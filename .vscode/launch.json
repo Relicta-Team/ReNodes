@@ -11,7 +11,8 @@
 			// uses main in rootdir
 			"program": "./main.py",
 			"console": "integratedTerminal",
-			"justMyCode": true
+			"justMyCode": true,
+			//"preLaunchTask": "Update git revision"
 		}
 	]
 }

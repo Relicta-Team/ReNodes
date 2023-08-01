@@ -26,7 +26,10 @@
             ],
             "problemMatcher": {
                 "owner": "cpp",
-                "fileLocation": ["relative", "${workspaceFolder}"],
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ]
             }
         },
         {
@@ -38,14 +41,31 @@
             ],
             "problemMatcher": {
                 "owner": "cpp",
-                "fileLocation": ["relative", "${workspaceFolder}"],
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ]
+            }
+        },
+        {
+            "label": "Update git revision",
+            "type": "shell",
+            "command": "${workspaceFolder}/builder.py",
+            "args": [],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ]
             }
         },
         {
             "label": "Build and increment minor",
             "type": "shell",
             "dependsOn": [
-                "Increment minor","Build"
+                "Increment minor",
+                "Build"
             ],
             "dependsOrder": "sequence"
         },
@@ -53,9 +73,11 @@
             "label": "Build and increment major",
             "type": "shell",
             "dependsOn": [
-                "Increment major","Build"
+                "Increment major",
+                "Build"
             ],
-            "dependsOrder": "sequence"
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }
