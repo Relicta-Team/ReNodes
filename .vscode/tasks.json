@@ -16,6 +16,46 @@
                 "panel": "new",
                 "focus": true
             }
+        },
+        {
+            "label": "Increment minor",
+            "type": "process",
+            "command": "${workspaceFolder}/builder.py",
+            "args": [
+                "minor"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+            }
+        },
+        {
+            "label": "Increment major",
+            "type": "shell",
+            "command": "${workspaceFolder}/builder.py",
+            "args": [
+                "major"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+            }
+        },
+        {
+            "label": "Build and increment minor",
+            "type": "shell",
+            "dependsOn": [
+                "Increment minor","Build"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "Build and increment major",
+            "type": "shell",
+            "dependsOn": [
+                "Increment major","Build"
+            ],
+            "dependsOrder": "sequence"
         }
     ]
 }
