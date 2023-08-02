@@ -54,7 +54,7 @@ class MainWindow( QMainWindow ):
 		self.mdiArea.setTabsMovable(True)
 		self.setCentralWidget(self.mdiArea)
 
-		
+		self.createInspectorDock()
 	
 	def createMenu(self):
 		self.newAction = QAction('&Новый скрипт', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Новый скрипт")
@@ -97,4 +97,43 @@ class MainWindow( QMainWindow ):
 		self.status_mouse_pos = QLabel("")
 		self.statusBar().addPermanentWidget(self.status_mouse_pos)
 		
-	
+	def createInspectorDock(self):
+		dockWidget = QDockWidget("Инспектор", self)
+		dockWidget.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+		dockWidget.setFeatures(QDockWidget.DockWidgetMovable)
+		#dockWidget.setFixedHeight(300)
+		
+		dockWidget.setMaximumWidth(400)
+		dockWidget.setMinimumWidth(100)
+		# Create a widget to hold the contents of the inspector
+		inspectorWidget = QWidget()
+
+		# Create a layout for the inspector widget
+		layout = QVBoxLayout()
+		layout.setObjectName('inspectorLayout')
+		inspectorWidget.setLayout(layout)
+
+		# Set the inspector widget as the contents of the dock widget
+		dockWidget.setWidget(inspectorWidget)
+
+		# Add the dock widget to the main window
+		self.addDockWidget(Qt.LeftDockWidgetArea, dockWidget)
+
+		# TEST--------
+		addButton = QPushButton("+")
+		addButton.clicked.connect(self.addTextBox)
+		layout.addWidget(addButton, alignment=Qt.AlignTop)
+		# Keep track of the number of text boxes
+		self.textboxCount = 0
+		
+	def addTextBox(self):
+		# Create a text box
+		textbox = QLineEdit()
+
+		# Set a unique object name for each text box
+		self.textboxCount += 1
+		textbox.setObjectName(f"textbox_{self.textboxCount}")
+		
+		# Add the text box to the layout
+		layout = self.findChild(QVBoxLayout, 'inspectorLayout')
+		layout.addWidget(textbox, alignment=Qt.AlignTop)
