@@ -40,17 +40,20 @@ class MainWindow( QMainWindow ):
 		#setwindows size at screensize
 		self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 		
-		self.showMaximized()
+		
 		self.createMenu()
 		self.createStatusBar()
 
-		# при обновлении файла стиля вызывает метод onReloadStyle
-		# filewatcher
-		self.fs_watcher = QtCore.QFileSystemWatcher()
-		self.fs_watcher.addPath("./data/qss/default.qss")
-		#print fws files
-		print(self.fs_watcher.files())
-		self.fs_watcher.fileChanged.connect(self.onReloadStyle)
+		self.mdiArea = QMdiArea()
+		self.mdiArea.setBackground(QtGui.QColor(0, 0, 0, 0))
+		self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		self.mdiArea.setViewMode(QMdiArea.TabbedView)
+		self.mdiArea.setDocumentMode(True)
+		self.mdiArea.setTabsClosable(True)
+		self.mdiArea.setTabsMovable(True)
+		self.setCentralWidget(self.mdiArea)
+
 		
 	
 	def createMenu(self):
