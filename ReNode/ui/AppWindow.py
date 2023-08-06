@@ -4,6 +4,8 @@ from PyQt5.QtCore import *
 from PyQt5 import QtWidgets, QtCore, QtGui
 from ReNode.app.utils import loadStylesheet
 from ReNode.ui.Widgets import *
+from ReNode.ui.NodeGraphPanel import *
+from NodeGraphQt import NodeGraph
 
 class MainWindow( QMainWindow ):
 
@@ -55,6 +57,7 @@ class MainWindow( QMainWindow ):
 		self.setCentralWidget(self.mdiArea)
 
 		self.createInspectorDock()
+		self.createWindowGraphEditor()
 	
 	def createMenu(self):
 		self.newAction = QAction('&Новый скрипт', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Новый скрипт")
@@ -77,6 +80,7 @@ class MainWindow( QMainWindow ):
 	
 	def onNewFile(self):
 		print("Новый скрипт")
+		self.createWindowGraphEditor()
 	
 	def onOpenFile(self):
 		print("Открыть")
@@ -120,20 +124,15 @@ class MainWindow( QMainWindow ):
 		self.addDockWidget(Qt.LeftDockWidgetArea, dockWidget)
 
 		# TEST--------
-		addButton = QPushButton("+")
-		addButton.clicked.connect(self.addTextBox)
-		layout.addWidget(addButton, alignment=Qt.AlignTop)
+		#addButton = QPushButton("+")
+		#addButton.clicked.connect(self.addTextBox)
+		#layout.addWidget(addButton, alignment=Qt.AlignTop)
 		# Keep track of the number of text boxes
-		self.textboxCount = 0
+		#self.textboxCount = 0
 		
-	def addTextBox(self):
-		# Create a text box
-		textbox = QLineEdit()
-
-		# Set a unique object name for each text box
-		self.textboxCount += 1
-		textbox.setObjectName(f"textbox_{self.textboxCount}")
-		
-		# Add the text box to the layout
-		layout = self.findChild(QVBoxLayout, 'inspectorLayout')
-		layout.addWidget(textbox, alignment=Qt.AlignTop)
+	def createWindowGraphEditor(self):
+		graph = NodeGraph()
+		#graph.show()
+		#graphPanel = NodeGraphPanel(graph)
+		self.addDockWidget(QtCore.Qt.TopDockWidgetArea, graph.widget)
+		pass
