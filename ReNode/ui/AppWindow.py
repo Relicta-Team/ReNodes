@@ -132,7 +132,12 @@ class MainWindow( QMainWindow ):
 		
 	def createWindowGraphEditor(self):
 		graph = NodeGraph()
-		#graph.show()
+		
 		#graphPanel = NodeGraphPanel(graph)
-		self.addDockWidget(QtCore.Qt.TopDockWidgetArea, graph.widget)
+		dock = QDockWidget("Editor",self)
+		dock.setWidget(graph.widget)
+		dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+		dock.setFeatures(QDockWidget.DockWidgetMovable)
+		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+		graph.show()
 		pass
