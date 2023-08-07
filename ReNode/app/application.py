@@ -6,6 +6,7 @@ from ReNode.app.VERSION import global_version
 from ReNode.app.REVISION import global_revision
 from ReNode.ui.AppWindow import MainWindow
 from NodeGraphQt import NodeGraph, BaseNode
+from ReNode.app.config import Config
 
 class Application:
 	
@@ -20,10 +21,17 @@ class Application:
 	#construct
 	def __init__(self):
 
+		Config.init()
+
 		self.mainWindow = MainWindow()
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()})")
 		self.mainWindow.show()
 		self.mainWindow.showMaximized()
+
+	#destructor
+	def __del__(self):
+		Config.saveConfig()
+		pass
 
 '''class NodeGraphPanel(QtWidgets.QDockWidget):
     """
