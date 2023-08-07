@@ -60,3 +60,27 @@ class Config:
         if not Config.isLoaded: return
         Config.parser.write(Config.cfgPath)
         Config.logger.log("Config saved")
+    
+    @staticmethod
+    def get(key,section="main"):
+        return Config.parser.get(section,key)
+    
+    @staticmethod
+    def set(key,value,section="main"):
+        Config.parser.set(section,key,value)
+    
+    @staticmethod
+    def get_int(key,section="main"):
+        return Config.parser.get_int(section,key)
+    
+    @staticmethod
+    def get_float(key,section="main"):
+        return Config.parser.get_float(section,key)
+
+    @staticmethod
+    def get_str(key,section="main"):
+        return Config.parser.get_str(section,key)
+
+    @staticmethod
+    def get_bool(key,section="main"):
+        return Config.parser.get_bool(section,key)
