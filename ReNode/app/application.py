@@ -7,6 +7,8 @@ from ReNode.app.REVISION import global_revision
 from ReNode.ui.AppWindow import MainWindow
 from NodeGraphQt import NodeGraph, BaseNode
 from ReNode.app.config import Config
+from ReNode.app.Logger import Logger
+logger = None
 
 class Application:
 	
@@ -20,7 +22,6 @@ class Application:
 
 	#construct
 	def __init__(self):
-
 		Config.init()
 
 		self.mainWindow = MainWindow()
@@ -63,11 +64,12 @@ class FooNode(BaseNode):
         self.add_output('out')'''
 
 def AppMain():
-	print(f"Loading {Application.appName} (version {Application.getVersionString()})")
-
+	global logger
 	app = QApplication(sys.argv)
 	QApplication.setStyle( "Fusion" )
 	application = Application() 
+	logger = Logger(application)
+	logger(f"Loading {Application.appName} (version {Application.getVersionString()})")
         
 	"""graph = NodeGraph()
 	graph.show()
@@ -87,5 +89,5 @@ def AppMain():
 	#print fws files
 	fs_watcher.fileChanged.connect(application.mainWindow.onReloadStyle)
 
-	print("Application loaded. Start main loop")
+	logger("Application loaded. Start main loop")
 	sys.exit(app.exec_())

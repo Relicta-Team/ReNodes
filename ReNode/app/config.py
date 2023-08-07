@@ -1,5 +1,6 @@
 import iniparser2
 from os.path import *
+import ReNode.app.Logger
 
 configValues = {
     "main": {
@@ -10,16 +11,19 @@ configValues = {
         "testvalue": "test stringg"
     }
 }
-
+class CONFIG:
+    pass
 class Config:
     
     parser : iniparser2.INI
     cfgPath : str = "config.ini"
     isLoaded : bool = False
+    logger = ReNode.app.Logger.Logger(CONFIG())
+    
 
     @staticmethod
     def init():
-        print("Initialize config reader")
+        Config.logger.log("Initialize config reader")
         Config.parser = iniparser2.INI()
         
         #check if config file exists
@@ -28,22 +32,22 @@ class Config:
         else:
             Config.createConfig()
         ver = Config.parser.get_int("version","main")
-        print(f"Config version: {ver}")
+        Config.logger.log(f"Config version: {ver}")
         if (ver != configValues["main"]["version"]):
-            print("Version not actual")
+            Config.logger.log("Version not actual")
             Config.createConfig()
         
-        print("Config initialized")
+        Config.logger.log("Config initialized")
         Config.isLoaded = True
     
     @staticmethod
     def readConfig():
-        print("Reading config")
+        Config.logger.log("Reading config")
         Config.parser.read_file(Config.cfgPath)
     
     @staticmethod
     def createConfig():
-        print("Creating new config")
+        Config.logger.log("Creating new config")
         parser = Config.parser
         # insert config values from configValues
         for key in configValues:
@@ -55,4 +59,4 @@ class Config:
     def saveConfig():
         if not Config.isLoaded: return
         Config.parser.write(Config.cfgPath)
-        print("Config saved")
+        Config.logger.log("Config saved")
