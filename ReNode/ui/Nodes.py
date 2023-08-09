@@ -18,3 +18,6 @@ class RuntimeNode(BaseNode):
 
 	def __init__(self):
 		super(RuntimeNode, self).__init__()
+
+
+	#TODO add events addStringInput, addCheckbox, event listener etc

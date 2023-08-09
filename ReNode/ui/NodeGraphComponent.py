@@ -1,3 +1,4 @@
+import uuid
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui
@@ -42,14 +43,21 @@ class NodeGraphComponent:
 
 		node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
 		node.add_input('in', color=(0, 80, 0))
-		node.add_output('out')
-		node.add_text_input('text1',"testlable")
+		node.add_output('out',False,False)
+		node.add_text_input('text1',"testlable",'default',"displaytab")
 		node.add_text_input('text2',"testlable")
 		node.add_text_input('text3',"testlable")
 		node.add_checkbox("cb",text="this is value a testing data")
 		node.add_combo_menu("cm","combo",["фыфыфыфы","ЙЙЙЙ ","СЕСЕСЕС"])
 		node.set_name("<b>Жирно</b> <i>наклон</i> и <font size=""20"">всё</font><br/><br/><br/><br/>nextline!")
-
+		wd : NodeCheckBox = node.get_widget("cb")
+		# add event on checked changed
+		def on_value_changed(self, *args, **kwargs):
+			if args[0]:
+				node.add_output('out' + str(uuid.uuid4().hex),False,False)
+			print(f"wid:{self} -> CHANGE: {args} AND:{kwargs}")
+			pass
+		wd.value_changed.connect(on_value_changed)
 		graph.clear_selection()
 		graph.fit_to_selection()
 		#properties_bin = PropertiesBinWidget(node_graph=graph)
