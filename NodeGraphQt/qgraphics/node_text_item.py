@@ -9,8 +9,11 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
     def __init__(self, text, parent=None):
         super(NodeTextItem, self).__init__(text, parent)
         self._locked = False
+        self._canEdit = False #custom for disable edit mode
         self.set_locked(False)
         self.set_editable(False)
+        #self.ItemUsesExtendedStyleOption = True
+        #self.setTextWidth(50) #multiline
 
     def mouseDoubleClickEvent(self, event):
         """
@@ -19,6 +22,9 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
         Args:
             event (QtWidgets.QGraphicsSceneMouseEvent): mouse event.
         """
+        if not self._canEdit:
+            return
+
         if not self._locked:
             if event.button() == QtCore.Qt.LeftButton:
                 self.set_editable(True)
@@ -61,7 +67,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
         Args:
             value (bool):  true in edit mode.
         """
-        if self._locked:
+        if self._locked or not self._canEdit:
             return
         if value:
             self.setTextInteractionFlags(
@@ -97,7 +103,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
             state (bool): lock state.
         """
         self._locked = state
-        if self._locked:
+        if self._locked or not self._canEdit:
             self.setFlag(QtWidgets.QGraphicsItem.ItemIsFocusable, False)
             self.setCursor(QtCore.Qt.ArrowCursor)
             self.setToolTip('')
