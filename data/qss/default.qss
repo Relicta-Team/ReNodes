@@ -66,8 +66,8 @@ QGroupBox {
 }
 
 QGroupBox::title {
-	top: -7px;
-	left: 7px;
+	top: 1px;
+	left: 1px;
 }
 
 QScrollBar {
