@@ -15,3 +15,21 @@ def loadStylesheet(filename: str):
     stylesheet = file.readAll()
     QApplication.instance().setStyleSheet(str(stylesheet, encoding='utf-8'))
     return str(stylesheet, encoding='utf-8')
+
+def intTryParse(value):
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+    
+def floatTryParse(value):
+    try:
+        return float(value)
+    except ValueError:
+        return 0.0
+    
+def boolTryParse(value):
+    try:
+        return bool(value)
+    except ValueError:
+        return False
