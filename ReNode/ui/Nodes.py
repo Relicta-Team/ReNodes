@@ -13,5 +13,8 @@ class RuntimeNode(BaseNode):
 	# initial default node name.
 	NODE_NAME = 'Default name'
 
+	#custom node data
+	metadata = {}
+
 	def __init__(self):
 		super(RuntimeNode, self).__init__()
