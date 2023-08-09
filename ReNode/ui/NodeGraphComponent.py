@@ -8,13 +8,14 @@ from NodeGraphQt import NodeGraph
 from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import PropertiesBinWidget
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from ReNode.ui.Nodes import RuntimeNode
+from ReNode.app.utils import *
 
 from NodeGraphQt.nodes.base_node import *
 
 class NodeGraphComponent:
 	def __init__(self,mainWindow) -> None:
 		graph = NodeGraph()
-		self.graphSystem = graph
+		self.graph = graph
 		
 		dock = QDockWidget("Editor main")
 		dock.setWidget(graph.widget)
@@ -38,7 +39,7 @@ class NodeGraphComponent:
 		#	graph.widget.tabBar().addTab("testvalue")
 
 		graph.show()
-
+		
 		self.registerNodes()
 
 		node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
@@ -49,7 +50,10 @@ class NodeGraphComponent:
 		node.add_text_input('text3',"testlable")
 		node.add_checkbox("cb",text="this is value a testing data")
 		node.add_combo_menu("cm","combo",["фыфыфыфы","ЙЙЙЙ ","СЕСЕСЕС"])
-		node.set_name("<b>Жирно</b> <i>наклон</i> и <font size=""20"">всё</font><br/><br/><br/><br/>nextline!")
+		
+		
+		node.set_icon("data\\function_sim.png")
+		node.set_property("name","<align=\"left\"><b>Действие</b><br/><font size=""4""><i>Дополнительные данные</i></font></align>",False)
 		wd : NodeCheckBox = node.get_widget("cb")
 		# add event on checked changed
 		def on_value_changed(self, *args, **kwargs):
@@ -58,23 +62,43 @@ class NodeGraphComponent:
 			print(f"wid:{self} -> CHANGE: {args} AND:{kwargs}")
 			pass
 		wd.value_changed.connect(on_value_changed)
+		
+		def on_intchange(self, *args, **kwargs):
+			val = args[0]
+			intval = intTryParse(val)
+			if str(intval)!=val:
+				node.set_property(self,str("0"))
+			pass
+
+		node.get_widget("text1").value_changed.connect(on_intchange)
+
 		graph.clear_selection()
 		graph.fit_to_selection()
 		#properties_bin = PropertiesBinWidget(node_graph=graph)
 		#properties_bin.setWindowFlags(QtCore.Qt.Tool)
 		self.update(node)
 		
+		
 	
 	def getGraphSystem(self) -> NodeGraph:
-		return self.graphSystem
+		return self.graph
 
 	def update(self,optNode = None):
 		if optNode:
 			optNode.update()
 			return
-		for node in self.graphSystem.graph.all_nodes():
+		for node in self.graph.graph.all_nodes():
 			node.update()
 
 	def registerNodes(self):
-		self.graphSystem.register_node(RuntimeNode)
+		self.graph.register_node(RuntimeNode)
 		pass
+
+	def setHistoryCollectLock(self,state: bool):
+		self.graph.undo_view.blockSignals(state)
+	
+	def showHistory(self):
+		self.graph.undo_view.show()
+	
+	def hideHistory(self):
+		self.graph.undo_view.hide()
