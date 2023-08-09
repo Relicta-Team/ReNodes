@@ -20,64 +20,73 @@
         {
             "label": "Increment minor",
             "type": "process",
-            "command": "${workspaceFolder}/builder.py",
+            "command": "python",
             "args": [
+                "builder.py",
                 "minor"
             ],
-            "problemMatcher": {
-                "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            }
+            "problemMatcher": [],
+            "group": {
+              "kind": "build",
+              "isDefault": true
+            },
+            "presentation": {
+              "focus": true,
+              "reveal": "always"
+            },
         },
         {
             "label": "Increment major",
-            "type": "shell",
-            "command": "${workspaceFolder}/builder.py",
+            "type": "process",
+            "command": "python",
             "args": [
+                "builder.py",
                 "major"
             ],
-            "problemMatcher": {
-                "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            }
+            "problemMatcher": []
         },
         {
             "label": "Update git revision",
-            "type": "shell",
-            "command": "${workspaceFolder}/builder.py",
-            "args": [],
-            "problemMatcher": {
-                "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            }
+            "type": "process",
+            "command": "python",
+            "args": ["builder.py"],
+            "problemMatcher": []
         },
         {
             "label": "Build and increment minor",
-            "type": "shell",
+            "type": "process",
             "dependsOn": [
                 "Increment minor",
-                "Build"
+                "Compile"
             ],
-            "dependsOrder": "sequence"
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+                },
+                "presentation": {
+                "focus": true,
+                "reveal": "always"
+            }
         },
         {
             "label": "Build and increment major",
-            "type": "shell",
+            "type": "process",
             "dependsOn": [
                 "Increment major",
-                "Build"
+                "Compile"
             ],
             "dependsOrder": "sequence",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+                },
+                "presentation": {
+                "focus": true,
+                "reveal": "always"
+            }
         }
     ]
 }
