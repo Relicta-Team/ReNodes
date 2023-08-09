@@ -842,12 +842,13 @@ class NodeItem(AbstractNodeItem):
         if selected:
             self.highlight_pipes()
 
+    #YODES: custom node header
     @AbstractNodeItem.name.setter
     def name(self, name=''):
         AbstractNodeItem.name.fset(self, name)
-        if name == self._text_item.toPlainText():
+        if name == self._text_item.toHtml():
             return
-        self._text_item.setPlainText(name)
+        self._text_item.setHtml(name)
         if self.scene():
             self.align_label()
         self.update()
