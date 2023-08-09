@@ -280,6 +280,7 @@ class NodeItem(AbstractNodeItem):
             tooltip += ' <font color="red"><b>(DISABLED)</b></font>'
         tooltip += '<br/>{}<br/>'.format(self.type_)
         self.setToolTip(tooltip)
+        self.setToolTip("") #Yodes: disabled tooltip for node (also we can use custom ttp)
 
     def _set_base_size(self, add_w=0.0, add_h=0.0):
         """
@@ -483,7 +484,10 @@ class NodeItem(AbstractNodeItem):
     def _align_label_horizontal(self, h_offset, v_offset):
         rect = self.boundingRect()
         text_rect = self._text_item.boundingRect()
-        x = rect.center().x() - (text_rect.width() / 2)
+        #x = rect.center().x() - (text_rect.width() / 2) #Yodes: here we can setup left offest
+        icon_rect = self._icon_item.boundingRect()
+        x = rect.center().x() - (text_rect.width() - icon_rect.width()) #customized value
+        #end custom
         self._text_item.setPos(x + h_offset, rect.y() + v_offset)
 
     def _align_label_vertical(self, h_offset, v_offset):
