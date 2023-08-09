@@ -71,10 +71,11 @@ class SlicerPipeItem(QtWidgets.QGraphicsPathItem):
         arrow.append(QtCore.QPointF(arrow_size, arrow_size))
 
         transform = QtGui.QTransform()
-        transform.translate(p2.x(), p2.y())
+        mid_point = QtCore.QPointF((p2.x() + p1.x()) / 2, (p2.y() + p1.y()) / 2)
+        transform.translate(mid_point.x(), mid_point.y()) #prev: transform.translate(p2.x(), p2.y())
         radians = math.atan2(p2.y() - p1.y(),
                              p2.x() - p1.x())
-        degrees = math.degrees(radians) - 90
+        degrees = math.degrees(radians) + 90 #prev:  degrees = math.degrees(radians) - 90
         transform.rotate(degrees)
 
         painter.drawPolygon(transform.map(arrow))
