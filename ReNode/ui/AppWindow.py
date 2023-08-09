@@ -1,10 +1,11 @@
 
+import uuid
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import QtWidgets, QtCore, QtGui
 from ReNode.app.utils import loadStylesheet
 from ReNode.ui.Widgets import *
-from ReNode.ui.NodeGraphPanel import *
+from ReNode.ui.NodeGraphComponent import *
 from NodeGraphQt import NodeGraph
 from ReNode.app.Logger import Logger
 
@@ -58,7 +59,7 @@ class MainWindow( QMainWindow ):
 		self.mdiArea.setDocumentMode(True)
 		self.mdiArea.setTabsClosable(True)
 		self.mdiArea.setTabsMovable(True)
-		self.setCentralWidget(self.mdiArea)
+		#self.setCentralWidget(self.mdiArea)
 
 		self.createInspectorDock()
 		self.createWindowGraphEditor()
@@ -106,6 +107,7 @@ class MainWindow( QMainWindow ):
 		self.statusBar().addPermanentWidget(self.status_mouse_pos)
 		
 	def createInspectorDock(self):
+		return
 		dockWidget = QDockWidget("Инспектор", self)
 		dockWidget.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
 		dockWidget.setFeatures(QDockWidget.DockWidgetMovable)
@@ -135,13 +137,5 @@ class MainWindow( QMainWindow ):
 		#self.textboxCount = 0
 		
 	def createWindowGraphEditor(self):
-		graph = NodeGraph()
-		
-		#graphPanel = NodeGraphPanel(graph)
-		dock = QDockWidget("Editor",self)
-		dock.setWidget(graph.widget)
-		dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
-		dock.setFeatures(QDockWidget.DockWidgetMovable)
-		self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-		graph.show()
+		self.nodeGraph = NodeGraphComponent(self)
 		pass

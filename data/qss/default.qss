@@ -182,13 +182,15 @@ QTableView {
 }
 
 QTabBar {
-	margin-left: 2px;
+	margin-left: 0px;
 }
 
 QTabBar::tab {
 	border-radius: 0px;
-	padding: 4px;
-	margin: 4px;
+	padding: 0px;
+	margin: 2px;
+	width: 100px;
+	height: 100px;
 }
 
 QTabBar::tab:selected {
