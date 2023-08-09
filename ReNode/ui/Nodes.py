@@ -21,3 +21,16 @@ class RuntimeNode(BaseNode):
 
 
 	#TODO add events addStringInput, addCheckbox, event listener etc
+
+	def addStringInput(self, name, label='', text='', tab=None):
+		self.add_text_input(name, label, text, tab)
+		self.update()
+
+	def addCheckboxInput(self,name, label='', text='', state=False, tab=None):
+		self.add_checkbox(name, label, text, state, tab)
+		self.update()
+
+	def addComboboxInput(self,name, label='', items=None, tab=None):
+		self.add_combo_menu(name, label, items, tab)
+
+	
