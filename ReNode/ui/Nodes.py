@@ -2,7 +2,7 @@ import os
 import random
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets, QtCore, QtGui
-from NodeGraphQt import NodeGraph, BaseNode
+from NodeGraphQt import NodeGraph, BaseNode,GroupNode
 
 
 class RuntimeNode(BaseNode):
@@ -33,4 +33,7 @@ class RuntimeNode(BaseNode):
 	def addComboboxInput(self,name, label='', items=None, tab=None):
 		self.add_combo_menu(name, label, items, tab)
 
+
+class RuntimeGroup(GroupNode):
+	__identifier__ = 'runtime_domain'
 	
