@@ -486,7 +486,9 @@ class NodeItem(AbstractNodeItem):
         text_rect = self._text_item.boundingRect()
         #x = rect.center().x() - (text_rect.width() / 2) #Yodes: here we can setup left offest
         icon_rect = self._icon_item.boundingRect()
-        x = rect.center().x() - (text_rect.width() - icon_rect.width()) #customized value
+        #v0.3
+        #x = rect.center().x() - (text_rect.width() - icon_rect.width()) #customized value
+        x = rect.left() + icon_rect.width() * 1.3 #Yodes: fixed rect 
         #end custom
         self._text_item.setPos(x + h_offset, rect.y() + v_offset)
 
