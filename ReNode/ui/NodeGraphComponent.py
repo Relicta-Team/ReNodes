@@ -4,10 +4,11 @@ from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui
 from PyQt5 import *
 
-from NodeGraphQt import NodeGraph
+from NodeGraphQt import (NodeGraph, GroupNode)
 from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import PropertiesBinWidget
 from NodeGraphQt.qgraphics.node_base import NodeItem
-from ReNode.ui.Nodes import RuntimeNode
+from NodeGraphQt.widgets.viewer import NodeViewer
+from ReNode.ui.Nodes import RuntimeNode, RuntimeGroup
 from ReNode.app.utils import *
 
 from NodeGraphQt.nodes.base_node import *
@@ -39,7 +40,7 @@ class NodeGraphComponent:
 		#	graph.widget.tabBar().addTab("testvalue")
 
 		graph.show()
-		
+		self._addEvents()
 		self.registerNodes()
 
 		node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
@@ -53,7 +54,7 @@ class NodeGraphComponent:
 		
 		
 		node.set_icon("data\\function_sim.png")
-		node.set_property("name","<align=\"left\"><b>Действие</b><br/><font size=""4""><i>Дополнительные данные</i></font></align>",False)
+		node.set_property("name","<b>Действие</b><br/><font size=""4""><i>Дополнительные данные</i></font>",False)
 		wd : NodeCheckBox = node.get_widget("cb")
 		# add event on checked changed
 		def on_value_changed(self, *args, **kwargs):
@@ -78,7 +79,17 @@ class NodeGraphComponent:
 		#properties_bin.setWindowFlags(QtCore.Qt.Tool)
 		self.update(node)
 		
-		
+		groupnode : GroupNode = graph.create_node("runtime_domain.RuntimeGroup")
+		groupnode.set_name("TESTNAME <b>TEST</b>")
+		groupnode.add_input("input")
+		groupnode.add_output("ouput")
+		groupnode.expand()
+		sg = graph.sub_graphs
+
+		graph.auto_layout_nodes()
+
+		n_backdrop = graph.create_node('Backdrop')
+		n_backdrop.wrap_nodes([groupnode, node])
 	
 	def getGraphSystem(self) -> NodeGraph:
 		return self.graph
@@ -92,6 +103,7 @@ class NodeGraphComponent:
 
 	def registerNodes(self):
 		self.graph.register_node(RuntimeNode)
+		self.graph.register_node(RuntimeGroup)
 		pass
 
 	def setHistoryCollectLock(self,state: bool):
@@ -102,3 +114,28 @@ class NodeGraphComponent:
 	
 	def hideHistory(self):
 		self.graph.undo_view.hide()
+
+	def _addEvents(self):
+		# wire function to "node_double_clicked" signal.
+		self.graph.node_double_clicked.connect(self.onNodeDoubleClickedEvent)
+		
+		#!only for debug
+		"""properties_bin = PropertiesBinWidget(node_graph=self.graph)
+		properties_bin.setWindowFlags(QtCore.Qt.Tool)
+		# example show the node properties bin widget when a node is double clicked.
+		def display_properties_bin(node):
+			if not properties_bin.isVisible():
+				properties_bin.show()
+		# wire function to "node_double_clicked" signal.
+		self.graph.node_double_clicked.connect(display_properties_bin)"""
+
+	def onNodeDoubleClickedEvent(self,node : BaseNode):
+		print(node.type_)
+		if "RuntimeGroup" in node.type_:
+			print("expand")
+			node.expand()
+		pass
+	
+	def onMouseClicked(self,posx,posy):
+		print(f">>>>>>>>{self} {posx} {posy}")
+		pass
