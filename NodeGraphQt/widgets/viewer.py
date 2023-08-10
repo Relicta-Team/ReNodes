@@ -222,7 +222,13 @@ class NodeViewer(QtWidgets.QGraphicsView):
         if pos:
             pos = self.mapToScene(pos)
         if sensitivity is None:
+            zoom = self.get_zoom()
             scale = 1.001 ** value
+            #Yodes :const min and max zoom
+            if zoom >= ZOOM_MAX and value > 0:
+                return
+            if zoom <= ZOOM_MIN and value < 0:
+                return
             self.scale(scale, scale, pos)
             return
 
