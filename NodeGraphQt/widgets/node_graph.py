@@ -62,9 +62,9 @@ class NodeGraphWidget(QtWidgets.QTabWidget):
     def add_viewer(self, viewer, name, node_id):
         self.addTab(viewer, name)
         index = self.indexOf(viewer)
-        self.setTabToolTip(index, node_id)
+        self.setTabToolTip(index, node_id) #Yodes: do not disable tooltip, this used in nodesystem logic (on closing)
         self.setCurrentIndex(index)
-
+        
     def remove_viewer(self, viewer):
         index = self.indexOf(viewer)
         self.removeTab(index)
@@ -77,6 +77,7 @@ class SubGraphWidget(QtWidgets.QWidget):
         self._graph = graph
         self._navigator = NodeNavigationWidget()
         self._layout = QtWidgets.QVBoxLayout(self)
+        #self._navigator.setHidden(True) #Yodes: if you need hide subgraph navigator use this
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(1)
         self._layout.addWidget(self._navigator)
