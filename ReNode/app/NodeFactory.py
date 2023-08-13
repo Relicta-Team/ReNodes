@@ -158,14 +158,14 @@ class NodeFactory:
 		if not graphref: return None
 		if not pos:
 			pos = graphref.viewer().scene_cursor_pos()
-		
-		node = graphref.create_node(nodename,pos=[pos.x(),pos.y()],forwardedCustomFactory=self)
+		graphref.undo_view.blockSignals(True)
+		node = graphref.create_node(nodename,pos=[pos.x(),pos.y()],forwardedCustomFactory={'name':nodename})
 		cfg = self.nodes[nodename]
 		nametext = f'<b>{cfg["name"]}</b>'
 		if cfg.get('desc')!="":
 			nametext += f'<br/><font size=""4"><i>{cfg["desc"]}</i></font>'
-		node.set_property("name",nametext,True,doNotRename=not True)
-		node.set_icon(cfg['icon'])
+		node.set_property("name",nametext,False,doNotRename=True)
+		node.set_icon(cfg['icon'],False)
 
 		for inputkey,inputvals in cfg['inputs'].items():
 			node.add_input(
@@ -192,4 +192,5 @@ class NodeFactory:
 				node.add_checkbox(name=optname,text=optvals.get('text',""),state=optvals.get('default',False))
 
 		node.update()
+		graphref.undo_view.blockSignals(False)
 	#endregion

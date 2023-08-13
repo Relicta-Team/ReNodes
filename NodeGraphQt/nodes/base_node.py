@@ -125,14 +125,14 @@ class BaseNode(NodeObject):
         # redraw the node.
         self._view.draw_node()
 
-    def set_icon(self, icon=None):
+    def set_icon(self, icon=None, push_undo=True):#Yodes: fix pushundo for icon
         """
         Set the node icon.
 
         Args:
             icon (str): path to the icon image.
         """
-        self.set_property('icon', icon)
+        self.set_property('icon', icon, push_undo)
 
     def icon(self):
         """
