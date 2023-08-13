@@ -1886,7 +1886,8 @@ class NodeGraph(QtCore.QObject):
                 file_out,
                 indent=2,
                 separators=(',', ':'),
-                default=default
+                default=default,
+                ensure_ascii=False #Yodes: fix rus letter encoding
             )
 
     def load_session(self, file_path):
