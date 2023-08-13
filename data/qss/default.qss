@@ -53,7 +53,7 @@ QRadioButton::indicator:unchecked:hover, QCheckBox::indicator:unchecked:hover {
 
 QRadioButton::indicator::checked, QCheckBox::indicator::checked {
 	border: 1px solid #5A5A5A;
-	/*background: #5A5A5A;*/
+	background: #5A5A5A;
 }
 
 QRadioButton::indicator:checked:hover, QCheckBox::indicator:checked:hover {
