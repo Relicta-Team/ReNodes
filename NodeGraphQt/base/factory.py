@@ -42,7 +42,7 @@ class NodeFactory(object):
         """
         return self.__nodes
 
-    def create_node_instance(self, node_type=None):
+    def create_node_instance(self, node_type=None, customFactoryReference=None):
         """
         create node object by the node type identifier or alias.
 
@@ -52,6 +52,11 @@ class NodeFactory(object):
         Returns:
             NodeGraphQt.NodeObject: new node object.
         """
+        #Yodes: redirect factory
+        if customFactoryReference:
+            from ReNode.ui.Nodes import RuntimeNode
+            return RuntimeNode()
+
         if node_type in self.aliases:
             node_type = self.aliases[node_type]
 
@@ -69,6 +74,9 @@ class NodeFactory(object):
         """
         if node is None:
             return
+
+        if node is str:
+            raise NodeRegistrationError('string node register not implemented')
 
         name = node.NODE_NAME
         node_type = node.type_

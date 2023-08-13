@@ -1165,7 +1165,7 @@ class NodeGraph(QtCore.QObject):
         self.nodes_registered.emit(nodes)
 
     def create_node(self, node_type, name=None, selected=True, color=None,
-                    text_color=None, pos=None, push_undo=True):
+                    text_color=None, pos=None, push_undo=True, forwardedCustomFactory=None): #Yodes: factory reference
         """
         Create a new node in the node graph.
 
@@ -1184,7 +1184,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             BaseNode: the created instance of the node.
         """
-        node = self._node_factory.create_node_instance(node_type)
+        node = self._node_factory.create_node_instance(node_type,forwardedCustomFactory)
         if node:
             node._graph = self
             node.model._graph_model = self.model
@@ -2185,6 +2185,7 @@ class NodeGraph(QtCore.QObject):
             ]
 
         if not start_nodes:
+            self.end_undo() #Yodes: fix empty graph layout
             return
 
         node_views = [n.view for n in nodes]
