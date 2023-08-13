@@ -102,6 +102,7 @@ def draw_square_port(painter, rect, info):
 
     painter.restore()
 
+# TODO; pins for all types, float,int,bool etc
 
 """class CustomPortsNode(BaseNode):
 
