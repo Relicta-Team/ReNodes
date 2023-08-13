@@ -73,7 +73,7 @@ class BaseNode(NodeObject):
         for name, widget in self.view.widgets.items():
             self.model.set_property(name, widget.get_value())
 
-    def set_property(self, name, value, push_undo=True):
+    def set_property(self, name, value, push_undo=True,doNotRename=False): #Yodes: fix autorenamer
         """
         Set the value on the node custom property.
 
@@ -100,7 +100,7 @@ class BaseNode(NodeObject):
             for port in ports:
                 for pipe in port.connected_pipes:
                     pipe.update()
-        super(BaseNode, self).set_property(name, value, push_undo)
+        super(BaseNode, self).set_property(name, value, push_undo, doNotRename)
 
     def set_layout_direction(self, value=0):
         """

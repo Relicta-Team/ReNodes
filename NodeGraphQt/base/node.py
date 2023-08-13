@@ -379,7 +379,7 @@ class NodeObject(object):
 
         return self.model.get_property(name)
 
-    def set_property(self, name, value, push_undo=True):
+    def set_property(self, name, value, push_undo=True,doNotRename=False): #Yodes: fix naming update
         """
         Set the value on the node custom property.
 
@@ -399,7 +399,8 @@ class NodeObject(object):
 
         # prevent nodes from have the same name.
         if self.graph and name == 'name':
-            value = self.graph.get_unique_name(value)
+            if not doNotRename:
+                value = self.graph.get_unique_name(value)
             self.NODE_NAME = value
 
         if self.graph:
