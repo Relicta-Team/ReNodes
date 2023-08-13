@@ -1,0 +1,56 @@
+{
+	"system":{
+		"version": 1
+	},
+	"nodes":{
+		"operators":{
+			"if_branch": {
+				"kind": "data\\branch_sim.png", 
+				"name": "Ветка",
+				"desc": "Проверяет условие",
+				"color": [13,18,23,255],
+				"inputs": {
+					"flowin": {
+						"color": [100, 100, 100, 255],
+						"display_name": false,
+						"mutliconnect": false,
+						"style": "triangle"
+					}
+				},
+				"outputs": {
+					"Истина": {
+						"color": [100, 100, 100, 255],
+						"display_name": true,
+						"mutliconnect": false,
+						"style": "triangle"
+					},
+					"Ложь": {
+						"color": [100, 100, 100, 255],
+						"display_name": true,
+						"mutliconnect": false,
+						"style": "triangle"
+					}
+				},
+				"options": {
+					"istrue": {
+						"type": "bool",
+						"default": true,
+						"text": "Условие"
+					}
+				}
+			}
+		},
+		"functions":{
+
+		},
+		"gameobjects":{
+
+		},
+		"gamemodes":{
+
+		},
+		"roles": {
+
+		}
+	}
+}
