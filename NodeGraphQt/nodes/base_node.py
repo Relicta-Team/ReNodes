@@ -204,7 +204,7 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_combo_menu(self, name, label='', items=None, tab=None):
+    def add_combo_menu(self, name, label='', items=None, tab=None, default=None): #Yodes: added default item
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QComboBox` widget
@@ -220,9 +220,12 @@ class BaseNode(NodeObject):
             items (list[str]): items to be added into the menu.
             tab (str): name of the widget tab to display in.
         """
+        curidx = 0
+        if items and default:
+            curidx = items.index(default)
         self.create_property(
             name,
-            value=items[0] if items else None,
+            value=items[curidx] if items else None,
             items=items or [],
             widget_type=NodePropWidgetEnum.QCOMBO_BOX.value,
             tab=tab

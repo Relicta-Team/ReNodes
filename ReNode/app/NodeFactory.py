@@ -67,7 +67,7 @@ class NodeFactory:
 		typename = category+"."+name
 		defcolor = (13,18,23,255)
 		defborder = (255,0,0,255)
-		kind = data['kind'] # function,control,operator etc for define icon
+		kind = data.get('kind',None) # function,control,operator etc for define icon
 		struct['name'] = data['name']
 		struct['desc'] = data.get('desc', '')
 		struct['icon'] = self._nodeKindToIcon(kind)
@@ -115,8 +115,13 @@ class NodeFactory:
 			if not typeopt:
 				raise Exception(f"no type for option {key}")
 			valdat['type'] = typeopt
-			valdat['default'] = val.get('default')
 			valdat['text'] = val.get('text')
+			if val.get('default'):
+				valdat['default'] = val.get('default')
+			if val.get('label'):
+				valdat['label'] = val.get('label')
+			if val.get('values'):
+				valdat['values'] = val.get('values')
 
 			opts[key] = valdat
 				
@@ -189,8 +194,11 @@ class NodeFactory:
 		for optname,optvals in cfg['options'].items():
 			type = optvals['type']
 			if type == "bool":
-				node.add_checkbox(name=optname,text=optvals.get('text',""),state=optvals.get('default',False))
-
+				node.add_checkbox(name=optname,text=optvals.get('text',""),label=optvals.get('label',""),state=optvals.get('default',False))
+			if type=="input":
+				node.add_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
+			if type=="list":
+				node.add_combo_menu(name=optname,label=optvals.get('text'),items=optvals.get('values',[]),default=optvals.get('default'))
 		node.update()
 		graphref.undo_view.blockSignals(False)
 	#endregion
