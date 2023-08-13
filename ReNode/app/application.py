@@ -8,6 +8,7 @@ from ReNode.ui.AppWindow import MainWindow
 from NodeGraphQt import NodeGraph, BaseNode
 from ReNode.app.config import Config
 from ReNode.app.Logger import Logger
+from ReNode.app.NodeFactory import NodeFactory
 logger = None
 
 class Application:
@@ -24,7 +25,9 @@ class Application:
 	def __init__(self):
 		Config.init()
 
-		self.mainWindow = MainWindow()
+		self.nodeFactory = NodeFactory()
+
+		self.mainWindow = MainWindow(self.nodeFactory)
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()})")
 		self.mainWindow.show()
 		self.mainWindow.showMaximized()

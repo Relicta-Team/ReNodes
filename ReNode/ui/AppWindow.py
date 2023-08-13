@@ -13,10 +13,11 @@ logger = None
 
 class MainWindow( QMainWindow ):
 
-	def __init__( self):
+	def __init__( self, factory):
 		super().__init__()
 		global logger
 		logger = Logger(self)
+		self.nodeFactory = factory
 		self.initUI()
 
 
@@ -82,6 +83,8 @@ class MainWindow( QMainWindow ):
 		self.fileMenu.addAction(self.exitAction)
 		self.fileMenu.addSeparator()
 		self.fileMenu.addAction(self.reloadStyle)
+
+		self.editMenu = menubar.addMenu("&Правка")
 	
 	def onNewFile(self):
 		logger("Новый скрипт")

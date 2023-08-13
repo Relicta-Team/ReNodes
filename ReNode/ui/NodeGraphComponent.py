@@ -11,6 +11,7 @@ from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.viewer import NodeViewer
 from ReNode.ui.Nodes import RuntimeNode, RuntimeGroup
 from ReNode.app.utils import *
+from ReNode.app.NodeFactory import NodeFactory
 
 from NodeGraphQt.nodes.base_node import *
 
@@ -19,6 +20,7 @@ class NodeGraphComponent:
 		graph = NodeGraph()
 		self.graph = graph
 		self.mainWindow = mainWindow
+		self.nodeFactory : NodeFactory = mainWindow.nodeFactory
 		
 		dock = QDockWidget("Editor main")
 		dock.setWidget(graph.widget)
@@ -43,16 +45,16 @@ class NodeGraphComponent:
 
 		graph.show()
 		self._addEvents()
-		self.registerNodes()
 		self.contextMenuLoad()
 
-		node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
-		node.add_input('in', color=(0, 80, 0))
+		self.registerNodes()
+		"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
+		node.add_input('in', color=(0, 80, 0), display_name=True)
 		node.add_output('out',False,False)
 		node.add_text_input('text1',"testlable",'default',"displaytab")
 		node.add_text_input('text2',"testlable")
 		node.add_text_input('text3',"testlable")
-		node.add_checkbox("cb",text="this is value a testing data")
+		node.add_checkbox("cb",text="this is value a testing data 12  ada wd aw d")
 		node.add_combo_menu("cm","combo",["фыфыфыфы","ЙЙЙЙ ","СЕСЕСЕС"])
 		
 		
@@ -80,7 +82,7 @@ class NodeGraphComponent:
 		graph.fit_to_selection()
 		#properties_bin = PropertiesBinWidget(node_graph=graph)
 		#properties_bin.setWindowFlags(QtCore.Qt.Tool)
-		self.update(node)
+		self.update(node)"""
 		
 		"""groupnode : GroupNode = graph.create_node("runtime_domain.RuntimeGroup")
 		groupnode.set_name("TESTNAME <b>TEST</b>")
@@ -89,8 +91,7 @@ class NodeGraphComponent:
 		groupnode.expand()
 		sg = graph.sub_graphs"""
 
-		graph.auto_layout_nodes()
-
+		graph.auto_layout_nodes() 
 		#n_backdrop = graph.create_node('Backdrop')
 		#n_backdrop.wrap_nodes([groupnode, node])
 	
@@ -136,7 +137,7 @@ class NodeGraphComponent:
 		print(node.type_)
 		if "RuntimeGroup" in node.type_:
 			print("expand")
-			node.expand()
+			#node.expand()
 		pass
 	
 	def contextMenuLoad(self):
@@ -149,10 +150,11 @@ class NodeGraphComponent:
 		#sect.add_command("testcmd",node_class=RuntimeNode,func=test_func)
 
 		def my_test(graph):
-			"""ps = graph.viewer().scene_cursor_pos()
-			node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode', pos=[ps.x(),ps.y()])
-			node.add_input('in', color=(0, 80, 0))
-			node.add_output('out',False,False)
+			ps = graph.viewer().scene_cursor_pos()
+			self.nodeFactory.instance("operators.if_branch",pos=ps,graphref=graph)
+			"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode', pos=[ps.x(),ps.y()])
+			node.add_input('Входные данные', color=(0, 80, 0))
+			node.add_output('Выходные данные',False,False)
 			node.add_text_input('text1',"testlable",'default',"displaytab")"""
 
 			"""node.add_text_input('text2',"testlable")
@@ -181,11 +183,15 @@ class NodeGraphComponent:
 			#print([(w.underMouse(),w) for w in self.widgets_at(pos)])
 			graph.toggle_node_search(True)
 		gmenu.add_command("TOGGLESEARCH",tsc__,"Tab")
+		gmenu.add_command("showhistory",self.showHistory)
 		gmenu.add_separator()
 		gmenu.add_menu("Файл")
 		gmenu.add_menu("Сцена")
 
 		pass
+
+	def toggleNodeSearch(self):
+		self.graph.toggle_node_search(False)
 
 	def onMouseClicked(self,posx,posy):
 		print(f">>>>>>>>{self} {posx} {posy}")
