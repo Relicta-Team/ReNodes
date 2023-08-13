@@ -202,3 +202,12 @@ class NodeFactory:
 		node.update()
 		graphref.undo_view.blockSignals(False)
 	#endregion
+
+	def getNodesForSearch(self):
+		if len(self.nodes) == 0: return {}
+		retval = {}
+		for type,props in self.nodes.items():
+			retval[props['name']]=[type]
+		
+		return retval
+		#return {"backdrop": ["system.backdrop"],"test2":['x.v','t.e.ass']}

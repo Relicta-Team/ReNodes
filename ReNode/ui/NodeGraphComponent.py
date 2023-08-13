@@ -181,7 +181,7 @@ class NodeGraphComponent:
 		def tsc__(graph: NodeGraph):
 			#pos = QtGui.QCursor.pos()
 			#print([(w.underMouse(),w) for w in self.widgets_at(pos)])
-			graph.toggle_node_search(True)
+			graph.toggle_node_search(True,self.nodeFactory)
 		gmenu.add_command("TOGGLESEARCH",tsc__,"Tab")
 		gmenu.add_command("showhistory",self.showHistory)
 		gmenu.add_separator()
@@ -191,7 +191,7 @@ class NodeGraphComponent:
 		pass
 
 	def toggleNodeSearch(self):
-		self.graph.toggle_node_search(False)
+		self.graph.toggle_node_search(False,self.nodeFactory)
 
 	def onMouseClicked(self,posx,posy):
 		print(f">>>>>>>>{self} {posx} {posy}")

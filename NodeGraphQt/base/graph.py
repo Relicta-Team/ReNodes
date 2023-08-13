@@ -537,12 +537,15 @@ class NodeGraph(QtCore.QObject):
             return 0.0, 0.0
         return cursor_pos.x(), cursor_pos.y()
 
-    def toggle_node_search(self,isContextEvent = False): # Yodes: fixed show node search from context menu
+    def toggle_node_search(self,isContextEvent = False,optFactory = None): # Yodes: fixed show node search from context menu
         """
         toggle the node search widget visibility.
         """
         if self._viewer.underMouse() or isContextEvent:
-            self._viewer.tab_search_set_nodes(self._node_factory.names)
+            if optFactory:
+                self._viewer.tab_search_set_nodes(optFactory.getNodesForSearch())
+            else:
+                self._viewer.tab_search_set_nodes(self._node_factory.names)
             self._viewer.tab_search_toggle()
 
     def show(self):
