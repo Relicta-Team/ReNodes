@@ -7,7 +7,7 @@
 			"if_branch": {
 				"kind": "data\\branch_sim.png", 
 				"name": "Ветка",
-				"desc": "Проверяет условие",
+				"desc123": "Проверяет условие",
 				"color": [13,18,23,255],
 				"inputs": {
 					"flowin": {
@@ -36,6 +36,36 @@
 						"type": "bool",
 						"default": true,
 						"text": "Условие"
+					}
+				}
+			},
+			"testnode":{
+				"name":"Тестовый узел",
+				"inputs":{
+					"inp1": {"color":[255,0,0,255]},
+					"inp2": {}
+				},
+				"outputs": {
+					"out1": {},
+					"out2": {}
+				},
+				"options": {
+					"testbool": {
+						"type":"bool",
+						"default": true,
+						"text": "test text",
+						"label": "test label"
+					},
+					"testinput": {
+						"type":"input",
+						"default": "hehehhe",
+						"text": "test text"
+					},
+					"testcheckbox": {
+						"type":"list",
+						"text": "select some items",
+						"default": "third item",
+						"values": ["first item", "second item", "third item"]
 					}
 				}
 			}
