@@ -157,6 +157,9 @@ class NodeGraph(QtCore.QObject):
             kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack)
         )
         
+        #Yodes: reftofactory
+        self._factoryRef = None
+
         layout_direction = kwargs.get('layout_direction')
         if layout_direction:
             if layout_direction not in [e.value for e in LayoutDirectionEnum]:
@@ -414,7 +417,9 @@ class NodeGraph(QtCore.QObject):
             node_type (str): node identifier.
             pos (tuple or list): x, y position for the node.
         """
-        self.create_node(node_type, pos=pos)
+        #self.create_node(node_type, pos=pos)
+        self._factoryRef.instance(node_type,graphref=self,pos=pos)
+        
 
     def _on_connection_changed(self, disconnected, connected):
         """
