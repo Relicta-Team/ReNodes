@@ -164,9 +164,10 @@ class NodeFactory:
 		if not self.nodes[nodename]: return None
 		if not graphref: return None
 		if not pos:
-			pos = graphref.viewer().scene_cursor_pos()
+			pos_pre = graphref.viewer().scene_cursor_pos()
+			pos = [pos_pre.x(),pos_pre.y()]
 		graphref.undo_view.blockSignals(True)
-		node = graphref.create_node(nodename,pos=[pos.x(),pos.y()],forwardedCustomFactory={'name':nodename})
+		node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
 		cfg = self.nodes[nodename]
 		nametext = f'<b>{cfg["name"]}</b>'
 		if cfg.get('desc')!="":
@@ -210,5 +211,9 @@ class NodeFactory:
 		retval = {}
 		for type,props in self.nodes.items():
 			retval[props['name']]=[type]
+		
+		#for i in range(1,200):
+		#	retval['propname'+str(i)]=["propcat"+str(i)+".testcat.abc.def",'cat123.ptr'+str(i)]
+		
 		return retval
 		#return {"backdrop": ["system.backdrop"],"test2":['x.v','t.e.ass']}
