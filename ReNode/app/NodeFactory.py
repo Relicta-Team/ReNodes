@@ -37,6 +37,8 @@ class NodeFactory:
 		def default(obj):
 			if isinstance(obj, set):
 				return list(obj)
+			if callable(obj):
+				return obj.__name__
 			return obj
 		logger.log(f"version lib {self.version}")
 		with open("lib_output.json", 'w') as file_out:
@@ -208,6 +210,5 @@ class NodeFactory:
 		retval = {}
 		for type,props in self.nodes.items():
 			retval[props['name']]=[type]
-		
 		return retval
 		#return {"backdrop": ["system.backdrop"],"test2":['x.v','t.e.ass']}
