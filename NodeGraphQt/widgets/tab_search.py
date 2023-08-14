@@ -122,6 +122,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
                 ),
                 'border': '1px solid rgba({0},{1},{2},30)'.format(*text_color),
                 'border-radius': '3px',
+                'menu-scrollable': '1' #Yodes: now menu is scrollable
             },
             'QMenu::item': {
                 'padding': '5px 18px 2px',
