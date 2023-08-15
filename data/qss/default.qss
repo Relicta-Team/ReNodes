@@ -55,7 +55,7 @@ QRadioButton::indicator::checked, QCheckBox::indicator::checked {
 	border: 1px solid #5A5A5A;
 	background: #5A5A5A;
 }
-
+		
 QRadioButton::indicator:checked:hover, QCheckBox::indicator:checked:hover {
 	border: 1px solid #DDDDDD;
 	background: #DDDDDD;
@@ -77,17 +77,18 @@ QScrollBar {
 
 QScrollBar:horizontal {
 	height: 15px;
-	margin: 0px 0px 0px 32px;
+	/* margin: 0px 0px 0px 32px; */
 }
 
 QScrollBar:vertical {
 	width: 15px;
-	margin: 32px 0px 0px 0px;
+	/* margin: 32px 0px 0px 0px; */
+	margin: 0px 2px 0px 0px;
 }
 
 QScrollBar::handle {
 	background: #353535;
-	border: 1px solid #5A5A5A;
+	border: 3px solid #5A5A5A;
 }
 
 QScrollBar::handle:horizontal {
@@ -95,7 +96,7 @@ QScrollBar::handle:horizontal {
 }
 
 QScrollBar::handle:vertical {
-	border-width: 1px 0px 1px 0px;
+	border-width: 2px 1px 2px 1px;
 }
 
 QScrollBar::handle:horizontal {
@@ -103,9 +104,10 @@ QScrollBar::handle:horizontal {
 }
 
 QScrollBar::handle:vertical {
-	min-height: 20px;
+	min-height: 80px;
 }
 
+/*
 QScrollBar::add-line, QScrollBar::sub-line {
 	background:#353535;
 	border: 1px solid #5A5A5A;
@@ -142,6 +144,17 @@ QScrollBar:left-arrow, QScrollBar::right-arrow, QScrollBar::up-arrow, QScrollBar
 	border: 1px solid #5A5A5A;
 	width: 3px;
 	height: 3px;
+}
+*/
+
+QScrollBar::add-line:vertical {
+height: 0px;
+}
+QScrollBar::sub-line:vertical {
+height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+height: 0px;
 }
 
 QScrollBar::add-page, QScrollBar::sub-page {

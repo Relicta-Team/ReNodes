@@ -5,6 +5,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5 import *
 from PyQt5.QtWidgets import QWidget, QTreeWidget
 import asyncio
+from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
 
 
@@ -12,41 +13,64 @@ class TabSearchMenu(QWidget):
     def __init__(self,parent=None):
         super(TabSearchMenu, self).__init__(parent)
         baseWidget = self
-        self.move(0,0)
-        baseWidget.setMinimumSize(500, 300+22)
+        #self.move(0,0)
+        sizeXFull = 400
+        sizeYFull = 350
+        baseWidget.setMinimumSize(sizeXFull, sizeYFull)
+        baseWidget.setMaximumSize(sizeXFull, sizeYFull)
         self.setVisible(False)
-        #self.show()
-        #self.setFocus()
-
         baseWidget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.background = baseWidget
         #baseWidget.setStyleSheet('background-color: red;')
+        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
+                               ViewerEnum.BACKGROUND_COLOR.value))
+        selected_color = self.palette().highlight().color().getRgb()
+        baseWidget.setStyleSheet(f"background-color: {'rgb({0},{1},{2})'.format(*ViewerNavEnum.BACKGROUND_COLOR.value)}; border-radius: 4px; border: #ff00ff00")
+
+        ofsY = 0
+        text = QLabel(baseWidget)
+        self.text = text
+        text.move(0,0)
+        text.setMinimumSize(sizeXFull,25)
+        text.setMaximumSize(sizeXFull,25)
+        ofsY += 25 + 5
+        self.setText("Выберите тип узла из всех доступных")
+        #self.setStyleSheet("padding: 10px 50px 20px;")
+
+        inputX = int(sizeXFull/100*80)
+        checkX = sizeXFull - inputX
+        self.edit = TabSearchLineEditWidget(baseWidget)
+        self.edit.setPlaceholderText("Поиск")
+        self.edit.move(0, ofsY)
+        self.edit.setMinimumSize(inputX,34)
+        self.edit.setMaximumSize(inputX,34)
+
+        self.contextSense = QCheckBox(baseWidget)
+        self.contextSense.move(inputX,ofsY)
+        self.contextSense.setMinimumSize(checkX,34)
+        self.contextSense.setMaximumSize(checkX,34)
+        self.contextSense.setText("Контекст")
+        self.contextSense.setToolTip("Если эта опция включена, то в поиске будут доступны узлы, подходящие к текущему контексту.")
+
+        ofsY += 34
+
+        treeWidget = QTreeWidget(baseWidget)
+        treeWidget.move(0,ofsY)
+        self.tree = treeWidget
+        treeWidget.setColumnCount(1)
+        treeWidget.setMinimumSize(sizeXFull, sizeYFull-ofsY)
+        treeWidget.setMaximumSize(sizeXFull, sizeYFull-ofsY)
+        treeWidget.setWindowTitle("NodeSearch")
+        treeWidget.setHeaderHidden(True)
+        
+        #treeWidget.setDragEnabled(True)
+        
+        treeWidget.headerItem().setText(0,"Select node")
+        
 
         data = ['folder1/file1', 'file2', 'file3', 'folder2/file4']
         for i in range(1,1000):
             data.append(f'fld/test/inside/button/num'+str(i))
-        treeWidget = QTreeWidget(baseWidget)
-        treeWidget.setColumnCount(1)
-        treeWidget.move(0, 25)
-        treeWidget.setMinimumSize(500, 300)
-        treeWidget.setWindowTitle("NodeSearch")
-        treeWidget.setHeaderHidden(True)
-        #treeWidget.setDragEnabled(True)
-        
-        treeWidget.headerItem().setText(0,"Select node")
-
-        self.line_edit = TabSearchLineEditWidget(baseWidget)
-        self.line_edit.move(0, 0)
-        self.line_edit.setMinimumWidth(410)
-
-        self.contextSense = QRadioButton(baseWidget)
-        self.contextSense.move(410,2)
-        self.contextSense.setMinimumSize(30,22)
-        self.contextSense.setMaximumSize(80,22)
-        self.contextSense.setText("Контекст")
-
-        self.edit = self.line_edit
-        self.tree = treeWidget
-
         items = []
         for item in data:
             itemparts = item.split('/')
@@ -56,12 +80,18 @@ class TabSearchMenu(QWidget):
             partentitem = entry
 
             if len(itemparts) > 1:
+                idx = 0
                 for i in itemparts[1:]:
                     childitem = QTreeWidgetItem(None, [i])
-                    #childitem.setIcon(0,QtGui.QIcon('./data/branch_sim.png'))
+                    if idx%2==0:
+                        childitem.setIcon(0,QtGui.QIcon('./data/function_sim.png'))
                     partentitem.addChild(childitem)
                     partentitem = childitem
+                    idx+=1
 
             items.append(entry)
 
         treeWidget.insertTopLevelItems(0, items)
+    
+    def setText(self,data):
+        self.text.setText(f'<p style=\"font-size:20px;padding: 2% 2%;\">{data}</p>')
