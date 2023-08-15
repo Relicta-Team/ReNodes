@@ -22,6 +22,8 @@ from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
 from NodeGraphQt.widgets.dialogs import BaseDialog, FileDialog
 from NodeGraphQt.widgets.scene import NodeScene
 from NodeGraphQt.widgets.tab_search import TabSearchMenuWidget
+from ReNode.app.utils import clamp
+from ReNode.ui.TabSearchMenu import TabSearchMenu
 
 ZOOM_MIN = -0.95
 ZOOM_MAX = 2.0
@@ -121,6 +123,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._search_widget = TabSearchMenuWidget()
         self._search_widget.search_submitted.connect(self._on_search_submitted)
 
+        #test
+        self._tabSearch = TabSearchMenu(self)
+        
+
         # workaround fix for shortcuts from the non-native menu.
         # actions don't seem to trigger so we create a hidden menu bar.
         self._ctx_menu_bar = QtWidgets.QMenuBar(self)
@@ -219,6 +225,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
             sensitivity (float): zoom sensitivity.
             pos (QtCore.QPoint): mapped position.
         """
+        
+        #Yodes: disable visible for custom tab view
+        if self._tabSearch.isVisible(): return
+
         if pos:
             pos = self.mapToScene(pos)
         if sensitivity is None:
@@ -405,7 +415,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
          self._prev_selection_pipes) = self.selected_items()
 
         # close tab search
-        if self._search_widget.isVisible():
+        if self._tabSearch.isVisible():
             self.tab_search_toggle()
 
         # cursor pos.
@@ -1181,7 +1191,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
     def tab_search_set_nodes(self, nodes):
         self._search_widget.set_nodes(nodes)
 
-    def tab_search_toggle(self):
+    def tab_search_toggle_OLD(self):
         state = self._search_widget.isVisible()
         if not state:
             self._search_widget.setVisible(state)
@@ -1195,6 +1205,24 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._search_widget.move(new_pos)
         self._search_widget.setVisible(state)
         self._search_widget.setFocus()
+
+        rect = self.mapToScene(rect).boundingRect()
+        self.scene().update(rect)
+    
+    def tab_search_toggle(self):
+        state = self._tabSearch.isVisible()
+        if state:
+            self._tabSearch.setVisible(False)
+            self.setFocus()
+            return
+
+        pos = self._previous_pos
+        rect = self._tabSearch.rect()
+        new_pos = QtCore.QPoint(int(pos.x() - rect.width() / 2),
+                                int(pos.y() - rect.height() / 2))
+        self._tabSearch.move(new_pos)
+        self._tabSearch.setVisible(True)
+        self._tabSearch.edit.setFocus()
 
         rect = self.mapToScene(rect).boundingRect()
         self.scene().update(rect)
