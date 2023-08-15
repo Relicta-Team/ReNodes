@@ -5,6 +5,7 @@
 	"nodes":{
 		"operators":{
 			"if_branch": {
+				"path": "Контрольные структуры.Операторы",
 				"kind": "data\\branch_sim.png", 
 				"name": "Ветка",
 				"desc123": "Проверяет условие",
@@ -40,6 +41,7 @@
 				}
 			},
 			"testnode":{
+				"path": "debug",
 				"name":"Тестовый узел",
 				"inputs":{
 					"inp1": {"color":[255,0,0,255]},

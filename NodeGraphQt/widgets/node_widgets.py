@@ -261,6 +261,7 @@ class NodeComboBox(NodeBaseWidget):
         self.setZValue(Z_VAL_NODE_WIDGET + 1)
         combo = QtWidgets.QComboBox()
         combo.setMinimumHeight(24)
+        combo.setMinimumWidth(100)
         combo.addItems(items or [])
         combo.currentIndexChanged.connect(self.on_value_changed)
         combo.clearFocus()

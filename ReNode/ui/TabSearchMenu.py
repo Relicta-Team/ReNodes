@@ -16,8 +16,8 @@ class TabSearchMenu(QWidget):
         #self.move(0,0)
         sizeXFull = 400
         sizeYFull = 350
-        baseWidget.setMinimumSize(sizeXFull, sizeYFull)
-        baseWidget.setMaximumSize(sizeXFull, sizeYFull)
+        baseWidget.setMinimumSize(sizeXFull+2, sizeYFull+2)
+        baseWidget.setMaximumSize(sizeXFull+2, sizeYFull+2)
         self.setVisible(False)
         baseWidget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.background = baseWidget
@@ -25,12 +25,12 @@ class TabSearchMenu(QWidget):
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
                                ViewerEnum.BACKGROUND_COLOR.value))
         selected_color = self.palette().highlight().color().getRgb()
-        baseWidget.setStyleSheet(f"background-color: {'rgb({0},{1},{2})'.format(*ViewerNavEnum.BACKGROUND_COLOR.value)}; border-radius: 4px; border: #ff00ff00")
+        baseWidget.setStyleSheet(f".TabSearchMenu {{ background-color: {'rgb({0},{1},{2})'.format(*ViewerNavEnum.BACKGROUND_COLOR.value)}; border-radius: 2px; border: 2px solid #353535; }}")
 
         ofsY = 0
         text = QLabel(baseWidget)
         self.text = text
-        text.move(0,0)
+        text.move(1,1)
         text.setMinimumSize(sizeXFull,25)
         text.setMaximumSize(sizeXFull,25)
         ofsY += 25 + 5
@@ -41,12 +41,12 @@ class TabSearchMenu(QWidget):
         checkX = sizeXFull - inputX
         self.edit = TabSearchLineEditWidget(baseWidget)
         self.edit.setPlaceholderText("Поиск")
-        self.edit.move(0, ofsY)
+        self.edit.move(1, ofsY)
         self.edit.setMinimumSize(inputX,34)
         self.edit.setMaximumSize(inputX,34)
 
         self.contextSense = QCheckBox(baseWidget)
-        self.contextSense.move(inputX,ofsY)
+        self.contextSense.move(1+inputX,ofsY)
         self.contextSense.setMinimumSize(checkX,34)
         self.contextSense.setMaximumSize(checkX,34)
         self.contextSense.setText("Контекст")
@@ -55,22 +55,46 @@ class TabSearchMenu(QWidget):
         ofsY += 34
 
         treeWidget = QTreeWidget(baseWidget)
-        treeWidget.move(0,ofsY)
+        treeWidget.move(1,ofsY)
         self.tree = treeWidget
         treeWidget.setColumnCount(1)
         treeWidget.setMinimumSize(sizeXFull, sizeYFull-ofsY)
         treeWidget.setMaximumSize(sizeXFull, sizeYFull-ofsY)
         treeWidget.setWindowTitle("NodeSearch")
         treeWidget.setHeaderHidden(True)
+        treeWidget.setAnimated(True)
+        treeWidget.setIndentation(10)
         
         #treeWidget.setDragEnabled(True)
         
         treeWidget.headerItem().setText(0,"Select node")
         
-
-        data = ['folder1/file1', 'file2', 'file3', 'folder2/file4']
+        test = {
+            "Операторы" : {
+                "Контрольные струкутры": {
+                    "Ветка",
+                    "Цикл",
+                    "",
+                },
+                "Отладка" : {
+                    "Тестовый оператор",
+                    "Система"
+                }
+            },
+            "Список": {
+                "Создать",
+                "Очистить"
+            },
+            "Строки": {
+                "Создать",
+                "Разделить"
+            },
+            "Элементы": "Создать элемент"
+        }
+        self.build_tree(test)
+        """data = ['folder1/file1', 'file2', 'file3', 'folder2/file4']
         for i in range(1,1000):
-            data.append(f'fld/test/inside/button/num'+str(i))
+            data.append(f'fld/test/num'+str(i))
         items = []
         for item in data:
             itemparts = item.split('/')
@@ -91,7 +115,29 @@ class TabSearchMenu(QWidget):
 
             items.append(entry)
 
-        treeWidget.insertTopLevelItems(0, items)
+        treeWidget.insertTopLevelItems(0, items)"""
     
+    def build_tree(self,data : dict):
+        data = dict or {}
+        return
+        
+        toplvl = []
+        for k,v in data.items():
+            entry = QTreeWidgetItem(None, [k])
+            toplvl.append(entry)
+            print(f'parsetop: {k}')
+            if v:
+                self._build_recrusive(entry,v)
+
+        self.tree.insertTopLevelItems(0,toplvl)
+
+    def _build_recrusive(self,parent,vdict):
+        for key,val in vdict.items():
+            print(f'parse inside: {key}')
+            itm = QTreeWidgetItem(None, key)
+            parent.addChild(itm)
+            if val:
+                self._build_recrusive(itm,val)
+
     def setText(self,data):
         self.text.setText(f'<p style=\"font-size:20px;padding: 2% 2%;\">{data}</p>')

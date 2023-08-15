@@ -295,3 +295,31 @@ QProgressBar::chunk {
 QMenu::separator {
 	background: #353535;
 }
+
+
+QTreeView {
+    show-decoration-selected: 0;
+}
+
+QTreeView::item {
+    border: 0px solid #d9d9d9;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+QTreeView::item:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 20, y2: 0, stop: 0 #353535, stop: 1 #353535);
+    border: 0px solid #353535;
+}
+
+QTreeView::item:selected {
+    border: 0px solid #353535;
+}
+
+QTreeView::item:selected:active{
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #5A5A5A, stop: 1 #5A5A5A);
+}
+
+QTreeView::item:selected:!active {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #5A5A5A, stop: 1 #5A5A5A);
+}
