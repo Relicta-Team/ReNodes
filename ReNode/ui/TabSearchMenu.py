@@ -75,11 +75,18 @@ class TabSearchMenu(QWidget):
         treeWidget.setIndentation(10)
         
         #treeWidget.setDragEnabled(True)
+
+        self.delegate = HighlightingDelegate(self.tree)
+        self.delegate.editor = self.edit
+        self.tree.setItemDelegate(self.delegate)
+
         
         treeWidget.headerItem().setText(0,"Select node")
         
         test = {
             "Операторы.Контрольные структуры": ["operators.while","operators.if_branch"],
+            "Операторы.Системные": ["sys.push","sys.pop"],
+            "Тесты.Системные": ["debug_test_create"],
             "Списки": ["list.create","list.resize"],
             "Строки": ["string.create"],
             "Структуры.Дата": [],
@@ -88,7 +95,7 @@ class TabSearchMenu(QWidget):
 
         #sort test
         self.test = OrderedDict(sorted(test.items()))
-        
+        self._existsTrees = {}
         self.build_tree(test)
         self.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
 
@@ -120,17 +127,101 @@ class TabSearchMenu(QWidget):
 
         treeWidget.insertTopLevelItems(0, items)"""
     
-    def build_tree(self, data: OrderedDict, parent_item:QTreeWidgetItem=None, searchFilter=None):
+        """if searcher=='': searcher="%NOT_SEARCHED_TEXT%"
+        #get all items
+        listall = []
+        for it in self.tree.findItems("*", Qt.MatchWrap | Qt.MatchWildcard | Qt.MatchRecursive):
+            if not TabSearchMenu.__defaultColor:
+                TabSearchMenu.__defaultColor = it.foreground(0)
+            it.setHidden(False)
+            it.setForeground(0,TabSearchMenu.__defaultColor)
+            listall.append(it)
+        
+        for it in self.tree.findItems(searcher,Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive,0):
+            #it.setHidden(not hideall)
+            it.setForeground(0,self.palette().highlight().color())
+            listall.remove(it)
+        
+        for it in listall:
+            it.setHidden(True)
+            pass
+        """
+
+    __defaultColor = None
+    def buidSearchTree(self,search_text):
+        #hideall = searcher != ""
+        search_words = search_text.lower().split()
+        self.delegate.set_search_words(search_words)
+        self.tree.viewport().update()
+        self.reset_visibility(self.tree.invisibleRootItem())
+        if search_words:
+            self.hide_items(self.tree.invisibleRootItem(), search_words)
+
+    def hide_items(self, item, search_words):
+        for idx in range(item.childCount()):
+            child = item.child(idx)
+            if self.item_contains_words(child, search_words):
+                child.setHidden(False)
+                child.setExpanded(True)
+                self.show_parents(child)
+            else:
+                child.setHidden(True)
+                self.hide_items(child, search_words)
+
+    def item_contains_words(self, item, search_words):
+        item_text = item.text(0).lower()
+        item_text = item.text(0).lower()
+        contains = False
+        for word_group in search_words:
+            if word_group in item_text:
+                contains = True
+                break
+        return contains
+
+    def show_parents(self, item):
+        parent = item.parent()
+        while parent:
+            parent.setExpanded(True)
+            parent.setHidden(False)
+            parent = parent.parent()
+
+    def reset_visibility(self, item):
+        item.setHidden(False)
+        item.setExpanded(False)
+        for idx in range(item.childCount()):
+            child = item.child(idx)
+            self.reset_visibility(child)
+
+    def __containsFilter(self,string,filter):
+        for i in filter:
+            if i in string:
+                return True
+        return False
+
+    def build_tree(self, data: OrderedDict, parent_item:QTreeWidgetItem=None,path=None,deepMode = 1):
+        item = None
         for key, values in data.items():
             key_parts = key.split(".")
+            cur_section = key_parts[0]
+            if not path:
+                path = key_parts   
+            cur_cat = ".".join(path[:deepMode])
+            
 
-            item = QTreeWidgetItem(parent_item, [key_parts[0]])
-           
+            #if searchFilter and self.__containsFilter(cur_section,searchFilter):
+            #TODO fixme - autoredirect category logic
+            if self._existsTrees.get(cur_cat) and False:
+                item = self._existsTrees[cur_cat]
+            else:
+                item = QTreeWidgetItem(parent_item, [cur_section])
+                self._existsTrees[cur_cat] = item
+
             if len(key_parts) > 1:
-                self.build_tree({ ".".join(key_parts[1:]): values }, parent_item=item)
+                self.build_tree({ ".".join(key_parts[1:]): values }, parent_item=item, path=path, deepMode=deepMode+1)
             else:
                 if len(values) > 0:
                     for value in values:
+                        #if searchFilter and self.__containsFilter(value,searchFilter):
                         value_item = QTreeWidgetItem(item, [value])
 
             if parent_item is None:
@@ -147,8 +238,7 @@ class TabSearchMenu(QWidget):
 
     def _on_text_changed(self, text):
         print("changed to "+text)
-        self.tree.clear()
-        self.build_tree(self.test,searchFilter=text)
+        self.buidSearchTree(text)
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):
 
@@ -191,3 +281,30 @@ class TabSearchLineEdit(QtWidgets.QLineEdit):
         super(TabSearchLineEdit, self).keyPressEvent(event)
         if event.key() == QtCore.Qt.Key_Tab:
             self.tab_pressed.emit()
+
+class HighlightingDelegate(QtWidgets.QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.search_words = []
+        self.editor : QLineEdit = None
+
+    def set_search_words(self, search_words):
+        self.search_words = search_words
+
+    def paint(self, painter, option, index):
+        if index.isValid():
+            text = index.data(QtCore.Qt.DisplayRole)
+            for search_word in self.search_words:
+                start_pos = 0
+                while start_pos < len(text):
+                    start_pos = text.lower().find(search_word, start_pos)
+                    if start_pos == -1:
+                        break
+                    end_pos = start_pos + len(search_word)
+                    highlight_rect = option.rect
+                    #highlight_rect.setX(option.rect.x() + start_pos * self.editor.fontMetrics().width(" "))
+                    #highlight_rect.setWidth(len(search_word) * self.editor.fontMetrics().width(" "))
+                    painter.fillRect(highlight_rect, option.palette.highlight().color())
+                    start_pos = end_pos
+
+            super().paint(painter, option, index)
