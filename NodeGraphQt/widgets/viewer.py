@@ -1213,6 +1213,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         state = self._tabSearch.isVisible()
         if state:
             self._tabSearch.setVisible(False)
+            self._tabSearch.onChangeVisible(False)
             self.setFocus()
             return
 
@@ -1222,6 +1223,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                                 int(pos.y() - rect.height() / 2))
         self._tabSearch.move(new_pos)
         self._tabSearch.setVisible(True)
+        self._tabSearch.onChangeVisible(True,new_pos)
         self._tabSearch.edit.setFocus()
 
         rect = self.mapToScene(rect).boundingRect()

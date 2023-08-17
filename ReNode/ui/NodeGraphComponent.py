@@ -102,6 +102,8 @@ class NodeGraphComponent:
 		graph.auto_layout_nodes() 
 		#n_backdrop = graph.create_node('Backdrop')
 		#n_backdrop.wrap_nodes([groupnode, node])
+
+		self.generateTreeDict()
 	
 	def getGraphSystem(self) -> NodeGraph:
 		return self.graph
@@ -230,3 +232,27 @@ class NodeGraphComponent:
 			widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
 
 		return widgets
+
+	def generateTreeDict(self):
+		tabSearch = self.graph._viewer._tabSearch
+		tabSearch.generate_treeDict()
+		tabSearch.tree.clear()
+		tabSearch.build_tree(tabSearch.dictTreeGen)
+		tabSearch.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
+
+	
+	def _generateSearchTreeDict(self):
+		test = {}
+		for key,val in self.graph._factoryRef.nodes.items():
+			path = val.get('path', '')
+			if path in test:
+				test[path].append(key)
+			else:
+				test[path] = [key]
+		return OrderedDict(sorted(test.items()))
+	
+	def _getAssociatedNodeName(self,nodesysname):
+		itm = self.graph._factoryRef.nodes.get(nodesysname,None)
+		if itm:
+			return itm.get('name',nodesysname)
+		return nodesysname

@@ -73,7 +73,11 @@ class TabSearchMenu(QWidget):
         treeWidget.setHeaderHidden(True)
         treeWidget.setAnimated(True)
         treeWidget.setIndentation(10)
+
+        treeWidget.itemDoubleClicked.connect(self.itemDoubleClicked)
         
+        self.lastMousePos = None
+
         #treeWidget.setDragEnabled(True)
 
         self.delegate = HighlightingDelegate(self.tree)
@@ -94,7 +98,7 @@ class TabSearchMenu(QWidget):
         }
 
         #sort test
-        self.test = OrderedDict(sorted(test.items()))
+        self.dictTreeGen = OrderedDict(sorted(test.items()))
         self._existsTrees = {}
         self.build_tree(test)
         self.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
@@ -147,7 +151,18 @@ class TabSearchMenu(QWidget):
             pass
         """
 
-    __defaultColor = None
+    
+    def onChangeVisible(self,newMode,centerpos=None):
+        if newMode:
+            if centerpos:
+                self.lastMousePos = [centerpos.x(),centerpos.y()]
+                return
+            ps = self.nodeGraphComponent.graph.viewer().scene_cursor_pos()
+            self.lastMousePos = [ps.x(),ps.y()]
+
+    def generate_treeDict(self):
+        self.dictTreeGen = self.nodeGraphComponent._generateSearchTreeDict()
+
     def buidSearchTree(self,search_text):
         #hideall = searcher != ""
         search_words = search_text.lower().split()
@@ -209,8 +224,7 @@ class TabSearchMenu(QWidget):
             
 
             #if searchFilter and self.__containsFilter(cur_section,searchFilter):
-            #TODO fixme - autoredirect category logic
-            if self._existsTrees.get(cur_cat) and False:
+            if self._existsTrees.get(cur_cat):
                 item = self._existsTrees[cur_cat]
             else:
                 item = QTreeWidgetItem(parent_item, [cur_section])
@@ -222,10 +236,16 @@ class TabSearchMenu(QWidget):
                 if len(values) > 0:
                     for value in values:
                         #if searchFilter and self.__containsFilter(value,searchFilter):
-                        value_item = QTreeWidgetItem(item, [value])
+                        item_name = value
+                        if self.nodeGraphComponent:
+                            item_name = self.nodeGraphComponent._getAssociatedNodeName(value)
+                        value_item = QTreeWidgetItem(item, [item_name])
+                        value_item.setData(0, QtCore.Qt.UserRole, value)
 
             if parent_item is None:
                 self.tree.addTopLevelItem(item)
+            
+            path=None
 
     def setText(self,data):
         self.text.setText(f'<p style=\"font-size:20px;padding: 2% 2%;\">{data}</p>')
@@ -239,6 +259,15 @@ class TabSearchMenu(QWidget):
     def _on_text_changed(self, text):
         print("changed to "+text)
         self.buidSearchTree(text)
+
+    #dbl click event
+    def itemDoubleClicked(self, item : QTreeWidgetItem, column):
+        name = item.text(0)
+        data = item.data(0,QtCore.Qt.UserRole)
+        if data:
+            self._close()
+            self.nodeGraphComponent.nodeFactory.instance(data,pos=self.lastMousePos,graphref=self.nodeGraphComponent.graph)
+
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):
 
@@ -281,6 +310,7 @@ class TabSearchLineEdit(QtWidgets.QLineEdit):
         super(TabSearchLineEdit, self).keyPressEvent(event)
         if event.key() == QtCore.Qt.Key_Tab:
             self.tab_pressed.emit()
+
 
 class HighlightingDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent=None):

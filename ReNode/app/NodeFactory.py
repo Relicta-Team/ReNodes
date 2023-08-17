@@ -71,6 +71,7 @@ class NodeFactory:
 		defborder = (255,0,0,255)
 		kind = data.get('kind',None) # function,control,operator etc for define icon
 		struct['name'] = data['name']
+		struct['path'] = data.get('path','')
 		struct['desc'] = data.get('desc', '')
 		struct['icon'] = self._nodeKindToIcon(kind)
 		struct['color'] = data.get('color',defcolor)
