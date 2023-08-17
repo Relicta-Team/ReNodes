@@ -155,9 +155,11 @@ class TabSearchMenu(QWidget):
     def onChangeVisible(self,newMode,centerpos=None):
         if newMode:
             if centerpos:
+                centerpos = self.nodeGraphComponent.graph._viewer.mapToScene(centerpos)
                 self.lastMousePos = [centerpos.x(),centerpos.y()]
                 return
             ps = self.nodeGraphComponent.graph.viewer().scene_cursor_pos()
+            ps = self.nodeGraphComponent.graph._viewer.mapToScene(ps)
             self.lastMousePos = [ps.x(),ps.y()]
 
     def generate_treeDict(self):
