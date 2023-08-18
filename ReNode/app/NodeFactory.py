@@ -1,15 +1,14 @@
 import json
-from ReNode.app.Logger import Logger
+from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
 from ReNode.ui.NodePainter import draw_square_port,draw_triangle_port
-
-logger = None
-
+import logging
+logger : logging.Logger = None
 class NodeFactory:
 	
 	def __init__(self):
 		global logger
-		logger = Logger(self)
+		logger = RegisterLogger("NodeFactory")
 		
 		self.graph = None
 
@@ -19,6 +18,7 @@ class NodeFactory:
 		pass
 
 	def loadFactoryFromJson(self,file_path):
+		logger.info(f"Loading factory from json file {file_path}")
 		self.nodes = {}
 		self.version = 0
 
@@ -40,7 +40,7 @@ class NodeFactory:
 			if callable(obj):
 				return obj.__name__
 			return obj
-		logger.log(f"version lib {self.version}")
+		logger.info(f"version lib {self.version}")
 		with open("lib_output.json", 'w') as file_out:
 			json.dump(
 				self.nodes,
@@ -57,9 +57,9 @@ class NodeFactory:
 
 		#load nodes
 		for nodecat,nodelist in data.get('nodes', {}).items():
-			logger.log(f"Loading category: {nodecat}")
+			logger.info(f"Loading category: {nodecat}")
 			for node,data in nodelist.items():
-				logger.log(f"	Loading node {node}")
+				logger.info(f"	Loading node {node}")
 				self.registerNodeInLib(nodecat,node,data)
 
 		

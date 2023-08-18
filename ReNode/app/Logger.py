@@ -1,22 +1,17 @@
 
+import sys
 from typing import Any
+import logging
 
+def RegisterLoggerStdoutHandler(logobject : logging.Logger):
+	#stdout handler
+	if len(logobject.handlers) == 0:
+		stdout_hndl = logging.StreamHandler(sys.stdout)
+		stdout_hndl.setFormatter(logging.Formatter('[%(name)s::%(levelname)s] - %(message)s'))
+		logobject.addHandler(stdout_hndl)
 
-class Logger:
-    def __init__(self,object):
-        self.category = str(object.__class__.__name__)
-
-    def formatlog(self,cat,mes):
-        return f"[{self.category}] ({cat})    {mes}"
-
-    def log(self,msg):
-        print(self.formatlog("LOG",msg))
-    
-    def warn(self,msg):
-        print(self.formatlog("WARN",msg))
-    
-    def error(self,msg):
-        print(self.formatlog("ERROR",msg))
-    
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        print(self.formatlog("INFO",args[0]))
+def RegisterLogger(logname="main"):
+	logobject = logging.getLogger(logname)
+	logobject.setLevel(logging.DEBUG)
+	RegisterLoggerStdoutHandler(logobject)
+	return logobject

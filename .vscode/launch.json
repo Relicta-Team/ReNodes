@@ -14,6 +14,17 @@
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			//"preLaunchTask": "Update git revision"
+		},
+		{
+			"name": "Debug (no-splash)",
+			"type": "python",
+			"request": "launch",
+			"args": ["-nosplash"],
+			// uses main in rootdir
+			"program": "./main.py",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": true,
 		}
 	]
 }

@@ -7,16 +7,16 @@ from ReNode.app.utils import loadStylesheet
 from ReNode.ui.Widgets import *
 from ReNode.ui.NodeGraphComponent import *
 from NodeGraphQt import NodeGraph
-from ReNode.app.Logger import Logger
+from ReNode.app.Logger import *
 
-logger = None
+logger : logging.Logger = None
 
 class MainWindow( QMainWindow ):
 
 	def __init__( self, factory):
 		super().__init__()
 		global logger
-		logger = Logger(self)
+		logger = RegisterLogger("main")
 		self.nodeFactory = factory
 		self.initUI()
 
@@ -87,21 +87,21 @@ class MainWindow( QMainWindow ):
 		self.editMenu = menubar.addMenu("&Правка")
 	
 	def onNewFile(self):
-		logger("Новый скрипт")
+		logger.info("Новый скрипт")
 		self.createWindowGraphEditor()
 	
 	def onOpenFile(self):
-		logger("Открыть")
+		logger.info("Открыть")
 	
 	def onSaveFile(self):
-		logger("Сохранить")
+		logger.info("Сохранить")
 	
 	def onExit(self):
-		logger("Выход")
+		logger.info("Выход")
 		exit(0)
 
 	def onReloadStyle(self,string):
-		logger("STYLE UPDATE")
+		logger.info("STYLE UPDATE")
 		self.setStyleSheet(loadStylesheet("./data/qss/default.qss"))
 
 	def createStatusBar(self):
