@@ -103,54 +103,6 @@ class TabSearchMenu(QWidget):
         self.build_tree(test)
         self.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
 
-        """data = ['folder1/file1', 'file2', 'file3', 'folder2/file4']
-        for i in range(1,1000):
-            data.append(f'fld/test/num'+str(i))
-        items = []
-        for item in data:
-            itemparts = item.split('/')
-
-            entry = QTreeWidgetItem(None, [itemparts[0]])
-            
-            partentitem = entry
-            if itemparts[0] == 'fld':
-                entry.setIcon(0,QtGui.QIcon('./data/function_sim.png'))
-                entry.setHidden(True)
-
-            if len(itemparts) > 1:
-                idx = 0
-                for i in itemparts[1:]:
-                    childitem = QTreeWidgetItem(None, [i])
-                    if idx%2==0:
-                        childitem.setIcon(0,QtGui.QIcon('./data/function_sim.png'))
-                    partentitem.addChild(childitem)
-                    partentitem = childitem
-                    idx+=1
-
-            items.append(entry)
-
-        treeWidget.insertTopLevelItems(0, items)"""
-    
-        """if searcher=='': searcher="%NOT_SEARCHED_TEXT%"
-        #get all items
-        listall = []
-        for it in self.tree.findItems("*", Qt.MatchWrap | Qt.MatchWildcard | Qt.MatchRecursive):
-            if not TabSearchMenu.__defaultColor:
-                TabSearchMenu.__defaultColor = it.foreground(0)
-            it.setHidden(False)
-            it.setForeground(0,TabSearchMenu.__defaultColor)
-            listall.append(it)
-        
-        for it in self.tree.findItems(searcher,Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive,0):
-            #it.setHidden(not hideall)
-            it.setForeground(0,self.palette().highlight().color())
-            listall.remove(it)
-        
-        for it in listall:
-            it.setHidden(True)
-            pass
-        """
-
     
     def onChangeVisible(self,newMode,centerpos=None):
         if newMode:
@@ -171,6 +123,7 @@ class TabSearchMenu(QWidget):
         self.delegate.set_search_words(search_words)
         self.tree.viewport().update()
         self.reset_visibility(self.tree.invisibleRootItem())
+        self.tree.collapseAll()
         if search_words:
             self.hide_items(self.tree.invisibleRootItem(), search_words)
 
@@ -181,12 +134,12 @@ class TabSearchMenu(QWidget):
                 child.setHidden(False)
                 child.setExpanded(True)
                 self.show_parents(child)
+                self.hide_items(child, search_words)
             else:
                 child.setHidden(True)
                 self.hide_items(child, search_words)
 
     def item_contains_words(self, item, search_words):
-        item_text = item.text(0).lower()
         item_text = item.text(0).lower()
         contains = False
         for word_group in search_words:
