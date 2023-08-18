@@ -273,7 +273,7 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_spinbox(self,name,label='',text=0,range=[0,10],tab=None):
+    def add_spinbox(self,name,label='',text=0,range={"min":0,"max":1},tab=None):
         """Custom spinbox widget"""
         self.create_property(
             name,
@@ -287,7 +287,7 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_float_spinbox(self,name,label='',text=0,range=[0,10],tab=None,floatspindata={'step': 0.01,"decimals": 3}):
+    def add_float_spinbox(self,name,label='',text=0,range={"min":0,"max":1},tab=None,floatspindata={'step': 0.01,"decimals": 3}):
         """Custom float point spinbox widget"""
         self.create_property(
             name,
@@ -296,8 +296,8 @@ class BaseNode(NodeObject):
             tab=tab
         )
         widget = NodeFloatSpinBox(self.view, name, label, text,range)
-        if floatspindata['step']: widget.get_custom_widget().setSingleStep(floatspindata.get('step'))
-        if floatspindata['decimals']: widget.get_custom_widget().setDecimals(floatspindata.get('decimals'))
+        widget.get_custom_widget().setSingleStep(floatspindata.get('step',1))
+        widget.get_custom_widget().setDecimals(floatspindata.get('decimals',2))
 
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)

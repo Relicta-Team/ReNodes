@@ -452,7 +452,7 @@ class NodeTextEdit(NodeBaseWidget):
 
 class NodeSpinBox(NodeBaseWidget):
 
-    def __init__(self, parent=None, name='', label='', value=0,range=[0,10]):
+    def __init__(self, parent=None, name='', label='', value=0,range={"min":0,"max":1}):
         super(NodeSpinBox, self).__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -478,7 +478,7 @@ class NodeSpinBox(NodeBaseWidget):
             stylesheet += style
         spin = QtWidgets.QSpinBox()
         spin.setValue(value)
-        spin.setRange(*range)
+        spin.setRange(range['min'],range['max'])
         spin.setStyleSheet(stylesheet)
         spin.valueChanged.connect(self.on_value_changed)
         spin.clearFocus()
@@ -500,7 +500,7 @@ class NodeSpinBox(NodeBaseWidget):
 
 class NodeFloatSpinBox(NodeBaseWidget):
 
-    def __init__(self, parent=None, name='', label='', value=0,range=[0,10]):
+    def __init__(self, parent=None, name='', label='', value=0,range={"min":0,"max":1}):
         super(NodeFloatSpinBox, self).__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -529,7 +529,7 @@ class NodeFloatSpinBox(NodeBaseWidget):
         spin.setSingleStep(single_step)
         spin.setDecimals(3)"""
         spin.setValue(value)
-        spin.setRange(*range)
+        spin.setRange(range['min'],range['max'])
         spin.setStyleSheet(stylesheet)
         locale = QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
         spin.setLocale(locale)

@@ -67,13 +67,13 @@
 						"type": "spin",
 						"default": 442,
 						"text": "test spin",
-						"range": [0,100]
+						"range": {"min":0,"max":100}
 					},
 					"test_floatspin": {
 						"type": "fspin",
 						"default": 1.1,
 						"text": "float point spin",
-						"range": [-100.5,100.5],
+						"range": {"min":101.5,"max":-101.5},
 						"floatspindata": {
 							"step": 1.01,
 							"decimals": 5
