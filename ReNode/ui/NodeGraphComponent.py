@@ -104,9 +104,18 @@ class NodeGraphComponent:
 		#n_backdrop.wrap_nodes([groupnode, node])
 
 		self.generateTreeDict()
-	
+		
+	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
+		"""Get NodeGraph API object"""
 		return self.graph
+	def getFactory(self) -> NodeFactory:
+		"""Get NodeFactory object"""
+		return self.graph._factoryRef
+	def getTabSearch(self) -> TabSearchMenu:
+		"""Get TabSearchMenu object"""
+		return self.graph._viewer._tabSearch
+	#endregion
 
 	def update(self,optNode = None):
 		if optNode:
@@ -234,7 +243,7 @@ class NodeGraphComponent:
 		return widgets
 
 	def generateTreeDict(self):
-		tabSearch = self.graph._viewer._tabSearch
+		tabSearch = self.getTabSearch()
 		tabSearch.generate_treeDict()
 		tabSearch.tree.clear()
 		tabSearch.build_tree(tabSearch.dictTreeGen)
@@ -242,17 +251,12 @@ class NodeGraphComponent:
 
 	
 	def _generateSearchTreeDict(self):
+		"""Generator for search tree"""
 		test = {}
-		for key,val in self.graph._factoryRef.nodes.items():
+		for key,val in self.getFactory().nodes.items():
 			path = val.get('path', '')
 			if path in test:
 				test[path].append(key)
 			else:
 				test[path] = [key]
 		return OrderedDict(sorted(test.items()))
-	
-	def _getAssociatedNodeName(self,nodesysname):
-		itm = self.graph._factoryRef.nodes.get(nodesysname,None)
-		if itm:
-			return itm.get('name',nodesysname)
-		return nodesysname

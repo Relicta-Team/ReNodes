@@ -193,7 +193,7 @@ class TabSearchMenu(QWidget):
                         #if searchFilter and self.__containsFilter(value,searchFilter):
                         item_name = value
                         if self.nodeGraphComponent:
-                            item_name = self.nodeGraphComponent._getAssociatedNodeName(value)
+                            item_name = self._getAssociatedNodeName(value)
                         value_item = QTreeWidgetItem(item, [item_name])
                         value_item.setData(0, QtCore.Qt.UserRole, value)
 
@@ -201,6 +201,12 @@ class TabSearchMenu(QWidget):
                 self.tree.addTopLevelItem(item)
             
             path=None
+
+    def _getAssociatedNodeName(self,nodesysname):
+        itm = self.nodeGraphComponent.getFactory().nodes.get(nodesysname,None)
+        if itm:
+            return itm.get('name',nodesysname)
+        return nodesysname
 
     def setText(self,data):
         self.text.setText(f'<p style=\"font-size:20px;padding: 2% 2%;\">{data}</p>')
