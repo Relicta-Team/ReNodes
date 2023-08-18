@@ -11,12 +11,7 @@ from NodeGraphQt.errors import (
     NodeWidgetError
 )
 from NodeGraphQt.qgraphics.node_base import NodeItem
-from NodeGraphQt.widgets.node_widgets import (
-    NodeBaseWidget,
-    NodeCheckBox,
-    NodeComboBox,
-    NodeLineEdit
-)
+from NodeGraphQt.widgets.node_widgets import *
 
 
 class BaseNode(NodeObject):
@@ -259,6 +254,20 @@ class BaseNode(NodeObject):
             tab=tab
         )
         widget = NodeLineEdit(self.view, name, label, text)
+        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        self.view.add_widget(widget)
+        #: redraw node to address calls outside the "__init__" func.
+        self.view.draw_node()
+
+    def add_multiline_text_input(self,name,label='',text='',tab=None):
+        """Custom multiline text input"""
+        self.create_property(
+            name,
+            value=text,
+            widget_type=NodePropWidgetEnum.QTEXT_EDIT.value,
+            tab=tab
+        )
+        widget = NodeTextEdit(self.view, name, label, text)
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.

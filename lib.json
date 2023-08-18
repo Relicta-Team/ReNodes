@@ -63,6 +63,11 @@
 						"default": "hehehhe",
 						"text": "test text"
 					},
+					"testedit": {
+						"type": "edit",
+						"default": "NON_TEXT",
+						"text": "Header"
+					},
 					"testcheckbox": {
 						"type":"list",
 						"text": "select some items",

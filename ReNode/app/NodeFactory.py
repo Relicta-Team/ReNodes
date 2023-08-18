@@ -201,6 +201,8 @@ class NodeFactory:
 				node.add_checkbox(name=optname,text=optvals.get('text',""),label=optvals.get('label',""),state=optvals.get('default',False))
 			if type=="input":
 				node.add_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
+			if type == "edit":
+				node.add_multiline_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
 			if type=="list":
 				node.add_combo_menu(name=optname,label=optvals.get('text'),items=optvals.get('values',[]),default=optvals.get('default'))
 		node.update()

@@ -353,6 +353,7 @@ class NodeLineEdit(NodeBaseWidget):
             stylesheet += style
         ledit = QtWidgets.QLineEdit()
         ledit.setText(text)
+        ledit.setToolTip(text)
         ledit.setStyleSheet(stylesheet)
         ledit.setAlignment(QtCore.Qt.AlignCenter)
         ledit.editingFinished.connect(self.on_value_changed)
@@ -383,7 +384,71 @@ class NodeLineEdit(NodeBaseWidget):
         if text != self.get_value():
             self.get_custom_widget().setText(text)
             self.on_value_changed()
+    
+    def on_value_changed(self, *args, **kwargs):
+        custom = self.get_custom_widget()
+        custom.setToolTip(custom.text())
+        return super().on_value_changed(*args, **kwargs)
 
+class NodeTextEdit(NodeBaseWidget):
+
+    def __init__(self, parent=None, name='', label='', text=''):
+        super(NodeTextEdit, self).__init__(parent, name, label)
+        bg_color = ViewerEnum.BACKGROUND_COLOR.value
+        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
+                               bg_color))
+        text_sel_color = text_color
+        style_dict = {
+            'QPlainTextEdit': {
+                'background': 'rgba({0},{1},{2},20)'.format(*bg_color),
+                'border': '1px solid rgb({0},{1},{2})'
+                          .format(*ViewerEnum.GRID_COLOR.value),
+                'border-radius': '3px',
+                'color': 'rgba({0},{1},{2},150)'.format(*text_color),
+                'selection-background-color': 'rgba({0},{1},{2},100)'
+                                              .format(*text_sel_color),
+            }
+        }
+        stylesheet = ''
+        for css_class, css in style_dict.items():
+            style = '{} {{\n'.format(css_class)
+            for elm_name, elm_val in css.items():
+                style += '  {}:{};\n'.format(elm_name, elm_val)
+            style += '}\n'
+            stylesheet += style
+        ledit = QtWidgets.QPlainTextEdit()
+        ledit.setPlainText(text)
+        ledit.setPlaceholderText("...")
+        ledit.setStyleSheet(stylesheet)
+        ledit.textChanged.connect(self.on_value_changed)
+        ledit.clearFocus()
+        self.set_custom_widget(ledit)
+        #self.widget().setMaximumSize(140,120)
+        self.widget().setFixedSize(200,120)
+
+    @property
+    def type_(self):
+        return 'PlainTextEditNodeWidget'
+
+    def get_value(self):
+        """
+        Returns the widgets current text.
+
+        Returns:
+            str: current text.
+        """
+        return str(self.get_custom_widget().toPlainText())
+
+    def set_value(self, text=''):
+        """
+        Sets the widgets current text.
+
+        Args:
+            text (str): new text.
+        """
+        if text != self.get_value():
+            self.get_custom_widget().setPlainText(text)
+            self.on_value_changed()
 
 class NodeCheckBox(NodeBaseWidget):
     """
