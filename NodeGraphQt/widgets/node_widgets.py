@@ -450,6 +450,107 @@ class NodeTextEdit(NodeBaseWidget):
             self.get_custom_widget().setPlainText(text)
             self.on_value_changed()
 
+class NodeSpinBox(NodeBaseWidget):
+
+    def __init__(self, parent=None, name='', label='', value=0,range=[0,10]):
+        super(NodeSpinBox, self).__init__(parent, name, label)
+        bg_color = ViewerEnum.BACKGROUND_COLOR.value
+        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
+                               bg_color))
+        text_sel_color = text_color
+        style_dict = {
+            'QSpinBox': {
+                'background': 'rgba({0},{1},{2},20)'.format(*bg_color),
+                'border': '1px solid rgb({0},{1},{2})'
+                          .format(*ViewerEnum.GRID_COLOR.value),
+                'border-radius': '3px',
+                'color': 'rgba({0},{1},{2},150)'.format(*text_color),
+                'selection-background-color': 'rgba({0},{1},{2},100)'
+                                              .format(*text_sel_color),
+            }
+        }
+        stylesheet = ''
+        for css_class, css in style_dict.items():
+            style = '{} {{\n'.format(css_class)
+            for elm_name, elm_val in css.items():
+                style += '  {}:{};\n'.format(elm_name, elm_val)
+            style += '}\n'
+            stylesheet += style
+        spin = QtWidgets.QSpinBox()
+        spin.setValue(value)
+        spin.setRange(*range)
+        spin.setStyleSheet(stylesheet)
+        spin.valueChanged.connect(self.on_value_changed)
+        spin.clearFocus()
+        self.set_custom_widget(spin)
+        #self.widget().setMaximumSize(140,120)
+        #self.widget().setFixedSize(200,120)
+
+    @property
+    def type_(self):
+        return 'SpinBoxNodeWidget'
+
+    def get_value(self):
+        return int(self.get_custom_widget().value())
+
+    def set_value(self, text=0):
+        if text != self.get_value():
+            self.get_custom_widget().setValue(text)
+            self.on_value_changed()
+
+class NodeFloatSpinBox(NodeBaseWidget):
+
+    def __init__(self, parent=None, name='', label='', value=0,range=[0,10]):
+        super(NodeFloatSpinBox, self).__init__(parent, name, label)
+        bg_color = ViewerEnum.BACKGROUND_COLOR.value
+        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
+                               bg_color))
+        text_sel_color = text_color
+        style_dict = {
+            'QDoubleSpinBox': {
+                'background': 'rgba({0},{1},{2},20)'.format(*bg_color),
+                'border': '1px solid rgb({0},{1},{2})'
+                          .format(*ViewerEnum.GRID_COLOR.value),
+                'border-radius': '3px',
+                'color': 'rgba({0},{1},{2},150)'.format(*text_color),
+                'selection-background-color': 'rgba({0},{1},{2},100)'
+                                              .format(*text_sel_color),
+            }
+        }
+        stylesheet = ''
+        for css_class, css in style_dict.items():
+            style = '{} {{\n'.format(css_class)
+            for elm_name, elm_val in css.items():
+                style += '  {}:{};\n'.format(elm_name, elm_val)
+            style += '}\n'
+            stylesheet += style
+        spin = QtWidgets.QDoubleSpinBox()
+        """single_step = (range[1] - range[0]) / 100.0  # You can adjust the divisor as needed
+        spin.setSingleStep(single_step)
+        spin.setDecimals(3)"""
+        spin.setValue(value)
+        spin.setRange(*range)
+        spin.setStyleSheet(stylesheet)
+        locale = QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
+        spin.setLocale(locale)
+        spin.valueChanged.connect(self.on_value_changed)
+        spin.clearFocus()
+        self.set_custom_widget(spin)
+        #self.widget().setMaximumSize(140,120)
+        #self.widget().setFixedSize(200,120)
+
+    @property
+    def type_(self):
+        return 'SpinBoxFloatNodeWidget'
+
+    def get_value(self):
+        return float(self.get_custom_widget().value())
+
+    def set_value(self, text=0):
+        if text != self.get_value():
+            self.get_custom_widget().setValue(text)
+            self.on_value_changed()
+
 class NodeCheckBox(NodeBaseWidget):
     """
     Displays as a ``QCheckBox`` in a node.

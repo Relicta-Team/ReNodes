@@ -63,6 +63,22 @@
 						"default": "hehehhe",
 						"text": "test text"
 					},
+					"testspin": {
+						"type": "spin",
+						"default": 442,
+						"text": "test spin",
+						"range": [0,100]
+					},
+					"test_floatspin": {
+						"type": "fspin",
+						"default": 1.1,
+						"text": "float point spin",
+						"range": [-100.5,100.5],
+						"floatspindata": {
+							"step": 1.01,
+							"decimals": 5
+						}
+					},
 					"testedit": {
 						"type": "edit",
 						"default": "NON_TEXT",

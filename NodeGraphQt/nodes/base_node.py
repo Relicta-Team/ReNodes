@@ -273,6 +273,37 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
+    def add_spinbox(self,name,label='',text=0,range=[0,10],tab=None):
+        """Custom spinbox widget"""
+        self.create_property(
+            name,
+            value=text,
+            widget_type=NodePropWidgetEnum.QSPIN_BOX.value,
+            tab=tab
+        )
+        widget = NodeSpinBox(self.view, name, label, text,range)
+        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        self.view.add_widget(widget)
+        #: redraw node to address calls outside the "__init__" func.
+        self.view.draw_node()
+
+    def add_float_spinbox(self,name,label='',text=0,range=[0,10],tab=None,floatspindata={'step': 0.01,"decimals": 3}):
+        """Custom float point spinbox widget"""
+        self.create_property(
+            name,
+            value=text,
+            widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value,
+            tab=tab
+        )
+        widget = NodeFloatSpinBox(self.view, name, label, text,range)
+        if floatspindata['step']: widget.get_custom_widget().setSingleStep(floatspindata.get('step'))
+        if floatspindata['decimals']: widget.get_custom_widget().setDecimals(floatspindata.get('decimals'))
+
+        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        self.view.add_widget(widget)
+        #: redraw node to address calls outside the "__init__" func.
+        self.view.draw_node()
+
     def add_checkbox(self, name, label='', text='', state=False, tab=None):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`

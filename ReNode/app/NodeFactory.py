@@ -119,6 +119,10 @@ class NodeFactory:
 				raise Exception(f"no type for option {key}")
 			valdat['type'] = typeopt
 			valdat['text'] = val.get('text')
+			if val.get('range'):
+				valdat['range'] = val.get('range')
+			if val.get('floatspindata'):
+				valdat['floatspindata'] = val.get('floatspindata')
 			if val.get('default'):
 				valdat['default'] = val.get('default')
 			if val.get('label'):
@@ -203,6 +207,10 @@ class NodeFactory:
 				node.add_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
 			if type == "edit":
 				node.add_multiline_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
+			if type == "spin":
+				node.add_spinbox(name=optname,label=optvals.get('text'),text=optvals.get('default',0),range=optvals.get('range'))
+			if type == "fspin":
+				node.add_float_spinbox(name=optname,label=optvals.get('text'),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
 			if type=="list":
 				node.add_combo_menu(name=optname,label=optvals.get('text'),items=optvals.get('values',[]),default=optvals.get('default'))
 		node.update()
