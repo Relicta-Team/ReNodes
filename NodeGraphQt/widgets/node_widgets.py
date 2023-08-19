@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from Qt import QtCore, QtWidgets
+from Qt import QtCore, QtWidgets, QtGui
 
 from NodeGraphQt.constants import ViewerEnum, Z_VAL_NODE_WIDGET
 from NodeGraphQt.errors import NodeWidgetError
@@ -259,17 +259,47 @@ class NodeComboBox(NodeBaseWidget):
     def __init__(self, parent=None, name='', label='', items=None):
         super(NodeComboBox, self).__init__(parent, name, label)
         self.setZValue(Z_VAL_NODE_WIDGET + 1)
+        
+        combo_view = QtWidgets.QListView()
+        #combo_view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        
         combo = QtWidgets.QComboBox()
-        combo.setMinimumHeight(24)
-        combo.setMinimumWidth(100)
+        combo.setView(combo_view)
+        combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        combo.view().setMinimumWidth(300)
+        """combo.setMinimumHeight(24)
+        combo.setMinimumWidth(130)
+        combo.setMaximumWidth(400)"""
+        combo.setMinimumContentsLength(30)
         combo.addItems(items or [])
         combo.currentIndexChanged.connect(self.on_value_changed)
         combo.clearFocus()
         self.set_custom_widget(combo)
+        #updated scroll
+        combo.setStyleSheet("combobox-popup: 0;")
+        combo.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
 
     @property
     def type_(self):
         return 'ComboNodeWidget'
+
+    def on_value_changed(self, *args, **kwargs):
+        combo_box = self.get_custom_widget()
+        if not combo_box:
+            return super().on_value_changed(*args,**kwargs)
+
+        def is_text_fitting(combo_box):
+            font_metrics = combo_box.fontMetrics()
+            max_width = combo_box.width() - combo_box.view().verticalScrollBar().width()  # Учитываем вертикальную полосу прокрутки
+            current_text = combo_box.currentText()
+            text_width = font_metrics.width(current_text)
+            return text_width <= max_width
+        text = combo_box.itemText(args[0])
+        if is_text_fitting(combo_box):
+            combo_box.setToolTip("")
+        else:
+            combo_box.setToolTip(f'{text}')
+        return super().on_value_changed(*args, **kwargs)
 
     def get_value(self):
         """
@@ -292,7 +322,7 @@ class NodeComboBox(NodeBaseWidget):
             combo_widget.setCurrentIndex(index)
 
     def add_item(self, item):
-        combo_widget = self.get_custom_widget()
+        combo_widget : QtWidgets.QComboBox = self.get_custom_widget()
         combo_widget.addItem(item)
 
     def add_items(self, items=None):
