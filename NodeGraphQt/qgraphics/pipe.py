@@ -26,14 +26,14 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
     Base Pipe item used for drawing node connections.
     """
 
-    def __init__(self, input_port=None, output_port=None):
+    def __init__(self, input_port=None, output_port=None, color=None): #Yodes: added custom color to pipeitem
         super(PipeItem, self).__init__()
         self.setZValue(Z_VAL_PIPE)
         self.setAcceptHoverEvents(True)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.setCacheMode(ITEM_CACHE_MODE)
 
-        self._color = PipeEnum.COLOR.value
+        self._color = color or PipeEnum.COLOR.value
         self._style = PipeEnum.DRAW_TYPE_DEFAULT.value
         self._active = False
         self._highlight = False

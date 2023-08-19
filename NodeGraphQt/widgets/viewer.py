@@ -1152,6 +1152,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         establish a new pipe connection.
         (adds a new pipe item to draw between 2 ports)
         """
+        #Yodes: TODO set color from port typekind...
+        #color=start_port.color
+        #pipe = PipeItem(color=color)
         pipe = PipeItem()
         self.scene().addItem(pipe)
         pipe.set_connections(start_port, end_port)
