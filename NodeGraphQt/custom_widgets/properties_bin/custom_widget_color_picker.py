@@ -18,6 +18,8 @@ class PropColorPickerRGB(BaseProperty):
         self._vector.set_value([0, 0, 0])
         self._update_color()
 
+        self.customizedColorbox = 0 # Yodes: custom color picker logic, 1 - rgb, 2 - rgba
+
         self._button.clicked.connect(self._on_select_color)
         self._vector.value_changed.connect(self._on_vector_changed)
 
@@ -33,7 +35,22 @@ class PropColorPickerRGB(BaseProperty):
 
     def _on_select_color(self):
         current_color = QtGui.QColor(*self.get_value())
-        color = QtWidgets.QColorDialog.getColor(current_color, self)
+        color = None 
+        if self.customizedColorbox > 0:
+            #Yodes: seems locales dosen t work
+            #locale = QtCore.QLocale(QtCore.QLocale.Russian, QtCore.QLocale.Russia)
+            #QtCore.QLocale.setDefault(locale)
+            opts = QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog
+            if self.customizedColorbox == 2:
+                opts |= QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
+            color = QtWidgets.QColorDialog.getColor(
+                current_color,
+                parent=None,
+                title="Выбор цвета",
+                options=opts
+            )
+        else:
+            color = QtWidgets.QColorDialog.getColor(current_color, self)
         if color.isValid():
             self.set_value(color.getRgb())
 

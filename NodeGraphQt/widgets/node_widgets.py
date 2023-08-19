@@ -2,6 +2,7 @@
 from Qt import QtCore, QtWidgets, QtGui
 
 from NodeGraphQt.constants import ViewerEnum, Z_VAL_NODE_WIDGET
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_color_picker import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
@@ -674,3 +675,28 @@ class NodeVector(NodeBaseWidget):
     def set_value(self, value=None):
         if not value or value != self.get_value():
             self.propertyVector.set_value(value)
+
+
+class NodeColorPicker(NodeBaseWidget):
+    def __init__(self, parent=None, name='', label='', value=None,useAlpha = False):
+        super(NodeColorPicker, self).__init__(parent, name, label)
+        wid = None
+        if useAlpha:
+            wid = PropColorPickerRGBA()
+            wid.customizedColorbox = 2
+        else:
+            wid = PropColorPickerRGB()
+            wid.customizedColorbox = 1
+        
+        self.set_custom_widget(wid)
+
+    @property
+    def type_(self):
+        return 'NodeColorPickerWidget'
+
+    def get_value(self):
+        return self.get_custom_widget().get_value()
+
+    def set_value(self, value=None):
+        if value != self.get_value():
+            self.get_custom_widget().set_value(value)

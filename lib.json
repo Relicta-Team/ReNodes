@@ -97,6 +97,14 @@
 					"testvec3": {
 						"type": "vec3",
 						"text": "vec3 for transform"
+					},
+					"testcolor": {
+						"type": "rgb",
+						"text": "rgb text palette"
+					},
+					"testcolor_alpha": {
+						"type": "rgba",
+						"text": "rgba palette"
 					}
 				}
 			}

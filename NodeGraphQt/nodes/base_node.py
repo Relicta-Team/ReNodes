@@ -344,6 +344,18 @@ class BaseNode(NodeObject):
         self.view.draw_node()
         pass
 
+    def add_rgb_palette(self,name,label='',value=None, tab=None):
+        self.create_property(name,value=value,widget_type=NodePropWidgetEnum.COLOR_PICKER.value,tab=tab)
+        widget = NodeColorPicker(self.view,name,label,value)
+        self.view.add_widget(widget)
+        self.view.draw_node()
+
+    def add_rgba_palette(self,name,label='',value=None, tab=None):
+        self.create_property(name,value=value,widget_type=NodePropWidgetEnum.COLOR_PICKER.value,tab=tab)
+        widget = NodeColorPicker(self.view,name,label,value,useAlpha=True)
+        self.view.add_widget(widget)
+        self.view.draw_node()
+
     def hide_widget(self, name):
         """
         Hide an embedded node widget.
