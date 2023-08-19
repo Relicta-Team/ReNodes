@@ -530,7 +530,7 @@ class NodeSpinBox(NodeBaseWidget):
 
 class NodeFloatSpinBox(NodeBaseWidget):
 
-    def __init__(self, parent=None, name='', label='', value=0,range={"min":0,"max":1}):
+    def __init__(self, parent=None, name='', label='', value=0,range={"min":0,"max":1},floatspindata={'step': 0.01,"decimals": 3}):
         super(NodeFloatSpinBox, self).__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -555,9 +555,6 @@ class NodeFloatSpinBox(NodeBaseWidget):
             style += '}\n'
             stylesheet += style
         spin = QtWidgets.QDoubleSpinBox()
-        """single_step = (range[1] - range[0]) / 100.0  # You can adjust the divisor as needed
-        spin.setSingleStep(single_step)
-        spin.setDecimals(3)"""
         spin.setValue(value)
         spin.setRange(range['min'],range['max'])
         spin.setStyleSheet(stylesheet)
@@ -565,6 +562,8 @@ class NodeFloatSpinBox(NodeBaseWidget):
         spin.setLocale(locale)
         spin.valueChanged.connect(self.on_value_changed)
         spin.clearFocus()
+        spin.setSingleStep(floatspindata.get('step',1))
+        spin.setDecimals(floatspindata.get('decimals',2))
         self.set_custom_widget(spin)
         #self.widget().setMaximumSize(140,120)
         #self.widget().setFixedSize(200,120)

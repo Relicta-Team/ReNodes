@@ -295,10 +295,7 @@ class BaseNode(NodeObject):
             widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value,
             tab=tab
         )
-        widget = NodeFloatSpinBox(self.view, name, label, text,range)
-        widget.get_custom_widget().setSingleStep(floatspindata.get('step',1))
-        widget.get_custom_widget().setDecimals(floatspindata.get('decimals',2))
-
+        widget = NodeFloatSpinBox(self.view, name, label, text,range,floatspindata)
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
