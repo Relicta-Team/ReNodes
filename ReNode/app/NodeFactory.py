@@ -195,15 +195,19 @@ class NodeFactory:
 			if type == "bool":
 				node.add_checkbox(name=optname,text=optvals.get('text',""),label=optvals.get('label',""),state=optvals.get('default',False))
 			if type=="input":
-				node.add_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
+				node.add_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
 			if type == "edit":
-				node.add_multiline_text_input(name=optname,label=optvals.get('text'),text=optvals.get('default',""))
+				node.add_multiline_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
 			if type == "spin":
-				node.add_spinbox(name=optname,label=optvals.get('text'),text=optvals.get('default',0),range=optvals.get('range'))
+				node.add_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'))
 			if type == "fspin":
-				node.add_float_spinbox(name=optname,label=optvals.get('text'),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
+				node.add_float_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
 			if type=="list":
-				node.add_combo_menu(name=optname,label=optvals.get('text'),items=optvals.get('values',[]),default=optvals.get('default'))
+				node.add_combo_menu(name=optname,label=optvals.get('text',''),items=optvals.get('values',[]),default=optvals.get('default'))
+			if type=="vec2":
+				node.add_vector2(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0]))
+			if type=="vec3":
+				node.add_vector3(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
 		node.update()
 		graphref.undo_view.blockSignals(False)
 	#endregion

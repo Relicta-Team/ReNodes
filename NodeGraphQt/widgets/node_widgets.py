@@ -2,6 +2,8 @@
 from Qt import QtCore, QtWidgets, QtGui
 
 from NodeGraphQt.constants import ViewerEnum, Z_VAL_NODE_WIDGET
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
 
 
@@ -641,3 +643,34 @@ class NodeCheckBox(NodeBaseWidget):
         """
         if state != self.get_value():
             self.get_custom_widget().setChecked(state)
+
+
+class NodeVector(NodeBaseWidget):
+    def __init__(self, parent=None, name='', label='', value=None,dimensions = 2):
+        super(NodeVector, self).__init__(parent, name, label)
+        if not value:
+            raise NodeWidgetError("Empty value")
+        itm = _PropVector(fields=dimensions)
+        
+        #setup dot style
+        locale = QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
+        for itmiter in itm._items:
+            itmiter: QtWidgets.QLineEdit
+            itmiter.setLocale(locale)
+        
+        itm.set_value(value)
+        self.propertyVector : _PropVector = itm
+        self.set_custom_widget(itm)
+        #_cbox.stateChanged.connect(self.on_value_changed)
+        #self.set_custom_widget(_cbox)
+
+    @property
+    def type_(self):
+        return 'NodeVectorWidget'
+
+    def get_value(self):
+        return self.propertyVector.get_value()
+
+    def set_value(self, value=None):
+        if not value or value != self.get_value():
+            self.propertyVector.set_value(value)

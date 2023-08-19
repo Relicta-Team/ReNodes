@@ -89,6 +89,14 @@
 						"text": "select some items",
 						"default": "third item",
 						"values": ["first item", "second item", "third item"]
+					},
+					"vec2test": {
+						"type": "vec2",
+						"text": "vec2 for 2d vector"
+					},
+					"testvec3": {
+						"type": "vec3",
+						"text": "vec3 for transform"
 					}
 				}
 			}

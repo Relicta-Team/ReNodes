@@ -1,6 +1,8 @@
 #!/usr/bin/python
 from Qt import QtWidgets, QtCore, QtGui
 
+from ReNode.app.utils import clamp
+
 
 class _NumberValueMenu(QtWidgets.QMenu):
 
@@ -92,7 +94,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         self._menu.stepChange.connect(self._reset_previous_x)
         self._menu.set_steps([0.001, 0.01, 0.1, 1, 10, 100, 1000])
 
-        self.editingFinished.connect(self._on_text_changed)
+        self.textChanged.connect(self._on_text_changed) #Yodes: replaced from signal editingFinished (fix)
 
         self.set_data_type(data_type)
 
@@ -147,7 +149,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         # int("1.0") will return error
         # so we use int(float("1.0"))
         try:
-            value = float(text)
+            value = clamp(round(float(text),6),-999999.999999,999999.999999) #Yodes: check bounds... just in case
         except:
             value = 0.0
         if self._data_type is int:
@@ -162,21 +164,29 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         if data_type is int:
             self.setValidator(QtGui.QIntValidator())
         elif data_type is float:
-            self.setValidator(QtGui.QDoubleValidator())
+            validator = QtGui.QDoubleValidator(self)
+            loc = QtCore.QLocale("en_US")
+            loc.setNumberOptions(QtCore.QLocale.RejectGroupSeparator)
+            validator.setLocale(loc)
+            validator.setRange(-999999.0,999999.0,6)
+            validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+            self.setValidator(validator)
 
     def set_steps(self, steps=None):
         steps = steps or [0.001, 0.01, 0.1, 1, 10, 100, 1000]
         self._menu.set_steps(steps)
 
     def get_value(self):
+        """Value is number"""
         if self.text().startswith('.'):
             text = '0' + self.text()
             self.setText(text)
         return self._convert_text(self.text())
 
     def set_value(self, value):
+        """Param `value` is number"""
         if value != self.get_value():
-            self.setText(str(self._convert_text(value)))
+            self.setText(str(self._convert_text(value)).replace(',','.'))
 
 
 class IntValueEdit(_NumberValueEdit):

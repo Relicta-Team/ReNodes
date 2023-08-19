@@ -330,6 +330,20 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
+    def add_vector2(self, name, label='', value=[0,0], tab=None):
+        self.create_property(name,value=value,widget_type=NodePropWidgetEnum.VECTOR2.value,tab=tab)
+        widget = NodeVector(self.view,name,label,value,2)
+        self.view.add_widget(widget)
+        self.view.draw_node()
+        pass
+    
+    def add_vector3(self, name, label='', value=[0,0,0], tab=None):
+        self.create_property(name,value=value,widget_type=NodePropWidgetEnum.VECTOR3.value,tab=tab)
+        widget = NodeVector(self.view,name,label,value,3)
+        self.view.add_widget(widget)
+        self.view.draw_node()
+        pass
+
     def hide_widget(self, name):
         """
         Hide an embedded node widget.
