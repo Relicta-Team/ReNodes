@@ -59,7 +59,7 @@ class NodeFactory:
 		for nodecat,nodelist in data.get('nodes', {}).items():
 			logger.info(f"Loading category: {nodecat}")
 			for node,data in nodelist.items():
-				logger.info(f"	Loading node {node}")
+				logger.info(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,data)
 
 		
@@ -117,19 +117,10 @@ class NodeFactory:
 			typeopt = val.get('type')
 			if not typeopt:
 				raise Exception(f"no type for option {key}")
-			valdat['type'] = typeopt
-			valdat['text'] = val.get('text')
-			if val.get('range'):
-				valdat['range'] = val.get('range')
-			if val.get('floatspindata'):
-				valdat['floatspindata'] = val.get('floatspindata')
-			if val.get('default'):
-				valdat['default'] = val.get('default')
-			if val.get('label'):
-				valdat['label'] = val.get('label')
-			if val.get('values'):
-				valdat['values'] = val.get('values')
-
+			
+			for keyopt,valopt in val.items():
+				valdat[keyopt] = valopt
+			
 			opts[key] = valdat
 				
 		return opts
