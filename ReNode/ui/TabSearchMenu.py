@@ -8,6 +8,7 @@ from Qt.QtCore import Signal
 from PyQt5.QtWidgets import QWidget, QTreeWidget
 import asyncio
 from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
+from NodeGraphQt.qgraphics.pipe import PipeItem
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
 
 
@@ -228,6 +229,10 @@ class TabSearchMenu(QWidget):
         if data:
             self._close()
             self.nodeGraphComponent.nodeFactory.instance(data,pos=self.lastMousePos,graphref=self.nodeGraphComponent.graph)
+    
+    def onDragFromPipeContext(self,pipe: PipeItem):
+        self.nodeGraphComponent.toggleNodeSearch()
+        print(f"TODO context drag logic {pipe}")
 
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):

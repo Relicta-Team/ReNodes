@@ -1034,7 +1034,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 else:
                     disconnected.append((self._start_port, self._detached_port))
                     self.connection_changed.emit(disconnected, connected)
-
+            else:
+                # Yodes: smart selector
+                #self._tabSearch.onDragFromPipeContext(self._start_port)
+                #return; TODO: return and stop live connection + connect to
+                pass
             self._detached_port = None
             self.end_live_connection()
             return
