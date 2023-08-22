@@ -14,7 +14,7 @@ class PropColorPickerRGB(BaseProperty):
         super(PropColorPickerRGB, self).__init__(parent)
         self._color = (0, 0, 0)
         self._button = QtWidgets.QPushButton()
-        self._vector = PropVector3()
+        self._vector = PropVector3(type=int)
         self._vector.set_value([0, 0, 0])
         self._update_color()
 
@@ -90,7 +90,7 @@ class PropColorPickerRGBA(PropColorPickerRGB):
         BaseProperty.__init__(self, parent)
         self._color = (0, 0, 0, 255)
         self._button = QtWidgets.QPushButton()
-        self._vector = PropVector4()
+        self._vector = PropVector4(type=int)
         self._vector.set_value([0, 0, 0, 255])
         self._update_color()
 

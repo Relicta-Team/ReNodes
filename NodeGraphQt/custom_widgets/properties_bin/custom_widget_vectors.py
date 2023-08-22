@@ -10,11 +10,12 @@ class _PropVector(BaseProperty):
     Base widget for the PropVector widgets.
     """
 
-    def __init__(self, parent=None, fields=0):
+    def __init__(self, parent=None, fields=0,type__=float):
         super(_PropVector, self).__init__(parent)
         self._value = []
         self._items = []
         self._can_emit = True
+        self.type__ = type__
 
         layout = QtWidgets.QHBoxLayout(self)
         layout.setSpacing(2)
@@ -23,7 +24,7 @@ class _PropVector(BaseProperty):
             self._add_item(i)
 
     def _add_item(self, index):
-        _ledit = _NumberValueEdit()
+        _ledit = _NumberValueEdit(data_type=self.type__)
         _ledit.index = index
         _ledit.valueChanged.connect(
             lambda: self._on_value_change(_ledit.get_value(), _ledit.index)
@@ -86,8 +87,8 @@ class PropVector3(_PropVector):
     Useful for displaying x,y,z data.
     """
 
-    def __init__(self, parent=None):
-        super(PropVector3, self).__init__(parent, 3)
+    def __init__(self, parent=None,type=None):
+        super(PropVector3, self).__init__(parent, 3,type__=type)
 
 
 class PropVector4(_PropVector):
@@ -98,5 +99,5 @@ class PropVector4(_PropVector):
     Useful for display r,g,b,a data.
     """
 
-    def __init__(self, parent=None):
-        super(PropVector4, self).__init__(parent, 4)
+    def __init__(self, parent=None,type=None):
+        super(PropVector4, self).__init__(parent, 4,type__=type)
