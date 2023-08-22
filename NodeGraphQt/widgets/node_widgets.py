@@ -3,6 +3,7 @@ from Qt import QtCore, QtWidgets, QtGui
 
 from NodeGraphQt.constants import ViewerEnum, Z_VAL_NODE_WIDGET
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_color_picker import *
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFilePathCustom
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
@@ -693,6 +694,34 @@ class NodeColorPicker(NodeBaseWidget):
     @property
     def type_(self):
         return 'NodeColorPickerWidget'
+
+    def get_value(self):
+        return self.get_custom_widget().get_value()
+
+    def set_value(self, value=None):
+        if value != self.get_value():
+            self.get_custom_widget().set_value(value)
+
+
+class NodeFileOpen(NodeBaseWidget):
+    def __init__(self, parent=None, name='', label='', value=None,extensionPattern=None,rootDir=None,title=None):
+        super(NodeFileOpen, self).__init__(parent, name, label)
+        wid = PropFilePathCustom()
+        
+        if extensionPattern:
+            wid.set_file_ext(extensionPattern)
+        
+        if rootDir:
+            wid.set_file_directory(rootDir)
+        
+        if title:
+            wid.set_file_title(title)
+
+        self.set_custom_widget(wid)
+
+    @property
+    def type_(self):
+        return 'FileOpenWidget'
 
     def get_value(self):
         return self.get_custom_widget().get_value()

@@ -212,6 +212,8 @@ class NodeFactory:
 				node.add_rgb_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
 			if type == "rgba":
 				node.add_rgba_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0,0]))
+			if type == "file":
+				node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
 		node.update()
 		graphref.undo_view.blockSignals(False)
 	#endregion

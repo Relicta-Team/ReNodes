@@ -92,7 +92,8 @@
 					},
 					"vec2test": {
 						"type": "vec2",
-						"text": "vec2 for 2d vector"
+						"text": "vec2 for 2d vector",
+						"default": [100,100,100]
 					},
 					"testvec3": {
 						"type": "vec3",
@@ -100,11 +101,21 @@
 					},
 					"testcolor": {
 						"type": "rgb",
-						"text": "rgb text palette"
+						"text": "rgb text palette",
+						"default": [255,0,0]
 					},
 					"testcolor_alpha": {
 						"type": "rgba",
-						"text": "rgba palette"
+						"text": "rgba palette",
+						"default": [0,255,0,125]
+					},
+					"test_filepath": {
+						"type": "file",
+						"text": "select file",
+						"ext": "*",
+						"root": ".",
+						"title": "Выберите подходящий файл",
+						"default": "test_file_path_as_default"
 					}
 				}
 			}

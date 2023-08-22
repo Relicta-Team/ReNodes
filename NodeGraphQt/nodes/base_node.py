@@ -356,6 +356,12 @@ class BaseNode(NodeObject):
         self.view.add_widget(widget)
         self.view.draw_node()
 
+    def add_filepath(self,name,label='',value='',ext=None,root=None,title=None, tab=None):
+        self.create_property(name,value=value,widget_type=NodePropWidgetEnum.FILE_OPEN.value,tab=tab)
+        widget = NodeFileOpen(self.view,name,label=label,extensionPattern=ext,rootDir=root,title=title)
+        self.view.add_widget(widget)
+        self.view.draw_node()
+
     def hide_widget(self, name):
         """
         Hide an embedded node widget.
