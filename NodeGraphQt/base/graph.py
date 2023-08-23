@@ -1343,7 +1343,10 @@ class NodeGraph(QtCore.QObject):
                             )
 
         node._graph = self
-        node.NODE_NAME = self.get_unique_name(node.NODE_NAME)
+        if node.type_ == "runtime_domain.RuntimeNode":
+            pass
+        else:
+            node.NODE_NAME = self.get_unique_name(node.NODE_NAME)
         node.model._graph_model = self.model
         node.model.name = node.NODE_NAME
 
@@ -1712,6 +1715,7 @@ class NodeGraph(QtCore.QObject):
             n.update_model()
 
             node_dict = n.model.to_dict
+            node_dict[n.id]['class_'] = n.nodeClass #Yodes: custom class
             nodes_data.update(node_dict)
 
         for n_id, n_data in nodes_data.items():
@@ -1782,7 +1786,10 @@ class NodeGraph(QtCore.QObject):
         nodes = {}
         for n_id, n_data in data.get('nodes', {}).items():
             identifier = n_data['type_']
-            node = self._node_factory.create_node_instance(identifier)
+            #classType = identifier['class']
+            nodeType = n_data.pop('class_')
+            #node = self._node_factory.create_node_instance(identifier,True)
+            node = self._factoryRef.instance(nodeType,graphref=self._viewer._tabSearch.nodeGraphComponent.graph,isInstanceCreate=True)
             if node:
                 node.NODE_NAME = n_data.get('name', node.NODE_NAME)
                 # set properties.

@@ -75,6 +75,10 @@ class NodeObject(object):
     """
 
     def __init__(self, qgraphics_item=None):
+        
+        # Yodes: sysref to custom class
+        self.nodeClass = None
+
         """
         Args:
             qgraphics_item (AbstractNodeItem): QGraphicsItem used for drawing.

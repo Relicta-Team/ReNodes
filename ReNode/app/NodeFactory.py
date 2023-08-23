@@ -156,15 +156,26 @@ class NodeFactory:
 
 	#region factory instances
 
-	def instance(self,nodename,graphref: NodeGraph = None,pos=None):
+	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False):
 		if not self.nodes[nodename]: return None
 		if not graphref: return None
 		if not pos:
 			pos_pre = graphref.viewer().scene_cursor_pos()
 			pos = [pos_pre.x(),pos_pre.y()]
 		graphref.undo_view.blockSignals(True)
-		node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
+		node = None
+		
 		cfg = self.nodes[nodename]
+		
+		if isInstanceCreate:
+			from ReNode.ui.Nodes import RuntimeNode
+			node = RuntimeNode()
+		else:
+			node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
+		
+		node.nodeClass = nodename
+		#node.create_property("class_",nodename)
+
 		nametext = f'<b>{cfg["name"]}</b>'
 		if cfg.get('desc')!="":
 			nametext += f'<br/><font size=""4"><i>{cfg["desc"]}</i></font>'
@@ -214,8 +225,15 @@ class NodeFactory:
 				node.add_rgba_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0,0]))
 			if type == "file":
 				node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
+		
+		if isInstanceCreate:
+			graphref.undo_view.blockSignals(False)
+			return node
+		
 		node.update()
 		graphref.undo_view.blockSignals(False)
+
+		return node
 	#endregion
 
 	def getNodesForSearch(self):
