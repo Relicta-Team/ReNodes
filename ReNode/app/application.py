@@ -49,7 +49,7 @@ class Application:
 	#construct
 	def __init__(self,args):
 		
-		pixmap = QtGui.QPixmap("data/err.png").scaled(800, 600, QtCore.Qt.KeepAspectRatio)
+		pixmap = QtGui.QPixmap("data/splash.png").scaled(600, 400) #, QtCore.Qt.KeepAspectRatio
 		#pixmap.fill(QtGui.QColor(0,0,0))
 		splash = QtWidgets.QSplashScreen(pixmap,QtCore.Qt.WindowStaysOnTopHint)
 		
@@ -93,7 +93,7 @@ class Application:
 		self.mainWindow = MainWindow(self.nodeFactory)
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()})")
 		
-		if splashEnabled: time.sleep(2)
+		if splashEnabled: time.sleep(3)
 		splash.finish(self.mainWindow)
 		logger.removeHandler(handler)
 		
