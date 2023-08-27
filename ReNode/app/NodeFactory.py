@@ -168,7 +168,7 @@ class NodeFactory:
 		cfg = self.nodes[nodename]
 		
 		if isInstanceCreate:
-			from ReNode.ui.Nodes import RuntimeNode
+			#from ReNode.ui.Nodes import RuntimeNode
 			node = graphref.node_factory.create_node_instance(nodename,customFactoryReference={'name':nodename})
 		else:
 			node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
