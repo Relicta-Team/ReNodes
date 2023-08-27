@@ -20,7 +20,13 @@ class BackdropNode(NodeObject):
     NODE_NAME = 'Backdrop'
 
     def __init__(self, qgraphics_views=None):
-        super(BackdropNode, self).__init__(qgraphics_views or BackdropNodeItem)
+        grit = qgraphics_views or BackdropNodeItem
+        super(BackdropNode, self).__init__(grit)
+
+        #Yodes: todo:fix history backdrop
+        #if isinstance(self.view,BackdropNodeItem):
+        #    self.view.baseBackdrop = self
+
         # override base default color.
         self.model.color = (5, 129, 138, 255)
         self.create_property('backdrop_text', '',
@@ -48,6 +54,12 @@ class BackdropNode(NodeObject):
             self.set_property('height', value['height'])
             self.set_pos(*value['pos'])
             self.graph.end_undo()
+        #Yodes: todo:fix history backdrop
+        """elif update_prop == 'name':
+            self.graph.begin_undo('renamed "{}"'.format(self.name()))
+            self.set_property('name',value,True,False)
+            self.update()
+            self.graph.end_undo()"""
 
     def auto_size(self):
         """

@@ -125,6 +125,8 @@ class BackdropNodeItem(AbstractNodeItem):
         self._textItem = NodeTextItemForBackdrop("", self)
         self._textItem.setDefaultTextColor(QtGui.QColor(*self.text_color))
         
+        #Yodes: todo:fix history backdrop
+        #self.baseBackdrop = None
 
     def _combined_rect(self, nodes):
         group = self.scene().createItemGroup(nodes)

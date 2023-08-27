@@ -224,6 +224,9 @@ class NodeTextItemForBackdrop(QtWidgets.QGraphicsTextItem):
             pname = self.node.name
             self.node.name = name
             
+            #Yodes: todo:fix history backdrop
+            #self.node.baseBackdrop.on_backdrop_updated('name',name)
+
             #TODO add history stack for change name
             """undo_cmd = PropertyChangedCmd(self.node, 'name', name)
             undo_cmd.setText(
