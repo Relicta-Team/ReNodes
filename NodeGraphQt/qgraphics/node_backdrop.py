@@ -6,6 +6,7 @@ from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem
 from NodeGraphQt.qgraphics.port import PortItem
 
+from NodeGraphQt.qgraphics.node_text_item import NodeTextItemForBackdrop
 
 class BackdropSizer(QtWidgets.QGraphicsItem):
     """
@@ -120,6 +121,11 @@ class BackdropNodeItem(AbstractNodeItem):
         self._sizer.set_pos(*self._min_size)
         self._nodes = [self]
 
+        #Yodes: fix nodetextitem
+        self._textItem = NodeTextItemForBackdrop("", self)
+        self._textItem.setDefaultTextColor(QtGui.QColor(*self.text_color))
+        
+
     def _combined_rect(self, nodes):
         group = self.scene().createItemGroup(nodes)
         rect = group.boundingRect()
@@ -128,10 +134,14 @@ class BackdropNodeItem(AbstractNodeItem):
 
     def mouseDoubleClickEvent(self, event):
         viewer = self.viewer()
+        if event.button() == QtCore.Qt.LeftButton:
+                self._textItem.setPlainText(self.name)
+                self._textItem.set_editable(True)
+                self.update()
+                return
         if viewer:
             viewer.node_double_clicked.emit(self.id)
         super(BackdropNodeItem, self).mouseDoubleClickEvent(event)
-
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             pos = event.scenePos()
@@ -225,10 +235,11 @@ class BackdropNodeItem(AbstractNodeItem):
             painter.setPen(QtCore.Qt.NoPen)
             painter.drawRoundedRect(rect, radius, radius)
 
-        txt_rect = QtCore.QRectF(top_rect.x(), top_rect.y(),
-                                 rect.width(), top_rect.height())
-        painter.setPen(QtGui.QColor(*self.text_color))
-        painter.drawText(txt_rect, QtCore.Qt.AlignCenter, self.name)
+        if not self._textItem._isEditProcess:
+            txt_rect = QtCore.QRectF(top_rect.x(), top_rect.y(),
+                                    rect.width(), top_rect.height())
+            painter.setPen(QtGui.QColor(*self.text_color))
+            painter.drawText(txt_rect, QtCore.Qt.AlignCenter | QtCore.Qt.TextWordWrap, self.name) #Yodes: fix multiline
 
         border = 0.8
         border_color = self.color
