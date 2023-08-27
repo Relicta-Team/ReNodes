@@ -70,7 +70,7 @@ class NodeFactory:
 		defcolor = (13,18,23,255)
 		defborder = (255,0,0,255)
 		kind = data.get('kind',None) # function,control,operator etc for define icon
-		struct['name'] = data['name']
+		struct['name'] = data.get('name','')
 		struct['path'] = data.get('path','')
 		struct['desc'] = data.get('desc', '')
 		struct['icon'] = self._nodeKindToIcon(kind)
@@ -169,18 +169,21 @@ class NodeFactory:
 		
 		if isInstanceCreate:
 			from ReNode.ui.Nodes import RuntimeNode
-			node = RuntimeNode()
+			node = graphref.node_factory.create_node_instance(nodename,customFactoryReference={'name':nodename})
 		else:
 			node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
 		
 		node.nodeClass = nodename
 		#node.create_property("class_",nodename)
 
-		nametext = f'<b>{cfg["name"]}</b>'
-		if cfg.get('desc')!="":
-			nametext += f'<br/><font size=""4"><i>{cfg["desc"]}</i></font>'
-		node.set_property("name",nametext,False,doNotRename=True)
-		node.set_icon(cfg['icon'],False)
+		if "internal." in nodename:
+			node.set_property("name",cfg["name"],False)
+		else:
+			nametext = f'<b>{cfg["name"]}</b>'
+			if cfg.get('desc')!="":
+				nametext += f'<br/><font size=""4"><i>{cfg["desc"]}</i></font>'
+			node.set_property("name",nametext,False,doNotRename=True)
+			node.set_icon(cfg['icon'],False)
 
 		for inputkey,inputvals in cfg['inputs'].items():
 			node.add_input(

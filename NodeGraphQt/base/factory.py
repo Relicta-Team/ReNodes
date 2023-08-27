@@ -55,6 +55,9 @@ class NodeFactory(object):
         #Yodes: redirect factory
         if customFactoryReference:
             from ReNode.ui.Nodes import RuntimeNode
+            from NodeGraphQt.nodes.backdrop_node import BackdropNode
+            if node_type == "internal.backdrop":
+                return BackdropNode()
             return RuntimeNode()
 
         if node_type in self.aliases:
