@@ -193,7 +193,10 @@ class NodeFactory:
 				multi_input=inputvals['mutliconnect'],
 				painter_func=self.__getDrawPortFunction(inputvals['style'])
 			)
-			
+
+		if cfg.get('input_list_runtime'):
+			node.add_runtime_input('test runtime')
+
 		for outputkey,outputvals in cfg['outputs'].items():
 			node.add_output(
 				name=outputkey,

@@ -439,6 +439,31 @@ class BaseNode(NodeObject):
         self.model.inputs[port.name()] = port.model
         return port
 
+    def add_runtime_input(self, name='input', multi_input=False, display_name=True,
+                  color=None, locked=False, painter_func=None):
+        if name in self.inputs().keys():
+            raise PortRegistrationError(
+                'port name "{}" already registered.'.format(name))
+
+        port_args = [name, multi_input, display_name, locked]
+        if painter_func and callable(painter_func):
+            port_args.append(painter_func)
+        view = self.view.add_input(*port_args)
+
+        if color:
+            view.color = color
+            view.border_color = [min([255, max([0, i + 80])]) for i in color]
+
+        port = Port(self, view)
+        port.model.type_ = PortTypeEnum.IN.value
+        port.model.name = name
+        port.model.display_name = display_name
+        port.model.multi_connection = multi_input
+        port.model.locked = locked
+        self._inputs.append(port)
+        self.model.inputs[port.name()] = port.model
+        return port
+
     def add_output(self, name='output', multi_output=True, display_name=True,
                    color=None, locked=False, painter_func=None):
         """
