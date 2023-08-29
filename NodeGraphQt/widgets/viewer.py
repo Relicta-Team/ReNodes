@@ -607,9 +607,12 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
 
         if self.MMB_state and self.ALT_state:
-            pos_x = (event.x() - self._previous_pos.x())
+            #Yodes: removed mmb+alt zoom
+            print("ZOOM WITH ALT+MMB DISABLED")
+            pass
+            """pos_x = (event.x() - self._previous_pos.x())
             zoom = 0.1 if pos_x > 0 else -0.1
-            self._set_viewer_zoom(zoom, 0.05, pos=event.pos())
+            self._set_viewer_zoom(zoom, 0.05, pos=event.pos())"""
         elif self.MMB_state or (self.LMB_state and self.ALT_state):
             previous_pos = self.mapToScene(self._previous_pos)
             current_pos = self.mapToScene(event.pos())
