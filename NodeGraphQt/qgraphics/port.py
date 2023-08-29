@@ -340,11 +340,17 @@ class ScriptedCustomPortItem(PortItem):
         
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         system : NodeGraphComponent = self.node.viewer()._tabSearch.nodeGraphComponent
+        isCreateProcess = event.button() == QtCore.Qt.LeftButton and not event.modifiers() == QtCore.Qt.AltModifier
         id = self.node.id
         node = system.getNodeById(id)
         if node:
-            system.getFactory().processAddScriptedPort(node,self.port_type)
-        print("TODO IMPLEMENT ADD EVENT " + str(system))
+            if isCreateProcess:
+                system.getFactory().processAddScriptedPort(node,self.port_type)
+            else:
+                system.getFactory().processRemoveLastScriptedPort(node,self.port_type)
+            
+            return
+        #print("TODO IMPLEMENT ADD EVENT " + str(system))
         
         super(ScriptedCustomPortItem, self).mousePressEvent(event)
 

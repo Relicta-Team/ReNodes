@@ -202,10 +202,12 @@ class NodeFactory:
 
 		if cfg.get('inputs_runtime'):
 			rtt_input = cfg['inputs_runtime']
-			node.add_runtime_input(name=rtt_input.get("add_button_text","Добавить"),locked=True,painter_func=draw_plus_port)
+			port = node.add_runtime_input(name=rtt_input.get("add_button_text","Добавить"),locked=True,painter_func=draw_plus_port)
+			port.view.setToolTip("ЛКМ для добавления\nЛКМ + Alt для удаления")
 			node.create_property('runtime_input',{
 				"current_count": 0
 			})
+			node.set_port_deletion_allowed(True)
 
 		for outputkey,outputvals in cfg['outputs'].items():
 			node.add_output(
@@ -249,7 +251,7 @@ class NodeFactory:
 				rtinp = cust.get('runtime_input')
 				if rtinp:
 					node.set_property('runtime_input',rtinp,False)
-					self.processAddScriptedPort(node, portType='in',isSyncMode=True)
+					self.processAddScriptedPort(node, portType='in',isSyncMode=True,deserData=forwardDeserializeData)
 
 		if isInstanceCreate:
 			graphref.undo_view.blockSignals(False)
@@ -277,16 +279,30 @@ class NodeFactory:
 		if not self.nodes: return None
 		return self.nodes[key]
 
-	def processAddScriptedPort(self,nodeObject : BaseNode, portType='in',isSyncMode=False):
+	def processAddScriptedPort(self,nodeObject : BaseNode, portType='in',isSyncMode=False,deserData=None):
 		
 		data = nodeObject.get_property('runtime_input' if portType=='in' else 'runtime_output')
 		curclass = nodeObject.nodeClass
 		curcount = data.get('current_count',0)
 		
 		if isSyncMode:
+			#rem native port info
+			"""list = deserData['input_ports']
+			namepattern = self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text')
+			
+
+			for portDict in list:
+				if portDict.get('name') == self.getNodeLibData(curclass)['inputs_runtime'].get('add_button_text',''):
+					list.remove(portDict)
+				for i in range(curcount):
+					if portDict.get('name') == namepattern.format(i + 1):
+						list.remove(portDict)"""
 			if curcount <= 0: return
 			for i in range(curcount):
-				nodeObject.add_input(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text','{0}').format(i + 1))
+				if portType=='in':
+					nodeObject.add_input(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text','{0}').format(i + 1))
+				else:
+					nodeObject.add_output(self.getNodeLibData(curclass)['outputs_runtime'].get('pattern_text','{0}').format(i + 1))
 			return
 
 		newcount = curcount + 1
@@ -294,5 +310,23 @@ class NodeFactory:
 		if portType == 'in':
 			nodeObject.add_input(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text',"{0}").format(newcount))
 		else:
-			nodeObject.add_output(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text',"{0}").format(newcount))
+			nodeObject.add_output(self.getNodeLibData(curclass)['outputs_runtime'].get('pattern_text',"{0}").format(newcount))
+		pass
+
+	def processRemoveLastScriptedPort(self,nodeObject : BaseNode,portType ='in'):
+		data = nodeObject.get_property('runtime_input' if portType=='in' else 'runtime_output')
+		curclass = nodeObject.nodeClass
+		curcount = data.get('current_count',0)
+		propName = self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text','{0}') if portType=='in' else self.getNodeLibData(curclass)['outputs_runtime'].get('pattern_text','{0}')
+		propName = propName.format(curcount)
+		if curcount <= 0: return
+		#if not nodeObject.has_property(propName): return
+
+		if portType == 'in':
+			nodeObject.delete_input(propName)
+		else:
+			nodeObject.delete_output(propName)
+
+		data['current_count'] = curcount - 1
+
 		pass
