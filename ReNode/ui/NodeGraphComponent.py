@@ -124,6 +124,9 @@ class NodeGraphComponent:
 		for node in self.graph.graph.all_nodes():
 			node.update()
 
+	def getNodeById(self,id):
+		return self.graph.get_node_by_id(id)
+
 	def registerNodes(self):
 		self.graph.register_node(RuntimeNode)
 		self.graph.register_node(RuntimeGroup)
@@ -153,7 +156,7 @@ class NodeGraphComponent:
 		self.graph.node_double_clicked.connect(display_properties_bin)"""
 
 	def onNodeDoubleClickedEvent(self,node : BaseNode):
-		print(node.type_)
+		print("NODE DOUBLECLICK EVENT:"+node.type_)
 		if "RuntimeGroup" in node.type_:
 			print("expand")
 			#node.expand()
@@ -171,7 +174,7 @@ class NodeGraphComponent:
 		def my_test(graph):
 			ps = graph.viewer().scene_cursor_pos()
 			pos = [ps.x(),ps.y()]
-			self.nodeFactory.instance("operators.testnode",pos=pos,graphref=graph)
+			self.nodeFactory.instance("operators.make_array",pos=pos,graphref=graph)
 			"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode', pos=[ps.x(),ps.y()])
 			node.add_input('Входные данные', color=(0, 80, 0))
 			node.add_output('Выходные данные',False,False)

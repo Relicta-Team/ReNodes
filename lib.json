@@ -15,12 +15,14 @@
 				"name": "Создать массив",
 				"desc": "Создание новой упорядоченной последовательности объектов",
 				"inputs": {
-					"Элемент 1": {
+					"Flow": {
 
 					}
 				},
-				"input_list_runtime": {
-
+				"inputs_runtime": {
+					"add_button_text":"Добавить элемент",
+					"max_count": 20,
+					"pattern_text": "Входное действие {0}"
 				},
 				"outputs": {
 					"Flow": {

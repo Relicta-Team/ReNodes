@@ -1,7 +1,8 @@
 import json
+from NodeGraphQt.nodes.base_node import BaseNode
 from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
-from ReNode.ui.NodePainter import draw_square_port,draw_triangle_port
+from ReNode.ui.NodePainter import draw_plus_port, draw_square_port,draw_triangle_port
 import logging
 logger : logging.Logger = None
 class NodeFactory:
@@ -85,15 +86,20 @@ class NodeFactory:
 		#outputs generate
 		struct['outputs'] = self._deserializeConnectors(data.get('outputs'),False)
 
+		struct['inputs_runtime'] = self._deserializeConnectors(data.get('inputs_runtime'),True,True)
+
 		#custom node options
 		struct['options'] = self._deserializeOptions(data.get('options'))
 
 		self.nodes[typename] = struct
 
-	def _deserializeConnectors(self,cnts :dict,isInput = True):
+	def _deserializeConnectors(self,cnts :dict,isInput = True,isRuntime=False):
 		cons = {}
 		
 		if not cnts: return cons
+		
+		if isRuntime:
+			return cnts.copy()
 
 		for key,val in cnts.items():
 			defcolor = [255, 255, 255, 255]
@@ -156,7 +162,7 @@ class NodeFactory:
 
 	#region factory instances
 
-	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False):
+	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False,forwardDeserializeData=None):
 		if not self.nodes[nodename]: return None
 		if not graphref: return None
 		if not pos:
@@ -194,8 +200,12 @@ class NodeFactory:
 				painter_func=self.__getDrawPortFunction(inputvals['style'])
 			)
 
-		if cfg.get('input_list_runtime'):
-			node.add_runtime_input('test runtime')
+		if cfg.get('inputs_runtime'):
+			rtt_input = cfg['inputs_runtime']
+			node.add_runtime_input(name=rtt_input.get("add_button_text","Добавить"),locked=True,painter_func=draw_plus_port)
+			node.create_property('runtime_input',{
+				"current_count": 0
+			})
 
 		for outputkey,outputvals in cfg['outputs'].items():
 			node.add_output(
@@ -232,6 +242,15 @@ class NodeFactory:
 			if type == "file":
 				node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
 		
+		#update runtime props
+		if forwardDeserializeData:
+			cust = forwardDeserializeData.get('custom')
+			if cust:
+				rtinp = cust.get('runtime_input')
+				if rtinp:
+					node.set_property('runtime_input',rtinp,False)
+					self.processAddScriptedPort(node, portType='in',isSyncMode=True)
+
 		if isInstanceCreate:
 			graphref.undo_view.blockSignals(False)
 			return node
@@ -253,3 +272,27 @@ class NodeFactory:
 		
 		return retval
 		#return {"backdrop": ["system.backdrop"],"test2":['x.v','t.e.ass']}
+	
+	def getNodeLibData(self,key):
+		if not self.nodes: return None
+		return self.nodes[key]
+
+	def processAddScriptedPort(self,nodeObject : BaseNode, portType='in',isSyncMode=False):
+		
+		data = nodeObject.get_property('runtime_input' if portType=='in' else 'runtime_output')
+		curclass = nodeObject.nodeClass
+		curcount = data.get('current_count',0)
+		
+		if isSyncMode:
+			if curcount <= 0: return
+			for i in range(curcount):
+				nodeObject.add_input(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text','{0}').format(i + 1))
+			return
+
+		newcount = curcount + 1
+		data['current_count'] = newcount
+		if portType == 'in':
+			nodeObject.add_input(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text',"{0}").format(newcount))
+		else:
+			nodeObject.add_output(self.getNodeLibData(curclass)['inputs_runtime'].get('pattern_text',"{0}").format(newcount))
+		pass

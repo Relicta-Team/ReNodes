@@ -448,6 +448,11 @@ class BaseNode(NodeObject):
         port_args = [name, multi_input, display_name, locked]
         if painter_func and callable(painter_func):
             port_args.append(painter_func)
+        else:
+            port_args.append(None)
+
+        port_args.append(True)
+
         view = self.view.add_input(*port_args)
 
         if color:

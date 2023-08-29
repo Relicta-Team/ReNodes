@@ -16,7 +16,7 @@ from NodeGraphQt.errors import NodeWidgetError
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_overlay_disabled import XDisabledItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
-from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem
+from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem, ScriptedCustomPortItem
 
 
 class NodeItem(AbstractNodeItem):
@@ -922,7 +922,7 @@ class NodeItem(AbstractNodeItem):
         return port
 
     def add_input(self, name='input', multi_port=False, display_name=True,
-                  locked=False, painter_func=None):
+                  locked=False, painter_func=None,scripted_port=None):
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         IN_PORT.
@@ -937,10 +937,13 @@ class NodeItem(AbstractNodeItem):
         Returns:
             PortItem: input port qgraphics item.
         """
-        if painter_func:
-            port = CustomPortItem(self, painter_func)
+        if scripted_port:
+            port = ScriptedCustomPortItem(self, painter_func)
         else:
-            port = PortItem(self)
+            if painter_func:
+                port = CustomPortItem(self, painter_func)
+            else:
+                port = PortItem(self)
         port.name = name
         port.port_type = PortTypeEnum.IN.value
         port.multi_connection = multi_port

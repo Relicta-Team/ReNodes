@@ -323,3 +323,49 @@ class CustomPortItem(PortItem):
             self._port_painter(painter, port_rect, port_info)
         else:
             super(CustomPortItem, self).paint(painter, option, widget)
+
+
+
+#Yodes: custom scripted port item
+class ScriptedCustomPortItem(PortItem):
+
+    def __init__(self, parent=None, paint_func=None):
+        super(ScriptedCustomPortItem, self).__init__(parent)
+        self._port_painter = paint_func
+
+    def set_painter(self, func=None):
+        self._port_painter = func
+
+    def mousePressEvent(self, event):
+        
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        system : NodeGraphComponent = self.node.viewer()._tabSearch.nodeGraphComponent
+        id = self.node.id
+        node = system.getNodeById(id)
+        if node:
+            system.getFactory().processAddScriptedPort(node,self.port_type)
+        print("TODO IMPLEMENT ADD EVENT " + str(system))
+        
+        super(ScriptedCustomPortItem, self).mousePressEvent(event)
+
+    def paint(self, painter, option, widget):
+        if self._port_painter:
+            rect_w = self._width / 1.8
+            rect_h = self._height / 1.8
+            rect_x = self.boundingRect().center().x() - (rect_w / 2)
+            rect_y = self.boundingRect().center().y() - (rect_h / 2)
+            port_rect = QtCore.QRectF(rect_x, rect_y, rect_w, rect_h)
+            node_rect = self.parentItem().boundingRect()
+            port_info = {
+                'port_type': self.port_type,
+                'color': self.color,
+                'border_color': self.border_color,
+                'multi_connection': self.multi_connection,
+                'connected': bool(self.connected_pipes),
+                'hovered': self.hovered,
+                'locked': self.locked,
+                'node_rect': node_rect
+            }
+            self._port_painter(painter, port_rect, port_info)
+        else:
+            super(ScriptedCustomPortItem, self).paint(painter, option, widget)
