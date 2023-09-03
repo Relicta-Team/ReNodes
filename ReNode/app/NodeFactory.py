@@ -66,6 +66,9 @@ class NodeFactory:
 		
 
 	def registerNodeInLib(self,category,name,data : dict):
+		
+		if data.get('disabled',False): return
+		
 		struct = {}
 		typename = category+"."+name
 		defcolor = (13,18,23,255)
@@ -85,8 +88,9 @@ class NodeFactory:
 		struct['inputs'] = self._deserializeConnectors(data.get('inputs'),True)
 		#outputs generate
 		struct['outputs'] = self._deserializeConnectors(data.get('outputs'),False)
-
-		struct['inputs_runtime'] = self._deserializeConnectors(data.get('inputs_runtime'),True,True)
+		
+		if data.get('inputs_runtime'):
+			struct['inputs_runtime'] = self._deserializeConnectors(data.get('inputs_runtime'),True,True)
 
 		#custom node options
 		struct['options'] = self._deserializeOptions(data.get('options'))
@@ -163,7 +167,7 @@ class NodeFactory:
 	#region factory instances
 
 	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False,forwardDeserializeData=None):
-		if not self.nodes[nodename]: return None
+		if not self.nodes.get(nodename): return None
 		if not graphref: return None
 		if not pos:
 			pos_pre = graphref.viewer().scene_cursor_pos()
@@ -201,6 +205,7 @@ class NodeFactory:
 			)
 
 		if cfg.get('inputs_runtime'):
+			raise Exception("runtime port not allowed")
 			rtt_input = cfg['inputs_runtime']
 			port = node.add_runtime_input(name=rtt_input.get("add_button_text","Добавить"),locked=True,painter_func=draw_plus_port)
 			port.view.setToolTip("ЛКМ для добавления\nЛКМ + Alt для удаления")
@@ -245,13 +250,14 @@ class NodeFactory:
 				node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
 		
 		#update runtime props
-		if forwardDeserializeData:
+		#! Disabled custom
+		"""if forwardDeserializeData:
 			cust = forwardDeserializeData.get('custom')
 			if cust:
 				rtinp = cust.get('runtime_input')
 				if rtinp:
 					node.set_property('runtime_input',rtinp,False)
-					self.processAddScriptedPort(node, portType='in',isSyncMode=True,deserData=forwardDeserializeData)
+					self.processAddScriptedPort(node, portType='in',isSyncMode=True,deserData=forwardDeserializeData)"""
 
 		if isInstanceCreate:
 			graphref.undo_view.blockSignals(False)
