@@ -174,7 +174,7 @@ class NodeGraphComponent:
 		def my_test(graph):
 			ps = graph.viewer().scene_cursor_pos()
 			pos = [ps.x(),ps.y()]
-			self.nodeFactory.instance("operators.make_array",pos=pos,graphref=graph)
+			self.nodeFactory.instance("operators.testnode",pos=pos,graphref=graph)
 			"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode', pos=[ps.x(),ps.y()])
 			node.add_input('Входные данные', color=(0, 80, 0))
 			node.add_output('Выходные данные',False,False)
