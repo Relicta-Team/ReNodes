@@ -107,13 +107,15 @@ class NodeFactory:
 
 		for key,val in cnts.items():
 			defcolor = [255, 255, 255, 255]
-			displayName = False
+			displayName = True
 			isMulticonnect = False
 			valdata = {}
 			valdata['color'] = val.get('color',defcolor)
 			valdata['display_name'] = val.get('display_name',displayName)
 			valdata['mutliconnect'] = val.get('mutliconnect',isMulticonnect)
 			valdata['style'] = self._kindPortStyle(val.get('style',"default"))
+			valdata['allowtypes'] = val.get('allowtypes')
+			valdata['type'] = val.get('type',key)
 			cons[key] = valdata
 		return cons	
 
@@ -196,13 +198,15 @@ class NodeFactory:
 			node.set_icon(cfg['icon'],False)
 
 		for inputkey,inputvals in cfg['inputs'].items():
-			node.add_input(
-				name=inputkey,
+			port = node.add_input(
+				name=inputvals['type'],
 				color=inputvals['color'],
 				display_name=inputvals['display_name'],
 				multi_input=inputvals['mutliconnect'],
-				painter_func=self.__getDrawPortFunction(inputvals['style'])
+				painter_func=self.__getDrawPortFunction(inputvals['style']),
+				visibleName=inputkey
 			)
+			self._prepAccessPortTypes(node,port,inputvals,'out')
 
 		if cfg.get('inputs_runtime'):
 			raise Exception("runtime port not allowed")
@@ -215,13 +219,15 @@ class NodeFactory:
 			node.set_port_deletion_allowed(True)
 
 		for outputkey,outputvals in cfg['outputs'].items():
-			node.add_output(
-				name=outputkey,
+			port = node.add_output(
+				name=outputvals['type'],
 				color=outputvals['color'],
 				display_name=outputvals['display_name'],
 				multi_output=outputvals['mutliconnect'],
-				painter_func=self.__getDrawPortFunction(outputvals['style'])
+				painter_func=self.__getDrawPortFunction(outputvals['style']),
+				visibleName=outputkey
 			)
+			self._prepAccessPortTypes(node,port,outputvals,'in')
 		
 		#options
 		for optname,optvals in cfg['options'].items():
@@ -267,6 +273,16 @@ class NodeFactory:
 		graphref.undo_view.blockSignals(False)
 
 		return node
+	
+	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
+		if inputvals.get('allowtypes'):
+				for item in inputvals.get('allowtypes'):
+					if isinstance(item,dict):
+						node.add_accept_port_type(port,{'port_name':item.get('name'),'port_type':item.get('port',type),'node_type':item.get('type',"runtime_domain.RuntimeNode")})
+					else:
+						node.add_accept_port_type(port,{'port_name':item,'port_type':type,'node_type':"runtime_domain.RuntimeNode"})
+
+	
 	#endregion
 
 	def getNodesForSearch(self):

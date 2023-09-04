@@ -67,15 +67,43 @@
 					}
 				}
 			},
+			"connector_test": {
+				"name": "testflow",
+				"inputs":{
+					"Flow in":{"type":"Flow","allowtypes":["Flow"]}
+
+					,"Boolean":{"allowtypes":["bool"]}
+				},
+				"outputs":{
+					"Flow out":{"type":"Flow","allowtypes":["Flow"]}
+				}
+			},
+			"boolean_test": {
+				"name": "make boolean",
+				"outputs": {
+					"Булево":{"type":"bool"}
+				}
+			},
 			"testnode":{
 				"path": "debug",
 				"name":"Тестовый узел",
 				"inputs":{
-					"inp1": {"color":[255,0,0,255]},
+					"inp1": {
+						"color":[255,0,0,255],
+						"allowtypes": [
+							{
+								"name":"out1",
+								"type":"runtime_domain.RuntimeNode"
+							},
+							"Истина"
+						]
+					},
 					"inp2": {}
 				},
 				"outputs": {
-					"out1": {},
+					"out1": {
+						"allowtypes":["inp1"]
+					},
 					"out2": {}
 				},
 				"options": {
