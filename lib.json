@@ -1,191 +1,47 @@
 {
-	"system":{
+	"system": {
 		"version": 1
 	},
-	"nodes":{
+	"nodes": {
 		"internal": {
 			"backdrop": {
-				"path": "Системные",
-				"name": "Группа"
+				"name": "Группа",
+				"path": "Системные"
 			}
 		},
-		"operators":{
-			"make_array": {
-				"path":"Массивы",
-				"disabled": true,
-				"name": "Создать массив",
-				"desc": "Создание новой упорядоченной последовательности объектов",
-				"inputs": {
-					"Flow": {
-
-					}
-				},
-				"inputs_runtime": {
-					"add_button_text":"Добавить элемент",
-					"max_count": 20,
-					"pattern_text": "Входное действие {0}"
-				},
-				"outputs": {
-					"Flow": {
-						"color":[255,0,0,255]
-					}
-				}
-			},
+		"operators": {
 			"if_branch": {
-				"path": "Контрольные структуры.Операторы",
-				"kind": "data\\branch_sim.png", 
 				"name": "Ветка",
-				"desc123": "Проверяет условие",
-				"color": [13,18,23,255],
-				"inputs": {
-					"flowin": {
-						"color": [100, 100, 100, 255],
-						"display_name": false,
-						"mutliconnect": false,
-						"style": "triangle"
-					}
-				},
-				"outputs": {
-					"Истина": {
-						"color": [100, 100, 100, 255],
-						"display_name": true,
-						"mutliconnect": false,
-						"style": "triangle"
+				"in": {
+					"Вход": {
+						"type": "Flow"
 					},
-					"Ложь": {
-						"color": [100, 100, 100, 255],
-						"display_name": true,
-						"mutliconnect": false,
-						"style": "triangle"
+					"test1": 1,
+					"test2": 1,
+					"test3": 1,
+					"Выход": {
+						"type": "Flow"
 					}
 				},
-				"options": {
-					"istrue": {
-						"type": "bool",
-						"default": true,
-						"text": "Условие"
-					}
-				}
+				"desc": "Ветка",
+				"path": "Операторы"
 			},
-			"connector_test": {
-				"name": "testflow",
-				"inputs":{
-					"Flow in":{"type":"Flow","allowtypes":["Flow"]}
-
-					,"Boolean":{"allowtypes":["bool"]}
-				},
-				"outputs":{
-					"Flow out":{"type":"Flow","allowtypes":["Flow"]}
-				}
-			},
-			"boolean_test": {
-				"name": "make boolean",
-				"outputs": {
-					"Булево":{"type":"bool"}
-				}
-			},
-			"testnode":{
-				"path": "debug",
-				"name":"Тестовый узел",
-				"inputs":{
-					"inp1": {
-						"color":[255,0,0,255],
-						"allowtypes": [
-							{
-								"name":"out1",
-								"type":"runtime_domain.RuntimeNode"
-							},
-							"Истина"
-						]
+			"while": {
+				"in": {
+					"Вход": {
+						"type": "Flow"
 					},
-					"inp2": {}
-				},
-				"outputs": {
-					"out1": {
-						"allowtypes":["inp1"]
-					},
-					"out2": {}
-				},
-				"options": {
-					"testbool": {
-						"type":"bool",
-						"default": true,
-						"text": "test text",
-						"label": "test label"
-					},
-					"testinput": {
-						"type":"input",
-						"default": "hehehhe",
-						"text": "test text"
-					},
-					"testspin": {
-						"type": "spin",
-						"default": 442,
-						"text": "test spin",
-						"range": {"min":0,"max":100}
-					},
-					"test_floatspin": {
-						"type": "fspin",
-						"default": 1.1,
-						"text": "float point spin",
-						"range": {"min":-101.5,"max":101.5},
-						"floatspindata": {
-							"step": 1.01,
-							"decimals": 5
-						}
-					},
-					"testedit": {
-						"type": "edit",
-						"default": "NON_TEXT",
-						"text": "Header"
-					},
-					"testcheckbox": {
-						"type":"list",
-						"text": "select some items",
-						"default": "third item",
-						"values": ["first item", "second item", "third item"]
-					},
-					"vec2test": {
-						"type": "vec2",
-						"text": "vec2 for 2d vector",
-						"default": [100,100,100]
-					},
-					"testvec3": {
-						"type": "vec3",
-						"text": "vec3 for transform"
-					},
-					"testcolor": {
-						"type": "rgb",
-						"text": "rgb text palette",
-						"default": [255,0,0]
-					},
-					"testcolor_alpha": {
-						"type": "rgba",
-						"text": "rgba palette",
-						"default": [0,255,0,125]
-					},
-					"test_filepath": {
-						"type": "file",
-						"text": "select file",
-						"ext": "*",
-						"root": ".",
-						"title": "Выберите подходящий файл",
-						"default": "test_file_path_as_default"
+					"test1": 1,
+					"test2": 1,
+					"test3": 1,
+					"Выход": {
+						"type": "Flow"
 					}
-				}
+				},
+				"desc": "Цикл",
+				"name": "Тест имя",
+				"path": "Операторы"
 			}
-		},
-		"functions":{
-
-		},
-		"gameobjects":{
-
-		},
-		"gamemodes":{
-
-		},
-		"roles": {
-
 		}
 	}
 }

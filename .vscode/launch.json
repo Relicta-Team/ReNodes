@@ -25,6 +25,17 @@
 			"cwd": "${workspaceFolder}",
 			"console": "integratedTerminal",
 			"justMyCode": true,
+		},
+		{
+			"name": "Generate library",
+			"type": "python",
+			"request": "launch",
+			"args": ["-genlib"],
+			// uses main in rootdir
+			"program": "./main.py",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": true,
 		}
 	]
 }

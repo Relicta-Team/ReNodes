@@ -3,6 +3,7 @@ import time
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication
+from ReNode.app.LibGenerator import GenerateLibFromObj
 from ReNode.app.VERSION import global_version
 from ReNode.app.REVISION import global_revision
 from ReNode.ui.AppWindow import MainWindow
@@ -138,9 +139,14 @@ class FooNode(BaseNode):
 
 def AppMain():
 	global logger
-	app = QApplication(sys.argv)
+	arguments = sys.argv
+
+	if "-genlib" in arguments:
+		sys.exit(GenerateLibFromObj())
+
+	app = QApplication(arguments)
 	QApplication.setStyle( "Fusion" )
-	application = Application(sys.argv) 
+	application = Application(arguments) 
 	logger = RegisterLogger('main')
 	logger.info(f"Loading {Application.appName} (version {Application.getVersionString()})")
 		

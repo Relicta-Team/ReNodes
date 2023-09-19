@@ -42,7 +42,7 @@ class NodeFactory:
 				return obj.__name__
 			return obj
 		logger.info(f"version lib {self.version}")
-		with open("lib_output.json", 'w') as file_out:
+		with open("lib_output.json", 'w',encoding='utf-8') as file_out:
 			json.dump(
 				self.nodes,
 				file_out,

@@ -88,6 +88,9 @@ class TabSearchMenu(QWidget):
         
         treeWidget.headerItem().setText(0,"Select node")
         
+        self._existsTrees = {}
+
+        #debug test nodes
         test = {
             "Операторы.Контрольные структуры": ["operators.while","operators.if_branch"],
             "Операторы.Системные": ["sys.push","sys.pop"],
@@ -100,8 +103,7 @@ class TabSearchMenu(QWidget):
 
         #sort test
         self.dictTreeGen = OrderedDict(sorted(test.items()))
-        self._existsTrees = {}
-        self.build_tree(test)
+        #self.build_tree(test)
         self.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
 
     
