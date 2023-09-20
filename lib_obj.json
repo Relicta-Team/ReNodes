@@ -13,22 +13,54 @@ $REGION:FUNCTIONS
 		"cat": "operators",
 		"in": {
 			"Вход": {
-				"type":"Flow"
-			},
-			"test1":1,
-			"test2":1,
-			"test3":1,
+				"type":"Flow",
+				"allowtypes": ["Flow"]
+			}
+		},
+		"out": {
 			"Выход": {
-				"type":"Flow"
+				"type": "Flow"
 			}
 		},
 		"list": {
 			"if_branch": {
 				"name": "Ветка",
-				"desc": "Ветка"
+				"desc": "Ветка",
+				"out": {
+					"Истина": {
+						"type":"Flow",
+						"allowtypes": ["Flow"]
+					},
+					"Ложь": {
+						"type":"Flow",
+						"allowtypes": ["Flow"]
+					}
+				}
 			},
 			"while": {
-				"desc": "Цикл"
+				"desc": "Цикл",
+				"Цикл": {
+					"type":"Flow",
+					"allowtypes": ["Flow"]
+				},
+				"Конец": {
+					"type":"Flow",
+					"allowtypes": ["Flow"]
+				}
+			}
+		}
+	},
+	"operators": {
+		"boolean_test": {
+			"name": "make boolean",
+			"outputs": {
+				"Булево":{"type":"bool"}
+			}
+		},
+		"test_event_out": {
+			"name": "entry",
+			"outputs": {
+				"Событие": {"type":"Flow"}
 			}
 		}
 	}

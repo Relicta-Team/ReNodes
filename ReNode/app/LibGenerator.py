@@ -87,7 +87,9 @@ def GenerateLibFromObj():
 				nodedata.pop('out')
 
 			catlist[nodename] = nodedata
-	
+
+		commonValues = None
+
 	print("---------- Prep class members region ----------")
 
 	print("---------- Prep class metadata region ----------")

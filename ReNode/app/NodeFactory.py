@@ -191,7 +191,7 @@ class NodeFactory:
 		if "internal." in nodename:
 			node.set_property("name",cfg["name"],False)
 		else:
-			nametext = f'<b>{cfg["name"]}</b>'
+			nametext = f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"]}</b></span>'
 			if cfg.get('desc')!="":
 				nametext += f'<br/><font size=""4"><i>{cfg["desc"]}</i></font>'
 			node.set_property("name",nametext,False,doNotRename=True)

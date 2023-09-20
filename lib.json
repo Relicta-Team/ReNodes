@@ -11,33 +11,74 @@
 		},
 		"operators": {
 			"if_branch": {
-				"path": "Операторы",
 				"name": "Ветка",
 				"desc": "Ветка",
+				"path": "Операторы",
 				"inputs": {
 					"Вход": {
-						"type": "Flow"
+						"type": "Flow",
+						"allowtypes": [
+							"Flow"
+						]
+					}
+				},
+				"outputs": {
+					"Истина": {
+						"type": "Flow",
+						"allowtypes": [
+							"Flow"
+						]
 					},
-					"test1": 1,
-					"test2": 1,
-					"test3": 1,
+					"Ложь": {
+						"type": "Flow",
+						"allowtypes": [
+							"Flow"
+						]
+					}
+				}
+			},
+			"while": {
+				"Цикл": {
+					"type": "Flow",
+					"allowtypes": [
+						"Flow"
+					]
+				},
+				"desc": "Цикл",
+				"name": "Тест имя",
+				"path": "Операторы",
+				"Конец": {
+					"type": "Flow",
+					"allowtypes": [
+						"Flow"
+					]
+				},
+				"inputs": {
+					"Вход": {
+						"type": "Flow",
+						"allowtypes": [
+							"Flow"
+						]
+					}
+				},
+				"outputs": {
 					"Выход": {
 						"type": "Flow"
 					}
 				}
 			},
-			"while": {
-				"path": "Операторы",
-				"desc": "Цикл",
-				"name": "Тест имя",
-				"inputs": {
-					"Вход": {
-						"type": "Flow"
-					},
-					"test1": 1,
-					"test2": 1,
-					"test3": 1,
-					"Выход": {
+			"boolean_test": {
+				"name": "make boolean",
+				"outputs": {
+					"Булево": {
+						"type": "bool"
+					}
+				}
+			},
+			"test_event_out": {
+				"name": "entry",
+				"outputs": {
+					"Событие": {
 						"type": "Flow"
 					}
 				}
