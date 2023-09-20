@@ -77,6 +77,15 @@ def GenerateLibFromObj():
 			if commonValues:
 				nodedata = {key: nodedata.get(key, commonValues.get(key)) for key in set(nodedata) | set(commonValues)}
 
+			# override port keynames
+			if nodedata.get('in'):
+				nodedata['inputs'] = nodedata.get('in')
+				nodedata.pop('in')
+			
+			if nodedata.get('out'):
+				nodedata['outputs'] = nodedata.get('out')
+				nodedata.pop('out')
+
 			catlist[nodename] = nodedata
 	
 	print("---------- Prep class members region ----------")
