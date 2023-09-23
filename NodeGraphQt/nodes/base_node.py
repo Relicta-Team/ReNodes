@@ -397,7 +397,7 @@ class BaseNode(NodeObject):
         self.graph.undo_stack().push(undo_cmd)
 
     def add_input(self, name='input', multi_input=False, display_name=True,
-                  color=None, locked=False, painter_func=None, visibleName=None):
+                  color=None, locked=False, painter_func=None, portType=None):
         """
         Add input :class:`Port` to node.
 
@@ -420,7 +420,7 @@ class BaseNode(NodeObject):
             raise PortRegistrationError(
                 'port name "{}" already registered.'.format(name))
 
-        port_args = [name, multi_input, display_name, locked,visibleName]
+        port_args = [name, multi_input, display_name, locked, portType]
         if painter_func and callable(painter_func):
             port_args.append(painter_func)
         view = self.view.add_input(*port_args)
@@ -470,7 +470,7 @@ class BaseNode(NodeObject):
         return port
 
     def add_output(self, name='output', multi_output=True, display_name=True,
-                   color=None, locked=False, painter_func=None,visibleName = None):
+                   color=None, locked=False, painter_func=None,portType = None):
         """
         Add output :class:`Port` to node.
 
@@ -493,7 +493,7 @@ class BaseNode(NodeObject):
             raise PortRegistrationError(
                 'port name "{}" already registered.'.format(name))
 
-        port_args = [name, multi_output, display_name, locked,visibleName]
+        port_args = [name, multi_output, display_name, locked, portType]
         if painter_func and callable(painter_func):
             port_args.append(painter_func)
         view = self.view.add_output(*port_args)

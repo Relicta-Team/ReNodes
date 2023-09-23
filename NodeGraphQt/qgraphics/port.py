@@ -32,6 +32,8 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._multi_connection = False
         self._locked = False
 
+        self.port_typeName = 'object'
+
     def __str__(self):
         return '{}.PortItem("{}")'.format(self.__module__, self.name)
 

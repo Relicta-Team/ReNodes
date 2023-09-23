@@ -199,12 +199,12 @@ class NodeFactory:
 
 		for inputkey,inputvals in cfg['inputs'].items():
 			port = node.add_input(
-				name=inputvals['type'],
+				name=inputkey,
 				color=inputvals['color'],
 				display_name=inputvals['display_name'],
 				multi_input=inputvals['mutliconnect'],
 				painter_func=self.__getDrawPortFunction(inputvals['style']),
-				visibleName=inputkey
+				portType=inputvals.get('type')
 			)
 			self._prepAccessPortTypes(node,port,inputvals,'out')
 
@@ -220,12 +220,12 @@ class NodeFactory:
 
 		for outputkey,outputvals in cfg['outputs'].items():
 			port = node.add_output(
-				name=outputvals['type'],
+				name=outputkey,
 				color=outputvals['color'],
 				display_name=outputvals['display_name'],
 				multi_output=outputvals['mutliconnect'],
 				painter_func=self.__getDrawPortFunction(outputvals['style']),
-				visibleName=outputkey
+				portType=outputvals.get('type')
 			)
 			self._prepAccessPortTypes(node,port,outputvals,'in')
 		

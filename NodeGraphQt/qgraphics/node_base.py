@@ -898,7 +898,7 @@ class NodeItem(AbstractNodeItem):
         """
         return list(self._output_items.keys())
 
-    def _add_port(self, port,portName=None):
+    def _add_port(self, port):
         """
         Adds a port qgraphics item into the node.
 
@@ -908,7 +908,7 @@ class NodeItem(AbstractNodeItem):
         Returns:
             PortItem: port qgraphics item.
         """
-        text = QtWidgets.QGraphicsTextItem(portName if portName else port.name, self)
+        text = QtWidgets.QGraphicsTextItem(port.name, self) #text = QtWidgets.QGraphicsTextItem(portName if portName else port.name, self)
         text.font().setPointSize(8)
         text.setFont(text.font())
         text.setVisible(port.display_name)
@@ -922,7 +922,7 @@ class NodeItem(AbstractNodeItem):
         return port
 
     def add_input(self, name='input', multi_port=False, display_name=True,
-                  locked=False,portname=None, painter_func=None,scripted_port=None):
+                  locked=False,portType=None, painter_func=None,scripted_port=None):
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         IN_PORT.
@@ -949,10 +949,12 @@ class NodeItem(AbstractNodeItem):
         port.multi_connection = multi_port
         port.display_name = display_name
         port.locked = locked
-        return self._add_port(port,portname)
+        port.port_typeName = portType #Yobas: added port typename
+        port._syncTooltip()
+        return self._add_port(port)
 
     def add_output(self, name='output', multi_port=False, display_name=True,
-                   locked=False,portname=None, painter_func=None):
+                   locked=False,portType=None, painter_func=None):
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         OUT_PORT.
@@ -976,7 +978,9 @@ class NodeItem(AbstractNodeItem):
         port.multi_connection = multi_port
         port.display_name = display_name
         port.locked = locked
-        return self._add_port(port,portname)
+        port.port_typeName = portType #Yobas: added port typename
+        port._syncTooltip()
+        return self._add_port(port)
 
     def _delete_port(self, port, text):
         """
