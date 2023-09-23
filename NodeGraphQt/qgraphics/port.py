@@ -228,11 +228,12 @@ class PortItem(QtWidgets.QGraphicsItem):
     @locked.setter
     def locked(self, value=False):
         self._locked = value
-        conn_type = 'multi' if self.multi_connection else 'single'
+        self._syncTooltip()
+        """conn_type = 'multi' if self.multi_connection else 'single'
         tooltip = '{}: ({})'.format(self.name, conn_type)
         if value:
             tooltip += ' (L)'
-        self.setToolTip(tooltip)
+        self.setToolTip(tooltip)"""
 
     @property
     def multi_connection(self):
@@ -240,9 +241,18 @@ class PortItem(QtWidgets.QGraphicsItem):
 
     @multi_connection.setter
     def multi_connection(self, mode=False):
-        conn_type = 'multi' if mode else 'single'
-        self.setToolTip('{}: ({})'.format(self.name, conn_type))
+        """conn_type = 'multi' if mode else 'single'
+        self.setToolTip('{}: ({})'.format(self.name, conn_type))"""
         self._multi_connection = mode
+        self._syncTooltip()
+
+    def _syncTooltip(self):
+        conn_type = 'Мульт.' if self.multi_connection else 'Одиноч.'
+        tooltip = '{}: ({})'.format(self.name, conn_type)
+        if self._locked:
+            tooltip += ' (Заблокирован)'
+        
+        self.setToolTip('[{}] {}: ({})'.format(self.port_typeName, self.name, conn_type))
 
     @property
     def port_type(self):
