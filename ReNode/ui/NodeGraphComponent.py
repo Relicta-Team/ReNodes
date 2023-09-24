@@ -168,8 +168,8 @@ class NodeGraphComponent:
 		
 		def test_func(graph, node):
 			print('Clicked on node: {}'.format(node.name()))
-		#sect=nmenu.add_menu("TEST NODE MENU")
-		#sect.add_command("testcmd",node_class=RuntimeNode,func=test_func)
+		nmenu.add_menu("TEST NODE MENU")
+		nmenu.add_command("testcmd",func=test_func) #,node_type='operators.if_branch'
 
 		def my_test(graph):
 			ps = graph.viewer().scene_cursor_pos()

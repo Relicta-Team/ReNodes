@@ -34,6 +34,8 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
         self._width = NodeEnum.WIDTH.value
         self._height = NodeEnum.HEIGHT.value
 
+        self.nodeClass = '' #Yobas: custom classname for view
+
     def __repr__(self):
         return '{}.{}(\'{}\')'.format(
             self.__module__, self.__class__.__name__, self.name)

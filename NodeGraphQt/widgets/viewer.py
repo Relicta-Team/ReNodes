@@ -379,7 +379,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             nodes = [i for i in items if isinstance(i, AbstractNodeItem)]
             if nodes:
                 node = nodes[0]
-                ctx_menu = ctx_menus['nodes'].get_menu(node.type_, node.id)
+                ctx_menu = ctx_menus['nodes'].get_menu(node.nodeClass, node.id) #Yobas: fixed typeing from nodeClass
                 if ctx_menu:
                     for action in ctx_menu.actions():
                         if not action.menu():

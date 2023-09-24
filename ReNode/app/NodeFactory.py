@@ -188,6 +188,7 @@ class NodeFactory:
 			node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename})
 		
 		node.nodeClass = nodename
+		node._view.nodeClass = nodename
 		#node.create_property("class_",nodename)
 
 		if "internal." in nodename:
