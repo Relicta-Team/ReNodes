@@ -81,6 +81,8 @@ class NodeFactory:
 		struct['color'] = data.get('color',defcolor)
 		struct['border_color'] = data.get('border_color',defborder)
 
+		struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
+
 		if self.nodes.get(typename):
 			raise Exception(f"node {typename} already exists")
 		
@@ -297,6 +299,7 @@ class NodeFactory:
 		return retval
 		#return {"backdrop": ["system.backdrop"],"test2":['x.v','t.e.ass']}
 	
+	#TODO pass param as node, key = node.class_
 	def getNodeLibData(self,key):
 		if not self.nodes: return None
 		return self.nodes[key]

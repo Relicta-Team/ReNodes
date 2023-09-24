@@ -59,6 +59,7 @@ $REGION:FUNCTIONS
 		},
 		"test_event_out": {
 			"name": "entry",
+			"states": ["event"],
 			"outputs": {
 				"Событие": {"type":"Flow"}
 			}
