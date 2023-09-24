@@ -235,13 +235,13 @@ class Port(object):
         accepted_types = port.accepted_port_types().get(node_type)
         if accepted_types:
             accepted_pnames = accepted_types.get(self.type_()) or set([])
-            if self.name() not in accepted_pnames:
+            if self.view.port_typeName not in accepted_pnames: #Yobas: replaced from self.name() (#15)
                 return
         node_type = port.node().type_
         accepted_types = self.accepted_port_types().get(node_type)
         if accepted_types:
             accepted_pnames = accepted_types.get(port.type_()) or set([])
-            if port.name() not in accepted_pnames:
+            if port.view.port_typeName not in accepted_pnames: #Yobas: replaced from port.name() (#15)
                 return
 
         # validate reject connection.
