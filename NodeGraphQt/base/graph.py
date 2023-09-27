@@ -2036,7 +2036,10 @@ class NodeGraph(QtCore.QObject):
             return
 
         import re
-        if not re.match("^v\d+\@",cb_text):
+        mnum = re.match("^v(\d+)\@",cb_text)
+        if not mnum:
+            return
+        if (int(mnum[1]) != self._factoryRef.version):
             return
         cb_text = re.sub("^v\d+\@","",cb_text,1)
 
