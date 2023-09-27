@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from typing_extensions import override
 from Qt import QtCore, QtWidgets
 
 from NodeGraphQt.constants import ViewerEnum
@@ -61,11 +60,14 @@ class BaseMenu(QtWidgets.QMenu):
     #             a.node_id = None
 
     def get_menu(self, name, node_id=None):
+        
         for action in self.actions():
             menu = action.menu()
             if not menu:
                 continue
             if menu.title() == name:
+                return menu
+            if menu.title() == "all":
                 return menu
             if node_id and menu.node_class:
                 node = menu.graph.get_node_by_id(node_id)
@@ -111,26 +113,4 @@ class NodeAction(GraphAction):
     def _on_triggered(self):
         node = self.graph.get_node_by_id(self.node_id)
         self.executed.emit(self.graph, node)
-
-    #Yobas: changed ge menu logic
-    #TODO done this...
-    def get_menu(self, name, node_id=None):
-        for action in self.actions():
-            menu = action.menu()
-            if not menu:
-                continue
-            if menu.title() == name:
-                return menu
-            if node_id and menu.node_class:
-                node = menu.graph.get_node_by_id(node_id)
-                if isinstance(node, menu.node_class):
-                    return menu
-
-    def get_menus(self, node_class):
-        menus = []
-        for action in self.actions():
-            menu = action.menu()
-            if menu.node_class:
-                if issubclass(menu.node_class, node_class):
-                    menus.append(menu)
-        return menus
+    

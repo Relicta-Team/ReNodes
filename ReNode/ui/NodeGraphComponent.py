@@ -10,6 +10,7 @@ from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import Prop
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.viewer import NodeViewer
 from ReNode.ui.Nodes import RuntimeNode, RuntimeGroup
+from ReNode.ui.NodeContextMenuUtility import *
 from ReNode.app.utils import *
 from ReNode.app.NodeFactory import NodeFactory
 
@@ -169,7 +170,14 @@ class NodeGraphComponent:
 		def test_func(graph, node):
 			print('Clicked on node: {}'.format(node.name()))
 		nmenu.add_menu("TEST NODE MENU")
-		nmenu.add_command("testcmd",func=test_func) #,node_type='operators.if_branch'
+		nmenu.add_command("testcmd",func=test_func,node_type='all') #,node_type='operators.if_branch'
+		
+		
+		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all")
+		nmenu.add_command("Вырезать",func=cut_nodes,node_type="all")
+		nmenu.add_command("Вставить",func=paste_nodes,node_type="all")
+		nmenu.add_command("Удалить выделенные",func=delete_nodes,node_type="all")
+		
 
 		def my_test(graph):
 			ps = graph.viewer().scene_cursor_pos()
@@ -212,7 +220,7 @@ class NodeGraphComponent:
 		gmenu.add_menu("Сцена")
 
 		pass
-
+	
 	def toggleNodeSearch(self):
 		self.graph.toggle_node_search(False,self.nodeFactory)
 
