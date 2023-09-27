@@ -539,7 +539,8 @@ class NodeGraphModel(object):
         if accept_ptype not in connection_data:
             connection_data[accept_ptype] = [accept_pname]  #Yobas: srccpst fix #363
         else:
-            connection_data[accept_ptype].append(accept_pname)
+            if not accept_pname in connection_data[accept_ptype]:
+                connection_data[accept_ptype].append(accept_pname)
 
     def port_accept_connection_types(self, node_type, port_type, port_name):
         """
@@ -584,7 +585,8 @@ class NodeGraphModel(object):
         if reject_ptype not in connection_data:
             connection_data[reject_ptype] = [reject_pname] #Yobas: srccpst fix #363
         else:
-            connection_data[reject_ptype].append(reject_pname)
+            if not reject_pname in connection_data[reject_ptype]:
+                connection_data[reject_ptype].append(reject_pname)
 
     def port_reject_connection_types(self, node_type, port_type, port_name):
         """
