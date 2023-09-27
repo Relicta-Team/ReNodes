@@ -21,7 +21,6 @@ class NodeFactory:
 	def loadFactoryFromJson(self,file_path):
 		logger.info(f"Loading factory from json file {file_path}")
 		self.nodes = {}
-		self.version = 0
 
 		try:
 			with open(file_path,encoding='utf-8') as data_file:

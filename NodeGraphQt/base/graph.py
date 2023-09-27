@@ -1971,9 +1971,13 @@ class NodeGraph(QtCore.QObject):
             return False
         clipboard = QtWidgets.QApplication.clipboard()
         serial_data = self._serialize(nodes)
-        serial_str = json.dumps(serial_data)
+        def default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            return obj
+        serial_str = json.dumps(serial_data,default=default,ensure_ascii=False)
         if serial_str:
-            clipboard.setText(serial_str)
+            clipboard.setText(f"v{self._factoryRef.version}@" + serial_str)
             return True
         return False
 
@@ -2030,6 +2034,11 @@ class NodeGraph(QtCore.QObject):
         cb_text = clipboard.text()
         if not cb_text:
             return
+
+        import re
+        if not re.match("^v\d+\@",cb_text):
+            return
+        cb_text = re.sub("^v\d+\@","",cb_text,1)
 
         try:
             serial_data = json.loads(cb_text)
