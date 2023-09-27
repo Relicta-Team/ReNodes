@@ -1,15 +1,25 @@
 
-def copy_nodes(graph):
+def copy_nodes(graph,node=None):
     """
     Copy nodes to the clipboard.
     """
-    graph.copy_nodes()
+    if graph.selected_nodes():
+        node = None
+    else:
+        if node:
+            node = [node]
+    graph.copy_nodes(node)
 
 
-def cut_nodes(graph):
+def cut_nodes(graph,node):
     """
     Cut nodes to the clip board.
     """
+    if graph.selected_nodes():
+        node = None
+    else:
+        if node:
+            node = [node]
     graph.cut_nodes()
 
 
@@ -20,18 +30,28 @@ def paste_nodes(graph):
     graph.paste_nodes()
 
 
-def delete_nodes(graph):
+def delete_nodes(graph,node=None):
     """
     Delete selected node.
     """
-    graph.delete_nodes(graph.selected_nodes())
+    if graph.selected_nodes():
+        node = graph.selected_nodes()
+    else:
+        if node:
+            node = [node]
+    graph.delete_nodes(node)
 
 
-def extract_nodes(graph):
+def extract_nodes(graph,node=None):
     """
     Extract selected nodes.
     """
-    graph.extract_nodes(graph.selected_nodes())
+    if graph.selected_nodes():
+        node = graph.selected_nodes()
+    else:
+        if node:
+            node = [node]
+    graph.extract_nodes(node)
 
 
 def clear_node_connections(graph):
@@ -64,3 +84,15 @@ def invert_node_selection(graph):
     Invert node selection.
     """
     graph.invert_selection()
+
+def undo(graph):
+    stack = graph._undo_stack
+    if stack.canUndo():
+        stack.undo()
+    pass
+
+def redo(graph):
+    stack = graph._undo_stack
+    if stack.canRedo():
+        stack.redo()
+    pass
