@@ -13,6 +13,7 @@ from ReNode.ui.Nodes import RuntimeNode, RuntimeGroup
 from ReNode.ui.NodeContextMenuUtility import *
 from ReNode.app.utils import *
 from ReNode.app.NodeFactory import NodeFactory
+from ReNode.app.CodeGen import CodeGenerator
 
 from NodeGraphQt.nodes.base_node import *
 from ReNode.ui.TabSearchMenu import TabSearchMenu
@@ -26,6 +27,9 @@ class NodeGraphComponent:
 		
 		#ref from native graph to custom factory
 		graph._factoryRef = self.nodeFactory
+
+		self.codegen = CodeGenerator()
+		self.codegen.graphsys = self
 
 		self.tabSearch : TabSearchMenu = graph._viewer._tabSearch
 		graph._viewer._tabSearch.nodeGraphComponent = self

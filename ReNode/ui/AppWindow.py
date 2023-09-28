@@ -72,6 +72,8 @@ class MainWindow( QMainWindow ):
 		self.exitAction = QAction('&Выход', self, triggered=self.onExit, shortcut="Ctrl+Q", statusTip="Выход")
 		self.reloadStyle = QAction('&Обновить стиль', self, triggered=self.onReloadStyle, shortcut="Ctrl+R")
 
+		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
+
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
 		self.fileMenu.setStatusTip("Основной раздел управления редактором")
@@ -85,6 +87,7 @@ class MainWindow( QMainWindow ):
 		self.fileMenu.addAction(self.reloadStyle)
 
 		self.editMenu = menubar.addMenu("&Правка")
+		self.editMenu.addAction(self.generateCode)
 	
 	def onNewFile(self):
 		logger.info("Новый скрипт")
@@ -141,4 +144,8 @@ class MainWindow( QMainWindow ):
 		
 	def createWindowGraphEditor(self):
 		self.nodeGraph = NodeGraphComponent(self)
+		pass
+
+	def generateCode(self):
+		self.nodeGraph.codegen.generateProcess()
 		pass
