@@ -1,3 +1,4 @@
+from Qt import QtWidgets, QtCore, QtGui
 
 def copy_nodes(graph,node=None):
     """
@@ -96,3 +97,19 @@ def redo(graph):
     if stack.canRedo():
         stack.redo()
     pass
+
+def change_color(graph,node):
+    if not node: return
+    curcol = node.color()
+    opts = QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog
+    #opts |= QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
+    color = QtWidgets.QColorDialog.getColor(
+        QtGui.QColor(*curcol),
+        parent=None,
+        title="Выбор цвета",
+        options=opts
+    )
+    cl = color.getRgb()
+    node.set_color(cl[0],cl[1],cl[2])
+    node._view.update(node._view.boundingRect())
+
