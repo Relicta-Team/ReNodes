@@ -1830,8 +1830,11 @@ class NodeGraph(QtCore.QObject):
                 # only connect if input port is not connected yet or input port
                 # can have multiple connections.
                 # important when duplicating nodes.
+                #!Yobas: fix connection check on copypaste
                 allow_connection = any([not in_port.model.connected_ports,
-                                        in_port.model.multi_connection])
+                                        in_port.model.multi_connection]) and any(
+                                            [not out_port.model.connected_ports,
+                                             out_port.model.multi_connection])
                 if allow_connection:
                     self._undo_stack.push(PortConnectedCmd(in_port, out_port))
 

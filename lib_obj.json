@@ -14,7 +14,8 @@ $REGION:FUNCTIONS
 		"in": {
 			"Вход": {
 				"type":"Flow",
-				"allowtypes": ["Flow"]
+				"allowtypes": ["Flow"],
+				"mutliconnect": true
 			}
 		},
 		"out": {

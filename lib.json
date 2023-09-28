@@ -11,15 +11,16 @@
 		},
 		"operators": {
 			"if_branch": {
-				"desc": "Ветка",
 				"path": "Операторы",
+				"desc": "Ветка",
 				"name": "Ветка",
 				"inputs": {
 					"Вход": {
 						"type": "Flow",
 						"allowtypes": [
 							"Flow"
-						]
+						],
+						"mutliconnect": true
 					}
 				},
 				"outputs": {
@@ -38,27 +39,28 @@
 				}
 			},
 			"while": {
-				"desc": "Цикл",
 				"Цикл": {
 					"type": "Flow",
 					"allowtypes": [
 						"Flow"
 					]
 				},
+				"path": "Операторы",
+				"desc": "Цикл",
 				"Конец": {
 					"type": "Flow",
 					"allowtypes": [
 						"Flow"
 					]
 				},
-				"path": "Операторы",
 				"name": "Тест имя",
 				"inputs": {
 					"Вход": {
 						"type": "Flow",
 						"allowtypes": [
 							"Flow"
-						]
+						],
+						"mutliconnect": true
 					}
 				},
 				"outputs": {
