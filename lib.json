@@ -11,71 +11,95 @@
 		},
 		"operators": {
 			"if_branch": {
-				"path": "Операторы.Ветки",
-				"name": "Ветка (Тест имя)",
+				"name": "Ветка",
 				"desc": "Ветка",
+				"path": "Операторы",
 				"inputs": {
 					"Вход": {
-						"type": "Flow",
+						"type": "Exec",
 						"allowtypes": [
-							"Flow"
+							"Exec"
 						],
-						"mutliconnect": true
+						"mutliconnect": true,
+						"display_name": false
+					},
+					"Условие": {
+						"type": "bool",
+						"allowtypes": [
+							"bool"
+						],
+						"mutliconnect": false
 					}
 				},
 				"outputs": {
 					"Истина": {
-						"type": "Flow",
+						"type": "Exec",
 						"allowtypes": [
-							"Flow"
-						]
+							"Exec"
+						],
+						"display_name": true
 					},
 					"Ложь": {
-						"type": "Flow",
+						"type": "Exec",
 						"allowtypes": [
-							"Flow"
-						]
+							"Exec"
+						],
+						"display_name": true
 					}
 				}
 			},
 			"while": {
-				"path": "Операторы",
-				"name": "Тест имя",
 				"desc": "Цикл",
+				"path": "Операторы",
 				"inputs": {
 					"Вход": {
-						"type": "Flow",
+						"type": "Exec",
 						"allowtypes": [
-							"Flow"
+							"Exec"
 						],
-						"mutliconnect": true
+						"mutliconnect": true,
+						"display_name": false
 					}
 				},
 				"outputs": {
 					"Выход": {
-						"type": "Flow"
-					}
-				}
-			},
-			"boolean_test": {
-				"name": "make boolean",
-				"outputs": {
-					"Булево": {
-						"type": "bool"
-					}
-				}
-			},
-			"test_event_out": {
-				"name": "entry",
-				"states": [
-					"event"
-				],
-				"outputs": {
-					"Событие": {
-						"type": "Flow"
+						"type": "Exec",
+						"allowtypes": [
+							"Exec"
+						],
+						"display_name": false
 					}
 				}
 			}
-		}
+		},
+		"types": {
+			"bool.create": {
+				"name": "Создать булево",
+				"options": {
+					"Значение": {
+						"type": "bool",
+						"default": true
+					}
+				},
+				"path": "Базовые типы.Булево",
+				"inputs": {
+					"Назначить": {
+						"type": "bool",
+						"allowtypes": [
+							"bool"
+						]
+					}
+				},
+				"outputs": {
+					"Получить": {
+						"type": "bool",
+						"allowtypes": [
+							"bool"
+						]
+					}
+				}
+			}
+		},
+		"math": {}
 	}
 }
