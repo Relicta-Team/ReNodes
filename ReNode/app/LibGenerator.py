@@ -72,10 +72,17 @@ def GenerateLibFromObj():
 			catlist = {}
 			outputData['nodes'][cat_or_region] = catlist
 		
+		def applybase(curval,replacercommon = ""):
+			if not isinstance(curval,str): return curval
+
+			if "@base" in curval:
+				return re.sub("\@base",replacercommon,curval)
+			return curval
+
 		for nodename,nodedata in data.items():
 			nodedata:dict=nodedata
 			if commonValues:
-				nodedata = {key: nodedata.get(key, commonValues.get(key)) for key in set(nodedata) | set(commonValues)}
+				nodedata = {key: applybase( nodedata.get(key, commonValues.get(key)) , commonValues.get(key)) for key in set(nodedata) | set(commonValues)}
 
 			# override port keynames
 			if nodedata.get('in'):

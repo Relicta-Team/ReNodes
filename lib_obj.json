@@ -25,7 +25,8 @@ $REGION:FUNCTIONS
 		},
 		"list": {
 			"if_branch": {
-				"name": "Ветка",
+				"path": "@base.Ветки",
+				"name": "Ветка (@base)",
 				"desc": "Ветка",
 				"out": {
 					"Истина": {
@@ -39,15 +40,7 @@ $REGION:FUNCTIONS
 				}
 			},
 			"while": {
-				"desc": "Цикл",
-				"Цикл": {
-					"type":"Flow",
-					"allowtypes": ["Flow"]
-				},
-				"Конец": {
-					"type":"Flow",
-					"allowtypes": ["Flow"]
-				}
+				"desc": "Цикл"
 			}
 		}
 	},

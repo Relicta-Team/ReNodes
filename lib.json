@@ -11,9 +11,9 @@
 		},
 		"operators": {
 			"if_branch": {
-				"path": "Операторы",
+				"path": "Операторы.Ветки",
+				"name": "Ветка (Тест имя)",
 				"desc": "Ветка",
-				"name": "Ветка",
 				"inputs": {
 					"Вход": {
 						"type": "Flow",
@@ -39,21 +39,9 @@
 				}
 			},
 			"while": {
-				"Цикл": {
-					"type": "Flow",
-					"allowtypes": [
-						"Flow"
-					]
-				},
 				"path": "Операторы",
-				"desc": "Цикл",
-				"Конец": {
-					"type": "Flow",
-					"allowtypes": [
-						"Flow"
-					]
-				},
 				"name": "Тест имя",
+				"desc": "Цикл",
 				"inputs": {
 					"Вход": {
 						"type": "Flow",
