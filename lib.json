@@ -11,8 +11,9 @@
 		},
 		"operators": {
 			"if_branch": {
-				"name": "Ветка",
 				"desc": "Ветка",
+				"name": "Ветка",
+				"code": "@in.1; if (@in.2) then {@out.1} else {@out.2};",
 				"path": "Операторы",
 				"inputs": {
 					"Вход": {
@@ -49,8 +50,9 @@
 				}
 			},
 			"while": {
-				"desc": "Цикл",
 				"path": "Операторы",
+				"code": "",
+				"desc": "Цикл",
 				"inputs": {
 					"Вход": {
 						"type": "Exec",
@@ -75,13 +77,13 @@
 		"types": {
 			"bool.create": {
 				"name": "Создать булево",
+				"path": "Базовые типы.Булево",
 				"options": {
 					"Значение": {
 						"type": "bool",
 						"default": true
 					}
 				},
-				"path": "Базовые типы.Булево",
 				"inputs": {
 					"Назначить": {
 						"type": "bool",
@@ -100,6 +102,34 @@
 				}
 			}
 		},
-		"math": {}
+		"math": {},
+		"events": {
+			"main": {
+				"name": "Main",
+				"path": "entry point events",
+				"outputs": {
+					"Выход": {
+						"type": "Exec",
+						"allowtypes": [
+							"Exec"
+						],
+						"display_name": false
+					}
+				}
+			},
+			"onStart": {
+				"name": "OnStart",
+				"path": "entry point events",
+				"outputs": {
+					"Выход": {
+						"type": "Exec",
+						"allowtypes": [
+							"Exec"
+						],
+						"display_name": false
+					}
+				}
+			}
+		}
 	}
 }

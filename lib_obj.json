@@ -10,6 +10,7 @@ $REGION:FUNCTIONS
 	"@sect_control_operators":{
 		"path":"Операторы",
 		"cat": "operators",
+		"code": "",
 		"in": {
 			"Вход": {
 				"type":"Exec","allowtypes": ["Exec"],"mutliconnect": true,"display_name": false
@@ -22,6 +23,7 @@ $REGION:FUNCTIONS
 		},
 		"list": {
 			"if_branch": {
+				"code": "@in.1; if (@in.2) then {@out.1} else {@out.2};",
 				"name": "Ветка",
 				"desc": "Ветка",
 				"out": {
@@ -102,6 +104,23 @@ $REGION:FUNCTIONS
 		},
 		"list": {
 
+		}
+	},
+	"@sect_entrytest": {
+		"path": "entry point events",
+		"cat": "events",
+		"out": {
+			"Выход": {
+				"type":"Exec","allowtypes": ["Exec"],"display_name": false
+			}
+		},
+		"list":{
+			"main": {
+				"name":"Main"
+			},
+			"onStart":{
+				"name":"OnStart"
+			}
 		}
 	}
 }
