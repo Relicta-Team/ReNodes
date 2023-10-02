@@ -79,6 +79,7 @@ class NodeFactory:
 		struct['icon'] = self._nodeKindToIcon(kind)
 		struct['color'] = data.get('color',defcolor)
 		struct['border_color'] = data.get('border_color',defborder)
+		struct['code'] = data.get('code',"")
 
 		struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
 
