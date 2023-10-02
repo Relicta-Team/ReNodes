@@ -13,7 +13,7 @@
 			"if_branch": {
 				"desc": "Ветка",
 				"name": "Ветка",
-				"code": "@in.1; if (@in.2) then {@out.1} else {@out.2};",
+				"code": "@in.1; if (@in.2) then {@out.1} else {@out.2}",
 				"path": "Операторы",
 				"inputs": {
 					"Вход": {
@@ -51,8 +51,9 @@
 			},
 			"while": {
 				"path": "Операторы",
-				"code": "",
+				"code": "@in.1; while {@in.1} do {@out.1}; @out.2;",
 				"desc": "Цикл",
+				"name": "Цикл",
 				"inputs": {
 					"Вход": {
 						"type": "Exec",
@@ -61,15 +62,23 @@
 						],
 						"mutliconnect": true,
 						"display_name": false
+					},
+					"Условие": {
+						"type":"bool","allowtypes":["bool"]
 					}
 				},
 				"outputs": {
-					"Выход": {
+					"Тело цикла": {
 						"type": "Exec",
 						"allowtypes": [
 							"Exec"
-						],
-						"display_name": false
+						]
+					},
+					"При завершении": {
+						"type": "Exec",
+						"allowtypes": [
+							"Exec"
+						]
 					}
 				}
 			}
@@ -78,34 +87,83 @@
 			"bool.create": {
 				"name": "Создать булево",
 				"path": "Базовые типы.Булево",
+				"code": "@out.1 = @values.1;",
 				"options": {
 					"Значение": {
 						"type": "bool",
 						"default": true
 					}
 				},
-				"inputs": {
-					"Назначить": {
-						"type": "bool",
-						"allowtypes": [
-							"bool"
-						]
+				"outputs": {
+					"Получить": {
+						"type": "bool","allowtypes": ["bool"]
+					}
+				}
+			},
+			"num.create": {
+				"name": "Создать число",
+				"path": "Базовые типы.Число",
+				"code":"@out.1 = @values.1;",
+				"options": {
+					"Значение": {
+						"type":"spin",
+						"text":"Значение",
+						"range": {"min":-1000,"max":1000}
 					}
 				},
 				"outputs": {
-					"Получить": {
-						"type": "bool",
-						"allowtypes": [
-							"bool"
-						]
-					}
+					"Получить":{"type":"number", "allowtypes":["number"]}
 				}
 			}
 		},
-		"math": {},
+		"math": {
+			"compeq": {
+				"name": "Равны",
+				"path": "Математика.Сравнение",
+				"code":"((@in.1) == (@in.2))",
+				"inputs": {
+					"Первое": {
+						"type":"number","allowtypes":["number"]
+					},
+					"Второе": {
+						"type":"number","allowtypes":["number"]
+					}
+				},
+				"outputs": {
+					"Результат": {
+						"type":"bool","allowtypes":["bool"]
+					}
+				}
+			},
+			"bcomp_not": {
+				"name":"Логическое НЕ",
+				"path":"Математика.Сравнение",
+				"code": "(!(@in.1))",
+				"inputs": {
+					"Входное": {"type":"bool","allowtypes":["bool"]}
+				},
+				"outputs": {
+					"Результат" : {"type":"bool","allowtypes":["bool"]}
+				}
+			}
+		},
+		"functions": {
+			"debug_print": {
+				"name":"Debug print",
+				"path": "Debug.Print",
+				"code": "[] call debug_print; @out.1",
+				"inputs": {
+					"inp":{"type":"Exec","allowtypes":["Exec"]}
+				},
+				"outputs": {
+					"out": {"type":"Exec","allowtypes":["Exec"]}
+				}
+			}
+		},
 		"events": {
 			"main": {
 				"name": "Main",
+				"code": "entryMain = {@out.1};",
 				"path": "entry point events",
 				"outputs": {
 					"Выход": {
@@ -119,6 +177,7 @@
 			},
 			"onStart": {
 				"name": "OnStart",
+				"code": "onStart = {@out.1};",
 				"path": "entry point events",
 				"outputs": {
 					"Выход": {
