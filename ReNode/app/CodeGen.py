@@ -1,6 +1,6 @@
-
-
+from collections import defaultdict
 import json
+import re
 
 
 class CodeGenerator:
@@ -8,22 +8,10 @@ class CodeGenerator:
         self.generated_code = ""
         self.graphsys = None
 
+        self.serialized_graph = None
+
     def getNodeLibData(self,cls):
         return self.graphsys.nodeFactory.getNodeLibData(cls)
-
-    def generate_graph_code(self, graph_data):
-        nodes = graph_data.get('nodes', {})
-        for node_id, node_data in nodes.items():
-            obj = self.getNodeLibData(node_data['class_'])
-            print(f"node {obj['name']}: {obj['path']}")
-
-        #connections = graph_data.get('connections', [])
-        #for connection in connections:
-        #    connection_code = self.generate_connection_code(connection)
-        #    self.generated_code += f"{connection_code}\n"
-    def generate_from_serialized_data(self, graph_data):
-        self.generate_graph_code(graph_data)
-        #print(self.generated_code)
 
     def generateProcess(self):
         file_path = "./session.json"
@@ -37,4 +25,11 @@ class CodeGenerator:
         if not layout_data:
             return
 
-        self.generate_from_serialized_data(layout_data)
+        self.serialized_graph = layout_data
+
+    def findNodesByClass(self, serialized_graph, class_to_find):
+        node_ids = []
+        for node_id, node_data in serialized_graph["nodes"].items():
+            if node_data["class_"] == class_to_find:
+                node_ids.append(node_id)
+        return node_ids
