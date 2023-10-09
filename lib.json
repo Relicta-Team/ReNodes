@@ -13,7 +13,7 @@
 			"if_branch": {
 				"desc": "Ветка",
 				"name": "Ветка",
-				"code": "@in.1; if (@in.2) then {@out.1} else {@out.2}",
+				"code": "if (@in.2) then {@out.1} else {@out.2};",
 				"path": "Операторы",
 				"inputs": {
 					"Вход": {
@@ -51,7 +51,7 @@
 			},
 			"while": {
 				"path": "Операторы",
-				"code": "@in.1; while {@in.1} do {@out.1}; @out.2;",
+				"code": "while {@in.2} do {@out.1}; @out.2",
 				"desc": "Цикл",
 				"name": "Цикл",
 				"inputs": {
@@ -87,7 +87,7 @@
 			"bool.create": {
 				"name": "Создать булево",
 				"path": "Базовые типы.Булево",
-				"code": "@out.1 = @values.1;",
+				"code": "@values.1",
 				"options": {
 					"Значение": {
 						"type": "bool",
@@ -103,7 +103,7 @@
 			"num.create": {
 				"name": "Создать число",
 				"path": "Базовые типы.Число",
-				"code":"@out.1 = @values.1;",
+				"code":"@values.1",
 				"options": {
 					"Значение": {
 						"type":"spin",
@@ -138,7 +138,7 @@
 			"bcomp_not": {
 				"name":"Логическое НЕ",
 				"path":"Математика.Сравнение",
-				"code": "(!(@in.1))",
+				"code": "!(@in.1)",
 				"inputs": {
 					"Входное": {"type":"bool","allowtypes":["bool"]}
 				},
