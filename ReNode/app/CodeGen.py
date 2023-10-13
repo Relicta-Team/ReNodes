@@ -31,9 +31,83 @@ class CodeGenerator:
         code = "generated:"
         for nodeid in entrys:
             self.visited = set()
-            code += "\n" + self.generateCode(nodeid)
+            code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
 
+    def formatCode(self, instructions):
+        def make_prefix(level):
+            return ' ' * 4 * level
+
+        def normalize_brackets(text):
+            text = re.sub(r'{\s*', '{\n', text)
+            text = re.sub(r'\s*}', '\n}', text)
+            text = re.sub(r'{\s*}', '{}', text)
+            return text
+
+        def normalize_command_structure(text):
+            text = re.sub(r'if\s*\((.*)\)\s*then\s*{', 'if (\\1) then {', text)
+            text = re.sub(r'}\s*else\s*{', '} else {', text)
+            text = re.sub(r'if\s*\((.*)\)\s*exitwith\s*{', 'if (\\1) exitwith {', text)
+            text = re.sub(r'while\s*\{\s*(.*[^\s]*)\s*\}\s*do\s*{', 'while {\\1} do {', text)
+            return text
+
+        def normalize_commas(text):
+            text = re.sub(r', *([^,\n]+)', ', \\1', text)
+            text = re.sub(r'\s*,', ',', text)
+            return text
+
+        def set_indents(text):
+            level = 0
+            empty_line_count = 0
+            delete_next_empty_line = False
+            lines = text.split('\n')
+            result = []
+            for line in lines:
+                if line == '':
+                    if delete_next_empty_line:
+                        continue
+                    empty_line_count += 1
+                    if empty_line_count > 1:
+                        continue
+                else:
+                    empty_line_count = 0
+                delete_next_empty_line = False
+                prefix = make_prefix(level)
+                open_brackets = line.split('[')
+                close_brackets = line.split(']')
+                open_braces = line.split('{')
+                close_braces = line.split('}')
+                open_bracket_count = len(open_brackets)
+                close_bracket_count = len(close_brackets)
+                open_brace_count = len(open_braces)
+                close_brace_count = len(close_braces)
+                is_open_block = len(open_brackets[0].split(']')) > 1 or len(open_braces[0].split('}')) > 1
+                if open_bracket_count > close_bracket_count or open_brace_count > close_brace_count:
+                    level += 1
+                    delete_next_empty_line = True
+                elif open_bracket_count < close_bracket_count or open_brace_count < close_brace_count:
+                    level = max(0, level - 1)
+                    prefix = make_prefix(level)
+                elif is_open_block:
+                    prefix = make_prefix(level - 1)
+                result.append(prefix + line)
+            result = [line for line in result if line is not None]
+            return '\n'.join(result).strip()
+
+        def pretty(text):
+            output = re.sub(r'\/\/[\s\/]*(.*)', r'# \1', text)
+            output = normalize_brackets(output)
+            output = normalize_commas(output)
+            output = normalize_command_structure(output)
+            output = re.sub(r' {2,}', ' ', output)
+            output = re.sub(r'; *([^\n]+)', r';\n\1', output)
+            output = re.sub(r'[\s;]*;', ';', output)
+            output = re.sub(r'\(\s*(.*[^\s])\s*\)', r'(\1)', output)
+            output = set_indents(output)
+            return output
+
+        result = pretty(instructions)
+        return result
 
     def generateCode(self, id):
         if id in self.visited: return ""
