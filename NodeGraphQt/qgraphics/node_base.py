@@ -47,6 +47,8 @@ class NodeItem(AbstractNodeItem):
         self._proxy_mode = False
         self._proxy_mode_threshold = 70
 
+        self._sortedWidgets = None
+
     def post_init(self, viewer, pos=None):
         """
         Called after node has been added into the scene.
@@ -519,12 +521,16 @@ class NodeItem(AbstractNodeItem):
         rect = self.boundingRect()
         y = rect.y() + v_offset
         inputs = [p for p in self.inputs if p.isVisible()]
+        inpDict = {p.name:p for p in inputs}
         outputs = [p for p in self.outputs if p.isVisible()]
-        for widget in self._widgets.values():
+        for widget in self._sortedWidgets: #self._widgets.items():
             if not widget.isVisible():
                 continue
             widget_rect = widget.boundingRect()
-            if not inputs:
+            if widget._name in inpDict:
+                x = rect.left() + 10 #inpDict[widget._name].boundingRect().width()/2
+                widget.widget().setTitleAlign('left')
+            elif not inputs:
                 x = rect.left() + 10
                 widget.widget().setTitleAlign('left')
             elif not outputs:
@@ -577,19 +583,50 @@ class NodeItem(AbstractNodeItem):
         txt_offset = PortEnum.CLICK_FALLOFF.value - 2
         spacing = 1
 
+        #list: widget
+        widgetData = []
+        widgetMap = {nm:w for nm,w in self._widgets.items() if w.isVisible()}
+        disabledPortText = []
+        
         # adjust input position
         inputs = [p for p in self.inputs if p.isVisible()]
         if inputs:
+            #sort widgets
+            for port in inputs:
+                if port.name in widgetMap.keys():
+                    widgetData.append(widgetMap[port.name])
+                    widgetMap.pop(port.name)
+
+            for leftitem in widgetMap.values():
+                widgetData.append(leftitem)
+
+            self._sortedWidgets = widgetData
+
             port_width = inputs[0].boundingRect().width()
             port_height = inputs[0].boundingRect().height()
             port_x = (port_width / 2) * -1
             port_y = v_offset
+            idx = 0
             for port in inputs:
-                port.setPos(port_x, port_y)
-                port_y += port_height + spacing
+                baseY = port_y
+                baseHeight = port_height
+                if idx < len(widgetData):
+                    if widgetData[idx]._name == port.name:
+                        baseY += widgetData[idx].boundingRect().height() / 4
+                        baseHeight = widgetData[idx].boundingRect().height()
+                        disabledPortText.append(port)
+                        idx+=1
+                    else:
+                        pass
+                port.setPos(port_x, baseY)
+                port_y += baseHeight + spacing
+                
         # adjust input text position
         for port, text in self._input_items.items():
             if port.isVisible():
+                if (port in disabledPortText):
+                    text.setVisible(False)
+                    continue
                 txt_x = port.boundingRect().width() / 2 #- txt_offset #Yodes: removed const offset
                 text.setPos(txt_x, port.y() - 1.5)
 

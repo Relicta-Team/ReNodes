@@ -100,6 +100,43 @@
 					}
 				}
 			},
+			"testval_create": {
+				"name": "Make debug value",
+				"path":"",
+				"code": "",
+				"options": {
+					"testtext": {
+						"type": "edit",
+						"default": "NON_TEXT",
+						"text": "Header"
+					},
+					"Start1": {
+						"type":"bool",
+						"default": true,
+						"text": "test text",
+						"label": "test label"
+					},
+					"Start2": {
+						"type":"list",
+						"text": "select some items",
+						"default": "third item",
+						"values": ["first item", "second item", "third item"]
+					}
+				},
+				"inputs": {
+					"Start2": {},
+					"Start3": {"style": "triangle"},
+					"Start1": {"style":"square"},
+					"Start4": {"style":"square"}
+				},
+				"outputs": {
+					"flowexit": {
+						"display_name": true,
+						"type":"Exec",
+						"allowtypes": ["Exec"]
+					}
+				}
+			},
 			"num.create": {
 				"name": "Создать число",
 				"path": "Базовые типы.Число",
