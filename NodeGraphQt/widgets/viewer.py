@@ -861,6 +861,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
             if port.locked:
                 return
 
+            #Yodes: postcheck pipeliveconnection
+            if not port._hovered:
+                return
+
             if not port.multi_connection and port.connected_ports:
                 self._detached_port = port.connected_ports[0]
             self.start_live_connection(port)

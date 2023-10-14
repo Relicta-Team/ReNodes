@@ -590,7 +590,7 @@ class NodeItem(AbstractNodeItem):
         # adjust input text position
         for port, text in self._input_items.items():
             if port.isVisible():
-                txt_x = port.boundingRect().width() / 2 - txt_offset
+                txt_x = port.boundingRect().width() / 2 #- txt_offset #Yodes: removed const offset
                 text.setPos(txt_x, port.y() - 1.5)
 
         # adjust output position
@@ -606,7 +606,7 @@ class NodeItem(AbstractNodeItem):
         # adjust output text position
         for port, text in self._output_items.items():
             if port.isVisible():
-                txt_width = text.boundingRect().width() - txt_offset
+                txt_width = text.boundingRect().width() #- txt_offset #Yodes: removed const offset
                 txt_x = port.x() - txt_width
                 text.setPos(txt_x, port.y() - 1.5)
 

@@ -42,7 +42,7 @@ class PortItem(QtWidgets.QGraphicsItem):
 
     def boundingRect(self):
         return QtCore.QRectF(0.0, 0.0,
-                             self._width + PortEnum.CLICK_FALLOFF.value,
+                             self._width ,#+ PortEnum.CLICK_FALLOFF.value, #Yodes: removed falloff click
                              self._height)
 
     def paint(self, painter, option, widget):
