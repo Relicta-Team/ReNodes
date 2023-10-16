@@ -47,7 +47,8 @@ class NodeItem(AbstractNodeItem):
         self._proxy_mode = False
         self._proxy_mode_threshold = 70
 
-        self._sortedWidgets = None
+        # Tuple of (port,widget, sizeH)
+        self._tupleWidgetData : list[tuple] = None
 
     def post_init(self, viewer, pos=None):
         """
@@ -390,8 +391,17 @@ class NodeItem(AbstractNodeItem):
         elif widget_width:
             side_padding = 10
 
+        #Yodes: custom code
+        #calc maxheight for custom system
+        p_amountHeightOpt = 0.0
+        for prt,wid,sizeH in self._tupleWidgetData:
+            accum = 0
+            if prt:
+                accum += 1 # because exists _align_ports_horizontal -> spacing = 1
+            p_amountHeightOpt += accum + sizeH
+
         width = port_width + max([text_w, port_text_width]) + side_padding
-        height = max([text_h, p_input_height, p_output_height, widget_height])
+        height = max([text_h, p_input_height, p_output_height, widget_height , p_amountHeightOpt])
         if widget_width:
             # add additional width for node widget.
             width += widget_width
@@ -523,7 +533,10 @@ class NodeItem(AbstractNodeItem):
         inputs = [p for p in self.inputs if p.isVisible()]
         inpDict = {p.name:p for p in inputs}
         outputs = [p for p in self.outputs if p.isVisible()]
-        for widget in self._sortedWidgets: #self._widgets.items():
+        for prt,widget,height in self._tupleWidgetData: #self._widgets.items():
+            if not widget:
+                y += height
+                continue
             if not widget.isVisible():
                 continue
             widget_rect = widget.boundingRect()
@@ -540,7 +553,7 @@ class NodeItem(AbstractNodeItem):
                 x = rect.center().x() - (widget_rect.width() / 2)
                 widget.widget().setTitleAlign('center')
             widget.setPos(x, y)
-            y += widget_rect.height()
+            y += height #widget_rect.height()
 
     def _align_widgets_vertical(self, v_offset):
         if not self._widgets:
@@ -583,43 +596,29 @@ class NodeItem(AbstractNodeItem):
         txt_offset = PortEnum.CLICK_FALLOFF.value - 2
         spacing = 1
 
-        #list: widget
-        widgetData = []
-        widgetMap = {nm:w for nm,w in self._widgets.items() if w.isVisible()}
         disabledPortText = []
         
         # adjust input position
         inputs = [p for p in self.inputs if p.isVisible()]
         if inputs:
-            #sort widgets
-            for port in inputs:
-                if port.name in widgetMap.keys():
-                    widgetData.append(widgetMap[port.name])
-                    widgetMap.pop(port.name)
-
-            for leftitem in widgetMap.values():
-                widgetData.append(leftitem)
-
-            self._sortedWidgets = widgetData
 
             port_width = inputs[0].boundingRect().width()
             port_height = inputs[0].boundingRect().height()
             port_x = (port_width / 2) * -1
             port_y = v_offset
-            idx = 0
-            for port in inputs:
-                baseY = port_y
-                baseHeight = port_height
-                if idx < len(widgetData):
-                    if widgetData[idx]._name == port.name:
-                        baseY += widgetData[idx].boundingRect().height() / 4
-                        baseHeight = widgetData[idx].boundingRect().height()
-                        disabledPortText.append(port)
-                        idx+=1
-                    else:
-                        pass
-                port.setPos(port_x, baseY)
-                port_y += baseHeight + spacing
+            # for port in inputs:
+            #     baseY = port_y
+            #     baseHeight = port_height
+            #     port.setPos(port_x, baseY)
+            #     port_y += baseHeight + spacing
+            for prt,w,hsize in self._tupleWidgetData:
+                if prt:
+                    addval = 0
+                    if w:
+                        disabledPortText.append(prt)
+                        addval = port_height/2
+                    prt.setPos(port_x, port_y + addval)
+                port_y += hsize + spacing
                 
         # adjust input text position
         for port, text in self._input_items.items():
@@ -699,6 +698,8 @@ class NodeItem(AbstractNodeItem):
             if port.isVisible():
                 text.setVisible(port.display_name)
 
+        self._calculate_items_positions(v_offset=height)
+
         # setup initial base size.
         self._set_base_size(add_h=height)
         # set text color when node is initialized.
@@ -747,6 +748,38 @@ class NodeItem(AbstractNodeItem):
         self.align_widgets()
 
         self.update()
+
+    def _calculate_items_positions(self, v_offset=0.0):
+        allPorts = [p for p in self.inputs if p.isVisible()]
+
+        retData : list[tuple] = []
+
+        #sorting all widgets by port names
+        widgetMap = {nm:w for nm,w in self._widgets.items() if w.isVisible()}
+        
+        for port in allPorts:
+            if port.name in widgetMap.keys():
+                retData.append((port, widgetMap[port.name]))
+                widgetMap.pop(port.name)
+            else:
+                retData.append((port, None))
+
+        for leftitem in widgetMap.values():
+            retData.append((None, leftitem))
+
+        
+        curY = v_offset
+
+        # Calcluate sizes
+        tsizer : list[tuple] = []
+        for port,wid in retData:
+            maxadd = 0
+            maxadd = port.boundingRect().height() if port else maxadd
+            maxadd = max(maxadd, wid.boundingRect().height()) if wid else maxadd
+            tsizer.append((port, wid, maxadd))
+            pass
+        
+        self._tupleWidgetData = tsizer
 
     def draw_node(self):
         """
