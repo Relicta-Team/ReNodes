@@ -48,7 +48,7 @@ class NodeGraphComponent:
 		#graph.set_pipe_slicing(True) #enabled by default
 		graph.show()
 		
-		dock.setWindowTitle("Editortab")#upper title
+		dock.setWindowTitle("Graph")#upper title
 		
 		#testing tabs system
 		"""graph.widget.tabBar().addTab("testvalue")

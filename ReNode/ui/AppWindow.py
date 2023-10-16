@@ -25,6 +25,9 @@ class MainWindow( QMainWindow ):
 		self.setWindowTitle("Unnamed window")
 		self.setWindowIcon(QtGui.QIcon('./data/pic.png'))
 		
+		#self.tabWidget = QTabWidget()
+		#self.setCentralWidget(self.tabWidget)
+
 		#style setup
 		"""self.setStyleSheet('''
 		    QMainWindow {
@@ -96,7 +99,8 @@ class MainWindow( QMainWindow ):
 	
 	def onNewFile(self):
 		logger.info("Новый скрипт")
-		self.createWindowGraphEditor()
+		self.createNewGraphWindow()
+		#self.createWindowGraphEditor()
 	
 	def onOpenFile(self):
 		logger.info("Открыть")
@@ -149,6 +153,23 @@ class MainWindow( QMainWindow ):
 		
 	def createWindowGraphEditor(self):
 		self.nodeGraph = NodeGraphComponent(self)
+		gr = self.nodeGraph.graph
+		gr.widget.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+		pass
+
+	def createNewGraphWindow(self):
+		src = self.nodeGraph.graph
+		"""graph = NodeGraph(parent=src,kwargs={
+			"model": src.model,
+			"viewer": src.viewer(),
+			"node_factory": src.node_factory
+		})
+		graph._factoryRef = self.nodeFactory"""
+		# from NodeGraphQt import SubGraph
+		# sub = SubGraph(src)
+		# sub.show()
+		
+
 		pass
 
 	def generateCode(self):
