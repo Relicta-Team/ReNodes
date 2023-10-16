@@ -18,6 +18,8 @@ from ReNode.app.CodeGen import CodeGenerator
 from NodeGraphQt.nodes.base_node import *
 from ReNode.ui.TabSearchMenu import TabSearchMenu
 
+from ReNode.ui.VariableManager import VariableManager
+
 class NodeGraphComponent:
 	def __init__(self,mainWindow) -> None:
 		graph = NodeGraph()
@@ -55,6 +57,8 @@ class NodeGraphComponent:
 		# add 20 tabs
 		#for i in range(1,20):
 		#	graph.widget.tabBar().addTab("testvalue")
+
+		self._initVariableManager()
 
 		graph.show()
 		self._addEvents()
@@ -307,3 +311,14 @@ class NodeGraphComponent:
 			else:
 				test[path] = [key]
 		return OrderedDict(sorted(test.items()))
+
+
+	def _initVariableManager(self):
+		variable_manager = VariableManager()
+		#dock.setWidget(self.mainWindow)
+		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
+		variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
+		#dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, variable_manager)
+		#graph.set_pipe_slicing(True) #enabled by default
+		pass
