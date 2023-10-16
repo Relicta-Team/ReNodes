@@ -627,6 +627,7 @@ class NodeItem(AbstractNodeItem):
         for port, text in self._input_items.items():
             if port.isVisible():
                 if (port in disabledPortText):
+                    port.display_name = False
                     text.setVisible(False)
                     continue
                 txt_x = port.boundingRect().width() / 2 #- txt_offset #Yodes: removed const offset
