@@ -15,6 +15,12 @@
 				"name": "Ветка",
 				"code": "if (@in.2) then {@out.1} else {@out.2};",
 				"path": "Операторы",
+				"options": {
+					"Условие": {
+						"type": "bool",
+						"default": true
+					}	
+				},
 				"inputs": {
 					"Вход": {
 						"type": "Exec",
@@ -54,6 +60,12 @@
 				"code": "while {@in.2} do {@out.1}; @out.2",
 				"desc": "Цикл",
 				"name": "Цикл",
+				"options": {
+					"Условие": {
+						"type": "bool",
+						"default": true
+					}	
+				},
 				"inputs": {
 					"Вход": {
 						"type": "Exec",

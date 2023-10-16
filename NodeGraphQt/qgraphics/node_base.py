@@ -529,12 +529,15 @@ class NodeItem(AbstractNodeItem):
         if not self._widgets:
             return
         rect = self.boundingRect()
+        spacing = 1
         y = rect.y() + v_offset
         inputs = [p for p in self.inputs if p.isVisible()]
         inpDict = {p.name:p for p in inputs}
         outputs = [p for p in self.outputs if p.isVisible()]
         for prt,widget,height in self._tupleWidgetData: #self._widgets.items():
             if not widget:
+                if prt:
+                    y += spacing
                 y += height
                 continue
             if not widget.isVisible():
@@ -616,7 +619,7 @@ class NodeItem(AbstractNodeItem):
                     addval = 0
                     if w:
                         disabledPortText.append(prt)
-                        addval = port_height/2
+                        addval = hsize/2-(port_height/2)
                     prt.setPos(port_x, port_y + addval)
                 port_y += hsize + spacing
                 
