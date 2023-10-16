@@ -161,8 +161,13 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
         # connection constrains.
         # TODO: maybe this should be a reference to the graph model instead?
+        #! Yodes: do not use this varaibles, now use references from modelRef
         self.accept_connection_types = None
         self.reject_connection_types = None
+
+
+        from NodeGraphQt.base.model import NodeGraphModel
+        self.modelRef : NodeGraphModel = None
 
     def __repr__(self):
         return '<{}() object at {}>'.format(
@@ -942,7 +947,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         from_ptype = from_port.port_type
 
         # validate the start.
-        from_data = self.accept_connection_types.get(from_port.node.type_) or {}
+        from_data = self.modelRef.accept_connection_types.get(from_port.node.type_) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
         accept_data = constraints.get(to_port.node.type_, {})
         accepted_pnames = accept_data.get(to_ptype, {})
@@ -953,7 +958,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 accept_validation.append(False)
 
         # validate the end.
-        to_data = self.accept_connection_types.get(to_port.node.type_) or {}
+        to_data = self.modelRef.accept_connection_types.get(to_port.node.type_) or {}
         constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
         accept_data = constraints.get(from_port.node.type_, {})
         accepted_pnames = accept_data.get(from_ptype, {})
@@ -982,7 +987,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         to_ptype = to_port.port_type
         from_ptype = from_port.port_type
 
-        to_data = self.reject_connection_types.get(to_port.node.type_) or {}
+        to_data = self.modelRef.reject_connection_types.get(to_port.node.type_) or {}
         constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
         reject_data = constraints.get(from_port.node.type_, {})
 
@@ -992,7 +997,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 return True
             return False
 
-        from_data = self.reject_connection_types.get(from_port.node.type_) or {}
+        from_data = self.modelRef.reject_connection_types.get(from_port.node.type_) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
         reject_data = constraints.get(to_port.node.type_, {})
 

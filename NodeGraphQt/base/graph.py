@@ -157,6 +157,9 @@ class NodeGraph(QtCore.QObject):
             kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack)
         )
         
+        #linking viewer to model
+        self._viewer.modelRef = self._model
+
         #Yodes: reftofactory
         self._factoryRef = None
 
