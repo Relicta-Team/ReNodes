@@ -112,8 +112,8 @@ class CodeGenerator:
     def generateCode(self, id):
         if id in self.visited: return ""
         self.visited.add(id)
-
-        libNode = self.getNodeLibData(self.serialized_graph['nodes'][id]['class_'])
+        nodeObject = self.serialized_graph['nodes'][id]
+        libNode = self.getNodeLibData(nodeObject['class_'])
         codeprep = libNode['code']
 
         execDict = self.getExecPins(id)
@@ -121,7 +121,10 @@ class CodeGenerator:
         
         #process inputs
         for i,(k,v) in enumerate(libNode.get('inputs',{}).items()):
-            if not inputDict.get(k): continue
+            if not inputDict.get(k):
+                print(f"{i} < {k} is not defined. Attempt use value from custom")
+                codeprep = codeprep.replace(f'@in.{i+1}', f"{nodeObject['custom'].get(k,' NULL ')}" )
+                continue
 
             outcode = self.generateCode(inputDict.get(k))
             print(f"{i} < {k} returns: {outcode}")
@@ -138,7 +141,7 @@ class CodeGenerator:
             print(f"{i} > {k} returns: {outcode}")
             codeprep = codeprep.replace(f'@out.{i+1}',outcode)
             pass
-    
+
         #postcheck outputs
         if "@out." in codeprep:
             codeprep = re.sub(r"@out.\d+","",codeprep)
