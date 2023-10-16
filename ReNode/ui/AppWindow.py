@@ -74,6 +74,8 @@ class MainWindow( QMainWindow ):
 
 		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
 
+		self.switchVariableViewerAction = QAction("&Переключить виджет переменных",self,triggered=self.switchVariableViewer,shortcut="Alt+1")
+
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
 		self.fileMenu.setStatusTip("Основной раздел управления редактором")
@@ -88,6 +90,9 @@ class MainWindow( QMainWindow ):
 
 		self.editMenu = menubar.addMenu("&Правка")
 		self.editMenu.addAction(self.generateCode)
+
+		self.windows = menubar.addMenu("&Окна")
+		self.windows.addAction(self.switchVariableViewerAction)
 	
 	def onNewFile(self):
 		logger.info("Новый скрипт")
@@ -149,3 +154,8 @@ class MainWindow( QMainWindow ):
 	def generateCode(self):
 		self.nodeGraph.codegen.generateProcess()
 		pass
+
+	def switchVariableViewer(self):
+		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())
+		self.nodeGraph.variable_manager.syncActionText()
+		

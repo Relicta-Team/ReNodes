@@ -22,9 +22,10 @@ from ReNode.ui.VariableManager import VariableManager
 
 class NodeGraphComponent:
 	def __init__(self,mainWindow) -> None:
+		from ReNode.ui.AppWindow import MainWindow
 		graph = NodeGraph()
 		self.graph = graph
-		self.mainWindow = mainWindow
+		self.mainWindow : MainWindow = mainWindow
 		self.nodeFactory : NodeFactory = mainWindow.nodeFactory
 		
 		#ref from native graph to custom factory
@@ -36,6 +37,7 @@ class NodeGraphComponent:
 		self.tabSearch : TabSearchMenu = graph._viewer._tabSearch
 		graph._viewer._tabSearch.nodeGraphComponent = self
 
+		self.variable_manager = None
 
 		dock = QDockWidget("Editor main")
 		dock.setWidget(graph.widget)
@@ -44,6 +46,7 @@ class NodeGraphComponent:
 		#dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 		mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
 		#graph.set_pipe_slicing(True) #enabled by default
+		graph.show()
 		
 		dock.setWindowTitle("Editortab")#upper title
 		
@@ -60,7 +63,6 @@ class NodeGraphComponent:
 
 		self._initVariableManager()
 
-		graph.show()
 		self._addEvents()
 		self.contextMenuLoad()
 
@@ -314,11 +316,14 @@ class NodeGraphComponent:
 
 
 	def _initVariableManager(self):
-		variable_manager = VariableManager()
+		variable_manager = VariableManager(actionVarViewer=self.mainWindow.switchVariableViewerAction)
+		self.variable_manager = variable_manager
 		#dock.setWidget(self.mainWindow)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
 		variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		#dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, variable_manager)
 		#graph.set_pipe_slicing(True) #enabled by default
+
+		variable_manager.syncActionText(True)
 		pass

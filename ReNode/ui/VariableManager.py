@@ -1,15 +1,24 @@
 from PyQt5.QtWidgets import QMainWindow,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 
 class VariableManager(QDockWidget):
-    def __init__(self):
+    def __init__(self,actionVarViewer = None):
+        
         super().__init__("Variables")
         self.variable_type_combo = None
         self.variable_name_input = None
         self.default_value_input = None
         self.variable_tree = None
+
+        self.actionVarViewer = actionVarViewer
         
         self.initUI()
         
+    def syncActionText(self,initState=None):
+        condition = self.isVisible()
+        if initState:
+            condition = initState
+        newtext = "&Скрыть окно переменных" if condition else "&Показать окно переменных"
+        self.actionVarViewer.setText(newtext)
 
     def initUI(self):
         # Создайте центральный виджет для док-зоны
