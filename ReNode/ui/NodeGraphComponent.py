@@ -109,6 +109,7 @@ class NodeGraphComponent:
 		#n_backdrop.wrap_nodes([groupnode, node])
 
 		self.generateTreeDict()
+		self.graph.load_session(".\\session.json")
 		
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
@@ -186,6 +187,28 @@ class NodeGraphComponent:
 		nmenu.add_command("Очистить подключения",func=clear_node_connections,node_type='all')
 		nmenu.add_separator()
 		nmenu.add_command("Снять выделение",func=clear_node_selection,node_type='all')
+
+		def __debaddport(graph, node):
+			import random
+			rname = f"random name {random.randrange(1,100000)}"
+			node.add_input(
+				name=rname,
+				color=None,
+				display_name=True,
+				multi_input=True,
+				painter_func=None,
+				portType=f'allof'
+			)
+		nmenu.add_command("DEBUG ADD PORT",func=__debaddport,node_type='all')
+		def __debaddvalue(graph,node):
+			import random
+			rname = f"random name {random.randrange(1,100000)}"
+			node.add_text_input(
+				name=rname,
+				label=rname,
+				text=rname
+			)
+		nmenu.add_command("DEBUG ADD VALUE",func=__debaddvalue,node_type='all')
 
 		def my_test(graph):
 			ps = graph.viewer().scene_cursor_pos()
