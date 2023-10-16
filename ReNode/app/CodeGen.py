@@ -9,12 +9,15 @@ class CodeGenerator:
         self.graphsys = None
 
         self.serialized_graph = None
-        self.visited = None
+
+        self._addComments = False
 
     def getNodeLibData(self,cls):
         return self.graphsys.nodeFactory.getNodeLibData(cls)
 
-    def generateProcess(self):
+    def generateProcess(self,addComments=False):
+        self._addComments = addComments
+
         file_path = "./session.json"
         try:
             with open(file_path) as data_file:
@@ -30,7 +33,6 @@ class CodeGenerator:
         entrys = self.findNodesByClass("events.onStart")
         code = "generated:"
         for nodeid in entrys:
-            self.visited = set()
             code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
 
@@ -109,24 +111,34 @@ class CodeGenerator:
         result = pretty(instructions)
         return result
 
-    def generateCode(self, id):
-        if id in self.visited: return ""
-        self.visited.add(id)
+    def generateCode(self, id,fromid=None,path=None):
+
+        if not path:
+            path = []
+
+        if id in path: return "CICLE_HANDLED"
+        path.append(id)
+
         nodeObject = self.serialized_graph['nodes'][id]
         libNode = self.getNodeLibData(nodeObject['class_'])
         codeprep = libNode['code']
+        if self._addComments:
+            codeprep = f"//[{id}]:{nodeObject['class_']}\n" + codeprep
 
         execDict = self.getExecPins(id)
         inputDict = self.getInputs(id)
         
         #process inputs
         for i,(k,v) in enumerate(libNode.get('inputs',{}).items()):
-            if not inputDict.get(k):
-                print(f"{i} < {k} is not defined. Attempt use value from custom")
+            inpId = inputDict.get(k)
+            if (inpId == fromid): continue #do not generate from prev node
+            
+            if not inpId:
+                print(f"{i} < {k} is not defined, custom: {nodeObject['custom'].get(k,' NULL ')}")
                 codeprep = codeprep.replace(f'@in.{i+1}', f"{nodeObject['custom'].get(k,' NULL ')}" )
                 continue
 
-            outcode = self.generateCode(inputDict.get(k))
+            outcode = self.generateCode(inpId,id,path)
             print(f"{i} < {k} returns: {outcode}")
             codeprep = codeprep.replace(f'@in.{i+1}',outcode)
             pass
@@ -137,7 +149,7 @@ class CodeGenerator:
             
             if not execDict.get(k): continue
 
-            outcode = self.generateCode(execDict.get(k))
+            outcode = self.generateCode(execDict.get(k),id,path)
             print(f"{i} > {k} returns: {outcode}")
             codeprep = codeprep.replace(f'@out.{i+1}',outcode)
             pass
@@ -145,6 +157,8 @@ class CodeGenerator:
         #postcheck outputs
         if "@out." in codeprep:
             codeprep = re.sub(r"@out.\d+","",codeprep)
+
+        path.pop()
 
         return codeprep
 
