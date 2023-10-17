@@ -235,6 +235,7 @@ class NodeGraph(QtCore.QObject):
         self._viewer.node_selection_changed.connect(
             self._on_node_selection_changed)
         self._viewer.data_dropped.connect(self._on_node_data_dropped)
+        self._viewer.data_dropped_from_tree.connect(self._on_node_data_dropped_from_tree)
         self._viewer.context_menu_prompt.connect(self._on_context_menu_prompt)
 
     def _on_context_menu_prompt(self, menu_name, node_id):
@@ -346,6 +347,18 @@ class NodeGraph(QtCore.QObject):
         sel_nodes = [self.get_node_by_id(nid) for nid in sel_ids]
         unsel_nodes = [self.get_node_by_id(nid) for nid in desel_ids]
         self.node_selection_changed.emit(sel_nodes, unsel_nodes)
+
+    def _on_node_data_dropped_from_tree(self,text,pos_x,pos_y):
+        
+        nodeSystem = self._viewer._tabSearch.nodeGraphComponent
+        #print(f"({nodeSystem})DATA DROP FROM {pos_x}:{pos_y} AS {text}")
+
+        tabSearch = self._viewer._tabSearch
+        tabSearch._close()
+        self._factoryRef.instance(text,pos=[pos_x,pos_y],graphref=self)
+        self._viewer.setFocus()
+
+        pass
 
     def _on_node_data_dropped(self, data, pos):
         """

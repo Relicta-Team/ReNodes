@@ -74,12 +74,17 @@ class TabSearchMenu(QWidget):
         treeWidget.setHeaderHidden(True)
         treeWidget.setAnimated(True)
         treeWidget.setIndentation(10)
+        
+        #dragndrop logic
+        treeWidget.setDragEnabled(True)
+        treeWidget.setDragDropMode(treeWidget.DragOnly)
+        treeWidget.setDefaultDropAction(Qt.MoveAction)
+        
+        
 
         treeWidget.itemDoubleClicked.connect(self.itemDoubleClicked)
         
         self.lastMousePos = None
-
-        #treeWidget.setDragEnabled(True)
 
         self.delegate = HighlightingDelegate(self.tree)
         self.delegate.editor = self.edit
@@ -188,6 +193,7 @@ class TabSearchMenu(QWidget):
                 item = self._existsTrees[cur_cat]
             else:
                 item = QTreeWidgetItem(parent_item, [cur_section])
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 self._existsTrees[cur_cat] = item
 
             if len(key_parts) > 1:
@@ -200,7 +206,9 @@ class TabSearchMenu(QWidget):
                         if self.nodeGraphComponent:
                             item_name = self._getAssociatedNodeName(value)
                         value_item = QTreeWidgetItem(item, [item_name])
+                        value_item.setFlags(value_item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                         value_item.setData(0, QtCore.Qt.UserRole, value)
+                        
 
             if parent_item is None:
                 self.tree.addTopLevelItem(item)
@@ -233,6 +241,7 @@ class TabSearchMenu(QWidget):
         if data:
             self._close()
             self.nodeGraphComponent.nodeFactory.instance(data,pos=self.lastMousePos,graphref=self.nodeGraphComponent.graph)
+            self.nodeGraphComponent.graph._viewer.setFocus()
     
     def onDragFromPipeContext(self,pipe: PipeItem):
         self.nodeGraphComponent.toggleNodeSearch()

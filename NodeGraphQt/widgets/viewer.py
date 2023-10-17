@@ -53,6 +53,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
     node_selection_changed = QtCore.Signal(list, list)
     node_double_clicked = QtCore.Signal(str)
     data_dropped = QtCore.Signal(QtCore.QMimeData, QtCore.QPoint)
+    data_dropped_from_tree = QtCore.Signal(str, float,float)
     context_menu_prompt = QtCore.Signal(str, object)
 
     def __init__(self, parent=None, undo_stack=None):
@@ -696,16 +697,28 @@ class NodeViewer(QtWidgets.QGraphicsView):
     def dropEvent(self, event):
         pos = self.mapToScene(event.pos())
         event.setDropAction(QtCore.Qt.CopyAction)
+
+        if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):
+            txt = event.source().currentItem().data(0,QtCore.Qt.UserRole)
+            self.data_dropped_from_tree.emit(txt, pos.x(), pos.y())
+            return
+
         self.data_dropped.emit(
             event.mimeData(), QtCore.QPoint(pos.x(), pos.y()))
 
     def dragEnterEvent(self, event):
+        if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):
+            event.accept()
+            return
         if event.mimeData().hasFormat('text/uri-list'):
             event.accept()
         else:
             event.ignore()
 
     def dragMoveEvent(self, event):
+        if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):
+            event.accept()
+            return
         if event.mimeData().hasFormat('text/uri-list'):
             event.accept()
         else:
