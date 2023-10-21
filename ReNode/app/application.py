@@ -2,7 +2,7 @@ import sys
 import time
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from ReNode.app.LibGenerator import GenerateLibFromObj
 from ReNode.app.VERSION import global_version
 from ReNode.app.REVISION import global_revision
@@ -111,6 +111,34 @@ class Application:
 		Config.saveConfig()
 		pass
 
+class ExceptionHandler:
+	def __init__(self):
+		self.logger = logging.getLogger('main')  # Имя вашего логгера
+		self.handler = None
+
+	def handle_exception(self, exctype, value, traceback_obj):
+		import traceback
+		self.logger.error("Unhandled exception", exc_info=(exctype, value, traceback_obj))
+		
+		tb_text = "".join(traceback.format_exception(exctype, value, traceback_obj))
+		error_message = f"\n{Application.appName} {Application.getVersionString()}\nНеобработанное исключение: {exctype.__name__}\n{value}\n\n{tb_text}"
+		#TODO copy error message to clipboard
+		QMessageBox.critical(None, "Критическая ошибка", error_message)
+		
+
+		# Вы можете выполнить другие действия здесь, например, показать диалог с сообщением об ошибке.
+		sys.__excepthook__(exctype, value, traceback_obj)  # Вызов стандартного обработчика исключений
+		sys.exit(-1)
+
+	def enable(self):
+		self.handler = sys.excepthook
+		sys.excepthook = self.handle_exception
+
+	def disable(self):
+		if self.handler is not None:
+			sys.excepthook = self.handler
+
+
 
 def AppMain():
 	global logger
@@ -119,12 +147,17 @@ def AppMain():
 	if "-genlib" in arguments:
 		sys.exit(GenerateLibFromObj())
 
+	if getattr(sys, 'frozen', False):
+		# Инициализация обработчика исключений
+		exception_handler = ExceptionHandler()
+		exception_handler.enable()
+
 	app = QApplication(arguments)
 	QApplication.setStyle( "Fusion" )
 	application = Application(arguments) 
 	logger = RegisterLogger('main')
 	logger.info(f"Loading {Application.appName} (version {Application.getVersionString()})")
-		
+
 	"""graph = NodeGraph()
 	graph.show()
 
