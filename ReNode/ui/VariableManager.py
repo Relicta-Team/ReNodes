@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import QMainWindow,QCompleter,QListView,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import *
 
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
@@ -19,6 +20,72 @@ class VariableTypedef:
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
 
+class VariableCategory:
+    def __init__(self,varcat='',varcatText = ''):
+        self.category = varcat
+        self.categoryTextName = varcatText
+
+class ExtendedComboBox(QComboBox):
+    def __init__(self, parent=None):
+        super(ExtendedComboBox, self).__init__(parent)
+
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setEditable(True)
+
+        # add a filter model to filter matching items
+        self.pFilterModel = QSortFilterProxyModel(self)
+        self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.pFilterModel.setSourceModel(self.model())
+
+        # add a completer, which uses the filter model
+        self.completer = QCompleter(self.pFilterModel, self)
+        # always show all (filtered) completions
+        self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.setCompleter(self.completer)
+
+        # connect signals
+        self.lineEdit().textEdited.connect(self.pFilterModel.setFilterFixedString)
+        self.completer.activated.connect(self.on_completer_activated)
+        self.currentIndexChanged.connect(self._onCurIndChanged)
+
+        self.lastIndex = -1
+
+    def _onCurIndChanged(self,*args,**kwargs):
+        self.lastIndex = args[0]
+
+    def focusInEvent(self, e) -> None:
+        self.lastIndex = self.currentIndex()
+        return super().focusInEvent(e)
+
+    def focusOutEvent(self, e) -> None:
+        idx = self.findText(self.lineEdit().text())
+        if idx >= 0:
+            self.setCurrentIndex(idx)
+        else:
+            self.setCurrentIndex(self.lastIndex)
+        return super().focusOutEvent(e)
+
+    # on selection of an item from the completer, select the corresponding item from combobox 
+    def on_completer_activated(self, text):
+        if text:
+            index = self.findText(text)
+            self.setCurrentIndex(index)
+            self.activated[str].emit(self.itemText(index))
+
+
+    # on model change, update the models of the filter and completer as well 
+    def setModel(self, model):
+        super(ExtendedComboBox, self).setModel(model)
+        self.pFilterModel.setSourceModel(model)
+        self.completer.setModel(self.pFilterModel)
+
+
+    # on model column change, update the model column of the filter and completer as well
+    def setModelColumn(self, column):
+        self.completer.setCompletionColumn(column)
+        self.pFilterModel.setFilterKeyColumn(column)
+        super(ExtendedComboBox, self).setModelColumn(column)   
+
 class VariableManager(QDockWidget):
     def __init__(self,actionVarViewer = None):
         
@@ -33,6 +100,12 @@ class VariableManager(QDockWidget):
             VariableTypedef("int","Целое число",IntValueEdit),
             VariableTypedef("float","Дробное число",FloatValueEdit),
             VariableTypedef("string","Строка",PropTextEdit)
+        ]
+
+        self.variableCategoryList = [
+            VariableCategory('localvariable',"Локальная переменная"),
+            VariableCategory('classvariable','Переменная графа')
+            #TODO constants
         ]
 
         self.initUI()
@@ -53,15 +126,25 @@ class VariableManager(QDockWidget):
         layout = QVBoxLayout()
         self.widLayout = layout
 
-        layout.addWidget(QLabel("Тип переменной:"))
-        self.widVarType = QComboBox()
+        layout.addWidget(QLabel("Категория переменной:"))
+        self.widCat = QComboBox()
+        for vcat in self.variableCategoryList:
+            self.widCat.addItem(vcat.categoryTextName)
+        self.widCat.currentIndexChanged.connect(self._onVariableCategoryChanged)
+        layout.addWidget(self.widCat)
+        # self.widCat.setEditable(True)
+        # self.widCat.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
+        # # change completion mode of the default completer from InlineCompletion to PopupCompletion
+        # self.widCat.completer().setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+
+        layout.addWidget(QLabel("Тип данных:"))
+        self.widVarType = ExtendedComboBox()
         for vobj in self.variableTempateData:
             self.widVarType.addItem(vobj.variableTextName,vobj)
         self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
-        
         layout.addWidget(self.widVarType)
 
-        layout.addWidget(QLabel("Имя переменной:"))
+        layout.addWidget(QLabel("Имя:"))
         self.widVarName = QLineEdit()
         layout.addWidget(self.widVarName)
 
@@ -87,6 +170,10 @@ class VariableManager(QDockWidget):
         newIndex = args[0]
         varobj = self.variableTempateData[newIndex]
         print(f"New variable type is {varobj}")
+        pass
+
+    def _onVariableCategoryChanged(self, *args, **kwargs):
+        newIndex = args[0]
         pass
 
     def createVariable(self):
