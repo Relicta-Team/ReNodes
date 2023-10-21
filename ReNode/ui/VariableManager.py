@@ -12,18 +12,17 @@ class VariableInfo:
 
 class VariableTypedef:
     def __init__(self,vart="",vartText="",classMaker=None):
-        self.variableType = vart
-        self.variableTypeName = vartText
+        self.variableType = vart #typename
+        self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
+    
+    def __repr__(self):
+        return f"{self.variableType} ({self.variableTextName})"
 
 class VariableManager(QDockWidget):
     def __init__(self,actionVarViewer = None):
         
         super().__init__("Variables")
-        self.variable_type_combo = None
-        self.variable_name_input = None
-        self.default_value_input = None
-        self.variable_tree = None
 
         self.actionVarViewer = actionVarViewer
         
@@ -52,65 +51,52 @@ class VariableManager(QDockWidget):
 
         # Создайте вертикальный макет для центрального виджета
         layout = QVBoxLayout()
+        self.widLayout = layout
 
         layout.addWidget(QLabel("Тип переменной:"))
-        # Выпадающий список для выбора типа переменной
-        variable_type_combo = QComboBox()
+        self.widVarType = QComboBox()
         for vobj in self.variableTempateData:
-            variable_type_combo.addItem(vobj.variableTypeName,vobj)
-        variable_type_combo.currentIndexChanged.connect(self._onVariableTypeChanged)
-        layout.addWidget(variable_type_combo)
-        self.variable_type_combo = variable_type_combo
+            self.widVarType.addItem(vobj.variableTextName,vobj)
+        self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
+        
+        layout.addWidget(self.widVarType)
 
         layout.addWidget(QLabel("Имя переменной:"))
-        # Поле для ввода имени переменной
-        variable_name_input = QLineEdit()
-        layout.addWidget(variable_name_input)
-        self.variable_name_input = variable_name_input
+        self.widVarName = QLineEdit()
+        layout.addWidget(self.widVarName)
 
         layout.addWidget(QLabel("Начальное значение:"))
-        # Поле для ввода дефолтного значения
-        default_value_input = QLineEdit()
-        layout.addWidget(default_value_input)
-        self.default_value_input = default_value_input
-
-        self.tempvalue = None
-        prop = PropSlider()
-        layout.addWidget(prop)
-        self.tempvalue = prop
-        self.lay = layout
+        self.widInitVal = QLineEdit()
+        layout.addWidget(self.widInitVal)
 
         # Кнопка создания переменной
-        create_variable_button = QPushButton("Create Variable")
-        create_variable_button.setMinimumWidth(200)
-        create_variable_button.setMinimumHeight(40)
-        create_variable_button.clicked.connect(self.createVariable)
-        layout.addWidget(create_variable_button,alignment=Qt.AlignmentFlag.AlignCenter)
+        self.widCreateVar = QPushButton("Создать")
+        self.widCreateVar.setMinimumWidth(200)
+        self.widCreateVar.setMinimumHeight(40)
+        self.widCreateVar.clicked.connect(self.createVariable)
+        layout.addWidget(self.widCreateVar,alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Дерево для отображения списка переменных
-        variable_tree = QTreeWidget()
-        variable_tree.setHeaderLabels(["Name", "Type", "Default Value"])
-        layout.addWidget(variable_tree)
-        self.variable_tree = variable_tree
+        self.widVarTree = QTreeWidget()
+        self.widVarTree.setHeaderLabels(["Name", "Type", "Default Value"])
+        layout.addWidget(self.widVarTree)
 
         central_widget.setLayout(layout)
 
     def _onVariableTypeChanged(self, *args, **kwargs):
-        
-        self.tempvalue.deleteLater()
-        layout = self.lay
-        self.tempvalue = PropTextEdit()
-        layout.insertWidget(4,self.tempvalue)
+        newIndex = args[0]
+        varobj = self.variableTempateData[newIndex]
+        print(f"New variable type is {varobj}")
         pass
 
     def createVariable(self):
         # Получите значения типа переменной, имени и дефолтного значения
-        variable_type = self.variable_type_combo.currentText()
-        variable_name = self.variable_name_input.text()
-        default_value = self.default_value_input.text()
+        variable_type = self.widVarType.currentText()
+        variable_name = self.widVarName.text()
+        default_value = self.widInitVal.text()
 
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
         item = QTreeWidgetItem([variable_name, variable_type, default_value])
-        self.variable_tree.addTopLevelItem(item)
+        self.widVarTree.addTopLevelItem(item)
 
 
