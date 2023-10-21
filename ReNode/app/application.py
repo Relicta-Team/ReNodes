@@ -47,6 +47,9 @@ class Application:
 	def getVersionString():
 		return f"{Application.appVersion[0]}.{Application.appVersion[1]}.{Application.appRevision}"
 
+	def isExecutable(self):
+		return getattr(sys, 'frozen', False)
+
 	#construct
 	def __init__(self,args):
 		
@@ -108,34 +111,6 @@ class Application:
 		Config.saveConfig()
 		pass
 
-'''class NodeGraphPanel(QtWidgets.QDockWidget):
-	"""
-	Widget wrapper for the node graph that can be docked to
-	the main window.
-	"""
-
-	def __init__(self, graph, parent=None):
-		super(NodeGraphPanel, self).__init__(parent)
-		self.setObjectName('nodeGraphQt.NodeGraphPanel')
-		self.setWindowTitle('Редактор логики')
-		self.setWidget(graph.widget)
-
-class FooNode(BaseNode):
-
-	# unique node identifier domain.
-	__identifier__ = 'testident'
-
-	# initial default node name.
-	NODE_NAME = 'Foo Node'
-
-	def __init__(self):
-		super(FooNode, self).__init__()
-
-		# create an input port.
-		self.add_input('in', color=(180, 80, 0))
-
-		# create an output port.
-		self.add_output('out')'''
 
 def AppMain():
 	global logger
