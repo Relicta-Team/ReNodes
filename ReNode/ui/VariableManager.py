@@ -100,7 +100,8 @@ class VariableManager(QDockWidget):
         self.variableTempateData = [
             VariableTypedef("int","Целое число",IntValueEdit),
             VariableTypedef("float","Дробное число",FloatValueEdit),
-            VariableTypedef("string","Строка",PropTextEdit)
+            VariableTypedef("string","Строка",PropTextEdit),
+            VariableTypedef("bool","Булево",PropCheckBox)
         ]
 
         self.variableCategoryList = [
@@ -133,10 +134,6 @@ class VariableManager(QDockWidget):
             self.widCat.addItem(vcat.categoryTextName)
         self.widCat.currentIndexChanged.connect(self._onVariableCategoryChanged)
         layout.addWidget(self.widCat)
-        # self.widCat.setEditable(True)
-        # self.widCat.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
-        # # change completion mode of the default completer from InlineCompletion to PopupCompletion
-        # self.widCat.completer().setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
 
         layout.addWidget(QLabel("Тип данных:"))
         self.widVarType = ExtendedComboBox()
@@ -147,11 +144,14 @@ class VariableManager(QDockWidget):
 
         layout.addWidget(QLabel("Имя:"))
         self.widVarName = QLineEdit()
+        self.widVarName.setMaxLength(128)
         layout.addWidget(self.widVarName)
 
         layout.addWidget(QLabel("Начальное значение:"))
         self.widInitVal = QLineEdit()
         layout.addWidget(self.widInitVal)
+        self._initialValue = None
+        self._onVariableTypeChanged((0))
 
         # Кнопка создания переменной
         self.widCreateVar = QPushButton("Создать")
@@ -170,8 +170,14 @@ class VariableManager(QDockWidget):
     
     def _onVariableTypeChanged(self, *args, **kwargs):
         newIndex = args[0]
-        varobj = self.variableTempateData[newIndex]
-        print(f"New variable type is {varobj}")
+        varobj : VariableTypedef = self.variableTempateData[newIndex]
+        typeInstance = varobj.classInstance
+        #print(f"New variable type is {varobj}")
+        idx = self.widLayout.indexOf(self.widInitVal)
+        self.widInitVal.deleteLater()
+        self.widInitVal = typeInstance()
+        self.widLayout.insertWidget(idx,self.widInitVal)
+        self._initialValue = self.widInitVal.get_value()
         pass
 
     def _onVariableCategoryChanged(self, *args, **kwargs):
@@ -201,13 +207,17 @@ class VariableManager(QDockWidget):
         # Получите значения типа переменной, имени и дефолтного значения
         variable_type = self.widVarType.currentText()
         variable_name = self.widVarName.text()
-        default_value = self.widInitVal.text()
+        default_value = self.widInitVal.get_value()
+        if not isinstance(default_value,str): default_value = str(default_value)
         current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
 
         category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
         if not category_tree_name:
             raise Exception("Неизвестная категория для создания переменной")
         
+        if not variable_name:
+            self.showErrorMessageBox(f"Укажите имя переменной")
+            return
 
         variable_exists = self.variableExists(category_tree_name, variable_name)
         
@@ -229,4 +239,4 @@ class VariableManager(QDockWidget):
 
         # Очистите поля ввода
         self.widVarName.clear()
-        self.widInitVal.clear()
+        self.widInitVal.set_value(self._initialValue)
