@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QMainWindow,QCompleter,QListView,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QMainWindow,QMessageBox,QCompleter,QListView,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import *
 
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
@@ -21,9 +21,10 @@ class VariableTypedef:
         return f"{self.variableType} ({self.variableTextName})"
 
 class VariableCategory:
-    def __init__(self,varcat='',varcatText = ''):
+    def __init__(self,varcat='',varcatText = '',varcatTextTree=''):
         self.category = varcat
         self.categoryTextName = varcatText
+        self.categoryTreeTextName = varcatTextTree
 
 class ExtendedComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -103,8 +104,8 @@ class VariableManager(QDockWidget):
         ]
 
         self.variableCategoryList = [
-            VariableCategory('localvariable',"Локальная переменная"),
-            VariableCategory('classvariable','Переменная графа')
+            VariableCategory('localvariable',"Локальная переменная","Локальные переменные"),
+            VariableCategory('classvariable','Переменная графа',"Переменные графа")
             #TODO constants
         ]
 
@@ -161,11 +162,12 @@ class VariableManager(QDockWidget):
 
         # Дерево для отображения списка переменных
         self.widVarTree = QTreeWidget()
-        self.widVarTree.setHeaderLabels(["Name", "Type", "Default Value"])
+        self.widVarTree.setHeaderLabels(["Имя", "Тип", "Значение"])
+        self.widVarTree.setColumnWidth(0,self.widVarTree.columnWidth(0)*2)
         layout.addWidget(self.widVarTree)
 
         central_widget.setLayout(layout)
-
+    
     def _onVariableTypeChanged(self, *args, **kwargs):
         newIndex = args[0]
         varobj = self.variableTempateData[newIndex]
@@ -176,14 +178,55 @@ class VariableManager(QDockWidget):
         newIndex = args[0]
         pass
 
+    def variableExists(self, category, name):
+        # Проверка наличия переменной с заданным именем в выбранной категории
+        category_item = self.widVarTree.findItems(category, Qt.MatchExactly)
+        if category_item:
+            category_item = category_item[0]
+            for row in range(category_item.childCount()):
+                item = category_item.child(row)
+                if item.text(0) == name:
+                    return True
+        return False
+
+    def showErrorMessageBox(self, message):
+        # Отобразите сообщение об ошибке в диалоговом окне
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setText(message)
+        msg_box.setWindowTitle("Ошибка")
+        msg_box.exec_()
+
     def createVariable(self):
         # Получите значения типа переменной, имени и дефолтного значения
         variable_type = self.widVarType.currentText()
         variable_name = self.widVarName.text()
         default_value = self.widInitVal.text()
+        current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
+
+        category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
+        if not category_tree_name:
+            raise Exception("Неизвестная категория для создания переменной")
+        
+
+        variable_exists = self.variableExists(category_tree_name, variable_name)
+        
+        if variable_exists:
+            # Выведите сообщение об ошибке
+            self.showErrorMessageBox(f"Переменная с именем '{variable_name}' уже существует в категории '{category_tree_name}'!")
+            return
 
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
         item = QTreeWidgetItem([variable_name, variable_type, default_value])
-        self.widVarTree.addTopLevelItem(item)
 
+        itmsTree = self.widVarTree.findItems(category_tree_name,Qt.MatchExactly)
+        if itmsTree:
+            itmsTree[0].addChild(item)
+        else:
+            itmsTree = QTreeWidgetItem([category_tree_name])
+            self.widVarTree.addTopLevelItem(itmsTree)
+            itmsTree.addChild(item)
 
+        # Очистите поля ввода
+        self.widVarName.clear()
+        self.widInitVal.clear()
