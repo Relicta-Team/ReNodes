@@ -96,7 +96,7 @@ class VariableManager(QDockWidget):
 
         self.actionVarViewer = actionVarViewer
         
-        #varmap
+        #varmap: class, local
         self.variables = {}
         
         self.variableTempateData = [
@@ -272,7 +272,8 @@ class VariableManager(QDockWidget):
             "name": variable_name,
             "type": var_typename,
             "value": default_value,
-            "category": cat_sys_name
+            "category": cat_sys_name,
+            "realname": "_" + variableSystemName if cat_sys_name == "local" else variableSystemName
         }
 
         # Очистите поля ввода
@@ -291,7 +292,18 @@ class VariableManager(QDockWidget):
         cfg = fact.getNodeLibData(_class)
         nodeObj.set_property('name',f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"].format(lvdata["name"])}</b></span>',False,
             doNotRename=True)
-        nodeObj.set_property('value','hidden',id)
+        nodeObj.set_property('nameid',id)
+
+        code = ""
+        if lvdata['category']=='local':
+            code = f"{lvdata['realname']}" if getorset == "get" else f"{lvdata['realname']} = @in.2; @out.1"
+        elif lvdata['category']=='class':
+            code = "" if getorset == "get" else ""
+        else:
+            raise Exception(f"Unknown category {lvdata['category']}")
+        
+        nodeObj.set_property('code',code)
+
         if "set" == getorset:
             props = vartypedata.dictProp
             for k,v in props.items():

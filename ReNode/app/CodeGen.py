@@ -15,6 +15,9 @@ class CodeGenerator:
     def getNodeLibData(self,cls):
         return self.graphsys.nodeFactory.getNodeLibData(cls)
 
+    def getVariableDict(self) -> dict:
+        return self.graphsys.variable_manager.variables
+
     def generateProcess(self,addComments=False):
         self._addComments = addComments
 
@@ -32,6 +35,11 @@ class CodeGenerator:
         self.serialized_graph = layout_data
         entrys = self.findNodesByClass("events.onStart")
         code = "generated:"
+
+        # generate classvars
+        for vid,vdat in self.getVariableDict().get('class',{}).items():
+            code += "\n" + f'var({vdat["realname"]},{vdat["value"]});'
+
         for nodeid in entrys:
             code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
@@ -128,8 +136,28 @@ class CodeGenerator:
         execDict = self.getExecPins(id)
         inputDict = self.getInputs(id)
         
+        inputsDictFromLib = libNode.get('inputs',{}).items()
+
+        #if codeprep == RUNTIME them get nodeObject['custom']['code']
+        isLocalVar = codeprep == "RUNTIME"
+        if isLocalVar: 
+            codeprep = nodeObject['custom']['code']
+            #find key if not "nameid" and "code"
+            addedName = next((key for key in nodeObject['custom'].keys() if key not in ['nameid','code']),None)
+            if addedName:
+                inputsDictFromLib = list(inputsDictFromLib)
+                inputsDictFromLib.append((addedName,{}))
+            
+
+        
+        if "@initvars" in codeprep:
+            initlocalvars = ""
+            for k,vdat in self.getVariableDict().get('local',{}).items():
+                initlocalvars += f'\nprivate {vdat["realname"]} = {vdat["value"]};'
+            codeprep = codeprep.replace("@initvars",initlocalvars)
+
         #process inputs
-        for i,(k,v) in enumerate(libNode.get('inputs',{}).items()):
+        for i,(k,v) in enumerate(inputsDictFromLib):
             inpId = inputDict.get(k)
             if (inpId == fromid): continue #do not generate from prev node
             

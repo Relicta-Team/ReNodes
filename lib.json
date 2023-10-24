@@ -99,9 +99,12 @@
 			"get": {
 				"isVisibleInLib": false,
 				"name":"Получить {}",
-				"code": "@values.1",
+				"code": "RUNTIME",
 				"options": {
-					"value": {
+					"nameid": {
+						"type":"hidden"
+					},
+					"code": {
 						"type": "hidden"
 					}
 				},
@@ -112,9 +115,12 @@
 			"set": {
 				"isVisibleInLib": false,
 				"name":"Назначить {}",
-				"code": "@values.1 = @in.2",
+				"code": "RUNTIME",
 				"options": {
-					"value": {
+					"nameid": {
+						"type":"hidden"
+					},
+					"code": {
 						"type": "hidden"
 					}
 				},
@@ -243,7 +249,7 @@
 		"events": {
 			"main": {
 				"name": "Main",
-				"code": "entryMain = {@out.1};",
+				"code": "entryMain = {@initvars @out.1};",
 				"path": "entry point events",
 				"outputs": {
 					"Выход": {
@@ -257,7 +263,7 @@
 			},
 			"onStart": {
 				"name": "OnStart",
-				"code": "onStart = {@out.1};",
+				"code": "onStart = {@initvars @out.1};",
 				"path": "entry point events",
 				"outputs": {
 					"Выход": {
