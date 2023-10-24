@@ -94,13 +94,35 @@ class GraphAction(QtWidgets.QAction):
         self.triggered.connect(self._on_triggered)
 
     def _on_triggered(self):
-        self.executed.emit(self.graph)
+        self.executed.emit(self.actionType, self.graph)
 
     def get_action(self, name):
         for action in self.qmenu.actions():
             if not action.menu() and action.text() == name:
                 return action
 
+class ContextAction(QtWidgets.QAction):
+    
+    executed = QtCore.Signal(object,object,object)
+
+    def __init__(self, *args, **kwargs):
+        super(ContextAction, self).__init__(*args, **kwargs)
+        self.graph = None
+        self.actionType = "UnknownAction"
+        self.contextData = {}
+        self.actionKind = ""
+        self.optionalFormatter = ""
+        self.triggered.connect(self._on_triggered)
+
+    def _on_triggered(self):
+        self.executed.emit(self.actionType,self.contextData,self.graph)
+
+    #! non-used
+    def get_action(self, name):
+        for action in self.qmenu.actions():
+            if not action.menu() and action.text() == name:
+                return action
+            
 
 class NodeAction(GraphAction):
 

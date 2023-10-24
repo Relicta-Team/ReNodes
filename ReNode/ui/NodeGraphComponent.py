@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5 import *
 
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
-from NodeGraphQt.base.menu import NodesMenu
+from NodeGraphQt.base.menu import NodesMenu,ContextMenu
 from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import PropertiesBinWidget
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.viewer import NodeViewer
@@ -177,7 +177,8 @@ class NodeGraphComponent:
 	def contextMenuLoad(self):
 		gmenu : NodeGraphMenu = self.graph.get_context_menu("graph")
 		nmenu : NodesMenu = self.graph.get_context_menu("nodes")
-		
+		ctxmenu : ContextMenu = self.graph.get_context_menu("context")
+
 		def test_func(graph, node):
 			print('Clicked on node: {}'.format(node.name()))
 		nmenu.add_menu("TEST NODE MENU")
@@ -260,6 +261,13 @@ class NodeGraphComponent:
 		scm.add_command("Выбрать все",func=select_all_nodes,shortcut="Ctrl+A")
 		scm.add_command("Снять выделение",func=clear_node_selection,shortcut=None)
 		scm.add_command("Инвертировать выделение",func=invert_node_selection,shortcut=None)
+
+		# ------------ context menu ------------
+		def __coyvar(actType,ctxDataMap,graph):
+			print(f'{actType}:{ctxDataMap}; {graph}')
+		ctxmenu.add_command("Получить \"{}\"",func=__coyvar,actionKind="addVariable")
+		ctxmenu.add_command("Установить \"{}\"",func=__coyvar,actionKind="addVariable")
+		ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
 
 		pass
 	

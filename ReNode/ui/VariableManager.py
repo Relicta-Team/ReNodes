@@ -94,8 +94,8 @@ class VariableManager(QDockWidget):
 
         self.actionVarViewer = actionVarViewer
         
-        self.localVariables = {}
-        self.classVariables = {}
+        #varmap
+        self.variables = {}
         
         self.variableTempateData = [
             VariableTypedef("int","Целое число",IntValueEdit),
@@ -105,8 +105,8 @@ class VariableManager(QDockWidget):
         ]
 
         self.variableCategoryList = [
-            VariableCategory('localvariable',"Локальная переменная","Локальные переменные"),
-            VariableCategory('classvariable','Переменная графа',"Переменные графа")
+            VariableCategory('local',"Локальная переменная","Локальные переменные"),
+            VariableCategory('class','Переменная графа',"Переменные графа")
             #TODO constants
         ]
 
@@ -218,6 +218,9 @@ class VariableManager(QDockWidget):
         if not category_tree_name:
             raise Exception("Неизвестная категория для создания переменной")
         
+        cat_sys_name = next((obj.category for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
+        var_typename = next((obj.variableType for obj in self.variableTempateData if obj.variableTextName == variable_type),None)
+
         if not variable_name:
             self.showErrorMessageBox(f"Укажите имя переменной")
             return
@@ -232,6 +235,8 @@ class VariableManager(QDockWidget):
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
         item = QTreeWidgetItem([variable_name, variable_type, default_value])
         item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
+        variableSystemName = hex(id(item))
+        item.setData(0, QtCore.Qt.UserRole, variableSystemName)
 
         itmsTree = self.widVarTree.findItems(category_tree_name,Qt.MatchExactly)
         if itmsTree:
@@ -241,6 +246,14 @@ class VariableManager(QDockWidget):
             itmsTree.setFlags(itmsTree.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
             self.widVarTree.addTopLevelItem(itmsTree)
             itmsTree.addChild(item)
+
+        if not self.variables.get(cat_sys_name):
+            self.variables[cat_sys_name] = {}
+        self.variables[cat_sys_name][variableSystemName] = {
+            "name": variable_name,
+            "type": var_typename,
+            "value": default_value
+        }
 
         # Очистите поля ввода
         self.widVarName.clear()

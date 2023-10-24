@@ -138,6 +138,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         # context menus.
         self._ctx_graph_menu = BaseMenu('NodeGraph', self)
         self._ctx_node_menu = BaseMenu('Nodes', self)
+        self._ctx_context_menu = BaseMenu('Context', self)
 
         if undo_stack:
             self._undo_action = undo_stack.createUndoAction(self, '&Undo')
@@ -183,6 +184,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         #                 conflict with parent existing host app.
         self._ctx_menu_bar.addMenu(self._ctx_graph_menu)
         self._ctx_menu_bar.addMenu(self._ctx_node_menu)
+        self._ctx_menu_bar.addMenu(self._ctx_context_menu)
         return super(NodeViewer, self).focusInEvent(event)
 
     def focusOutEvent(self, event):
@@ -204,10 +206,12 @@ class NodeViewer(QtWidgets.QGraphicsView):
         # "node context menu" disabled by default and enabled when a action
         # is added through the "NodesMenu" interface.
         self._ctx_node_menu.setDisabled(True)
+        self._ctx_context_menu.setDisabled(True)
 
         # add the base menus.
         self._ctx_menu_bar.addMenu(self._ctx_graph_menu)
         self._ctx_menu_bar.addMenu(self._ctx_node_menu)
+        self._ctx_menu_bar.addMenu(self._ctx_context_menu)
 
         # setup the undo and redo actions.
         if self._undo_action and self._redo_action:
@@ -697,8 +701,17 @@ class NodeViewer(QtWidgets.QGraphicsView):
     def dropEvent(self, event):
         pos = self.mapToScene(event.pos())
         event.setDropAction(QtCore.Qt.CopyAction)
-
+        
         if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):
+            if event.source().objectName() == 'VariableManager.tree':
+                menu = self.context_menus()['context']
+                menu.setEnabled(True)
+                curitem = event.source().currentItem()
+                varid = curitem.data(0,QtCore.Qt.UserRole)
+                graphRef = self._tabSearch.nodeGraphComponent.graph
+                graphRef.get_context_menu('context').prepareActions("addVariable",{'id':varid},fmtText=curitem.text(0))
+                menu.exec_(QtGui.QCursor.pos())
+                return
             txt = event.source().currentItem().data(0,QtCore.Qt.UserRole)
             self.data_dropped_from_tree.emit(txt, pos.x(), pos.y())
             return
@@ -1291,7 +1304,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         Returns:
             dict: viewer context menu.
         """
-        return {'graph': self._ctx_graph_menu, 'nodes': self._ctx_node_menu}
+        return {'graph': self._ctx_graph_menu, 'nodes': self._ctx_node_menu, 'context': self._ctx_context_menu}
 
     def question_dialog(self, text, title='Node Graph'):
         """

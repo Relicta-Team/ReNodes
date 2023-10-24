@@ -12,7 +12,7 @@ from NodeGraphQt.base.commands import (NodeAddedCmd,
                                        NodeMovedCmd,
                                        PortConnectedCmd)
 from NodeGraphQt.base.factory import NodeFactory
-from NodeGraphQt.base.menu import NodeGraphMenu, NodesMenu
+from NodeGraphQt.base.menu import NodeGraphMenu, NodesMenu, ContextMenu
 from NodeGraphQt.base.model import NodeGraphModel
 from NodeGraphQt.base.node import NodeObject
 from NodeGraphQt.base.port import Port
@@ -207,6 +207,8 @@ class NodeGraph(QtCore.QObject):
             self._context_menu['graph'] = NodeGraphMenu(self, menus['graph'])
         if menus.get('nodes'):
             self._context_menu['nodes'] = NodesMenu(self, menus['nodes'])
+        if menus.get('context'):
+            self._context_menu['context'] = ContextMenu(self, menus['context'])
 
     def _register_builtin_nodes(self):
         """

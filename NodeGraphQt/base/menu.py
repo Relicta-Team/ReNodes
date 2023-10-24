@@ -5,7 +5,7 @@ from distutils.version import LooseVersion
 from Qt import QtGui, QtCore
 
 from NodeGraphQt.errors import NodeMenuError
-from NodeGraphQt.widgets.actions import BaseMenu, GraphAction, NodeAction
+from NodeGraphQt.widgets.actions import BaseMenu, GraphAction, NodeAction, ContextAction
 
 
 class NodeGraphMenu(object):
@@ -161,6 +161,43 @@ class NodeGraphMenu(object):
         self.qmenu.addSeparator()
         self._items.append(None)
 
+class ContextMenu(NodeGraphMenu):
+    
+    def add_command(self, name, func=None, shortcut=None,actionKind = ""):
+        """
+        Adds a command to the context menu.
+
+        Args:
+            name (str): command name.
+            func (function): command function eg. "func(``graph``)".
+            shortcut (str): shortcut key.
+
+        Returns:
+            NodeGraphQt.NodeGraphCommand: the appended command.
+        """
+        action = ContextAction(name, self._graph.viewer())
+        action.graph = self._graph
+        action.actionKind = actionKind
+        action.optionalFormatter = name
+        if LooseVersion(QtCore.qVersion()) >= LooseVersion('5.10'):
+            action.setShortcutVisibleInContextMenu(True)
+
+        if shortcut:
+            self._set_shortcut(action, shortcut)
+        if func:
+            action.executed.connect(func)
+        self.qmenu.addAction(action)
+        command = NodeGraphCommand(self._graph, action, func)
+        self._commands[name] = command
+        self._items.append(command)
+        return command
+    
+    def prepareActions(self,cat,ctx,fmtText=""):
+        for act in self.qmenu.actions():
+            act.setVisible(cat == act.actionKind)
+            act.actionType = cat
+            act.contextData = ctx
+            act.setText(act.optionalFormatter.format(fmtText))
 
 class NodesMenu(NodeGraphMenu):
     """
