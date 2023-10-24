@@ -195,7 +195,7 @@ QTableView {
 	gridline-color: #5A5A5A;
 }
 
-QTabBar {
+/* QTabBar {
 	margin-left: 0px;
 }
 
@@ -209,7 +209,7 @@ QTabBar::tab {
 
 QTabBar::tab:selected {
 	background: #353535;
-}
+} */
 /*! not active... */
 QComboBox::down-arrow {
 	border: 1px solid #5A5A5A;

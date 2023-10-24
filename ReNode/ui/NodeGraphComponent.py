@@ -43,13 +43,16 @@ class NodeGraphComponent:
 		dock.setWidget(graph.widget)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
 		dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
-		#dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		#dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+		dock.setWindowTitle("Граф")#upper title
+		#dock.setWindowFlags(Qt.Widget)
+		# Скройте заголовок и кнопки закрытия, максимизации и сворачивания.
+		#dock.setTitleBarWidget(QWidget())
 		mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
-		#graph.set_pipe_slicing(True) #enabled by default
 		graph.show()
-		
-		dock.setWindowTitle("Graph")#upper title
-		
+
+		self._initTabs(dock)
+
 		#testing tabs system
 		"""graph.widget.tabBar().addTab("testvalue")
 		tabbar = graph.widget.tabBar()
@@ -67,48 +70,6 @@ class NodeGraphComponent:
 		self.contextMenuLoad()
 
 		self.registerNodes()
-		"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode')
-		node.add_input('in', color=(0, 80, 0), display_name=True)
-		node.add_output('out',False,False)
-		node.add_text_input('text1',"testlable",'default',"displaytab")
-		node.add_text_input('text2',"testlable")
-		node.add_text_input('text3',"testlable")
-		node.add_checkbox("cb",text="this is value a testing data 12  ada wd aw d")
-		node.add_combo_menu("cm","combo",["фыфыфыфы","ЙЙЙЙ ","СЕСЕСЕС"])
-		
-		
-		node.set_icon("data\\function_sim.png")
-		node.set_property("name","<b>Действие</b><br/><font size=""4""><i>Дополнительные данные</i></font>",False)
-		wd : NodeCheckBox = node.get_widget("cb")
-		# add event on checked changed
-		def on_value_changed(self, *args, **kwargs):
-			if args[0]:
-				node.add_output('out' + str(uuid.uuid4().hex),False,False)
-			print(f"wid:{self} -> CHANGE: {args} AND:{kwargs}")
-			pass
-		wd.value_changed.connect(on_value_changed)
-		
-		def on_intchange(self, *args, **kwargs):
-			val = args[0]
-			intval = intTryParse(val)
-			if str(intval)!=val:
-				node.set_property(self,str("0"))
-			pass
-
-		node.get_widget("text1").value_changed.connect(on_intchange)
-
-		graph.clear_selection()
-		graph.fit_to_selection()
-		#properties_bin = PropertiesBinWidget(node_graph=graph)
-		#properties_bin.setWindowFlags(QtCore.Qt.Tool)
-		self.update(node)"""
-		
-		"""groupnode : GroupNode = graph.create_node("runtime_domain.RuntimeGroup")
-		groupnode.set_name("TESTNAME <b>TEST</b>")
-		groupnode.add_input("input")
-		groupnode.add_output("ouput")
-		groupnode.expand()
-		sg = graph.sub_graphs"""
 
 		graph.auto_layout_nodes() 
 		#n_backdrop = graph.create_node('Backdrop')
@@ -116,7 +77,7 @@ class NodeGraphComponent:
 
 		self.generateTreeDict()
 		self.graph.load_session(".\\session.json")
-		
+
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
 		"""Get NodeGraph API object"""
@@ -353,3 +314,17 @@ class NodeGraphComponent:
 		self.variable_manager._updateNode(nodeObj,varid,getorset)
 		self.graph.undo_view.blockSignals(False)
 		pass
+
+	def _initTabs(self,dock):
+		tab_widget = QTabWidget()
+		tab_widget.setMovable(True)  # Разрешите перетаскивание вкладок.
+		tab_widget.setTabsClosable(True)
+		#!tab_widget.setFixedHeight(tab_widget.tabBar().height())
+		#! Скрыть границу между доком графа и вкладками.
+		#tab_widget.setContentsMargins(0, 0, 0, 0)
+		# Создайте и добавьте вкладки в верхнюю док-зону.
+		tab_widget.addTab(QWidget(), 'Вкладка 1')
+		tab_widget.addTab(QWidget(), 'Вкладка 2')
+		#mainWindow.setCentralWidget(tab_widget)
+
+		dock.setTitleBarWidget(tab_widget)
