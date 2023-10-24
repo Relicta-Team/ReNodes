@@ -51,7 +51,7 @@ class CodeGenerator:
                 self.typesVarNames[v['systemname']] = v['type']
 
                 if vcat=='local':
-                    self.aliasVarNames[v['systemname']] = #f"_LVAR{i+1}"
+                    self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
                     #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
                 elif vcat=='class':
                     self.aliasVarNames[v['systemname']] = f"classMember_{i+1}"
@@ -169,7 +169,6 @@ class CodeGenerator:
         inputsDictFromLib = libNode.get('inputs',{}).items()
 
         #if codeprep == RUNTIME them get nodeObject['custom']['code']
-        nameid = None
         if isLocalVar:
             codeprep = nodeObject['custom']['code']
             if self._addComments:
@@ -181,7 +180,7 @@ class CodeGenerator:
             addedName = next((key for key in nodeObject['custom'].keys() if key not in ['nameid','code']),None)
             if addedName:
                 inputsDictFromLib = list(inputsDictFromLib)
-                inputsDictFromLib.append((addedName,{}))
+                inputsDictFromLib.append((addedName,{'type':self.typesVarNames.get(nameid,None)}))
 
         #process inputs
         for i,(k,v) in enumerate(inputsDictFromLib):
@@ -190,7 +189,7 @@ class CodeGenerator:
             
             if not inpId:
                 inlineValue = nodeObject['custom'].get(k,' NULL ')
-                inlineValue = self.updateValueDataForType(inlineValue,self.typesVarNames.get(nameid,None))
+                inlineValue = self.updateValueDataForType(inlineValue,v['type'])
                 print(f"{i} < {k} is not defined, custom: {inlineValue}")
                 codeprep = codeprep.replace(f'@in.{i+1}', f"{inlineValue}" )
                 continue
@@ -281,6 +280,8 @@ class CodeGenerator:
         if not type: return value
         if type == "string": 
             return "\"" + value.replace("\"","\"\"") + "\""
+        if type == "bool":
+            return str(value).lower()
         
         return value
     

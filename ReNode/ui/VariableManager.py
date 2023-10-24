@@ -228,7 +228,7 @@ class VariableManager(QDockWidget):
     def createVariable(self):
         # Получите значения типа переменной, имени и дефолтного значения
         variable_type = self.widVarType.currentText()
-        variable_name = self.widVarName.text()
+        variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')
         default_value = self.widInitVal.get_value()
         if not isinstance(default_value,str): default_value = str(default_value)
         current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
