@@ -92,7 +92,7 @@ class ExtendedComboBox(QComboBox):
 class VariableManager(QDockWidget):
     def __init__(self,actionVarViewer = None,nodeSystem=None):
         
-        super().__init__("Variables")
+        super().__init__("Переменные")
         self.nodeGraphComponent = nodeSystem
         
         self.actionVarViewer = actionVarViewer
