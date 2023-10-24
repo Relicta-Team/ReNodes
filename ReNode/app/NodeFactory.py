@@ -81,6 +81,8 @@ class NodeFactory:
 		struct['border_color'] = data.get('border_color',defborder)
 		struct['code'] = data.get('code',"")
 
+		struct['visible'] = data.get('isVisibleInLib',True)
+
 		struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
 
 		if self.nodes.get(typename):
@@ -201,15 +203,7 @@ class NodeFactory:
 			node.set_icon(cfg['icon'],False)
 
 		for inputkey,inputvals in cfg['inputs'].items():
-			port = node.add_input(
-				name=inputkey,
-				color=inputvals['color'],
-				display_name=inputvals['display_name'],
-				multi_input=inputvals['mutliconnect'],
-				painter_func=self.__getDrawPortFunction(inputvals['style']),
-				portType=inputvals.get('type')
-			)
-			self._prepAccessPortTypes(node,port,inputvals,'out')
+			self.addInput(node,inputkey,inputvals)
 
 		if cfg.get('inputs_runtime'):
 			raise Exception("runtime port not allowed")
@@ -222,41 +216,12 @@ class NodeFactory:
 			node.set_port_deletion_allowed(True)
 
 		for outputkey,outputvals in cfg['outputs'].items():
-			port = node.add_output(
-				name=outputkey,
-				color=outputvals['color'],
-				display_name=outputvals['display_name'],
-				multi_output=outputvals['mutliconnect'],
-				painter_func=self.__getDrawPortFunction(outputvals['style']),
-				portType=outputvals.get('type')
-			)
-			self._prepAccessPortTypes(node,port,outputvals,'in')
+			self.addOutput(node,outputkey,outputvals)
 		
 		#options
 		for optname,optvals in cfg['options'].items():
 			type = optvals['type']
-			if type == "bool":
-				node.add_checkbox(name=optname,text=optvals.get('text',""),label=optvals.get('label',""),state=optvals.get('default',False))
-			if type=="input":
-				node.add_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
-			if type == "edit":
-				node.add_multiline_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
-			if type == "spin":
-				node.add_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'))
-			if type == "fspin":
-				node.add_float_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
-			if type=="list":
-				node.add_combo_menu(name=optname,label=optvals.get('text',''),items=optvals.get('values',[]),default=optvals.get('default'))
-			if type=="vec2":
-				node.add_vector2(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0]))
-			if type=="vec3":
-				node.add_vector3(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
-			if type=="rgb":
-				node.add_rgb_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
-			if type == "rgba":
-				node.add_rgba_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0,0]))
-			if type == "file":
-				node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
+			self.addProperty(node,type,optname,optvals)
 		
 		#update runtime props
 		#! Disabled custom
@@ -277,6 +242,54 @@ class NodeFactory:
 
 		return node
 	
+	def addInput(self,node,inputkey,inputvals):
+		port = node.add_input(
+			name=inputkey,
+			color=inputvals['color'],
+			display_name=inputvals['display_name'],
+			multi_input=inputvals['mutliconnect'],
+			painter_func=self.__getDrawPortFunction(inputvals['style']),
+			portType=inputvals.get('type')
+		)
+		self._prepAccessPortTypes(node,port,inputvals,'out')
+
+	def addOutput(self,node,outputkey,outputvals):
+		port = node.add_output(
+			name=outputkey,
+			color=outputvals['color'],
+			display_name=outputvals['display_name'],
+			multi_output=outputvals['mutliconnect'],
+			painter_func=self.__getDrawPortFunction(outputvals['style']),
+			portType=outputvals.get('type')
+		)
+		self._prepAccessPortTypes(node,port,outputvals,'in')
+
+	def addProperty(self,node,type,optname,optvals):
+		if type == "bool":
+			node.add_checkbox(name=optname,text=optvals.get('text',""),label=optvals.get('label',""),state=optvals.get('default',False))
+		if type=="input":
+			node.add_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
+		if type == "edit":
+			node.add_multiline_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
+		if type == "spin":
+			node.add_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'))
+		if type == "fspin":
+			node.add_float_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
+		if type=="list":
+			node.add_combo_menu(name=optname,label=optvals.get('text',''),items=optvals.get('values',[]),default=optvals.get('default'))
+		if type=="vec2":
+			node.add_vector2(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0]))
+		if type=="vec3":
+			node.add_vector3(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
+		if type=="rgb":
+			node.add_rgb_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0]))
+		if type == "rgba":
+			node.add_rgba_palette(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0,0,0]))
+		if type == "file":
+			node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
+		if type=='hidden':
+			node.create_property(name=optname,value='nil')
+
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
 		if inputvals.get('allowtypes'):
 				for item in inputvals.get('allowtypes'):

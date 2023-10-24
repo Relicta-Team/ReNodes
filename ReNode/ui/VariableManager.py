@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
+from ReNode.ui.Nodes import RuntimeNode
 
 
 class VariableInfo:
@@ -12,10 +13,11 @@ class VariableInfo:
         pass
 
 class VariableTypedef:
-    def __init__(self,vart="",vartText="",classMaker=None):
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={}):
         self.variableType = vart #typename
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
+        self.dictProp = dictProp
     
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
@@ -98,10 +100,24 @@ class VariableManager(QDockWidget):
         self.variables = {}
         
         self.variableTempateData = [
-            VariableTypedef("int","Целое число",IntValueEdit),
-            VariableTypedef("float","Дробное число",FloatValueEdit),
-            VariableTypedef("string","Строка",PropTextEdit),
-            VariableTypedef("bool","Булево",PropCheckBox)
+            VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
+                "text": "Число",
+				"range": {"min":-999999,"max":99999}
+            }}),
+            VariableTypedef("float","Дробное число",FloatValueEdit,{"fspin": {
+                "text": "Число",
+                "range": {"min":-999999,"max":999999},
+                "floatspindata": {
+                    "step": 0.5,
+                    "decimals": 5
+                }
+            }}),
+            VariableTypedef("string","Строка",PropLineEdit,{"input": {
+                "text": "Текст"
+            }}),
+            VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
+                "text": "Булево"
+            }})
         ]
 
         self.variableCategoryList = [
@@ -252,9 +268,74 @@ class VariableManager(QDockWidget):
         self.variables[cat_sys_name][variableSystemName] = {
             "name": variable_name,
             "type": var_typename,
-            "value": default_value
+            "value": default_value,
+            "category": cat_sys_name
         }
 
         # Очистите поля ввода
         self.widVarName.clear()
         self.widInitVal.set_value(self._initialValue)
+
+    def _updateNode(self,nodeSystem, nodeObj:RuntimeNode,id,getorset):
+        from ReNode.app.NodeFactory import NodeFactory
+        lvdata = self.getVariableDataById(id)
+        if not lvdata:
+            raise Exception("Unknown variable id "+id)
+        vartypedata = self.getVariableTypedefByType(lvdata['type'])
+
+        _class = nodeObj.nodeClass
+        fact : NodeFactory = nodeSystem.getFactory()
+        cfg = fact.getNodeLibData(_class)
+        nodeObj.set_property('name',f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"].format(lvdata["name"])}</b></span>',False,
+            doNotRename=True)
+        nodeObj.set_property('value','hidden',id)
+        if "set" == getorset:
+            props = vartypedata.dictProp
+            for k,v in props.items():
+                fact.addProperty(nodeObj,k,lvdata['name'],v)
+
+        vardict = None
+        if "set" == getorset:
+            vardict = {
+                "type":vartypedata.variableType,
+                "allowtypes":[vartypedata.variableType],
+                "color":[
+                    255,
+                    255,
+                    255,
+                    255
+                ],
+                "display_name":True,
+                "mutliconnect":False,
+                "style":None,
+            }
+            fact.addInput(nodeObj,lvdata['name'],vardict)
+        else:
+            vardict = {
+                "type":vartypedata.variableType,
+                "allowtypes":[vartypedata.variableType],
+                "color":[
+                    255,
+                    255,
+                    255,
+                    255
+                ],
+                "display_name":True,
+                "mutliconnect":False,
+                "style":None,
+            }
+            fact.addOutput(nodeObj,"Значение",vardict)
+
+        nodeObj.update()
+        pass
+
+    def getVariableDataById(self,id) -> None | dict:
+        for cat in self.variables.values():
+            for k,v in cat.items():
+                if k == id: return v
+        return None
+    
+    def getVariableTypedefByType(self,type) -> None | VariableTypedef:
+        for vobj in self.variableTempateData:
+           if vobj.variableType == type: return vobj 
+        return None

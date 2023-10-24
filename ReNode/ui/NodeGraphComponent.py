@@ -265,8 +265,18 @@ class NodeGraphComponent:
 		# ------------ context menu ------------
 		def __coyvar(actType,ctxDataMap,graph):
 			print(f'{actType}:{ctxDataMap}; {graph}')
-		ctxmenu.add_command("Получить \"{}\"",func=__coyvar,actionKind="addVariable")
-		ctxmenu.add_command("Установить \"{}\"",func=__coyvar,actionKind="addVariable")
+		def __getvar(actType,ctxDataMap,graph):
+			if not actType == "addVariable": return
+			idvar = ctxDataMap["id"]
+			#nodeSystem :NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
+			self.addVariableToScene("get",idvar,ctxDataMap['pos'])
+		def __setvar(actType,ctxDataMap,graph):
+			if not actType == "addVariable": return
+			idvar = ctxDataMap["id"]
+			#nodeSystem : NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
+			self.addVariableToScene("set",idvar,ctxDataMap['pos'])
+		ctxmenu.add_command("Получить \"{}\"",func=__getvar,actionKind="addVariable")
+		ctxmenu.add_command("Установить \"{}\"",func=__setvar,actionKind="addVariable")
 		ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
 
 		pass
@@ -315,6 +325,7 @@ class NodeGraphComponent:
 		"""Generator for search tree"""
 		test = {}
 		for key,val in self.getFactory().nodes.items():
+			if not val.get('visible',True): continue
 			path = val.get('path', '')
 			if path in test:
 				test[path].append(key)
@@ -334,4 +345,11 @@ class NodeGraphComponent:
 		#graph.set_pipe_slicing(True) #enabled by default
 
 		variable_manager.syncActionText(True)
+		pass
+
+	def addVariableToScene(self,getorset,varid,pos):
+		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)
+		self.graph.undo_view.blockSignals(True)
+		self.variable_manager._updateNode(self,nodeObj,varid,getorset)
+		self.graph.undo_view.blockSignals(False)
 		pass

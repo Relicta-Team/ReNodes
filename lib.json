@@ -95,6 +95,37 @@
 				}
 			}
 		},
+		"variable": {
+			"get": {
+				"isVisibleInLib": false,
+				"name":"Получить {}",
+				"code": "@values.1",
+				"options": {
+					"value": {
+						"type": "hidden"
+					}
+				},
+				"outputs": {
+					
+				}
+			},
+			"set": {
+				"isVisibleInLib": false,
+				"name":"Назначить {}",
+				"code": "@values.1 = @in.2",
+				"options": {
+					"value": {
+						"type": "hidden"
+					}
+				},
+				"inputs": {
+					"inp":{"type":"Exec","allowtypes":["Exec"], "display_name": false}
+				},
+				"outputs": {
+					"out": {"type":"Exec","allowtypes":["Exec"], "display_name": false}
+				}
+			}
+		},
 		"types": {
 			"bool.create": {
 				"name": "Создать булево",

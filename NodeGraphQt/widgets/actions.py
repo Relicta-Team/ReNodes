@@ -94,7 +94,7 @@ class GraphAction(QtWidgets.QAction):
         self.triggered.connect(self._on_triggered)
 
     def _on_triggered(self):
-        self.executed.emit(self.actionType, self.graph)
+        self.executed.emit(self.graph)
 
     def get_action(self, name):
         for action in self.qmenu.actions():

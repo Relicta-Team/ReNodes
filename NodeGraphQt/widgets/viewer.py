@@ -709,7 +709,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 curitem = event.source().currentItem()
                 varid = curitem.data(0,QtCore.Qt.UserRole)
                 graphRef = self._tabSearch.nodeGraphComponent.graph
-                graphRef.get_context_menu('context').prepareActions("addVariable",{'id':varid},fmtText=curitem.text(0))
+                graphRef.get_context_menu('context').prepareActions("addVariable",{'id':varid,'pos':[pos.x(),pos.y()]},fmtText=curitem.text(0))
                 menu.exec_(QtGui.QCursor.pos())
                 return
             txt = event.source().currentItem().data(0,QtCore.Qt.UserRole)
