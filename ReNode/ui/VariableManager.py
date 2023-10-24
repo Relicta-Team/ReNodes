@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QMainWindow,QMessageBox,QCompleter,QListView,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QMainWindow,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import *
 
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
@@ -90,15 +90,16 @@ class ExtendedComboBox(QComboBox):
         super(ExtendedComboBox, self).setModelColumn(column)   
 
 class VariableManager(QDockWidget):
-    def __init__(self,actionVarViewer = None):
+    def __init__(self,actionVarViewer = None,nodeSystem=None):
         
         super().__init__("Variables")
-
+        self.nodeGraphComponent = nodeSystem
+        
         self.actionVarViewer = actionVarViewer
         
         #varmap: class, local
         self.variables = {}
-        
+
         self.variableTempateData = [
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
@@ -130,6 +131,7 @@ class VariableManager(QDockWidget):
         ]
 
         self.initUI()
+        self.setupContextMenu()
         
     def syncActionText(self,initState=None):
         condition = self.isVisible()
@@ -230,7 +232,7 @@ class VariableManager(QDockWidget):
         variable_type = self.widVarType.currentText()
         variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')
         default_value = self.widInitVal.get_value()
-        if not isinstance(default_value,str): default_value = str(default_value)
+        
         current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
 
         category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
@@ -252,7 +254,8 @@ class VariableManager(QDockWidget):
             return
 
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
-        item = QTreeWidgetItem([variable_name, variable_type, default_value])
+        defvalstr = str(default_value) if not isinstance(default_value,str) else default_value
+        item = QTreeWidgetItem([variable_name, variable_type, defvalstr])
         item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
         variableSystemName = hex(id(item))
         item.setData(0, QtCore.Qt.UserRole, variableSystemName)
@@ -281,7 +284,68 @@ class VariableManager(QDockWidget):
         self.widVarName.clear()
         self.widInitVal.set_value(self._initialValue)
 
-    def _updateNode(self,nodeSystem, nodeObj:RuntimeNode,id,getorset):
+    def setupContextMenu(self):
+        # Создайте контекстное меню
+        self.context_menu = QMenu(self)
+        self.delete_action = self.context_menu.addAction("Удалить переменную")
+        self.cancel = self.context_menu.addAction("Отмена")
+        self.delete_action.triggered.connect(self.deleteSelectedVariable)
+
+        # Подключите событие customContextMenuRequested для показа контекстного меню
+        self.widVarTree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.widVarTree.customContextMenuRequested.connect(self.showContextMenu)
+
+    def showContextMenu(self, pos):
+        item = self.widVarTree.itemAt(pos)
+        # Отображайте контекстное меню только если курсор мыши находится над элементом
+        if item:
+            if item.childCount() > 0:
+                # Это категория (ветка), не отображаем контекстное меню
+                return
+            self.current_variable_item = item
+            self.context_menu.exec_(QtGui.QCursor.pos())
+
+    def deleteSelectedVariable(self):
+        if hasattr(self, "current_variable_item"):
+            self.deleteVariable(self.current_variable_item)
+            self.syncActionText()
+        
+    def deleteVariable(self, item):
+        if item:
+            # Получите системное имя переменной, хранящееся в данных элемента
+            variable_system_name = item.data(0, Qt.UserRole)
+            
+            # Получите категорию переменной из имени элемента
+            vardata = self.getVariableDataById(variable_system_name)
+            if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
+            category = vardata['category']
+            
+            # Удаляем переменную из графа
+            graph = self.nodeGraphComponent.graph
+            allnodes = graph.get_nodes_by_class(None)
+            for node in allnodes:
+                if node.has_property('nameid'):
+                    if node.get_property('nameid') == variable_system_name:
+                        graph.delete_node(node,False)
+
+            # Удалите переменную из дерева
+            parent = item.parent() if item.parent() else self.widVarTree
+            parent.removeChild(item)
+
+            # Удалите переменную из словаря переменных
+            if category in self.variables and variable_system_name in self.variables[category]:
+                del self.variables[category][variable_system_name]
+
+            if parent.childCount() == 0:
+                # Если у родительского элемента больше нет детей, удаляем его
+                parent_index = self.widVarTree.indexOfTopLevelItem(parent)
+                if parent_index >= 0:
+                    self.widVarTree.takeTopLevelItem(parent_index)
+                    # Удалите категорию из словаря переменных, если она пуста
+                    if category in self.variables:
+                        del self.variables[category]
+
+    def _updateNode(self,nodeObj:RuntimeNode,id,getorset):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
         if not lvdata:
@@ -289,7 +353,7 @@ class VariableManager(QDockWidget):
         vartypedata = self.getVariableTypedefByType(lvdata['typename'],True)
 
         _class = nodeObj.nodeClass
-        fact : NodeFactory = nodeSystem.getFactory()
+        fact : NodeFactory = self.nodeGraphComponent.getFactory()
         cfg = fact.getNodeLibData(_class)
         nodeObj.set_property('name',f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"].format(lvdata["name"])}</b></span>',False,
             doNotRename=True)
@@ -358,3 +422,43 @@ class VariableManager(QDockWidget):
            if useTextTypename and vobj.variableTextName == type: return vobj
            if vobj.variableType == type: return vobj 
         return None
+    
+    def loadVariables(self, dictData):
+        # Очистите существующие переменные из self.variables и дерева
+        self.clearVariables()
+
+        # Обновите self.variables с данными из dictData
+        self.variables.update(dictData)
+
+        # Пересоздайте переменные в дереве
+        self.populateVariableTree()
+
+    def clearVariables(self):
+        # Очистите все переменные из self.variables
+        self.variables.clear()
+
+        # Очистите все элементы дерева
+        self.widVarTree.clear()
+
+    def populateVariableTree(self):
+        # Пересоздайте переменные в дереве на основе данных в self.variables
+        for category, variables in self.variables.items():
+            category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.category == category),None)
+            if not category_tree_name:
+                raise Exception("Неизвестная категория для создания переменной")
+            category_item = QTreeWidgetItem([category_tree_name])
+            category_item.setFlags(category_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
+            self.widVarTree.addTopLevelItem(category_item)
+
+           
+
+            for variable_id, variable_data in variables.items():
+                name = variable_data['name']
+                variable_type = variable_data['typename']
+                value = variable_data['value']
+                defvalstr = str(value) if not isinstance(value, str) else value
+
+                item = QTreeWidgetItem([name, variable_type, defvalstr])
+                item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
+                item.setData(0, QtCore.Qt.UserRole, variable_id)
+                category_item.addChild(item)

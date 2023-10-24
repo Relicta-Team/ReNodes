@@ -335,7 +335,7 @@ class NodeGraphComponent:
 
 
 	def _initVariableManager(self):
-		variable_manager = VariableManager(actionVarViewer=self.mainWindow.switchVariableViewerAction)
+		variable_manager = VariableManager(actionVarViewer=self.mainWindow.switchVariableViewerAction,nodeSystem=self)
 		self.variable_manager = variable_manager
 		#dock.setWidget(self.mainWindow)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
@@ -350,6 +350,6 @@ class NodeGraphComponent:
 	def addVariableToScene(self,getorset,varid,pos):
 		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)
 		self.graph.undo_view.blockSignals(True)
-		self.variable_manager._updateNode(self,nodeObj,varid,getorset)
+		self.variable_manager._updateNode(nodeObj,varid,getorset)
 		self.graph.undo_view.blockSignals(False)
 		pass

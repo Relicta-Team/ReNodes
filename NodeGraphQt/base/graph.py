@@ -1632,6 +1632,18 @@ class NodeGraph(QtCore.QObject):
             if node.name() == name:
                 return node
 
+    # Yobas: custom getter nodes
+    def get_nodes_by_class(self,nodeClass):
+        ret = []
+        for node_id, node in self._model.nodes.items():
+            if not nodeClass:
+                ret.append(node)
+                continue
+            if hasattr(node,"nodeClass") and node.nodeClass == nodeClass:
+                ret.append(node)
+            pass
+        return ret
+
     def get_nodes_by_type(self, node_type):
         """
         Return all nodes by their node type identifier.
@@ -1716,6 +1728,8 @@ class NodeGraph(QtCore.QObject):
         serial_data = {'graph': {}, 'nodes': {}, 'connections': []}
         nodes_data = {}
 
+        nodeSystem = self._viewer._tabSearch.nodeGraphComponent
+
         # serialize graph session.
         serial_data['graph']['layout_direction'] = self.layout_direction()
         serial_data['graph']['acyclic'] = self.acyclic()
@@ -1726,6 +1740,8 @@ class NodeGraph(QtCore.QObject):
         # connection constrains.
         serial_data['graph']['accept_connection_types'] = self.model.accept_connection_types
         serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
+
+        serial_data['graph']['variables'] = nodeSystem.variable_manager.variables
 
         # serialize nodes.
         for n in nodes:
@@ -1781,6 +1797,9 @@ class NodeGraph(QtCore.QObject):
         Returns:
             list[NodeGraphQt.Nodes]: list of node instances.
         """
+
+        nodeSystem = self._viewer._tabSearch.nodeGraphComponent
+
         # update node graph properties.
         for attr_name, attr_value in data.get('graph', {}).items():
             if attr_name == 'layout_direction':
@@ -1800,6 +1819,9 @@ class NodeGraph(QtCore.QObject):
             elif attr_name == 'reject_connection_types':
                 self.model.reject_connection_types = attr_value
 
+            elif attr_name == "variables":
+                nodeSystem.variable_manager.loadVariables(attr_value)
+
         # build the nodes.
         nodes = {}
         for n_id, n_data in data.get('nodes', {}).items():
@@ -1810,6 +1832,10 @@ class NodeGraph(QtCore.QObject):
             node = self._factoryRef.instance(nodeType,graphref=self._viewer._tabSearch.nodeGraphComponent.graph,isInstanceCreate=True,forwardDeserializeData=n_data)
             if node:
                 node.NODE_NAME = n_data.get('name', node.NODE_NAME)
+                
+                if n_data.get('custom',{}).get('nameid'):
+                    nodeSystem.variable_manager._updateNode(node,n_data.get('custom',{}).get('nameid'),nodeType.split('.')[1])
+                
                 # set properties.
                 for prop in node.model.properties.keys():
                     if prop in n_data.keys():
@@ -1820,7 +1846,7 @@ class NodeGraph(QtCore.QObject):
                     if isinstance(node, BaseNode):
                         if prop in node.view.widgets:
                             node.view.widgets[prop].set_value(val)
-
+                
                 nodes[n_id] = node
                 self.add_node(node, n_data.get('pos'))
 
