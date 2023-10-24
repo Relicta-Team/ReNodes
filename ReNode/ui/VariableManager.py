@@ -6,18 +6,19 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
 from ReNode.ui.Nodes import RuntimeNode
-
+from ReNode.ui.ArrayWidget import ArrayWidget
 
 class VariableInfo:
     def __init__(self):
         pass
 
 class VariableTypedef:
-    def __init__(self,vart="",vartText="",classMaker=None,dictProp={}):
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},widParam=None):
         self.variableType = vart #typename
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
         self.dictProp = dictProp
+        self.classInstanceParam = widParam
     
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
@@ -124,6 +125,14 @@ class VariableManager(QDockWidget):
             }})
         ]
 
+        for vobj in self.variableTempateData.copy():
+            self.variableTempateData.append(VariableTypedef(
+                f"array[{vobj.variableType}]",
+                f"Массив {vobj.variableTextName}"
+                ,ArrayWidget,vobj.dictProp,
+                widParam=vobj.classInstance)
+            )
+
         self.variableCategoryList = [
             VariableCategory('local',"Локальная переменная","Локальные переменные"),
             VariableCategory('class','Переменная графа',"Переменные графа")
@@ -202,7 +211,12 @@ class VariableManager(QDockWidget):
         #print(f"New variable type is {varobj}")
         idx = self.widLayout.indexOf(self.widInitVal)
         self.widInitVal.deleteLater()
-        self.widInitVal = typeInstance()
+        objInstance = None
+        if varobj.classInstanceParam:
+            objInstance = typeInstance(varobj.classInstanceParam)
+        else:
+            objInstance = typeInstance()
+        self.widInitVal = objInstance
         self.widLayout.insertWidget(idx,self.widInitVal)
         self._initialValue = self.widInitVal.get_value()
         pass
