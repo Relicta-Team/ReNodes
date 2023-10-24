@@ -79,6 +79,7 @@ class TabSearchMenu(QWidget):
         treeWidget.setDragEnabled(True)
         treeWidget.setDragDropMode(treeWidget.DragOnly)
         treeWidget.setDefaultDropAction(Qt.MoveAction)
+        treeWidget.setObjectName("TabSearchMenu.tree")
         
         
 

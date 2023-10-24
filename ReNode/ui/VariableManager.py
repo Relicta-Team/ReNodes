@@ -165,6 +165,9 @@ class VariableManager(QDockWidget):
         self.widVarTree.setHeaderLabels(["Имя", "Тип", "Значение"])
         self.widVarTree.setColumnWidth(0,self.widVarTree.columnWidth(0)*2)
         layout.addWidget(self.widVarTree)
+        self.widVarTree.setDragEnabled(True)
+        self.widVarTree.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.DragOnly)
+        self.widVarTree.setObjectName("VariableManager.tree")
 
         central_widget.setLayout(layout)
     
@@ -228,12 +231,14 @@ class VariableManager(QDockWidget):
 
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
         item = QTreeWidgetItem([variable_name, variable_type, default_value])
+        item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
 
         itmsTree = self.widVarTree.findItems(category_tree_name,Qt.MatchExactly)
         if itmsTree:
             itmsTree[0].addChild(item)
         else:
             itmsTree = QTreeWidgetItem([category_tree_name])
+            itmsTree.setFlags(itmsTree.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
             self.widVarTree.addTopLevelItem(itmsTree)
             itmsTree.addChild(item)
 
