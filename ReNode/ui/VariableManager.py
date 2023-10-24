@@ -115,6 +115,9 @@ class VariableManager(QDockWidget):
             VariableTypedef("string","Строка",PropLineEdit,{"input": {
                 "text": "Текст"
             }}),
+            VariableTypedef("string","Длинная строка",PropTextEdit,{"edit": {
+                "text": "Текст"
+            }}),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
             }})
