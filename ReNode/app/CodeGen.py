@@ -23,7 +23,7 @@ class CodeGenerator:
     def getVariableDict(self) -> dict:
         return self.graphsys.variable_manager.variables
 
-    def generateProcess(self,addComments=False):
+    def generateProcess(self,addComments=True):
         self._addComments = addComments
 
         """ file_path = "./session.json"
@@ -51,16 +51,22 @@ class CodeGenerator:
                 self.typesVarNames[v['systemname']] = v['type']
 
                 if vcat=='local':
-                    self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
+                    self.aliasVarNames[v['systemname']] = #f"_LVAR{i+1}"
+                    #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
                 elif vcat=='class':
                     self.aliasVarNames[v['systemname']] = f"classMember_{i+1}"
+                    #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
                 else:
                     continue
 
         # generate classvars
         for vid,vdat in self.getVariableDict().get('class',{}).items():
             varvalue = self.updateValueDataForType(vdat["value"],vdat['type'])
+            
+            if self._addComments:
+                code += f"\n//cv_init:{vdat['name']}"
             code += "\n" + f'var({self.aliasVarNames[vdat["systemname"]]},{varvalue});'
+            
 
         for nodeid in entrys:
             self.localVariablesUsed = set()
@@ -128,8 +134,8 @@ class CodeGenerator:
             return '\n'.join(result).strip()
 
         def pretty(text):
-            output = re.sub(r'\/\/[\s\/]*(.*)', r'# \1', text)
-            output = normalize_brackets(output)
+            #output = re.sub(r'\/\/[\s\/]*(.*)', r'# \1', text)
+            output = normalize_brackets(text)
             output = normalize_commas(output)
             output = normalize_command_structure(output)
             output = re.sub(r' {2,}', ' ', output)
@@ -153,6 +159,7 @@ class CodeGenerator:
         nodeObject = self.serialized_graph['nodes'][id]
         libNode = self.getNodeLibData(nodeObject['class_'])
         codeprep = libNode['code']
+        isLocalVar = codeprep == "RUNTIME"
         if self._addComments:
             codeprep = f"//[{id}]:{nodeObject['class_']}\n" + codeprep
 
@@ -162,10 +169,11 @@ class CodeGenerator:
         inputsDictFromLib = libNode.get('inputs',{}).items()
 
         #if codeprep == RUNTIME them get nodeObject['custom']['code']
-        isLocalVar = codeprep == "RUNTIME"
         nameid = None
-        if isLocalVar: 
+        if isLocalVar:
             codeprep = nodeObject['custom']['code']
+            if self._addComments:
+                codeprep = f"//[{id}]:{nodeObject['class_']}\n" + codeprep
             nameid = nodeObject['custom']['nameid']
             self.localVariablesUsed.add(nameid)
             codeprep = codeprep.replace(nameid,self.aliasVarNames[nameid])
@@ -212,6 +220,8 @@ class CodeGenerator:
             for k,vdat in self.getVariableDict().get('local',{}).items():
                 if not k in self.localVariablesUsed: continue
                 lval = self.updateValueDataForType(vdat['value'],vdat['type'])
+                if self._addComments:
+                    initlocalvars += f"\n//[{id}]lv_init:{vdat['name']}"
                 initlocalvars += f'\nprivate {self.aliasVarNames[vdat["systemname"]]} = {lval};'
             codeprep = codeprep.replace("@initvars",initlocalvars)
 
@@ -273,3 +283,26 @@ class CodeGenerator:
             return "\"" + value.replace("\"","\"\"") + "\""
         
         return value
+    
+    def transliterate(self,text):
+        translit_dict = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
+            'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i',
+            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+            'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
+            'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '',
+            'э': 'e', 'ю': 'yu', 'я': 'ya',
+        }
+        
+        result = []
+        for char in text:
+            if char.lower() in translit_dict:
+                if char.isupper():
+                    result.append(translit_dict[char.lower()].capitalize())
+                else:
+                    result.append(translit_dict[char])
+            else:
+                result.append(char)
+        enStr = ''.join(result)
+        return re.sub("[^\w]","_",enStr)
