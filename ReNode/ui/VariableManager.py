@@ -271,9 +271,10 @@ class VariableManager(QDockWidget):
         self.variables[cat_sys_name][variableSystemName] = {
             "name": variable_name,
             "type": var_typename,
+            "typename": variable_type,
             "value": default_value,
             "category": cat_sys_name,
-            "realname": "_" + variableSystemName if cat_sys_name == "local" else variableSystemName
+            "systemname": variableSystemName
         }
 
         # Очистите поля ввода
@@ -285,7 +286,7 @@ class VariableManager(QDockWidget):
         lvdata = self.getVariableDataById(id)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
-        vartypedata = self.getVariableTypedefByType(lvdata['type'])
+        vartypedata = self.getVariableTypedefByType(lvdata['typename'],True)
 
         _class = nodeObj.nodeClass
         fact : NodeFactory = nodeSystem.getFactory()
@@ -295,10 +296,12 @@ class VariableManager(QDockWidget):
         nodeObj.set_property('nameid',id)
 
         code = ""
+        inval = "@in.2"
+        
         if lvdata['category']=='local':
-            code = f"{lvdata['realname']}" if getorset == "get" else f"{lvdata['realname']} = @in.2; @out.1"
+            code = f"{lvdata['systemname']}" if getorset == "get" else f"{lvdata['systemname']} = {inval}; @out.1"
         elif lvdata['category']=='class':
-            code = "" if getorset == "get" else ""
+            code = f"this getVariable \"{lvdata['systemname']}\"" if getorset == "get" else f"this setVariable [\"{lvdata['systemname']}\",{inval}]; @out.1"
         else:
             raise Exception(f"Unknown category {lvdata['category']}")
         
@@ -350,7 +353,8 @@ class VariableManager(QDockWidget):
                 if k == id: return v
         return None
     
-    def getVariableTypedefByType(self,type) -> None | VariableTypedef:
+    def getVariableTypedefByType(self,type,useTextTypename=False) -> None | VariableTypedef:
         for vobj in self.variableTempateData:
+           if useTextTypename and vobj.variableTextName == type: return vobj
            if vobj.variableType == type: return vobj 
         return None

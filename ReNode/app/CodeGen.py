@@ -12,6 +12,11 @@ class CodeGenerator:
 
         self._addComments = False
 
+        self.aliasVarNames = {}
+        self.typesVarNames = {}
+        # те переменные, которые хоть раз используют установку или получение должны быть сгенерены
+        self.localVariablesUsed = set()
+
     def getNodeLibData(self,cls):
         return self.graphsys.nodeFactory.getNodeLibData(cls)
 
@@ -21,13 +26,15 @@ class CodeGenerator:
     def generateProcess(self,addComments=False):
         self._addComments = addComments
 
-        file_path = "./session.json"
+        """ file_path = "./session.json"
         try:
             with open(file_path) as data_file:
                 layout_data = json.load(data_file)
         except Exception as e:
             layout_data = None
-            print('Cannot read data from file.\n{}'.format(e))
+            print('Cannot read data from file.\n{}'.format(e))"""
+        
+        layout_data = self.graphsys.graph._serialize(self.graphsys.graph.all_nodes())
 
         if not layout_data:
             return
@@ -36,11 +43,27 @@ class CodeGenerator:
         entrys = self.findNodesByClass("events.onStart")
         code = "generated:"
 
+        self.aliasVarNames = {}
+        self.typesVarNames = {}
+
+        for vcat,vval in self.getVariableDict().items():
+            for i, (k,v) in enumerate(vval.items()):
+                self.typesVarNames[v['systemname']] = v['type']
+
+                if vcat=='local':
+                    self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
+                elif vcat=='class':
+                    self.aliasVarNames[v['systemname']] = f"classMember_{i+1}"
+                else:
+                    continue
+
         # generate classvars
         for vid,vdat in self.getVariableDict().get('class',{}).items():
-            code += "\n" + f'var({vdat["realname"]},{vdat["value"]});'
+            varvalue = self.updateValueDataForType(vdat["value"],vdat['type'])
+            code += "\n" + f'var({self.aliasVarNames[vdat["systemname"]]},{varvalue});'
 
         for nodeid in entrys:
+            self.localVariablesUsed = set()
             code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
 
@@ -140,21 +163,17 @@ class CodeGenerator:
 
         #if codeprep == RUNTIME them get nodeObject['custom']['code']
         isLocalVar = codeprep == "RUNTIME"
+        nameid = None
         if isLocalVar: 
             codeprep = nodeObject['custom']['code']
+            nameid = nodeObject['custom']['nameid']
+            self.localVariablesUsed.add(nameid)
+            codeprep = codeprep.replace(nameid,self.aliasVarNames[nameid])
             #find key if not "nameid" and "code"
             addedName = next((key for key in nodeObject['custom'].keys() if key not in ['nameid','code']),None)
             if addedName:
                 inputsDictFromLib = list(inputsDictFromLib)
                 inputsDictFromLib.append((addedName,{}))
-            
-
-        
-        if "@initvars" in codeprep:
-            initlocalvars = ""
-            for k,vdat in self.getVariableDict().get('local',{}).items():
-                initlocalvars += f'\nprivate {vdat["realname"]} = {vdat["value"]};'
-            codeprep = codeprep.replace("@initvars",initlocalvars)
 
         #process inputs
         for i,(k,v) in enumerate(inputsDictFromLib):
@@ -162,8 +181,10 @@ class CodeGenerator:
             if (inpId == fromid): continue #do not generate from prev node
             
             if not inpId:
-                print(f"{i} < {k} is not defined, custom: {nodeObject['custom'].get(k,' NULL ')}")
-                codeprep = codeprep.replace(f'@in.{i+1}', f"{nodeObject['custom'].get(k,' NULL ')}" )
+                inlineValue = nodeObject['custom'].get(k,' NULL ')
+                inlineValue = self.updateValueDataForType(inlineValue,self.typesVarNames.get(nameid,None))
+                print(f"{i} < {k} is not defined, custom: {inlineValue}")
+                codeprep = codeprep.replace(f'@in.{i+1}', f"{inlineValue}" )
                 continue
 
             outcode = self.generateCode(inpId,id,path)
@@ -185,6 +206,14 @@ class CodeGenerator:
         #postcheck outputs
         if "@out." in codeprep:
             codeprep = re.sub(r"@out.\d+","",codeprep)
+
+        if "@initvars" in codeprep:
+            initlocalvars = ""
+            for k,vdat in self.getVariableDict().get('local',{}).items():
+                if not k in self.localVariablesUsed: continue
+                lval = self.updateValueDataForType(vdat['value'],vdat['type'])
+                initlocalvars += f'\nprivate {self.aliasVarNames[vdat["systemname"]]} = {lval};'
+            codeprep = codeprep.replace("@initvars",initlocalvars)
 
         path.pop()
 
@@ -237,3 +266,10 @@ class CodeGenerator:
             if node_data["class_"] == class_to_find:
                 node_ids.append(node_id)
         return node_ids
+
+    def updateValueDataForType(self,value,type):
+        if not type: return value
+        if type == "string": 
+            return "\"" + value.replace("\"","\"\"") + "\""
+        
+        return value
