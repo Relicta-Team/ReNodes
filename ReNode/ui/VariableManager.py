@@ -189,6 +189,9 @@ class VariableManager(QDockWidget):
         self.widVarTree.setDragEnabled(True)
         self.widVarTree.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.DragOnly)
         self.widVarTree.setObjectName("VariableManager.tree")
+        self.widVarTree.setSortingEnabled(True)  # Включите сортировку
+        self.widVarTree.sortItems(0, Qt.AscendingOrder)  # Сортировка по первому столбцу (индекс 0) в порядке возрастания
+
 
         central_widget.setLayout(layout)
     
@@ -423,19 +426,28 @@ class VariableManager(QDockWidget):
            if vobj.variableType == type: return vobj 
         return None
     
-    def loadVariables(self, dictData):
+    def loadVariables(self, dictData,clearPrevDict = False):
         # Очистите существующие переменные из self.variables и дерева
-        self.clearVariables()
+        self.clearVariables(doCleanupVars = clearPrevDict)
 
         # Обновите self.variables с данными из dictData
-        self.variables.update(dictData)
+        def deep_update(d, u):
+            for k, v in u.items():
+                if isinstance(v, dict):
+                    d[k] = deep_update(d.get(k, {}), v)
+                else:
+                    d[k] = v
+            return d
+        deep_update(self.variables, dictData)
+        #self.variables.update(dictData)
 
         # Пересоздайте переменные в дереве
         self.populateVariableTree()
 
-    def clearVariables(self):
+    def clearVariables(self,doCleanupVars=False):
         # Очистите все переменные из self.variables
-        self.variables.clear()
+        if doCleanupVars:
+            self.variables.clear()
 
         # Очистите все элементы дерева
         self.widVarTree.clear()
