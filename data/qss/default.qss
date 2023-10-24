@@ -210,6 +210,16 @@ QTabBar::tab {
 QTabBar::tab:selected {
 	background: #353535;
 } */
+QTabBar::tab {
+    min-width: 200px;  /* Минимальная ширина вкладки */
+}
+QTabBar::close-button {
+    image: url(./data/icons/close_tab.png);  /* Замените путь на вашу иконку */
+    background-color: #353535;
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+}
+
 /*! not active... */
 QComboBox::down-arrow {
 	border: 1px solid #5A5A5A;
