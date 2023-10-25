@@ -227,13 +227,8 @@ class VariableManager(QDockWidget):
 
     def variableExists(self, category, name):
         # Проверка наличия переменной с заданным именем в выбранной категории
-        category_item = self.widVarTree.findItems(category, Qt.MatchExactly)
-        if category_item:
-            category_item = category_item[0]
-            for row in range(category_item.childCount()):
-                item = category_item.child(row)
-                if item.text(0) == name:
-                    return True
+        for varInfo in self.variables.get(category,{}).values():
+            if varInfo['name'] == name: return True
         return False
 
     def showErrorMessageBox(self, message):
@@ -263,7 +258,7 @@ class VariableManager(QDockWidget):
             self.showErrorMessageBox(f"Укажите имя переменной")
             return
 
-        variable_exists = self.variableExists(category_tree_name, variable_name)
+        variable_exists = self.variableExists(cat_sys_name, variable_name)
         
         if variable_exists:
             # Выведите сообщение об ошибке
