@@ -5,15 +5,18 @@ from PyQt5.QtWidgets import *
 from Qt import QtWidgets, QtCore
 
 class TabData:
-    def __init__(self) -> None:
-        self.filePath = ""
-        self.name = ""
+    def __init__(self,name='',file='') -> None:
+        self.filePath = file
+        self.name = name
         self.serializedData = None
         self.isActive = False
-        self.isUnsaved = False
+        self.isUnsaved = True
+
+    def __repr__(self) -> str:
+        return f'{self.name} {hex(id(self))}'
 
 class SessionManager(QTabWidget):
-    def __init__(self,graph,dock) -> None:
+    def __init__(self,graph) -> None:
         super().__init__()
         
         self.graphSystem = graph
@@ -32,7 +35,6 @@ class SessionManager(QTabWidget):
         #    self.addTab(QWidget(), 'Вкладка ' + str(i))
 
         self._initEvents()
-        self.tabData : list[TabData] = [] #TODO replace to property and calculate tabs runtime
 
     def _initEvents(self):
         #self.currentChanged.connect(self.handleTabChange)
@@ -40,25 +42,70 @@ class SessionManager(QTabWidget):
         self.tabBarClicked.connect(self.handleTabChange)
         self.tabBar().tabMoved.connect(self.handleMoved)
 
+    @property
+    def tabData(self) -> list[TabData]:
+        tdat = []
+
+        for i in range(0,self.count() - 1):
+            tdat.append(self.tabBar().tabData(i))
+        return tdat
+
+    def getTabData(self,index) -> TabData:
+        return self.tabBar().tabData(index)
+
+    def syncTabName(self,idx):
+        tdata = self.getTabData(idx)
+        unsafe = ""
+        if tdata.isUnsaved:
+            unsafe = "*"
+        self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
+
     def handleMoved(self,index):
-        print(f"moved to {index}")
+        #print(f"moved to {index}")
+        pass
 
     def newTab(self):
         idx = self.addTab(QWidget(),"tab")
-        tabCtx = TabData()
-        self.tabData.insert(idx,tabCtx)
+        tabCtx = TabData("Новый граф")
         self.tabBar().setTabData(idx,tabCtx)
+        self.syncTabName(idx)
+
+    def openFile(self):
+        pass
+
+    def saveFile(self):
+        pass
+
+    def validateExit(self):
+        if any([tab.isUnsaved for tab in self.tabData if tab.isUnsaved]):
+            from ReNode.app.application import Application
+            
+            reply = QMessageBox.warning(self, 'Закрытие', f'Вы уверены, что хотите закрыть {Application.appName}?\nВсе несохраненные данные будут утеряны.',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            return reply == QMessageBox.Yes
+        return True
+
+    def registerFileWatch(self,path):
+        import os
+        fs_watcher = QtCore.QFileSystemWatcher()
+        fs_watcher.addPath(os.path.abspath(path))
+        #print fws files
+        fs_watcher.fileChanged.connect(path)
+        fs_watcher.file
+        return fs_watcher
 
     def handleTabChange(self, index):
-        print(f'Активная вкладка изменилась на {index}')
+        print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')
 
     def handleTabClose(self, index):
-        # В этом методе вы можете запросить подтверждение пользователя перед закрытием вкладки
-        reply = QMessageBox.question(self, 'Закрыть вкладку', 'Вы уверены, что хотите закрыть эту вкладку?',
-                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        tabData = self.getTabData(index)
+        if tabData.isUnsaved:
+            # В этом методе вы можете запросить подтверждение пользователя перед закрытием вкладки
+            reply = QMessageBox.question(self, 'Закрыть вкладку', 'Вы уверены, что хотите закрыть эту вкладку?\nВсе несохраненные данные будут утеряны.',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-        if reply == QMessageBox.Yes:
-            self.removeTab(index)
+            if reply == QMessageBox.Yes:
+                self.removeTab(index)
 
     def showContextMenu(self):
             menu = QMenu(self)

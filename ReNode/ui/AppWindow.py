@@ -98,18 +98,21 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(self.switchVariableViewerAction)
 	
 	def onNewFile(self):
-		logger.info("Новый скрипт")
+		#logger.info("Новый скрипт")
 		self.nodeGraph.sessionManager.newTab()
 	
 	def onOpenFile(self):
-		logger.info("Открыть")
+		#logger.info("Открыть")
+		self.nodeGraph.sessionManager.openFile()
 	
 	def onSaveFile(self):
-		logger.info("Сохранить")
+		#logger.info("Сохранить")
+		self.nodeGraph.sessionManager.saveFile()
 	
 	def onExit(self):
-		logger.info("Выход")
-		exit(0)
+		#logger.info("Выход")
+		if self.nodeGraph.sessionManager.validateExit():
+			exit(0)
 
 	def onReloadStyle(self,string):
 		logger.info("STYLE UPDATE")

@@ -317,6 +317,6 @@ class NodeGraphComponent:
 
 	def _initTabs(self,dock):
 		from ReNode.ui.SessionManager import SessionManager
-		tab_widget = SessionManager(self,dock)
+		tab_widget = SessionManager(self)
 		self.sessionManager = tab_widget
 		dock.setTitleBarWidget(tab_widget)

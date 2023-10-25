@@ -299,7 +299,7 @@ class VariableManager(QDockWidget):
     def setupContextMenu(self):
         # Создайте контекстное меню
         self.context_menu = QMenu(self)
-        #TODO rename action
+        #TODO rename action, duplicate
         #self.rename_action = self.context_menu.addAction("Переименовать")
         self.delete_action = self.context_menu.addAction("Удалить переменную")
         self.cancel = self.context_menu.addAction("Отмена")
