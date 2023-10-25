@@ -16,6 +16,19 @@ class RuntimeNode(BaseNode):
 	def __init__(self):
 		super(RuntimeNode, self).__init__()
 
+	def on_input_connected(self, in_port, out_port):
+		if in_port.name() in self.widgets():
+			wid = self.widgets()[in_port.name()]
+			wid.widget().setWindowOpacity(0.2)
+		super(RuntimeNode,self).on_input_connected(in_port, out_port)
+		return
+
+	def on_input_disconnected(self, in_port, out_port):
+		if in_port.name() in self.widgets():
+			wid = self.widgets()[in_port.name()]
+			wid.widget().setWindowOpacity(1)
+		super(RuntimeNode,self).on_input_connected(in_port, out_port)
+		return
 
 class RuntimeGroup(GroupNode):
 	__identifier__ = 'runtime_domain'
