@@ -42,12 +42,21 @@ class ArrayWidget(QWidget):
         self.countInfo.setText(f"Количество элементов: {len(self.arrayElements)}")
 
     def get_value(self):
-        return [element.widget().text() for element in self.arrayElements]
+        return [element.itemAt(0).widget().get_value() for element in self.arrayElements]
 
     def set_value(self, values):
+        for elementLayout in self.arrayElements.copy():
+            self.removeArrayElement(elementLayout)
+        
+        self.arrayElements.clear()
+        
+        for v in values:
+            self.addArrayElement(val=v)
+
+        self.updateCountText()
         return
 
-    def addArrayElement(self):
+    def addArrayElement(self,val=None):
         # Создайте горизонтальный контейнер для нового элемента
         elementLayout = QHBoxLayout()
 
@@ -55,6 +64,8 @@ class ArrayWidget(QWidget):
         elementValueWidget = None
         if self.instancer:
             elementValueWidget = self.instancer()
+            if val:
+                elementValueWidget.set_value(val)
         else:
             elementValueWidget = QLineEdit()
         elementLayout.addWidget(elementValueWidget)
