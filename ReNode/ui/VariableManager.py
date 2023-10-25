@@ -200,7 +200,7 @@ class VariableManager(QDockWidget):
         self.widVarTree.setObjectName("VariableManager.tree")
         self.widVarTree.setSortingEnabled(True)  # Включите сортировку
         self.widVarTree.sortItems(0, Qt.AscendingOrder)  # Сортировка по первому столбцу (индекс 0) в порядке возрастания
-
+        
 
         central_widget.setLayout(layout)
     
@@ -299,9 +299,12 @@ class VariableManager(QDockWidget):
     def setupContextMenu(self):
         # Создайте контекстное меню
         self.context_menu = QMenu(self)
+        #TODO rename action
+        #self.rename_action = self.context_menu.addAction("Переименовать")
         self.delete_action = self.context_menu.addAction("Удалить переменную")
         self.cancel = self.context_menu.addAction("Отмена")
         self.delete_action.triggered.connect(self.deleteSelectedVariable)
+        #self.rename_action.triggered.connect(self.renameSelectedVariable)
 
         # Подключите событие customContextMenuRequested для показа контекстного меню
         self.widVarTree.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -321,7 +324,17 @@ class VariableManager(QDockWidget):
         if hasattr(self, "current_variable_item"):
             self.deleteVariable(self.current_variable_item)
             self.syncActionText()
-        
+    
+    def renameSelectedVariable(self):
+        if hasattr(self, "current_variable_item"):
+            #self.widVarTree.editItem(self.current_variable_item,0)
+            from PyQt5.QtWidgets import QInputDialog
+            text, ok = QInputDialog.getText(self.widVarTree, 'Ввод текста', 'Введите что-нибудь:',
+                flags=QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.Popup)
+            if ok:
+                # Выводим введенный текст
+                print('Вы ввели:', text)
+
     def deleteVariable(self, item):
         if item:
             # Получите системное имя переменной, хранящееся в данных элемента
