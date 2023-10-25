@@ -76,7 +76,7 @@ class NodeGraphComponent:
 		#n_backdrop.wrap_nodes([groupnode, node])
 
 		self.generateTreeDict()
-		self.graph.load_session(".\\session.json")
+		#self.graph.load_session(".\\session.json")
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
@@ -316,24 +316,7 @@ class NodeGraphComponent:
 		pass
 
 	def _initTabs(self,dock):
-		tab_widget = QTabWidget()
-		tab_widget.setMovable(True)  # Разрешите перетаскивание вкладок.
-		tab_widget.setTabsClosable(True)
-		#!tab_widget.setFixedHeight(tab_widget.tabBar().height())
-		#! Скрыть границу между доком графа и вкладками.
-		#tab_widget.setContentsMargins(0, 0, 0, 0)
-
-		# Устанавливаем политику размеров для растяжения в вертикальном направлении.
-		tab_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-		
-		# Изменяем минимальную высоту вкладки.
-		tab_widget.tabBar().setMinimumHeight(60)  # Измените значение по вашему усмотрению.
-		#tab_widget.tabBar().setAutoFillBackground(True)
-
-		# Создайте и добавьте вкладки в верхнюю док-зону.
-		for i in range(1,20):
-			tab_widget.addTab(QWidget(), 'Вкладка ' + str(i))
-		#mainWindow.setCentralWidget(tab_widget)
-
+		from ReNode.ui.SessionManager import SessionManager
+		tab_widget = SessionManager(self,dock)
+		self.sessionManager = tab_widget
 		dock.setTitleBarWidget(tab_widget)

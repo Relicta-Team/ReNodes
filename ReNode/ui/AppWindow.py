@@ -99,8 +99,7 @@ class MainWindow( QMainWindow ):
 	
 	def onNewFile(self):
 		logger.info("Новый скрипт")
-		self.createNewGraphWindow()
-		#self.createWindowGraphEditor()
+		self.nodeGraph.sessionManager.newTab()
 	
 	def onOpenFile(self):
 		logger.info("Открыть")
@@ -155,21 +154,6 @@ class MainWindow( QMainWindow ):
 		self.nodeGraph = NodeGraphComponent(self)
 		gr = self.nodeGraph.graph
 		gr.widget.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-		pass
-
-	def createNewGraphWindow(self):
-		src = self.nodeGraph.graph
-		"""graph = NodeGraph(parent=src,kwargs={
-			"model": src.model,
-			"viewer": src.viewer(),
-			"node_factory": src.node_factory
-		})
-		graph._factoryRef = self.nodeFactory"""
-		# from NodeGraphQt import SubGraph
-		# sub = SubGraph(src)
-		# sub.show()
-		
-
 		pass
 
 	def generateCode(self):
