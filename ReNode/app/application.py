@@ -153,6 +153,11 @@ def AppMain():
 		exception_handler.enable()
 
 	app = QApplication(arguments)
+	
+	trans = QtCore.QTranslator()
+	trans.load('.\data\qtbase_ru.qm')
+	app.installTranslator(trans)
+
 	QApplication.setStyle( "Fusion" )
 	application = Application(arguments) 
 	logger = RegisterLogger('main')
