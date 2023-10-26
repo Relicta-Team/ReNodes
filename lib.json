@@ -132,6 +132,34 @@
 				}
 			}
 		},
+		"dynamic": {
+			"array.get": {
+				"name": "Получить элемент",
+				"path": "",
+				"code": "(@in.1) select (@in.2)",
+				"options": {
+					"Индекс": {
+						"type":"spin",
+						"text":"Индекс",
+						"range": {"min":-1000,"max":1000}
+					}
+				},
+				"inputs": {
+					"Массив": {
+						
+					},
+					"Индекс": {
+						"type": "int",
+						"allowtypes": ["int"]
+					}
+				},
+				"outputs": {
+					"Значение": {
+
+					}
+				}
+			}
+		},
 		"types": {
 			"bool.create": {
 				"name": "Создать булево",
