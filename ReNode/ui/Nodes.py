@@ -20,9 +20,8 @@ class RuntimeNode(BaseNode):
 		if in_port.name() in self.widgets():
 			wid = self.widgets()[in_port.name()]
 			wid.get_custom_widget().setEnabled(False)
-			#wid.get_custom_widget().setVisible(False)
-			wid.widget().setWindowOpacity(0.5)
-			
+			wid.get_custom_widget().setVisible(False)
+			#wid.widget().setWindowOpacity(0.2)
 		super(RuntimeNode,self).on_input_connected(in_port, out_port)
 		return
 
@@ -30,8 +29,8 @@ class RuntimeNode(BaseNode):
 		if in_port.name() in self.widgets():
 			wid = self.widgets()[in_port.name()]
 			wid.get_custom_widget().setEnabled(True)
-			#wid.get_custom_widget().setVisible(True)
-			wid.widget().setWindowOpacity(1)
+			wid.get_custom_widget().setVisible(True)
+			#wid.widget().setWindowOpacity(1)
 		super(RuntimeNode,self).on_input_connected(in_port, out_port)
 		return
 
