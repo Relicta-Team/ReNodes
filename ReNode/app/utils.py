@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-
+from PyQt5.QtGui import *
 
 def loadStylesheet(filename: str):
     """
@@ -41,3 +41,14 @@ def clamp(n, min, max):
         return max
     else:
         return n
+    
+def updateIconColor(icon : QIcon, color):
+    size = icon.availableSizes()[0]
+    pixmap = icon.pixmap(icon.actualSize(size))  # Указываете желаемый размер
+
+    painter = QPainter(pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(pixmap.rect(), color)
+    painter.end()
+
+    return QIcon(pixmap)

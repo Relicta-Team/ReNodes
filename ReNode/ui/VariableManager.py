@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
+from ReNode.app.utils import updateIconColor
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
 
@@ -175,24 +176,13 @@ class VariableManager(QDockWidget):
 
         layout.addWidget(QLabel("Тип данных:"))
 
-        def change_icon_color(icon : QIcon, color):
-            size = icon.availableSizes()[0]
-            pixmap = icon.pixmap(icon.actualSize(size))  # Указываете желаемый размер
-
-            painter = QPainter(pixmap)
-            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-            painter.fillRect(pixmap.rect(), color)
-            painter.end()
-
-            return QIcon(pixmap)
-
         type_layout = QHBoxLayout()
         layout.addLayout(type_layout)
 
         self.widVarType = ExtendedComboBox()
         for vobj in self.variableTempateData:
             icon = QtGui.QIcon("data\\icons\\pill_16x.png")
-            colored_icon = change_icon_color(icon, vobj.color)
+            colored_icon = updateIconColor(icon, vobj.color)
             
             self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
         self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
