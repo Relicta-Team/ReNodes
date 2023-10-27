@@ -127,11 +127,23 @@ class DictWidget(QWidget):
     def __init__(self, instancer,widVarType):
         super(DictWidget, self).__init__()
         self.instancer = instancer
-        self.widVarTypeRef = widVarType
+        self.widVarTypeRef :QComboBox = widVarType
         self.initUI()
 
     def initUI(self):
         self.layout = QVBoxLayout()
+        
+        laydat = QHBoxLayout()
+       
+        self.layout.addLayout(laydat)
+        laydat.addWidget(QLabel("Тип значений:"))
+
+        self.selectType = self.widVarTypeRef.__class__()
+        laydat.addWidget(self.selectType)
+        for idx in range(0,self.widVarTypeRef.count()-1):
+            txt = self.widVarTypeRef.itemText(idx)
+            icn = self.widVarTypeRef.itemIcon(idx)
+            self.selectType.addItem(icn,txt)
 
         # Создайте кнопку для добавления нового элемента
         self.addButton = QPushButton("Добавить элемент")

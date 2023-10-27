@@ -141,7 +141,7 @@ class VariableManager(QDockWidget):
         self.variableDataType = [
             VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
             VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
-            VariableDataType("Словарь","dict","data\\icons\\ArrayPin.png",DictWidget),
+            #VariableDataType("Словарь","dict","data\\icons\\ArrayPin.png",DictWidget),
             VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
         ]
 
@@ -188,15 +188,11 @@ class VariableManager(QDockWidget):
 
         type_layout = QHBoxLayout()
         layout.addLayout(type_layout)
+
         self.widVarType = ExtendedComboBox()
         for vobj in self.variableTempateData:
             icon = QtGui.QIcon("data\\icons\\pill_16x.png")
-            
-            # Выберите желаемый цвет
-            desired_color = vobj.color  # Например, красный
-
-            # Примените функцию для изменения цвета иконки
-            colored_icon = change_icon_color(icon, desired_color)
+            colored_icon = change_icon_color(icon, vobj.color)
             
             self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
         self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
