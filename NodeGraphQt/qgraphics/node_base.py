@@ -884,6 +884,21 @@ class NodeItem(AbstractNodeItem):
                 NodeEnum.ICON_SIZE.value,
                 QtCore.Qt.SmoothTransformation
             )
+        
+        """image = pixmap.toImage()
+        color = QtGui.QColor(*self.color)
+        if color:
+            for x in range(image.width()):
+                for y in range(image.height()):
+                    pixel_color = QtGui.QColor(image.pixel(x, y))
+                    alpha = pixel_color.alpha()
+                    if alpha > 0:
+                        new_color = QtGui.QColor(color)
+                        new_color.setAlpha(alpha)
+                        image.setPixelColor(x, y, new_color)
+    
+        pixmap = QtGui.QPixmap.fromImage(image)"""
+
         self._icon_item.setPixmap(pixmap)
         if self.scene():
             self.post_init()

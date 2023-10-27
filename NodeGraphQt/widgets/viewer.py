@@ -978,7 +978,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         accept_data = constraints.get(to_port.node.type_, {})
         accepted_pnames = accept_data.get(to_ptype, {})
         if constraints:
-            if to_port.port_typeName in accepted_pnames: #Yobas: replaced from to_port.name (#15)
+            if to_port.port_typeName in accepted_pnames or not to_port.port_typeName: #Yobas: replaced from to_port.name (#15)
                 accept_validation.append(True)
             else:
                 accept_validation.append(False)
@@ -989,10 +989,14 @@ class NodeViewer(QtWidgets.QGraphicsView):
         accept_data = constraints.get(from_port.node.type_, {})
         accepted_pnames = accept_data.get(from_ptype, {})
         if constraints:
-            if from_port.port_typeName in accepted_pnames: #Yobas: replaced from from_port.name (#15)
+            if from_port.port_typeName in accepted_pnames or not to_port.port_typeName: #Yobas: replaced from from_port.name (#15)
                 accept_validation.append(True)
             else:
                 accept_validation.append(False)
+
+        #check empty typename ports
+        if not from_port.port_typeName and from_port.port_typeName == to_port.port_typeName:
+            return False
 
         if False in accept_validation:
             return False

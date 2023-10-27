@@ -652,12 +652,16 @@ class BaseNode(NodeObject):
         [self.add_input(name=port['name'],
                         multi_input=port['multi_connection'],
                         display_name=port['display_name'],
-                        locked=port.get('locked') or False)
+                        color=port['color'],
+                        locked=port.get('locked') or False,
+                        portType=port['type'])
          for port in port_data['input_ports']]
         [self.add_output(name=port['name'],
                          multi_output=port['multi_connection'],
                          display_name=port['display_name'],
-                         locked=port.get('locked') or False)
+                         color=port['color'],
+                         locked=port.get('locked') or False,
+                         portType=port['type'])
          for port in port_data['output_ports']]
         self._view.draw_node()
 

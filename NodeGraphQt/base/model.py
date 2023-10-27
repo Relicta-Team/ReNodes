@@ -379,20 +379,26 @@ class NodeModel(object):
         output_ports = []
         for name, model in node_dict.pop('inputs').items():
             if self.port_deletion_allowed:
+                port = model.node.inputs()[name]
                 input_ports.append({
                     'name': name,
                     'multi_connection': model.multi_connection,
                     'display_name': model.display_name,
+                    "color": port.color,
+                    "type": port.view.port_typeName,
                 })
             connected_ports = model.to_dict['connected_ports']
             if connected_ports:
                 inputs[name] = connected_ports
         for name, model in node_dict.pop('outputs').items():
             if self.port_deletion_allowed:
+                port = model.node.outputs()[name]
                 output_ports.append({
                     'name': name,
                     'multi_connection': model.multi_connection,
                     'display_name': model.display_name,
+                    "color": port.color,
+                    "type": port.view.port_typeName,
                 })
             connected_ports = model.to_dict['connected_ports']
             if connected_ports:

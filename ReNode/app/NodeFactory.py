@@ -81,6 +81,8 @@ class NodeFactory:
 		struct['border_color'] = data.get('border_color',defborder)
 		struct['code'] = data.get('code',"")
 
+		struct['runtime_ports'] = data.get('runtime_ports',False)
+
 		struct['visible'] = data.get('isVisibleInLib',True)
 
 		struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
@@ -196,6 +198,9 @@ class NodeFactory:
 			node.set_property("name",nametext,False,doNotRename=True)
 			node.set_icon(cfg['icon'],False)
 
+		if cfg.get('runtime_ports'):
+			node.set_port_deletion_allowed(True)
+
 		for inputkey,inputvals in cfg['inputs'].items():
 			self.addInput(node,inputkey,inputvals)
 
@@ -262,7 +267,7 @@ class NodeFactory:
 		if type == "file":
 			node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
 		if type=='hidden':
-			node.create_property(name=optname,value='nil')
+			node.create_property(name=optname,value=optvals.get('default',None))
 
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
 		if inputvals.get('allowtypes'):

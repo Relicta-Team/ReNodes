@@ -134,6 +134,8 @@
 		},
 		"dynamic": {
 			"array.get": {
+				"kind": "data\\icons\\ArrayPin.png",
+				"runtime_ports": true,
 				"name": "Получить элемент",
 				"path": "",
 				"code": "(@in.1) select (@in.2)",
@@ -142,11 +144,16 @@
 						"type":"spin",
 						"text":"Индекс",
 						"range": {"min":-1000,"max":1000}
+					},
+					"typedata": {
+						"type": "hidden",
+						"default": {}
 					}
 				},
 				"inputs": {
 					"Массив": {
-						
+						"type": "",
+						"color": [0,255,0,255]
 					},
 					"Индекс": {
 						"type": "int",
@@ -155,7 +162,8 @@
 				},
 				"outputs": {
 					"Значение": {
-
+						"type": "",
+						"color": [0,255,0,255]
 					}
 				}
 			}

@@ -118,6 +118,9 @@ class NodeGraphComponent:
 		# wire function to "node_double_clicked" signal.
 		self.graph.node_double_clicked.connect(self.onNodeDoubleClickedEvent)
 		
+		self.graph.port_connected.connect(self.onPortConnectedEvent)
+		self.graph.port_disconnected.connect(self.onPortDisconnectedEvent)
+
 		#!only for debug
 		"""properties_bin = PropertiesBinWidget(node_graph=self.graph)
 		properties_bin.setWindowFlags(QtCore.Qt.Tool)
@@ -127,6 +130,27 @@ class NodeGraphComponent:
 				properties_bin.show()
 		# wire function to "node_double_clicked" signal.
 		self.graph.node_double_clicked.connect(display_properties_bin)"""
+
+	def onPortConnectedEvent(self,port_in : Port,port_out : Port):
+		#? port_in.model.node < for get node
+		in_node : RuntimeNode = port_in.model.node
+		out_node : RuntimeNode = port_out.model.node
+		port_in.view.color = port_out.view.color
+		port_in.view.border_color = port_out.view.border_color
+		#port_in.model.node.update()
+		port_in.view.update()
+
+		custom_node = None 
+		if in_node.has_property("typedata"): custom_node = in_node
+		if out_node.has_property("typedata"): custom_node = out_node
+		if custom_node:
+			pass
+
+		print("")
+		pass
+
+	def onPortDisconnectedEvent(self,port_in : Port,port_out : Port):
+		pass
 
 	def onNodeDoubleClickedEvent(self,node : BaseNode):
 		print("NODE DOUBLECLICK EVENT:"+node.type_)
