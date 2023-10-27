@@ -6,19 +6,19 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
 from ReNode.ui.Nodes import RuntimeNode
-from ReNode.ui.ArrayWidget import ArrayWidget
+from ReNode.ui.ArrayWidget import *
 
 class VariableInfo:
     def __init__(self):
         pass
 
 class VariableTypedef:
-    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},widParam=None):
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None):
         self.variableType = vart #typename
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
         self.dictProp = dictProp
-        self.classInstanceParam = widParam
+        self.color = color
     
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
@@ -112,7 +112,7 @@ class VariableManager(QDockWidget):
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
 				"range": {"min":-999999,"max":99999}
-            }}),
+            }},color=QtGui.QColor("Sea green")),
             VariableTypedef("float","Дробное число",FloatValueEdit,{"fspin": {
                 "text": "Число",
                 "range": {"min":-999999,"max":999999},
@@ -120,16 +120,16 @@ class VariableManager(QDockWidget):
                     "step": 0.5,
                     "decimals": 5
                 }
-            }}),
+            }},color=QtGui.QColor("Yellow green")),
             VariableTypedef("string","Строка",PropLineEdit,{"input": {
                 "text": "Текст"
-            }}),
+            }},color=QtGui.QColor("Magenta")),
             VariableTypedef("string","Длинная строка",PropTextEdit,{"edit": {
                 "text": "Текст"
-            }}),
+            }},color=QtGui.QColor("Magenta")),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
-            }})
+            }},color=QtGui.QColor("Maroon"))
         ]
 
         self.variableCategoryList = [
@@ -139,10 +139,10 @@ class VariableManager(QDockWidget):
         ]
 
         self.variableDataType = [
-            VariableDataType("Значение","value","",None),
-            VariableDataType("Массив","array","",ArrayWidget),
-            VariableDataType("Словарь","dict","",ArrayWidget),
-            VariableDataType("Сет","set","",ArrayWidget),
+            VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
+            VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
+            VariableDataType("Словарь","dict","data\\icons\\ArrayPin.png",DictWidget),
+            VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
         ]
 
         self.initUI()
@@ -156,6 +156,7 @@ class VariableManager(QDockWidget):
         self.actionVarViewer.setText(newtext)
 
     def initUI(self):
+        from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
         # Создайте центральный виджет для док-зоны
         central_widget = QWidget(self)
         self.setWidget(central_widget)
@@ -174,11 +175,30 @@ class VariableManager(QDockWidget):
 
         layout.addWidget(QLabel("Тип данных:"))
 
+        def change_icon_color(icon : QIcon, color):
+            size = icon.availableSizes()[0]
+            pixmap = icon.pixmap(icon.actualSize(size))  # Указываете желаемый размер
+
+            painter = QPainter(pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+            painter.fillRect(pixmap.rect(), color)
+            painter.end()
+
+            return QIcon(pixmap)
+
         type_layout = QHBoxLayout()
         layout.addLayout(type_layout)
         self.widVarType = ExtendedComboBox()
         for vobj in self.variableTempateData:
-            self.widVarType.addItem(vobj.variableTextName,vobj)
+            icon = QtGui.QIcon("data\\icons\\pill_16x.png")
+            
+            # Выберите желаемый цвет
+            desired_color = vobj.color  # Например, красный
+
+            # Примените функцию для изменения цвета иконки
+            colored_icon = change_icon_color(icon, desired_color)
+            
+            self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
         self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
         type_layout.addWidget(self.widVarType)
 
@@ -256,7 +276,10 @@ class VariableManager(QDockWidget):
         if isValue:
             objInstance = tp.classInstance()
         else:
-            objInstance = dt.instance(tp.classInstance)
+            if dt.dataType == 'dict':
+                objInstance = dt.instance(tp.classInstance,self.widVarType)
+            else:
+                objInstance = dt.instance(tp.classInstance)
         
         self.widInitVal = objInstance
         self.widLayout.insertWidget(idx,self.widInitVal)
