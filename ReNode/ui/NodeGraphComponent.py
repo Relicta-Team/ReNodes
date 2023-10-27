@@ -263,7 +263,7 @@ class NodeGraphComponent:
 		cmd = ctxmenu.add_command("Получить \"{}\"",func=__getvar,actionKind="addVariable")
 		cmd.set_icon("data\\icons\\FIB_VarGet.png")
 		cmd = ctxmenu.add_command("Установить \"{}\"",func=__setvar,actionKind="addVariable")
-		#cmd.set_icon("data\\icons\\FIB_VarSet.png")
+		cmd.set_icon("data\\icons\\FIB_VarSet.png")
 
 		
 		cmd = ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
