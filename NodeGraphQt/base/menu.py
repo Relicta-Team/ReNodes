@@ -358,6 +358,11 @@ class NodeGraphCommand(object):
         """
         self.qaction.setVisible(not hidden)
 
+    def set_icon(self,icon):
+        if isinstance(icon, str):
+            icon = QtGui.QIcon(icon)
+        self.qaction.setIcon(icon)
+
     def show(self):
         """
         Set the command to be visible in the context menu.

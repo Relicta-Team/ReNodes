@@ -22,7 +22,7 @@ class BaseMenu(QtWidgets.QMenu):
                 'border-radius': '3px',
             },
             'QMenu::item': {
-                'padding': '5px 18px 2px',
+                #'padding': '5px 18px 2px', #for work icons without padding
                 'background-color': 'transparent',
             },
             'QMenu::item:selected': {

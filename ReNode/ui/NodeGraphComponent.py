@@ -260,9 +260,14 @@ class NodeGraphComponent:
 			idvar = ctxDataMap["id"]
 			#nodeSystem : NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
 			self.addVariableToScene("set",idvar,ctxDataMap['pos'])
-		ctxmenu.add_command("Получить \"{}\"",func=__getvar,actionKind="addVariable")
-		ctxmenu.add_command("Установить \"{}\"",func=__setvar,actionKind="addVariable")
-		ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
+		cmd = ctxmenu.add_command("Получить \"{}\"",func=__getvar,actionKind="addVariable")
+		cmd.set_icon("data\\icons\\FIB_VarGet.png")
+		cmd = ctxmenu.add_command("Установить \"{}\"",func=__setvar,actionKind="addVariable")
+		#cmd.set_icon("data\\icons\\FIB_VarSet.png")
+
+		
+		cmd = ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
+		
 
 		pass
 	
