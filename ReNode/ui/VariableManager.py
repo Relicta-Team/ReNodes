@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QMainWindow,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QMainWindow,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QHBoxLayout,QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import *
 
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
@@ -28,6 +28,13 @@ class VariableCategory:
         self.category = varcat
         self.categoryTextName = varcatText
         self.categoryTreeTextName = varcatTextTree
+
+class VariableDataType:
+    def __init__(self,vartext='',vartype='',varicon='',instancer=None):
+        self.text = vartext
+        self.dataType = vartype
+        self.icon = varicon
+        self.instance = instancer
 
 class ExtendedComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -125,18 +132,17 @@ class VariableManager(QDockWidget):
             }})
         ]
 
-        for vobj in self.variableTempateData.copy():
-            self.variableTempateData.append(VariableTypedef(
-                f"array[{vobj.variableType}]",
-                f"Массив {vobj.variableTextName}"
-                ,ArrayWidget,vobj.dictProp,
-                widParam=vobj.classInstance)
-            )
-
         self.variableCategoryList = [
             VariableCategory('local',"Локальная переменная","Локальные переменные"),
             VariableCategory('class','Переменная графа',"Переменные графа")
             #TODO constants
+        ]
+
+        self.variableDataType = [
+            VariableDataType("Значение","value","",None),
+            VariableDataType("Массив","array","",ArrayWidget),
+            VariableDataType("Словарь","dict","",ArrayWidget),
+            VariableDataType("Сет","set","",ArrayWidget),
         ]
 
         self.initUI()
@@ -165,12 +171,22 @@ class VariableManager(QDockWidget):
         self.widCat.currentIndexChanged.connect(self._onVariableCategoryChanged)
         layout.addWidget(self.widCat)
 
+
         layout.addWidget(QLabel("Тип данных:"))
+
+        type_layout = QHBoxLayout()
+        layout.addLayout(type_layout)
         self.widVarType = ExtendedComboBox()
         for vobj in self.variableTempateData:
             self.widVarType.addItem(vobj.variableTextName,vobj)
         self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
-        layout.addWidget(self.widVarType)
+        type_layout.addWidget(self.widVarType)
+
+        self.widDataType = QComboBox()
+        for vobj in self.variableDataType:
+            self.widDataType.addItem(QtGui.QIcon(vobj.icon),vobj.text)
+        self.widDataType.currentIndexChanged.connect(self._onDataTypeChanged)
+        type_layout.addWidget(self.widDataType)
 
         layout.addWidget(QLabel("Имя:"))
         self.widVarName = QLineEdit()
@@ -181,7 +197,7 @@ class VariableManager(QDockWidget):
         self.widInitVal = QLineEdit()
         layout.addWidget(self.widInitVal)
         self._initialValue = None
-        self._onVariableTypeChanged((0))
+        self._updateVariableValueVisual(self.variableTempateData[0],self.variableDataType[0])
 
         # Кнопка создания переменной
         self.widCreateVar = QPushButton("Создать")
@@ -206,18 +222,45 @@ class VariableManager(QDockWidget):
     
     def _onVariableTypeChanged(self, *args, **kwargs):
         newIndex = args[0]
-        varobj : VariableTypedef = self.variableTempateData[newIndex]
-        typeInstance = varobj.classInstance
-        #print(f"New variable type is {varobj}")
+        vart : VariableTypedef = self.variableTempateData[newIndex]
+        tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
+        self._updateVariableValueVisual(vart,tobj)
+        """typeInstance = vart.classInstance
+        #print(f"New variable type is {vart}")
         idx = self.widLayout.indexOf(self.widInitVal)
         self.widInitVal.deleteLater()
         objInstance = None
-        if varobj.classInstanceParam:
-            objInstance = typeInstance(varobj.classInstanceParam)
+        if vart.classInstanceParam:
+            objInstance = typeInstance(vart.classInstanceParam)
         else:
             objInstance = typeInstance()
         self.widInitVal = objInstance
         self.widLayout.insertWidget(idx,self.widInitVal)
+
+        self._initialValue = self.widInitVal.get_value()"""
+        pass
+
+    def _onDataTypeChanged(self,*args,**kwargs):
+        newIndex = args[0]
+        vart = self.variableTempateData[self.widVarType.currentIndex()]
+        tobj : VariableDataType = self.variableDataType[newIndex]
+        self._updateVariableValueVisual(vart,tobj)
+
+    def _updateVariableValueVisual(self,tp : VariableTypedef,dt : VariableDataType):
+        isValue = dt.dataType == 'value' or not dt.instance
+        #delete prev
+        idx = self.widLayout.indexOf(self.widInitVal)
+        self.widInitVal.deleteLater()
+
+        objInstance = None
+        if isValue:
+            objInstance = tp.classInstance()
+        else:
+            objInstance = dt.instance(tp.classInstance)
+        
+        self.widInitVal = objInstance
+        self.widLayout.insertWidget(idx,self.widInitVal)
+
         self._initialValue = self.widInitVal.get_value()
         pass
 
@@ -408,8 +451,8 @@ class VariableManager(QDockWidget):
                 "allowtypes":[vartypedata.variableType],
                 "color":[
                     255,
-                    255,
-                    255,
+                    0,
+                    0,
                     255
                 ],
                 "display_name":True,
@@ -423,8 +466,8 @@ class VariableManager(QDockWidget):
                 "allowtypes":[vartypedata.variableType],
                 "color":[
                     255,
-                    255,
-                    255,
+                    0,
+                    0,
                     255
                 ],
                 "display_name":True,
