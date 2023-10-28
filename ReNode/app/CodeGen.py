@@ -70,6 +70,9 @@ class CodeGenerator:
 
         for nodeid in entrys:
             self.localVariablesUsed = set()
+            #data,startPoints = self.generateDfs(nodeid)
+            #print(data)
+            #code += "\n" + self.buildCodeFromData(data,startPoints)
             code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
 
@@ -148,12 +151,134 @@ class CodeGenerator:
         result = pretty(instructions)
         return result
 
-    def generateCode(self, id,fromid=None,path=None):
+
+    def generateBfs(self, start_node_id):
+        from collections import deque
+        visited_nodes = set()
+        result = []
+
+        queue = deque()
+        queue.append(start_node_id)
+        visited_nodes.add(start_node_id)
+
+        while queue:
+            node_id = queue.popleft()
+            node_object = self.serialized_graph['nodes'][node_id]
+
+            exec_dict = self.getExecPins(node_id)
+            input_dict = self.getInputs(node_id)
+
+            node_info = {
+                'node_id': node_id,
+                'class': node_object['class_']
+            }
+
+            children = []
+
+            for _, child_id in input_dict.items():
+                if child_id not in visited_nodes:
+                    queue.append(child_id)
+                    visited_nodes.add(child_id)
+                    children.append({'node_id': child_id, 'class': self.serialized_graph['nodes'][child_id]['class_']})
+
+            for _, child_id in exec_dict.items():
+                if child_id not in visited_nodes:
+                    queue.append(child_id)
+                    visited_nodes.add(child_id)
+                    children.append({'node_id': child_id, 'class': self.serialized_graph['nodes'][child_id]['class_']})
+
+            node_info['children'] = children
+            result.append(node_info)
+
+        return result
+
+    def buildCodeFromData(self,data,startPoints):
+        nodeDict = {}
+        for point in startPoints:
+            self._compileFlow(point,nodeDict)
+
+        return ""
+
+    def _compileFlow(self,id,nodeDict):
+        nodeObject = self.serialized_graph['nodes'][id]
+        libNode = self.getNodeLibData(nodeObject['class_'])
+        codeprep = libNode['code']
+
+
+        execDict = self.getExecPins(id)
+
+        #process outputs
+        for i,(k,v) in enumerate(libNode.get('outputs',{}).items()):
+            #here we can update custom output
+            
+            if not execDict.get(k): continue
+
+            #outcode = self.generateCode(execDict.get(k),id,path)
+            #print(f"{i} > {k} returns: {outcode}")
+            codeprep = codeprep.replace(f'@out.{i+1}',outcode)
+            pass
+
+
+    def generateDfs(self,node_id, visited_nodes=None,baseRef=None,startPoints = None):
+        if not visited_nodes:
+            visited_nodes = set()
+        
+        if not startPoints:
+            startPoints = []
+
+        if node_id in visited_nodes:
+            return {}
+
+        visited_nodes.add(node_id)
+        node_object = self.serialized_graph['nodes'][node_id]
+
+        # Обходим все связи (exec и инпуты) текущего узла
+        exec_dict = self.getExecPins(node_id)
+        input_dict = self.getInputs(node_id)
+
+        result = {
+            'node_id': node_id,
+            'class': node_object['class_'],
+            'name': re.sub(r"\<[\w+\ 0-9\"\'\=\:\;\-\/]+\>","",node_object['name'])
+        }
+        tmap = []
+        if baseRef in exec_dict.values():
+            tmap.append("input")
+        if baseRef in input_dict.values():
+            tmap.append("output")
+        if len(tmap) == 0:
+            tmap.append("ERROR")
+
+        result['type'] = ','.join(tmap)
+        result['has_inputs'] = len(input_dict) > 0
+
+        # Рекурсивно обходим дочерние узлы
+
+        for _, child_id in input_dict.items():
+            child_result = self.generateDfs(child_id, visited_nodes,node_id)
+            if child_result:
+                if 'children' not in result:
+                    result['children'] = []
+                result['children'].append(child_result)
+
+        for _, child_id in exec_dict.items():
+            child_result = self.generateDfs(child_id, visited_nodes,node_id)
+            if child_result:
+                if 'children' not in result:
+                    result['children'] = []
+                result['children'].append(child_result)
+
+
+        return result, startPoints
+
+    def generateCode(self, id,fromid=None,path=None,stackedGenerated=None):
 
         if not path:
             path = []
+        if not stackedGenerated:
+            stackedGenerated = []
 
-        if id in path: return "CICLE_HANDLED"
+        if id in path: return "$CICLE_HANDLED$"
         path.append(id)
 
         nodeObject = self.serialized_graph['nodes'][id]
@@ -194,21 +319,48 @@ class CodeGenerator:
                 codeprep = codeprep.replace(f'@in.{i+1}', f"{inlineValue}" )
                 continue
 
-            outcode = self.generateCode(inpId,id,path)
+            outcode = self.generateCode(inpId,id,path,stackedGenerated)
             print(f"{i} < {k} returns: {outcode}")
+            if outcode == "$CICLE_HANDLED$": continue
             codeprep = codeprep.replace(f'@in.{i+1}',outcode)
             pass
+
+        if len(stackedGenerated) > 0 and "@in." in codeprep:
+            pat = stackedGenerated[-1]
+            if len(pat) > 0:
+                for k,v in pat.items():
+                    codeprep = codeprep.replace(k,v)
+
+        doremgenvar = False
+        if "@genvar." in codeprep:
+            lvar = f'_gv_{len(stackedGenerated)}_{len(stackedGenerated)+1}_{hex(doremgenvar)}'
+            clrval = re.findall(r'\@genvar\.(\w+\.\d+)',codeprep)[0]
+            wordpart = re.sub('\.\d+','',clrval)
+            numpart = re.sub('\w+\.','',clrval)
+            invword = "in" if wordpart == "out" else "out"
+            
+            stackedGenerated.append({
+                f'@{invword}.{numpart}': lvar
+            })
+            doremgenvar = True
+            codeprep = codeprep.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+            print("MATCHED")
 
         #process outputs
         for i,(k,v) in enumerate(libNode.get('outputs',{}).items()):
             #here we can update custom output
             
             if not execDict.get(k): continue
-
-            outcode = self.generateCode(execDict.get(k),id,path)
+            
+            outcode = self.generateCode(execDict.get(k),id,path,stackedGenerated)
             print(f"{i} > {k} returns: {outcode}")
+            if outcode == "$CICLE_HANDLED$": continue
+
             codeprep = codeprep.replace(f'@out.{i+1}',outcode)
             pass
+
+        if doremgenvar:
+            stackedGenerated.pop()
 
         #postcheck outputs
         if "@out." in codeprep:

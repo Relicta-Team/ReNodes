@@ -102,7 +102,7 @@
 			"for_loop": {
 				"path":"Операторы",
 				"kind": "data\\icons\\icon_Blueprint_Loop_16x",
-				"code": "for \"_eval\" from (@in.2) to (@in.3) do {@out.1}; @out.3",
+				"code": "for \"@genvar.out.2\" from (@in.2) to (@in.3) do {@out.1}; @out.3",
 				"desc": "Цикл в диапазоне",
 				"name": "Цикл в диапазоне",
 				"options": {
@@ -113,7 +113,7 @@
 					},
 					"Последний индекс": {
 						"type":"spin",
-						"text":"Последний индекс eqwe qwrqweqwr END",
+						"text":"Последний индекс",
 						"range": {"min":-999999,"max":999999}
 					}
 				},
