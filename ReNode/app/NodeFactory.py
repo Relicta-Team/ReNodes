@@ -7,6 +7,8 @@ import logging
 logger : logging.Logger = None
 class NodeFactory:
 	
+	defaultColor = (13,18,23,255)
+
 	def __init__(self):
 		global logger
 		logger = RegisterLogger("NodeFactory")
@@ -62,7 +64,25 @@ class NodeFactory:
 				logger.info(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,data)
 
+	def updateLibTypes(self):
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		if not NodeGraphComponent.refObject or not NodeGraphComponent.refObject.variable_manager:
+			raise Exception(f"Graph component or variable manager not loaded: {NodeGraphComponent.refObject}; {NodeGraphComponent.variable_manager}")
 		
+		varMgr = NodeGraphComponent.refObject.variable_manager
+		
+		typecolor = {}
+		for objInfo in varMgr.variableTempateData:
+			clrList = [objInfo.color.red(),objInfo.color.green(),objInfo.color.blue(),objInfo.color.alpha()]
+			typecolor[objInfo.variableType] = clrList
+
+		for val in self.nodes.values():
+			if not val['inputs']: continue
+
+			for v in val['inputs'].values():
+				if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
+					v['color'] = typecolor[v['type']]
+					v['border_color'] = None
 
 	def registerNodeInLib(self,category,name,data : dict):
 		
@@ -70,7 +90,7 @@ class NodeFactory:
 		
 		struct = {}
 		typename = category+"."+name
-		defcolor = (13,18,23,255)
+		defcolor = NodeFactory.defaultColor
 		defborder = (255,0,0,255)
 		kind = data.get('kind',None) # function,control,operator etc for define icon
 		struct['name'] = data.get('name','')

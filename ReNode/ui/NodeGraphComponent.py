@@ -363,6 +363,9 @@ class NodeGraphComponent:
 		#graph.set_pipe_slicing(True) #enabled by default
 
 		variable_manager.syncActionText(True)
+
+		self.getFactory().updateLibTypes()
+
 		pass
 
 	def addVariableToScene(self,getorset,varid,pos):
