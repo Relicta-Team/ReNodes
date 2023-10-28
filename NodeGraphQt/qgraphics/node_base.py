@@ -876,6 +876,15 @@ class NodeItem(AbstractNodeItem):
 
     @icon.setter
     def icon(self, path=None):
+        from ReNode.app.utils import updatePixmapColor
+        
+        applyColor = None
+
+        #update color icon
+        if isinstance(path,list):
+            applyColor = path[1]
+            path = path[0]
+        
         self._properties['icon'] = path
         path = path or ICON_NODE_BASE
         pixmap = QtGui.QPixmap(path)
@@ -885,19 +894,8 @@ class NodeItem(AbstractNodeItem):
                 QtCore.Qt.SmoothTransformation
             )
         
-        """image = pixmap.toImage()
-        color = QtGui.QColor(*self.color)
-        if color:
-            for x in range(image.width()):
-                for y in range(image.height()):
-                    pixel_color = QtGui.QColor(image.pixel(x, y))
-                    alpha = pixel_color.alpha()
-                    if alpha > 0:
-                        new_color = QtGui.QColor(color)
-                        new_color.setAlpha(alpha)
-                        image.setPixelColor(x, y, new_color)
-    
-        pixmap = QtGui.QPixmap.fromImage(image)"""
+        if applyColor:
+            pixmap = updatePixmapColor(pixmap, applyColor)
 
         self._icon_item.setPixmap(pixmap)
         if self.scene():

@@ -26,12 +26,19 @@ class PropertyChangedCmd(QtWidgets.QUndoCommand):
         """
         updates the node view and model.
         """
+        # set view data.
+        view = self.node.view
+
+        #managed for icon
+        isPropertyKey = name in view.properties.keys()
+        attrval = value
+        if isPropertyKey and name == 'icon' and isinstance(value, list):
+            value = value[0]
+        
         # set model data.
         model = self.node.model
         model.set_property(name, value)
 
-        # set view data.
-        view = self.node.view
 
         # view widgets.
         if hasattr(view, 'widgets') and name in view.widgets.keys():
@@ -41,11 +48,11 @@ class PropertyChangedCmd(QtWidgets.QUndoCommand):
                 view.widgets[name].set_value(value)
 
         # view properties.
-        if name in view.properties.keys():
+        if isPropertyKey:
             # remap "pos" to "xy_pos" node view has pre-existing pos method.
             if name == 'pos':
                 name = 'xy_pos'
-            setattr(view, name, value)
+            setattr(view, name, attrval)
 
         # emit property changed signal.
         graph = self.node.graph

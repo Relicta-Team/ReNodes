@@ -42,7 +42,7 @@ def clamp(n, min, max):
     else:
         return n
     
-def updateIconColor(icon : QIcon, color):
+def updateIconColor(icon : QIcon, color) -> QIcon:
     size = icon.availableSizes()[0]
     pixmap = icon.pixmap(icon.actualSize(size))  # Указываете желаемый размер
 
@@ -52,3 +52,14 @@ def updateIconColor(icon : QIcon, color):
     painter.end()
 
     return QIcon(pixmap)
+
+def updatePixmapColor(pixmap: QPixmap, color: QColor) -> QPixmap:
+    image = pixmap.toImage()
+    for x in range(image.width()):
+        for y in range(image.height()):
+            pixel_color = QColor.fromRgba(image.pixelColor(x, y).rgba())
+            if not pixel_color.alpha():
+                continue
+            pixel_color.setRgb(color.red(), color.green(), color.blue(),pixel_color.alpha())
+            image.setPixelColor(x, y, pixel_color)
+    return QPixmap.fromImage(image)
