@@ -500,7 +500,7 @@ class NodeItem(AbstractNodeItem):
         icon_rect = self._icon_item.boundingRect()
         #v0.3
         #x = rect.center().x() - (text_rect.width() - icon_rect.width()) #customized value
-        x = rect.left() + icon_rect.width() * 1.3 #Yodes: fixed rect 
+        x = rect.left() + icon_rect.width() #* 1.3 #Yodes: fixed rect 
         #end custom
         self._text_item.setPos(x + h_offset, rect.y() + v_offset)
 
