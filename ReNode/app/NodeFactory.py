@@ -79,12 +79,17 @@ class NodeFactory:
 			typecolor[objInfo.variableType] = clrList
 
 		for val in self.nodes.values():
-			if not val['inputs']: continue
-
-			for v in val['inputs'].values():
-				if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
-					v['color'] = typecolor[v['type']]
-					v['border_color'] = None
+			if val['inputs']:
+				for v in val['inputs'].values():
+					if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
+						v['color'] = typecolor[v['type']]
+						v['border_color'] = None
+			
+			if val['outputs']:
+				for v in val['outputs'].values():
+					if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
+						v['color'] = typecolor[v['type']]
+						v['border_color'] = None
 
 	def registerNodeInLib(self,category,name,data : dict):
 		
