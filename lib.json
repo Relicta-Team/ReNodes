@@ -97,6 +97,52 @@
 						]
 					}
 				}
+			},
+			"for_loop": {
+				"path":"Операторы",
+				"kind": "data\\icons\\icon_Blueprint_Loop_16x",
+				"code": "for \"_eval\" from (@in.2) to (@in.3) do {@out.1}; @out.3",
+				"desc": "Цикл в диапазоне",
+				"name": "Цикл в диапазоне",
+				"options": {
+					"Первый индекс": {
+						"type":"spin",
+						"text":"Первый индекс",
+						"range": {"min":-999999,"max":999999}
+					},
+					"Последний индекс": {
+						"type":"spin",
+						"text":"Последний индекс eqwe qwrqweqwr END",
+						"range": {"min":-999999,"max":999999}
+					}
+				},
+				"inputs": {
+					"Вход": {
+						"type": "Exec",
+						"allowtypes": [
+							"Exec"
+						],
+						"mutliconnect": true,
+						"display_name": false
+					},
+					"Первый индекс": {
+						"type":"int"
+					},
+					"Последний индекс": {
+						"type":"int"
+					}
+				},
+				"outputs": {
+					"Тело цикла": {
+						"type": "Exec"
+					},
+					"Индекс": {
+						"type": "int"
+					},
+					"При завершении": {
+						"type": "Exec"
+					}
+				}
 			}
 		},
 		"variable": {
