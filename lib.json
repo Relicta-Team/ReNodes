@@ -143,7 +143,7 @@
 					"Индекс": {
 						"type":"spin",
 						"text":"Индекс",
-						"range": {"min":-1000,"max":1000}
+						"range": {"min":0,"max":999999}
 					},
 					"autoportdata": {
 						"type": "hidden",

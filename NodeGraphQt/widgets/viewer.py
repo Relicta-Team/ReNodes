@@ -48,14 +48,18 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
 
     #dynamic set
     #if one port has data and was empty
-    if fromNode.has_property('autoportdata') and fromTypeName == '': return True
-    if toNode.has_property('autoportdata') and toTypeName == '': return True
-    # portList_isConnectedAsType = ['[' in fromTypeName,'[' in toTypeName]
-    # portList_isEmpty = [fromTypeName == '', toTypeName == '']
-    # onePortIsEmpty = any(portList_isEmpty)
-    # onePortIsConnected = any(portList_isConnectedAsType)
-    # if onePortIsEmpty and onePortIsConnected:
-    #     return True
+    """
+        Если один из портов автопорт и не подготовлен то
+        осуществляем проверку может ли быть подключен узел к автопорту
+    """
+    if fromNode.isAutoPortNode() and not fromNode.isAutoPortPrepared():
+        if fromNode.canConnectAutoPort(fromPort,toPort): return True
+
+    if toNode.isAutoPortNode() and not toNode.isAutoPortPrepared():
+        if toNode.canConnectAutoPort(toPort,fromPort): return True
+
+    #if fromNode.has_property('autoportdata') and fromTypeName == '': return True
+    #if toNode.has_property('autoportdata') and toTypeName == '': return True
     
     return False
 

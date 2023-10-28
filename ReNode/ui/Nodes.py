@@ -6,6 +6,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from NodeGraphQt import NodeGraph, BaseNode,GroupNode
 from Qt import QtCore
 from NodeGraphQt.base.port import Port
+from NodeGraphQt.constants import PortTypeEnum
+from NodeGraphQt.qgraphics.port import PortItem
 from ReNode.app.NodeFactory import *
 
 class RuntimeNode(BaseNode):
@@ -42,6 +44,29 @@ class RuntimeNode(BaseNode):
 	def getFactoryData(self):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 		return NodeGraphComponent.refObject.getFactory().getNodeLibData(self.nodeClass)
+
+	def isAutoPortNode(self):
+		return self.has_property('autoportdata')
+	
+	def isAutoPortPrepared(self):
+		if self.isAutoPortNode():
+			return len(self.get_property('autoportdata')) > 0
+		else:
+			return False
+
+	def canConnectAutoPort(self,fromPort : PortItem,toPort : PortItem):
+		if fromPort.port_typeName != "": return False
+		if toPort.port_typeName == "": return False
+		if "Exec" in [fromPort.port_typeName,toPort.port_typeName]: return False
+
+		data = self.getFactoryData()
+		portDataName = "inputs" if fromPort.port_type == PortTypeEnum.IN.value else "outputs"
+		evalType = self._calculate_autoport_type(toPort.port_typeName,data[portDataName].get(fromPort.name))
+
+		if evalType != toPort.port_typeName:
+			return False
+
+		return True
 
 	#
 	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict):
