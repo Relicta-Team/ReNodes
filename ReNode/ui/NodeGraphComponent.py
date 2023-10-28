@@ -135,18 +135,24 @@ class NodeGraphComponent:
 		#? port_in.model.node < for get node
 		in_node : RuntimeNode = port_in.model.node
 		out_node : RuntimeNode = port_out.model.node
-		port_in.view.color = port_out.view.color
-		port_in.view.border_color = port_out.view.border_color
+		#port_in.view.color = port_out.view.color
+		#port_in.view.border_color = port_out.view.border_color
 		#port_in.model.node.update()
-		port_in.view.update()
+		#port_in.view.update()
 
 		custom_node = None 
-		if in_node.has_property("typedata"): custom_node = in_node
-		if out_node.has_property("typedata"): custom_node = out_node
-		if custom_node:
+		source_port = None
+		if in_node.has_property("autoportdata"): 
+			custom_node = in_node
+			source_port = port_out
+		if out_node.has_property("autoportdata"): 
+			custom_node = out_node
+			source_port = port_in
+		if custom_node and len(custom_node.get_property("autoportdata")) == 0:
+			custom_node.onAutoPortConnected(source_port,self.getFactory())
 			pass
 
-		print("")
+		
 		pass
 
 	def onPortDisconnectedEvent(self,port_in : Port,port_out : Port):

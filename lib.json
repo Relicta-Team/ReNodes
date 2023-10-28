@@ -145,7 +145,7 @@
 						"text":"Индекс",
 						"range": {"min":-1000,"max":1000}
 					},
-					"typedata": {
+					"autoportdata": {
 						"type": "hidden",
 						"default": {}
 					}
@@ -153,7 +153,8 @@
 				"inputs": {
 					"Массив": {
 						"type": "",
-						"color": [0,255,0,255]
+						"typeget": "@type",
+						"color": [255,255,255,255]
 					},
 					"Индекс": {
 						"type": "int",
@@ -163,7 +164,8 @@
 				"outputs": {
 					"Значение": {
 						"type": "",
-						"color": [0,255,0,255]
+						"typeget": "@value.1",
+						"color": [255,255,255,255]
 					}
 				}
 			}

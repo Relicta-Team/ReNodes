@@ -1,6 +1,7 @@
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QMainWindow,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QHBoxLayout,QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import *
+from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
 
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
@@ -19,7 +20,7 @@ class VariableTypedef:
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
         self.dictProp = dictProp
-        self.color = color
+        self.color : QColor = color
     
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
@@ -36,6 +37,9 @@ class VariableDataType:
         self.dataType = vartype
         self.icon = varicon
         self.instance = instancer
+    
+    def __repr__(self):
+        return f"{self.dataType} ({self.text})"
 
 class ExtendedComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -157,7 +161,6 @@ class VariableManager(QDockWidget):
         self.actionVarViewer.setText(newtext)
 
     def initUI(self):
-        from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
         # Создайте центральный виджет для док-зоны
         central_widget = QWidget(self)
         self.setWidget(central_widget)
@@ -304,7 +307,9 @@ class VariableManager(QDockWidget):
             raise Exception("Неизвестная категория для создания переменной")
         
         cat_sys_name = next((obj.category for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
-        var_typename = next((obj.variableType for obj in self.variableTempateData if obj.variableTextName == variable_type),None)
+        varInfo = next((obj for obj in self.variableTempateData if obj.variableTextName == variable_type),None)
+
+        var_typename = varInfo.variableType
 
         if not variable_name:
             self.showErrorMessageBox(f"Укажите имя переменной")
@@ -317,12 +322,21 @@ class VariableManager(QDockWidget):
             self.showErrorMessageBox(f"Переменная с именем '{variable_name}' уже существует в категории '{category_tree_name}'!")
             return
 
+        dt : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
+
+        if dt.dataType != "value":
+            var_typename = f"{dt.dataType}[{var_typename}]"
+            variable_type = dt.text
+
         # Создайте новый элемент дерева для переменной и добавьте его в дерево
         defvalstr = str(default_value) if not isinstance(default_value,str) else default_value
         item = QTreeWidgetItem([variable_name, variable_type, defvalstr])
         item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
         variableSystemName = hex(id(item))
         item.setData(0, QtCore.Qt.UserRole, variableSystemName)
+        icn = QtGui.QIcon(dt.icon)
+        icn = updateIconColor(icn,varInfo.color)
+        item.setIcon(1, icn)
 
         itmsTree = self.widVarTree.findItems(category_tree_name,Qt.MatchExactly)
         if itmsTree:
@@ -338,10 +352,14 @@ class VariableManager(QDockWidget):
         self.variables[cat_sys_name][variableSystemName] = {
             "name": variable_name,
             "type": var_typename,
+            "datatype": dt.dataType,
             "typename": variable_type,
             "value": default_value,
             "category": cat_sys_name,
-            "systemname": variableSystemName
+            "systemname": variableSystemName,
+
+            "reprType": str(varInfo),
+            "reprDataType": str(dt),
         }
 
         # Очистите поля ввода
@@ -427,8 +445,9 @@ class VariableManager(QDockWidget):
         lvdata = self.getVariableDataById(id)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
-        vartypedata = self.getVariableTypedefByType(lvdata['typename'],True)
-
+        #varInfo = self.getVariableTypedefByType(lvdata['typename'],True)
+        varInfo,varDt = self._getVarDataByRepr(lvdata['reprType'],lvdata['reprDataType'])
+        
         _class = nodeObj.nodeClass
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         cfg = fact.getNodeLibData(_class)
@@ -448,22 +467,19 @@ class VariableManager(QDockWidget):
         
         nodeObj.set_property('code',code)
 
-        if "set" == getorset:
-            props = vartypedata.dictProp
+        if "set" == getorset and varDt.dataType == 'value':
+            props = varInfo.dictProp
             for k,v in props.items():
                 fact.addProperty(nodeObj,k,lvdata['name'],v)
 
         vardict = None
+        realType = lvdata['type']
         if "set" == getorset:
             vardict = {
-                "type":vartypedata.variableType,
-                "allowtypes":[vartypedata.variableType],
-                "color":[
-                    255,
-                    0,
-                    0,
-                    255
-                ],
+                "type":realType, #varInfo.variableType
+                "allowtypes":[realType],
+                #"color":[255,0,0,255],
+                "color": [*varInfo.color.getRgb()],
                 "display_name":True,
                 "mutliconnect":False,
                 "style":None,
@@ -471,14 +487,10 @@ class VariableManager(QDockWidget):
             fact.addInput(nodeObj,lvdata['name'],vardict)
         else:
             vardict = {
-                "type":vartypedata.variableType,
-                "allowtypes":[vartypedata.variableType],
-                "color":[
-                    255,
-                    0,
-                    0,
-                    255
-                ],
+                "type":realType,
+                "allowtypes":[realType],
+                #"color":[255,0,0,255],
+                "color": [*varInfo.color.getRgb()],
                 "display_name":True,
                 "mutliconnect":False,
                 "style":None,
@@ -500,6 +512,12 @@ class VariableManager(QDockWidget):
            if vobj.variableType == type: return vobj 
         return None
     
+    def _getVarDataByRepr(self,vartRepr,vardtRepr):
+        reprVar = next((obj for obj in self.variableTempateData if str(obj) == vartRepr),None)
+        reprDt = next((obj for obj in self.variableDataType if str(obj) == vardtRepr),None)
+
+        return reprVar,reprDt
+
     def loadVariables(self, dictData,clearPrevDict = False):
         # Очистите существующие переменные из self.variables и дерева
         self.clearVariables(doCleanupVars = clearPrevDict)
@@ -544,7 +562,16 @@ class VariableManager(QDockWidget):
                 value = variable_data['value']
                 defvalstr = str(value) if not isinstance(value, str) else value
 
+                varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
+                if not varInfo or not dt:
+                    raise Exception(f"Невозможно загрузить переменную {variable_id}; Информация и данные о типе: {varInfo}; {dt}")
+
                 item = QTreeWidgetItem([name, variable_type, defvalstr])
                 item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 item.setData(0, QtCore.Qt.UserRole, variable_id)
+
+                icn = QtGui.QIcon(dt.icon)
+                icn = updateIconColor(icn,varInfo.color)
+                item.setIcon(1, icn)
+
                 category_item.addChild(item)

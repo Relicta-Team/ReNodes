@@ -116,6 +116,7 @@ class NodeFactory:
 			valdata['style'] = self._kindPortStyle(val.get('style',"default"))
 			valdata['allowtypes'] = val.get('allowtypes')
 			valdata['type'] = val.get('type',key)
+			valdata['typeget'] = val.get('typeget',"")
 			cons[key] = valdata
 		return cons	
 
