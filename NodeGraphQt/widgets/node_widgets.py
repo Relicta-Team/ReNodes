@@ -22,6 +22,13 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
         self.layout().setContentsMargins(*margin)
         super(_NodeGroupBox, self).setTitle(text)
 
+        # Вычисляем ширину текста заголовка
+        fm = self.fontMetrics()
+        title_width = fm.width(text)
+
+        # Устанавливаем минимальную и максимальную ширину виджета (QGroupBox)
+        self.setMinimumWidth(title_width + 8) #+8 для полной видимости последней буквы
+
     def setTitleAlign(self, align='center'):
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
                                ViewerEnum.BACKGROUND_COLOR.value))
@@ -38,7 +45,7 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
             'QGroupBox::title': {
                 'subcontrol-origin': 'margin',
                 'subcontrol-position': 'top center',
-                'color': 'rgba({0}, {1}, {2}, 100)'.format(*text_color),
+                #'color': 'rgba({0}, {1}, {2}, 100)'.format(*text_color), # Цвет выключен
                 'padding': '0px',
             }
         }
@@ -56,6 +63,17 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
             style_dict['QGroupBox::title']['subcontrol-position'] += 'top right'
             style_dict['QGroupBox::title']['margin-right'] = '4px'
         stylesheet = ''
+
+        if align == 'port':
+            style_dict['QGroupBox::title']['subcontrol-position'] += 'top left'
+            style_dict['QGroupBox::title']['margin-left'] = '4px'
+            # Вертикальное выравнивание вверху (по высоте)
+            #style_dict['QGroupBox::title']['subcontrol-position'] = 'top top'
+            # Убираем вертикальные отступы
+            style_dict['QGroupBox::title']['padding-top'] = '14px'
+            style_dict['QGroupBox::title']['padding-bottom'] = '0px'
+            style_dict['QGroupBox::title']['alignment'] = 'center'
+
         for css_class, css in style_dict.items():
             style = '{} {{\n'.format(css_class)
             for elm_name, elm_val in css.items():
@@ -519,6 +537,7 @@ class NodeSpinBox(NodeBaseWidget):
         self.set_custom_widget(spin)
         #self.widget().setMaximumSize(140,120)
         #self.widget().setFixedSize(200,120)
+        self.widget().setMinimumWidth(self.widget().geometry().width())
 
     @property
     def type_(self):
