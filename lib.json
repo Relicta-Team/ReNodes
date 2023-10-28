@@ -6,7 +6,8 @@
 		"internal": {
 			"backdrop": {
 				"name": "Группа",
-				"path": "Системные"
+				"path": "Системные",
+				"kind": "data\\icons\\icon_Blueprint_Comment_16x.png"
 			}
 		},
 		"operators": {
