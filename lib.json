@@ -12,6 +12,7 @@
 		"operators": {
 			"if_branch": {
 				"desc": "Ветка",
+				"kind": "data\\icons\\icon_Blueprint_Branch_16x",
 				"name": "Ветка",
 				"code": "if (@in.2) then {@out.1} else {@out.2};",
 				"path": "Операторы",
@@ -57,6 +58,7 @@
 			},
 			"while": {
 				"path": "Операторы",
+				"kind": "data\\icons\\icon_Blueprint_Loop_16x",
 				"code": "while {@in.2} do {@out.1}; @out.2",
 				"desc": "Цикл",
 				"name": "Цикл",
@@ -125,7 +127,7 @@
 					}
 				},
 				"inputs": {
-					"inp":{"type":"Exec","allowtypes":["Exec"], "display_name": false}
+					"inp":{"type":"Exec","allowtypes":["Exec"], "display_name": false, "mutliconnect": true}
 				},
 				"outputs": {
 					"out": {"type":"Exec","allowtypes":["Exec"], "display_name": false}

@@ -455,6 +455,9 @@ class VariableManager(QDockWidget):
             doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 
+        #need rewrite code for set icon
+        #nodeObj.set_icon([varDt.icon,varInfo.color])
+
         code = ""
         inval = "@in.2"
         
@@ -485,6 +488,8 @@ class VariableManager(QDockWidget):
                 "style":None,
             }
             fact.addInput(nodeObj,lvdata['name'],vardict)
+
+            #todo: add output with multiconnect
         else:
             vardict = {
                 "type":realType,
