@@ -1881,7 +1881,10 @@ class NodeGraph(QtCore.QObject):
                                              out_port.model.multi_connection])
                 if allow_connection:
                     self._undo_stack.push(PortConnectedCmd(in_port, out_port))
-
+                else:
+                    # подключение не доступно - вызываем событие отключения
+                    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+                    NodeGraphComponent.refObject.onPortDisconnectedEvent(in_port,out_port)
                 # Run on_input_connected to ensure connections are fully set up after deserialization.
                 in_node.on_input_connected(in_port, out_port)
 
