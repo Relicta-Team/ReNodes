@@ -28,6 +28,24 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 ZOOM_MIN = -0.95
 ZOOM_MAX = 2.0
 
+def validate_connections(fromTypeName,toTypeName):
+    #check empty typename ports
+        if not fromTypeName and fromTypeName == toTypeName:
+            return False
+
+        #check start
+        if fromTypeName == toTypeName:
+            return True
+
+        #dynamic set
+        portList_isConnectedAsType = ['[' in fromTypeName,'[' in toTypeName]
+        portList_isEmpty = [fromTypeName == '', toTypeName == '']
+        onePortIsEmpty = any(portList_isEmpty)
+        onePortIsConnected = any(portList_isConnectedAsType)
+        if onePortIsEmpty and onePortIsConnected:
+            return True
+        
+        return False
 
 class NodeViewer(QtWidgets.QGraphicsView):
     """
@@ -969,10 +987,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
         """
         accept_validation = []
 
+        #in,out
         to_ptype = to_port.port_type
         from_ptype = from_port.port_type
 
-        # validate the start.
+        """# validate the start.
         from_data = self.modelRef.accept_connection_types.get(from_port.node.type_) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
         accept_data = constraints.get(to_port.node.type_, {})
@@ -992,15 +1011,16 @@ class NodeViewer(QtWidgets.QGraphicsView):
             if from_port.port_typeName in accepted_pnames or not to_port.port_typeName: #Yobas: replaced from from_port.name (#15)
                 accept_validation.append(True)
             else:
-                accept_validation.append(False)
+                accept_validation.append(False)"""
 
-        #check empty typename ports
-        if not from_port.port_typeName and from_port.port_typeName == to_port.port_typeName:
-            return False
+        fromTypeName = from_port.port_typeName
+        toTypeName = to_port.port_typeName
 
-        if False in accept_validation:
-            return False
-        return True
+        return validate_connections(fromTypeName,toTypeName)
+
+        #if False in accept_validation:
+        #    return False
+        #return True
 
     def _validate_reject_connection(self, from_port, to_port):
         """

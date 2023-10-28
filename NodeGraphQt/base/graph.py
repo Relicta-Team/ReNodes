@@ -1738,8 +1738,8 @@ class NodeGraph(QtCore.QObject):
         serial_data['graph']['pipe_style'] = self.pipe_style()
 
         # connection constrains.
-        serial_data['graph']['accept_connection_types'] = self.model.accept_connection_types
-        serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
+        #serial_data['graph']['accept_connection_types'] = self.model.accept_connection_types
+        #serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
 
         serial_data['graph']['variables'] = nodeSystem.variable_manager.variables
 
@@ -1814,10 +1814,10 @@ class NodeGraph(QtCore.QObject):
                 self.set_pipe_style(attr_value)
 
             # connection constrains.
-            elif attr_name == 'accept_connection_types':
-                self.model.accept_connection_types = attr_value
-            elif attr_name == 'reject_connection_types':
-                self.model.reject_connection_types = attr_value
+            # elif attr_name == 'accept_connection_types':
+            #     self.model.accept_connection_types = attr_value
+            # elif attr_name == 'reject_connection_types':
+            #     self.model.reject_connection_types = attr_value
 
             elif attr_name == "variables":
                 nodeSystem.variable_manager.loadVariables(attr_value)

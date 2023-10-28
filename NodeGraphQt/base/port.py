@@ -33,6 +33,7 @@ class Port(object):
 
     def __init__(self, node, port):
         self.__view = port
+        port.refPort = self
         self.__model = PortModel(node)
 
     def __repr__(self):
@@ -230,7 +231,7 @@ class Port(object):
             raise PortError(
                 'Can\'t connect port because "{}" is locked.'.format(name))
 
-        # validate accept connection.
+        """# validate accept connection.
         node_type = self.node().type_
         accepted_types = port.accepted_port_types().get(node_type)
         if accepted_types:
@@ -242,13 +243,16 @@ class Port(object):
         if accepted_types:
             accepted_pnames = accepted_types.get(port.type_()) or set([])
             if port.view.port_typeName not in accepted_pnames and port.view.port_typeName: #Yobas: replaced from port.name() (#15)
-                return
+                return"""
 
-        #empty ports cannot connect to same port
-        if not self.view.port_typeName and self.view.port_typeName == port.view.port_typeName:
-            return
+        fromTypeName = self.view.port_typeName
+        toTypeName = port.view.port_typeName
+        
+        from NodeGraphQt.widgets.viewer import validate_connections
 
-        # validate reject connection.
+        if not validate_connections(fromTypeName, toTypeName): return
+
+        """# validate reject connection.
         node_type = self.node().type_
         rejected_types = port.rejected_port_types().get(node_type)
         if rejected_types:
@@ -260,7 +264,7 @@ class Port(object):
         if rejected_types:
             rejected_pnames = rejected_types.get(port.type_()) or set([])
             if port.name() in rejected_pnames:
-                return
+                return"""
 
         # make the connection from here.
         graph = self.node().graph

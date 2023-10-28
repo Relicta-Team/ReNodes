@@ -231,7 +231,7 @@ class NodeFactory:
 			painter_func=self.__getDrawPortFunction(inputvals['style']),
 			portType=inputvals.get('type')
 		)
-		self._prepAccessPortTypes(node,port,inputvals,'out')
+		#self._prepAccessPortTypes(node,port,inputvals,'out')
 
 	def addOutput(self,node,outputkey,outputvals):
 		port = node.add_output(
@@ -242,7 +242,7 @@ class NodeFactory:
 			painter_func=self.__getDrawPortFunction(outputvals['style']),
 			portType=outputvals.get('type')
 		)
-		self._prepAccessPortTypes(node,port,outputvals,'in')
+		#self._prepAccessPortTypes(node,port,outputvals,'in')
 
 	def addProperty(self,node,type,optname,optvals):
 		if type == "bool":
@@ -271,6 +271,7 @@ class NodeFactory:
 			node.create_property(name=optname,value=optvals.get('default',None))
 
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
+		#todo: change algorithm multitypes check
 		if inputvals.get('allowtypes'):
 				for item in inputvals.get('allowtypes'):
 					if isinstance(item,dict):

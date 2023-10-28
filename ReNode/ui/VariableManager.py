@@ -453,7 +453,7 @@ class VariableManager(QDockWidget):
         cfg = fact.getNodeLibData(_class)
         nodeObj.set_property('name',f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"].format(lvdata["name"])}</b></span>',False,
             doNotRename=True)
-        nodeObj.set_property('nameid',id)
+        nodeObj.set_property('nameid',id,False)
 
         code = ""
         inval = "@in.2"
@@ -465,7 +465,7 @@ class VariableManager(QDockWidget):
         else:
             raise Exception(f"Unknown category {lvdata['category']}")
         
-        nodeObj.set_property('code',code)
+        nodeObj.set_property('code',code,False)
 
         if "set" == getorset and varDt.dataType == 'value':
             props = varInfo.dictProp

@@ -21,7 +21,13 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 from ReNode.ui.VariableManager import VariableManager
 
 class NodeGraphComponent:
+
+	refObject = None
+
 	def __init__(self,mainWindow) -> None:
+		
+		NodeGraphComponent.refObject = self
+
 		from ReNode.ui.AppWindow import MainWindow
 		graph = NodeGraph()
 		self.graph = graph
@@ -118,8 +124,9 @@ class NodeGraphComponent:
 		# wire function to "node_double_clicked" signal.
 		self.graph.node_double_clicked.connect(self.onNodeDoubleClickedEvent)
 		
-		self.graph.port_connected.connect(self.onPortConnectedEvent)
-		self.graph.port_disconnected.connect(self.onPortDisconnectedEvent)
+		# Эти события не вызываются при откате истории
+		#self.graph.port_connected.connect(self.onPortConnectedEvent)
+		#self.graph.port_disconnected.connect(self.onPortDisconnectedEvent)
 
 		#!only for debug
 		"""properties_bin = PropertiesBinWidget(node_graph=self.graph)
@@ -135,20 +142,19 @@ class NodeGraphComponent:
 		#? port_in.model.node < for get node
 		in_node : RuntimeNode = port_in.model.node
 		out_node : RuntimeNode = port_out.model.node
-		#port_in.view.color = port_out.view.color
-		#port_in.view.border_color = port_out.view.border_color
-		#port_in.model.node.update()
-		#port_in.view.update()
 
 		custom_node = None 
-		source_port = None
+		source_port = None #куда подключаемся. Должен быть пустым портом для успеха
+		dest_port = None 
 		if in_node.has_property("autoportdata"): 
 			custom_node = in_node
+			dest_port = port_in
 			source_port = port_out
 		if out_node.has_property("autoportdata"): 
 			custom_node = out_node
+			dest_port = port_out
 			source_port = port_in
-		if custom_node and len(custom_node.get_property("autoportdata")) == 0:
+		if custom_node and dest_port.view.port_typeName == "" and len(custom_node.get_property("autoportdata")) == 0:
 			custom_node.onAutoPortConnected(source_port,self.getFactory())
 			pass
 
@@ -156,7 +162,23 @@ class NodeGraphComponent:
 		pass
 
 	def onPortDisconnectedEvent(self,port_in : Port,port_out : Port):
-		pass
+		in_node : RuntimeNode = port_in.model.node
+		out_node : RuntimeNode = port_out.model.node
+
+		custom_node = None 
+		source_port = None #куда подключаемся. Должен быть пустым портом для успеха
+		dest_port = None 
+		if in_node.has_property("autoportdata"): 
+			custom_node = in_node
+			dest_port = port_in
+			source_port = port_out
+		if out_node.has_property("autoportdata"): 
+			custom_node = out_node
+			dest_port = port_out
+			source_port = port_in
+		if custom_node and len(custom_node.get_property("autoportdata")) > 0:
+			custom_node.onAutoPortDisconnected(source_port,self.getFactory())
+			pass
 
 	def onNodeDoubleClickedEvent(self,node : BaseNode):
 		print("NODE DOUBLECLICK EVENT:"+node.type_)

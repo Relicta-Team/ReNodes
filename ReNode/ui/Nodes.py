@@ -93,7 +93,38 @@ class RuntimeNode(BaseNode):
 				port.view.update()
 				port.view._syncTooltip()
 
-	def onAutoPortDisconnected(self):
+	def onAutoPortDisconnected(self,src_port_info : Port, fact : NodeFactory):
+		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип
+		#tp = src_port_info.view.port_typeName
+		data = fact.getNodeLibData(self.nodeClass)
+		portList = []
+		for name,port in self.inputs().items():
+			# Узнаем является порт автоматическим
+			if data['inputs'].get(name) and data['inputs'].get(name).get("type") == "":
+				# Если порт не подключен коллекционируем, иначе выходим
+				if len(port.view.connected_ports) == 0:
+					portList.append(port)
+				else:
+					return
+				
+		for name,port in self.outputs().items():
+			# Узнаем является порт автоматическим
+			if data['outputs'].get(name) and data['outputs'].get(name).get("type") == "":
+				# Если порт не подключен коллекционируем, иначе выходим
+				if len(port.view.connected_ports) == 0:
+					portList.append(port)
+				else:
+					return
+
+		data = self.get_property('autoportdata')
+		self.set_property("autoportdata",{})
+		for port in portList:
+			port.color = data['color']
+			port.border_color = data['border_color']
+			port.view.port_typeName = ''
+			port.view.update()
+			port.view._syncTooltip()
+
 		pass
 
 

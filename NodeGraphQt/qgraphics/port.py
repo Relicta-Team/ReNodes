@@ -33,6 +33,7 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._locked = False
 
         self.port_typeName = 'object'
+        self.refPort = None
 
     def __str__(self):
         return '{}.PortItem("{}")'.format(self.__module__, self.name)
@@ -274,6 +275,9 @@ class PortItem(QtWidgets.QGraphicsItem):
         port.update()
         self.update()
 
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        NodeGraphComponent.refObject.onPortConnectedEvent(self.refPort, port.refPort)
+
     def disconnect_from(self, port):
         port_types = {
             PortTypeEnum.IN.value: 'output_port',
@@ -287,6 +291,9 @@ class PortItem(QtWidgets.QGraphicsItem):
         # redraw the ports.
         port.update()
         self.update()
+
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        NodeGraphComponent.refObject.onPortDisconnectedEvent(self.refPort, port.refPort)
 
 
 class CustomPortItem(PortItem):
