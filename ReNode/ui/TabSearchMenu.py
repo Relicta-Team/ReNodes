@@ -212,7 +212,7 @@ class TabSearchMenu(QWidget):
                         value_item.setFlags(value_item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                         value_item.setData(0, QtCore.Qt.UserRole, value)
                         icn = NodeGraphComponent.refObject.getFactory().getNodeLibData(value)['icon']
-                        if not isinstance(icn,str):
+                        if icn and not isinstance(icn,str):
                             raise Exception("TODO: custom icon making")
                         if icn:
                             value_item.setIcon(0,QtGui.QIcon(icn))
