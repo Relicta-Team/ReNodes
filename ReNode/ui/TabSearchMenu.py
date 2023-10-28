@@ -180,6 +180,8 @@ class TabSearchMenu(QWidget):
         return False
 
     def build_tree(self, data: OrderedDict, parent_item:QTreeWidgetItem=None,path=None,deepMode = 1):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        
         item = None
         for key, values in data.items():
             key_parts = key.split(".")
@@ -209,6 +211,11 @@ class TabSearchMenu(QWidget):
                         value_item = QTreeWidgetItem(item, [item_name])
                         value_item.setFlags(value_item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                         value_item.setData(0, QtCore.Qt.UserRole, value)
+                        icn = NodeGraphComponent.refObject.getFactory().getNodeLibData(value)['icon']
+                        if not isinstance(icn,str):
+                            raise Exception("TODO: custom icon making")
+                        if icn:
+                            value_item.setIcon(0,QtGui.QIcon(icn))
                         
 
             if parent_item is None:

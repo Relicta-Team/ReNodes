@@ -64,6 +64,8 @@ class NodeFactory:
 				logger.info(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,data)
 
+
+	# Синхронизирует цвета нодов в библиотеке с цветом типов 
 	def updateLibTypes(self):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 		if not NodeGraphComponent.refObject or not NodeGraphComponent.refObject.variable_manager:
