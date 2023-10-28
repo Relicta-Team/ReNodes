@@ -155,7 +155,7 @@ class NodeGraphComponent:
 			dest_port = port_out
 			source_port = port_in
 		if custom_node and dest_port.view.port_typeName == "" and len(custom_node.get_property("autoportdata")) == 0:
-			custom_node.onAutoPortConnected(source_port,self.getFactory())
+			custom_node.onAutoPortConnected(source_port)
 			pass
 
 		
@@ -177,7 +177,7 @@ class NodeGraphComponent:
 			dest_port = port_out
 			source_port = port_in
 		if custom_node and len(custom_node.get_property("autoportdata")) > 0:
-			custom_node.onAutoPortDisconnected(source_port,self.getFactory())
+			custom_node.onAutoPortDisconnected(source_port)
 			pass
 
 	def onNodeDoubleClickedEvent(self,node : BaseNode):

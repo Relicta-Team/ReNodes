@@ -39,13 +39,24 @@ class RuntimeNode(BaseNode):
 		super(RuntimeNode,self).on_input_connected(in_port, out_port)
 		return
 
+	def getFactoryData(self):
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		return NodeGraphComponent.refObject.getFactory().getNodeLibData(self.nodeClass)
+
 	#
 	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict):
 		if not libCalculator: return sourceType
 
 		#libCalculator['typeget'] -> @type(for all), @typeref(for typeref (array,dict etc)), @value.1, @value.2
+
+		getterData = libCalculator['typeget']
+		dataType,getter = getterData.split(';')
+
+		if not re.findall('[\[\]\,]',sourceType):
+			sourceType = f'array[{sourceType}]'
+
 		typeinfo = re.findall('\w+',sourceType)
-		getter = libCalculator['typeget']
+		
 		if getter == '@type':
 			return sourceType
 		elif getter == '@typeref':
@@ -57,11 +68,11 @@ class RuntimeNode(BaseNode):
 		else :
 			raise Exception(f"Invalid type getter {getter}; Source type info {typeinfo}")
 		
-	def onAutoPortConnected(self,src_port_info : Port, fact : NodeFactory):
+	def onAutoPortConnected(self,src_port_info : Port):
 		clr = src_port_info.view.color
 		brdclr = src_port_info.view.border_color
 		tp = src_port_info.view.port_typeName
-		data = fact.getNodeLibData(self.nodeClass)
+		data = self.getFactoryData()
 
 		anySet = False
 		for name, port in self.inputs().items():
@@ -71,7 +82,7 @@ class RuntimeNode(BaseNode):
 					self.set_property("autoportdata",{
 						"color": port.view.color,
 						"border_color": port.view.border_color
-					})
+					},False)
 				port.view.color = clr
 				port.view.border_color = brdclr
 				port.view.port_typeName = self._calculate_autoport_type(tp,data['inputs'].get(name))
@@ -86,17 +97,19 @@ class RuntimeNode(BaseNode):
 					self.set_property("autoportdata",{
 						"color": port.view.color,
 						"border_color": port.view.border_color
-					})
+					},False)
 				port.view.color = clr
 				port.view.border_color = brdclr
 				port.view.port_typeName = self._calculate_autoport_type(tp,data['outputs'].get(name))
 				port.view.update()
 				port.view._syncTooltip()
 
-	def onAutoPortDisconnected(self,src_port_info : Port, fact : NodeFactory):
+		if anySet:
+
+	def onAutoPortDisconnected(self,src_port_info : Port):
 		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип
 		#tp = src_port_info.view.port_typeName
-		data = fact.getNodeLibData(self.nodeClass)
+		data = self.getFactoryData()
 		portList = []
 		for name,port in self.inputs().items():
 			# Узнаем является порт автоматическим

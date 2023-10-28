@@ -245,12 +245,12 @@ class Port(object):
             if port.view.port_typeName not in accepted_pnames and port.view.port_typeName: #Yobas: replaced from port.name() (#15)
                 return"""
 
-        fromTypeName = self.view.port_typeName
-        toTypeName = port.view.port_typeName
+        #fromTypeName = self.view.port_typeName
+        #toTypeName = port.view.port_typeName
         
         from NodeGraphQt.widgets.viewer import validate_connections
 
-        if not validate_connections(fromTypeName, toTypeName): return
+        if not validate_connections(self.view, port.view): return
 
         """# validate reject connection.
         node_type = self.node().type_

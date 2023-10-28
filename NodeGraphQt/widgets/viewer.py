@@ -28,24 +28,36 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 ZOOM_MIN = -0.95
 ZOOM_MAX = 2.0
 
-def validate_connections(fromTypeName,toTypeName):
+def validate_connections(fromPort : PortItem,toPort : PortItem):
+    
+    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+
+    fromTypeName = fromPort.port_typeName
+    toTypeName = toPort.port_typeName
+
+    fromNode = fromPort.refPort.model.node
+    toNode = toPort.refPort.model.node
+
     #check empty typename ports
-        if not fromTypeName and fromTypeName == toTypeName:
-            return False
-
-        #check start
-        if fromTypeName == toTypeName:
-            return True
-
-        #dynamic set
-        portList_isConnectedAsType = ['[' in fromTypeName,'[' in toTypeName]
-        portList_isEmpty = [fromTypeName == '', toTypeName == '']
-        onePortIsEmpty = any(portList_isEmpty)
-        onePortIsConnected = any(portList_isConnectedAsType)
-        if onePortIsEmpty and onePortIsConnected:
-            return True
-        
+    if not fromTypeName and fromTypeName == toTypeName:
         return False
+
+    #check start
+    if fromTypeName == toTypeName:
+        return True
+
+    #dynamic set
+    #if one port has data and was empty
+    if fromNode.has_property('autoportdata') and fromTypeName == '': return True
+    if toNode.has_property('autoportdata') and toTypeName == '': return True
+    # portList_isConnectedAsType = ['[' in fromTypeName,'[' in toTypeName]
+    # portList_isEmpty = [fromTypeName == '', toTypeName == '']
+    # onePortIsEmpty = any(portList_isEmpty)
+    # onePortIsConnected = any(portList_isConnectedAsType)
+    # if onePortIsEmpty and onePortIsConnected:
+    #     return True
+    
+    return False
 
 class NodeViewer(QtWidgets.QGraphicsView):
     """
@@ -1013,10 +1025,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
             else:
                 accept_validation.append(False)"""
 
-        fromTypeName = from_port.port_typeName
-        toTypeName = to_port.port_typeName
+        #fromTypeName = from_port.port_typeName
+        #toTypeName = to_port.port_typeName
 
-        return validate_connections(fromTypeName,toTypeName)
+        return validate_connections(from_port,to_port)
 
         #if False in accept_validation:
         #    return False

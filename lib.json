@@ -153,7 +153,7 @@
 				"inputs": {
 					"Массив": {
 						"type": "",
-						"typeget": "@type",
+						"typeget": "array;@type",
 						"color": [255,255,255,255]
 					},
 					"Индекс": {
@@ -164,7 +164,7 @@
 				"outputs": {
 					"Значение": {
 						"type": "",
-						"typeget": "@value.1",
+						"typeget": "array;@value.1",
 						"color": [255,255,255,255]
 					}
 				}
