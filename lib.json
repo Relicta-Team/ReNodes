@@ -20,7 +20,7 @@
 					"Условие": {
 						"type": "bool",
 						"default": true,
-						"text": "Условие"
+						"label": "Условие"
 					}	
 				},
 				"inputs": {
@@ -67,7 +67,7 @@
 					"Условие": {
 						"type": "bool",
 						"default": true,
-						"text": "Условие"
+						"label": "Условие"
 					}	
 				},
 				"inputs": {

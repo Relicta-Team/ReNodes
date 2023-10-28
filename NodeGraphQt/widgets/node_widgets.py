@@ -70,7 +70,7 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
             # Вертикальное выравнивание вверху (по высоте)
             #style_dict['QGroupBox::title']['subcontrol-position'] = 'top top'
             # Убираем вертикальные отступы
-            style_dict['QGroupBox::title']['padding-top'] = '14px'
+            style_dict['QGroupBox::title']['padding-top'] = "10px"#'14px'
             style_dict['QGroupBox::title']['padding-bottom'] = '0px'
             style_dict['QGroupBox::title']['alignment'] = 'center'
 
