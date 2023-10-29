@@ -20,8 +20,6 @@ class RuntimeNode(BaseNode):
 
 	def __init__(self):
 		super(RuntimeNode, self).__init__()
-		self.onConnected : QtCore.Signal = QtCore.Signal(object,Port,Port)
-		self.onDisconnected :QtCore.Signal = QtCore.Signal(object,Port,Port)
 
 	def on_input_connected(self, in_port, out_port):
 		if in_port.name() in self.widgets():

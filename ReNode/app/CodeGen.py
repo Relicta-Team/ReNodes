@@ -151,7 +151,8 @@ class CodeGenerator:
         result = pretty(instructions)
         return result
 
-
+    #region Obsoleted
+    
     def generateBfs(self, start_node_id):
         from collections import deque
         visited_nodes = set()
@@ -191,33 +192,6 @@ class CodeGenerator:
             result.append(node_info)
 
         return result
-
-    def buildCodeFromData(self,data,startPoints):
-        nodeDict = {}
-        for point in startPoints:
-            self._compileFlow(point,nodeDict)
-
-        return ""
-
-    def _compileFlow(self,id,nodeDict):
-        nodeObject = self.serialized_graph['nodes'][id]
-        libNode = self.getNodeLibData(nodeObject['class_'])
-        codeprep = libNode['code']
-
-
-        execDict = self.getExecPins(id)
-
-        #process outputs
-        for i,(k,v) in enumerate(libNode.get('outputs',{}).items()):
-            #here we can update custom output
-            
-            if not execDict.get(k): continue
-
-            #outcode = self.generateCode(execDict.get(k),id,path)
-            #print(f"{i} > {k} returns: {outcode}")
-            codeprep = codeprep.replace(f'@out.{i+1}',outcode)
-            pass
-
 
     def generateDfs(self,node_id, visited_nodes=None,baseRef=None,startPoints = None):
         if not visited_nodes:
@@ -270,6 +244,8 @@ class CodeGenerator:
 
 
         return result, startPoints
+
+    #endregion
 
     def generateCode(self, id,fromid=None,path=None,stackedGenerated=None):
 
