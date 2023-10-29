@@ -83,6 +83,9 @@ class NodeGraphComponent:
 
 		self.generateTreeDict()
 		#self.graph.load_session(".\\session.json")
+		with  open(".\\templates_tests.txt",encoding='utf-8') as f:
+			QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
+		self.graph.paste_nodes()
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:

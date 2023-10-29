@@ -144,6 +144,8 @@ class NodeFactory:
 			valdata['allowtypes'] = val.get('allowtypes')
 			valdata['type'] = val.get('type',key)
 			valdata['typeget'] = val.get('typeget',"")
+			if not isInput:
+				valdata['accepted_paths'] = val.get('accepted_paths',["@any"])
 			cons[key] = valdata
 		return cons	
 

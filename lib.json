@@ -138,10 +138,12 @@
 						"type": "Exec"
 					},
 					"Индекс": {
-						"type": "int"
+						"type": "int",
+						"accepted_paths": ["Тело цикла"]
 					},
 					"При завершении": {
-						"type": "Exec"
+						"type": "Exec",
+						"accepted_paths": []
 					}
 				}
 			}

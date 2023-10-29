@@ -2,6 +2,14 @@ from collections import defaultdict
 import json
 import re
 import enum
+import asyncio
+
+class GeneratedVariable:
+    def __init__(self,namevar,locname,maxid,definedNodeId):
+        self.nameVar = namevar
+        self.localName = locname
+        self.maxId = maxid
+        self.definedNodeId = definedNodeId
 
 class CodeGenerator:
     def __init__(self):
@@ -12,8 +20,11 @@ class CodeGenerator:
 
         self._addComments = False
 
-        self.aliasVarNames = {}
-        self.typesVarNames = {}
+        self._debug_info = True # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
+
+        self.aliasVarNames = {} # преобразовванные имена переменныъ
+        self.typesVarNames = {} # тип данных переменной
+        self.varCategoryInfo = {} # дикт с категориями переменных (класс, локальная)
         # те переменные, которые хоть раз используют установку или получение должны быть сгенерены
         self.localVariablesUsed = set()
 
@@ -45,10 +56,13 @@ class CodeGenerator:
 
         self.aliasVarNames = {}
         self.typesVarNames = {}
+        self.varCategoryInfo = {}
 
         for vcat,vval in self.getVariableDict().items():
             for i, (k,v) in enumerate(vval.items()):
                 self.typesVarNames[v['systemname']] = v['type']
+                
+                self.varCategoryInfo[v['systemname']] = vcat
 
                 if vcat=='local':
                     self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
@@ -67,6 +81,8 @@ class CodeGenerator:
                 code += f"\n//cv_init:{vdat['name']}"
             code += "\n" + f'var({self.aliasVarNames[vdat["systemname"]]},{varvalue});'
             
+        self._renamed = set()
+        self._indexer = 0
 
         for nodeid in entrys:
             self.localVariablesUsed = set()
@@ -247,10 +263,11 @@ class CodeGenerator:
 
     #endregion
 
-    def generateCode(self, id,fromid=None,path=None,stackedGenerated=None):
+    def generateCode(self, id,fromid=None,path=None,backwardConnections=None,stackedGenerated=None):
 
         if not path:
             path = []
+            backwardConnections = []
         if not stackedGenerated:
             stackedGenerated = []
 
@@ -258,11 +275,24 @@ class CodeGenerator:
         path.append(id)
 
         nodeObject = self.serialized_graph['nodes'][id]
-        libNode = self.getNodeLibData(nodeObject['class_'])
+        className = nodeObject['class_']
+        libNode = self.getNodeLibData(className)
         codeprep = libNode['code']
         isLocalVar = codeprep == "RUNTIME"
         if self._addComments:
-            codeprep = f"//[{id}]:{nodeObject['class_']}\n" + codeprep
+            if not self._debug_info:
+                codeprep = f"//[{id}]:{className}\n" + codeprep
+            else:
+            #region debug rename nodes
+                if not id in self._renamed:
+                    nameseg = f'[{self._indexer}]:{className}'
+                    codeprep = f'//{nameseg}\n' + codeprep
+                    self.graphsys.graph.get_node_by_id(id).set_name(nameseg)
+                    self._renamed.add(id)
+                    self._indexer += 1
+                else:
+                    codeprep = f'//err_copy_gen\n' + codeprep
+            #endregion
 
         execDict = self.getExecPins(id)
         inputDict = self.getInputs(id)
@@ -271,10 +301,20 @@ class CodeGenerator:
 
         #if codeprep == RUNTIME them get nodeObject['custom']['code']
         if isLocalVar:
-            codeprep = nodeObject['custom']['code']
-            if self._addComments:
-                codeprep = f"//[{id}]:{nodeObject['class_']}\n" + codeprep
+            #codeprep = nodeObject['custom']['code']
             nameid = nodeObject['custom']['nameid']
+            #define variable code
+            codeprep = self.getVariableCode(className,nameid)
+
+            if self._addComments:
+                if not self._debug_info:
+                    codeprep = f"//[{id}]:{className}\n" + codeprep
+                else:
+                    #region debug rename nodes
+                    nameinfo = f"[{self._indexer}]:{className}" if not id in self._renamed else "//err_copy_gen"
+                    #codeprep = f'{nameinfo}\n' + codeprep
+                    #endregion
+            
             self.localVariablesUsed.add(nameid)
             codeprep = codeprep.replace(nameid,self.aliasVarNames[nameid])
             #find key if not "nameid" and "code"
@@ -286,8 +326,10 @@ class CodeGenerator:
         #process inputs
         for i,(k,v) in enumerate(inputsDictFromLib):
             inpId = inputDict.get(k)
-            if (inpId == fromid): continue #do not generate from prev node
             
+            if f"@in.{i+1}" not in codeprep: continue
+
+            # no input -> generate variable
             if not inpId:
                 inlineValue = nodeObject['custom'].get(k,' NULL ')
                 inlineValue = self.updateValueDataForType(inlineValue,v['type'])
@@ -295,17 +337,50 @@ class CodeGenerator:
                 codeprep = codeprep.replace(f'@in.{i+1}', f"{inlineValue}" )
                 continue
 
-            outcode = self.generateCode(inpId,id,path,stackedGenerated)
+            #stack check 
+            if len(stackedGenerated) > 0:
+                # ? как узнать какой элемент стека нужен?
+                pat = stackedGenerated[-1]
+                # поднимаемся вверх по иерархии и находим допустимые пути
+                idBase = pat.definedNodeId
+                acp = None
+                cpyBkwrd = backwardConnections.copy()
+                cpyBkwrd.reverse()
+                for itm in cpyBkwrd:
+                    if itm[0] == idBase:
+                        acp = itm[3]
+                        #path valid
+                        if "@any" in acp:
+                            acp = None
+                        else:
+                            #check name
+                            acp = itm[1]
+                            if acp in itm[3]:
+                                acp = None
+                        break
+                if not acp:
+                    #if idBase == fromid:
+                        codeprep = codeprep.replace(f'@in.{i+1}',pat.localName)
+                        continue
+                    #else:    
+                        #raise Exception(f"UNHANDLED CONDITION; ID MISSMATCH")
+                    #    pass
+                else:
+                    node__ = self.graphsys.graph.get_node_by_id(id)
+                    node__.set_color(255,0,0)
+                    codeprep = codeprep.replace(f'@in.{i+1}',"[FAULT]")
+                    codeprep = f"//ERROR GENERATOR - PATH NOT ACCEPTED \"{acp}\": {self.graphsys.graph.get_node_by_id(id).name()}" + "\n" + codeprep
+                    continue
+                    pass
+            
+            if (inpId == fromid): continue #do not generate from prev node
+
+            outcode = self.generateCode(inpId,id,path,backwardConnections,stackedGenerated)
             print(f"{i} < {k} returns: {outcode}")
             if outcode == "$CICLE_HANDLED$": continue
             codeprep = codeprep.replace(f'@in.{i+1}',outcode)
             pass
 
-        if len(stackedGenerated) > 0 and "@in." in codeprep:
-            pat = stackedGenerated[-1]
-            if len(pat) > 0:
-                for k,v in pat.items():
-                    codeprep = codeprep.replace(k,v)
 
         doremgenvar = False
         if "@genvar." in codeprep:
@@ -315,25 +390,35 @@ class CodeGenerator:
             numpart = re.sub('\w+\.','',clrval)
             invword = "in" if wordpart == "out" else "out"
             
-            stackedGenerated.append({
-                f'@{invword}.{numpart}': lvar
-            })
+            # stackedGenerated.append({
+            #     f'@{invword}.{numpart}': {
+            #         "localName": lvar,
+            #         "maxId": int(numpart)-1
+            #     }
+            # })
+            stackedGenerated.append(GeneratedVariable(f'@{invword}.{numpart}',lvar,int(numpart)-1,id))
             doremgenvar = True
             codeprep = codeprep.replace(f'@genvar.{wordpart}.{numpart}',lvar)
-            print("MATCHED")
+            print("---------> MATCHED")
 
         #process outputs
         for i,(k,v) in enumerate(libNode.get('outputs',{}).items()):
             #here we can update custom output
             
             if not execDict.get(k): continue
-            
-            outcode = self.generateCode(execDict.get(k),id,path,stackedGenerated)
+
+            backwardConnections.append([id,k,className,v.get('accepted_paths',[])])
+            outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
+            backwardConnections.pop()
             print(f"{i} > {k} returns: {outcode}")
             if outcode == "$CICLE_HANDLED$": continue
 
             codeprep = codeprep.replace(f'@out.{i+1}',outcode)
             pass
+
+        #postcheck
+        if className == "operators.for_loop" and "@in." in codeprep:
+            pass#raise Exception("UNHANDLED DEPRECATED")
 
         if doremgenvar:
             stackedGenerated.pop()
@@ -355,6 +440,25 @@ class CodeGenerator:
         path.pop()
 
         return codeprep
+
+    def getVariableCode(self,className,nameid):
+
+        varCat = self.varCategoryInfo[nameid]
+        isGet = False
+
+        if ".get" in className:
+            isGet = True
+        elif ".set" in className:
+            isGet = False
+        else:
+            raise Exception(f"Unknown variable accessor classname: {className}")
+        
+        if varCat == "local":
+            return f"{nameid}" if isGet else f"{nameid} = @in.2; @out.1"
+        elif varCat == "class":
+            return f"this getVariable \"{nameid}\"" if isGet else f"this setVariable [\"{nameid}\", @in.2]; @out.1"
+        else:
+            raise Exception(f'Unknown variable getter type {varCat}')
 
     # returns map: key
     def getExecPins(self,id):
