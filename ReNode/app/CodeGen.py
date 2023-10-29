@@ -6,9 +6,9 @@ import asyncio
 
 class GeneratedVariable:
     def __init__(self,namevar,locname,maxid,definedNodeId):
-        self.nameVar = namevar
-        self.localName = locname
-        self.maxId = maxid
+        self.nameVar = namevar #not used
+        self.localName = locname 
+        self.maxId = maxid #not used
         self.definedNodeId = definedNodeId
 
 class CodeGenerator:
@@ -18,9 +18,12 @@ class CodeGenerator:
 
         self.serialized_graph = None
 
-        self._addComments = False
+        self._addComments = False # Добавляет мета-информацию внутрь кодовой структуры
 
         self._debug_info = True # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
+
+        #TODO: need write
+        self._optimizeCodeSize = False # включает оптимизацию кода. Меньше разрмер 
 
         self.aliasVarNames = {} # преобразовванные имена переменныъ
         self.typesVarNames = {} # тип данных переменной
@@ -57,6 +60,8 @@ class CodeGenerator:
         self.aliasVarNames = {}
         self.typesVarNames = {}
         self.varCategoryInfo = {}
+
+        self._finalizedCode = {} #k,v: nodeid, code (only finalized) !(work in _optimizeCodeSize)
 
         for vcat,vval in self.getVariableDict().items():
             for i, (k,v) in enumerate(vval.items()):
@@ -277,6 +282,10 @@ class CodeGenerator:
             stackedGenerated = []
 
         if id in path: return "$CICLE_HANDLED$"
+
+        #if self._finalizedCode.get(id):
+        #    return f'call {self._finalizedCode[id]["value"]};'
+        
         path.append(id)
 
         nodeObject = self.serialized_graph['nodes'][id]
@@ -443,6 +452,10 @@ class CodeGenerator:
         if "@out." in codeprep:
             codeprep = re.sub(r"@out.\d+","",codeprep)
 
+        #if id not in self._finalizedCode:
+        #    if "@out." not in codeprep and "@in." not in codeprep:
+        #        self._finalizedCode[id] = {"code": codeprep, "value": f'_state_{self.__gethexid(codeprep)}'}
+
         if "@initvars" in codeprep:
             initlocalvars = ""
             for k,vdat in self.getVariableDict().get('local',{}).items():
@@ -451,11 +464,23 @@ class CodeGenerator:
                 if self._addComments:
                     initlocalvars += f"\n//[{id}]lv_init:{vdat['name']}"
                 initlocalvars += f'\nprivate {self.aliasVarNames[vdat["systemname"]]} = {lval};'
+            
+            #states = ""
+            #for nodeId, vdat in self._finalizedCode.items():
+            #    if self._addComments:
+            #        states += f"\n//state_init:{nodeId}"
+            #    states += f'\nprivate {vdat["value"]} = {vdat["code"]};'
+            #initlocalvars += states
+
             codeprep = codeprep.replace("@initvars",initlocalvars)
+
 
         path.pop()
 
         return codeprep
+
+    def __gethexid(self,v):
+        return hex(id(v))
 
     def getVariableCode(self,className,nameid):
 
