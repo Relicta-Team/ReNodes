@@ -10,6 +10,9 @@ class GeneratedVariable:
         self.definedNodeId = definedNodeId
         self.acceptedPaths = acceptedPaths
         self.isUsed = False
+        
+        self.active = True
+        self.fromName = None
 
 class CodeGenerator:
     def __init__(self):
