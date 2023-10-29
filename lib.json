@@ -146,6 +146,51 @@
 						"accepted_paths": []
 					}
 				}
+			},
+			"foreach_loop": {
+				"path":"Операторы",
+				"kind": "data\\icons\\icon_Blueprint_ForEach_16x",
+				"code": "private @genvar.out.2 = NIL; private @genvar.out.3 = NIL; {@out.1} foreach (@in.2); @out.3",
+				"runtime_ports": true,
+				"desc": "Перебор коллекции",
+				"name": "Перебор коллекции",
+				"options": {
+					"autoportdata": {
+						"type": "hidden",
+						"default": {}
+					}
+				},
+				"inputs": {
+					"Вход": {
+						"type": "Exec",
+						"mutliconnect": true,
+						"display_name": false
+					},
+					"Массив": {
+						"type": "",
+						"typeget": "array;@type",
+						"color": [255,255,255,255]
+					}
+				},
+				"outputs": {
+					"Итерация": {
+						"type": "Exec"
+					},
+					"Элемент": {
+						"type": "",
+						"typeget": "array;@value.1",
+						"accepted_paths": ["Итерация"],
+						"color": [255,255,255,255]
+					},
+					"Индекс": {
+						"type": "int",
+						"accepted_paths": ["Итерация"]
+					},
+					"При завершении": {
+						"type": "Exec",
+						"accepted_paths": []
+					}
+				}
 			}
 		},
 		"variable": {

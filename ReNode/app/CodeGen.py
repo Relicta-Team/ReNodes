@@ -5,11 +5,11 @@ import enum
 import asyncio
 
 class GeneratedVariable:
-    def __init__(self,namevar,locname,maxid,definedNodeId):
-        self.nameVar = namevar #not used
+    def __init__(self,locname,definedNodeId,acceptedPaths = None):
         self.localName = locname 
-        self.maxId = maxid #not used
         self.definedNodeId = definedNodeId
+        self.acceptedPaths = acceptedPaths
+        self.isUsed = False
 
 class CodeGenerator:
     def __init__(self):
@@ -354,9 +354,9 @@ class CodeGenerator:
             #stack check 
             if len(stackedGenerated) > 0:
                 # ? как узнать какой элемент стека нужен?
-                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId),None)
+                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId or it_.definedNodeId in path),None)
                 #pat = stackedGenerated[-1] #! последний элемент не прокатит если цикл в цикле+ получение итератора верхнего цикла
-                if pat:
+                if pat and pat.definedNodeId in path:
                     # поднимаемся вверх по иерархии и находим допустимые пути
                     idBase = pat.definedNodeId
                     acp = None
@@ -377,6 +377,7 @@ class CodeGenerator:
                             break
                     if not acp:
                         #if idBase == fromid:
+                            pat.isUsed = True
                             codeprep = codeprep.replace(f'@in.{i+1}',pat.localName)
                             continue
                         #else:    
@@ -408,22 +409,28 @@ class CodeGenerator:
 
 
         doremgenvar = False
+        remCount = 0
+        slotsStack = {}
         if "@genvar." in codeprep:
-            lvar = f'_gv_{len(stackedGenerated)}_{len(stackedGenerated)+1}_{hex(doremgenvar)}'
-            clrval = re.findall(r'\@genvar\.(\w+\.\d+)',codeprep)[0]
-            wordpart = re.sub('\.\d+','',clrval)
-            numpart = re.sub('\w+\.','',clrval)
-            invword = "in" if wordpart == "out" else "out"
-            
-            # stackedGenerated.append({
-            #     f'@{invword}.{numpart}': {
-            #         "localName": lvar,
-            #         "maxId": int(numpart)-1
-            #     }
-            # })
-            stackedGenerated.append(GeneratedVariable(f'@{invword}.{numpart}',lvar,int(numpart)-1,id))
-            doremgenvar = True
-            codeprep = codeprep.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+            clrvalList = re.findall(r'\@genvar\.(\w+\.\d+)',codeprep)
+            dictValues = list(libNode.get('outputs',{}).values())
+            for clrval in clrvalList:
+                
+                lvar = f'_gv_{len(stackedGenerated)}_{len(stackedGenerated)+1}_{hex(doremgenvar)}'
+                wordpart = re.sub('\.\d+','',clrval)
+                numpart = re.sub('\w+\.','',clrval)
+                indexOf = int(numpart)-1 #because is not a index
+                gvObj = GeneratedVariable(lvar,id)
+                slotsStack[f'@{wordpart}.{numpart}'] = gvObj
+                
+                doremgenvar = True
+                codeprep = codeprep.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+
+                #adding accepted paths
+                gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
+                stackedGenerated.append(gvObj)
+                remCount += 1
+
             print("---------> MATCHED")
 
         #process outputs
@@ -432,9 +439,20 @@ class CodeGenerator:
             
             if not execDict.get(k): continue
 
+            nameprop = f"@out.{i+1}"
+            stackGenDoRem = False
+
+            #if nameprop in slotsStack:
+            #    stackedGenerated.append(slotsStack[nameprop])
+            #    stackGenDoRem = True
+
             backwardConnections.append([id,k,className,v.get('accepted_paths',[])])
             outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
             backwardConnections.pop()
+
+            #if stackGenDoRem:
+            #    stackedGenerated.pop()
+
             print(f"{i} > {k} returns: {outcode}")
             if outcode == "$CICLE_HANDLED$": continue
 
@@ -446,7 +464,8 @@ class CodeGenerator:
             pass#raise Exception("UNHANDLED DEPRECATED")
 
         if doremgenvar:
-            stackedGenerated.pop()
+            for i in range(1,remCount):
+                stackedGenerated.pop()
 
         #postcheck outputs
         if "@out." in codeprep:
