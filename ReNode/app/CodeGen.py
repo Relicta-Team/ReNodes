@@ -446,7 +446,7 @@ class CodeGenerator:
             #    stackedGenerated.append(slotsStack[nameprop])
             #    stackGenDoRem = True
 
-            backwardConnections.append([id,k,className,v.get('accepted_paths',[])])
+            backwardConnections.append([id,k,className,v.get('accepted_paths',['@any'])])
             outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
             backwardConnections.pop()
 
