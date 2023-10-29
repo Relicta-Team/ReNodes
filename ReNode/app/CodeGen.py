@@ -84,6 +84,9 @@ class CodeGenerator:
         self._renamed = set()
         self._indexer = 0
 
+        #debug reset node disables
+        self._resetNodesDisable()
+
         for nodeid in entrys:
             self.localVariablesUsed = set()
             #data,startPoints = self.generateDfs(nodeid)
@@ -91,6 +94,8 @@ class CodeGenerator:
             #code += "\n" + self.buildCodeFromData(data,startPoints)
             code += "\n" + self.formatCode(self.generateCode(nodeid))
         print(code)
+        from PyQt5.QtWidgets import QApplication
+        QApplication.clipboard().setText(code)
 
     def formatCode(self, instructions):
         def make_prefix(level):
@@ -340,38 +345,49 @@ class CodeGenerator:
             #stack check 
             if len(stackedGenerated) > 0:
                 # ? как узнать какой элемент стека нужен?
-                pat = stackedGenerated[-1]
-                # поднимаемся вверх по иерархии и находим допустимые пути
-                idBase = pat.definedNodeId
-                acp = None
-                cpyBkwrd = backwardConnections.copy()
-                cpyBkwrd.reverse()
-                for itm in cpyBkwrd:
-                    if itm[0] == idBase:
-                        acp = itm[3]
-                        #path valid
-                        if "@any" in acp:
-                            acp = None
-                        else:
-                            #check name
-                            acp = itm[1]
-                            if acp in itm[3]:
+                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId),None)
+                #pat = stackedGenerated[-1] #! последний элемент не прокатит если цикл в цикле+ получение итератора верхнего цикла
+                if pat:
+                    # поднимаемся вверх по иерархии и находим допустимые пути
+                    idBase = pat.definedNodeId
+                    acp = None
+                    cpyBkwrd = backwardConnections.copy()
+                    cpyBkwrd.reverse()
+                    for itm in cpyBkwrd:
+                        if itm[0] == idBase:
+                            acp = itm[3]
+                            #path valid
+                            if "@any" in acp:
                                 acp = None
-                        break
-                if not acp:
-                    #if idBase == fromid:
-                        codeprep = codeprep.replace(f'@in.{i+1}',pat.localName)
+                            else:
+                                #check name
+                                acp = itm[1]
+                                # есть ли в accepted_paths либо это этот же айди (если дургие есть)
+                                if acp in itm[3] or (inpId == idBase and len(itm[3]) > 0):
+                                    acp = None
+                            break
+                    if not acp:
+                        #if idBase == fromid:
+                            codeprep = codeprep.replace(f'@in.{i+1}',pat.localName)
+                            continue
+                        #else:    
+                            #raise Exception(f"UNHANDLED CONDITION; ID MISSMATCH")
+                        #    pass
+                    else:
+                        #! см ниже... (но с условиями)
+                        node__ = self.graphsys.graph.get_node_by_id(id)
+                        node__.set_disabled(True)
+                        codeprep = codeprep.replace(f'@in.{i+1}',"[FAULT]")
+                        codeprep = f"//ERROR GENERATOR - PATH NOT ACCEPTED \"{acp}\": {self.graphsys.graph.get_node_by_id(id).name()}" + "\n" + codeprep
                         continue
-                    #else:    
-                        #raise Exception(f"UNHANDLED CONDITION; ID MISSMATCH")
-                    #    pass
+                        pass
                 else:
+                    #! Нельзя использовать inpId, так как на ноду id наложены ограничения из другого пути
                     node__ = self.graphsys.graph.get_node_by_id(id)
-                    node__.set_color(255,0,0)
+                    node__.set_disabled(True)
                     codeprep = codeprep.replace(f'@in.{i+1}',"[FAULT]")
-                    codeprep = f"//ERROR GENERATOR - PATH NOT ACCEPTED \"{acp}\": {self.graphsys.graph.get_node_by_id(id).name()}" + "\n" + codeprep
+                    codeprep = f"//ERROR STRUCTURE - WRONG REFERENCE \"{k}\": {self.graphsys.graph.get_node_by_id(inpId).name()}" + "\n" + codeprep
                     continue
-                    pass
             
             if (inpId == fromid): continue #do not generate from prev node
 
@@ -500,6 +516,10 @@ class CodeGenerator:
     
     def findConnection(self,contype : ConnectionType,nodeid):
         return self.findConnections(contype,nodeid,True)
+
+    def _resetNodesDisable(self):
+        for node_id in self.serialized_graph["nodes"].keys():
+            self.graphsys.graph.get_node_by_id(node_id).set_disabled(False)
 
     def findNodesByClass(self, class_to_find):
         node_ids = []
