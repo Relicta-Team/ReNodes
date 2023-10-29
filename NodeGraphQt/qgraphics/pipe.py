@@ -96,7 +96,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             if not self._active:
                 pen.setColor(QtGui.QColor(*PipeEnum.DISABLED_COLOR.value))
                 pen.setStyle(PIPE_STYLES.get(PipeEnum.DRAW_TYPE_DOTTED.value))
-                pen.setWidth(int(pen.width() * 1.25))
+                pen.setWidth(int(pen.width() * 1.25)) #fic convert type error (not expected float)
 
         painter.setPen(pen)
         painter.setBrush(self.brush())
