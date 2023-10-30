@@ -355,11 +355,13 @@ class CodeGenerator:
                 continue
 
             #stack check 
-            if len(stackedGenerated) > 0:
+            
+            pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId and it_.active),None)
+            if len(stackedGenerated) > 0 and pat:
                 # ? как узнать какой элемент стека нужен?
-                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId or it_.definedNodeId in path),None)
+                #pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId),None)
                 #pat = stackedGenerated[-1] #! последний элемент не прокатит если цикл в цикле+ получение итератора верхнего цикла
-                if pat and pat.definedNodeId in path:
+                if pat:
                     # поднимаемся вверх по иерархии и находим допустимые пути
                     idBase = pat.definedNodeId
                     acp = None
@@ -414,9 +416,11 @@ class CodeGenerator:
         doremgenvar = False
         remCount = 0
         slotsStack = {}
+        stackvars = []
         if "@genvar." in codeprep:
             clrvalList = re.findall(r'\@genvar\.(\w+\.\d+)',codeprep)
             dictValues = list(libNode.get('outputs',{}).values())
+            dictKeys = list(libNode.get('outputs',{}).keys())
             for clrval in clrvalList:
                 
                 lvar = f'_gv_{len(stackedGenerated)}_{len(stackedGenerated)+1}_{hex(doremgenvar)}'
@@ -431,8 +435,10 @@ class CodeGenerator:
 
                 #adding accepted paths
                 gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
+                gvObj.fromName = dictKeys[indexOf]
                 stackedGenerated.append(gvObj)
                 remCount += 1
+                stackvars.append(gvObj)
 
             print("---------> MATCHED")
 
@@ -448,10 +454,20 @@ class CodeGenerator:
             #if nameprop in slotsStack:
             #    stackedGenerated.append(slotsStack[nameprop])
             #    stackGenDoRem = True
+            if len(stackvars) > 0:
+                for varobj in stackvars:
+                    if not "@any" in varobj.acceptedPaths:
+                        if not k in varobj.acceptedPaths and varobj.fromName != k:
+                            varobj.active = False
+                pass
 
             backwardConnections.append([id,k,className,v.get('accepted_paths',['@any'])])
             outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
             backwardConnections.pop()
+
+            #reset activity
+            for varobj in stackvars:
+                varobj.active = True
 
             #if stackGenDoRem:
             #    stackedGenerated.pop()
