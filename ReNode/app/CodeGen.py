@@ -97,15 +97,119 @@ class CodeGenerator:
         #debug reset node disables
         self._resetNodesDisable()
 
-        for nodeid in entrys:
-            self.localVariablesUsed = set()
+        self.__generateNames(entrys)
+
+        if self.graphsys.graph.question_dialog("Generate order?","Generator"):
+            generated_code = self.generateOrderedCode(entrys)
+            print(generated_code)
+        #for nodeid in entrys:
+            #self.localVariablesUsed = set()
             #data,startPoints = self.generateDfs(nodeid)
             #print(data)
             #code += "\n" + self.buildCodeFromData(data,startPoints)
-            code += "\n" + self.formatCode(self.generateCode(nodeid))
-        print(code)
-        from PyQt5.QtWidgets import QApplication
-        QApplication.clipboard().setText(code)
+            #code += "\n" + self.formatCode(self.generateCode(nodeid))
+        #print(code)
+        #from PyQt5.QtWidgets import QApplication
+        #QApplication.clipboard().setText(code)
+
+    def __generateNames(self,entry : list):
+        import copy
+        unicalNameDict = dict()
+        uniIdx = 0
+        for k,v in copy.copy(self.serialized_graph['nodes']).items():
+            newname = f'[{uniIdx}]{v["class_"]}'
+            unicalNameDict[k] = newname
+            self.serialized_graph['nodes'][newname] = v
+            self.serialized_graph['nodes'].pop(k)
+            uniIdx += 1
+
+            self.graphsys.graph.get_node_by_id(k).set_name(newname)
+        pass
+        
+        #entry update
+        for its in copy.copy(entry):
+            entry.append(unicalNameDict[its])
+            entry.remove(its)
+
+        for conn in self.serialized_graph['connections']:
+            inOld = conn['in'][0]
+            outOld = conn['out'][0]
+
+            conn['in'][0] = unicalNameDict[inOld]
+            conn['out'][0] = unicalNameDict[outOld]
+
+    def generateOrderedCode(self, entrys):
+        # Создание графа зависимостей
+        graph = self.createDependencyGraph()
+
+        # Топологическая сортировка узлов
+        topological_order = self.topologicalSort(entrys, graph)
+
+        self._resetNodesDisable()
+        #self.generateFromTopology(topological_order)
+
+        code = "generated:"
+
+        # for node in topological_order:
+        #     self._resetNodesDisable()
+        #     self.localVariablesUsed = set()
+        #     code += self.generateCodeForNode(node)
+
+        return code
+
+    def createDependencyGraph(self):
+        graph = defaultdict(list)
+        for connection in self.serialized_graph['connections']:
+            input_node, _ = connection["in"]
+            output_node, _ = connection["out"]
+            graph[input_node].append(output_node)
+            graph[output_node].append(input_node)
+        return graph
+
+    def topologicalSort(self, entrys, graph):
+        stack = []
+        visited = {node: False for node in graph}
+        
+        def topological_sort(node):
+            visited[node] = True
+            for neighbor in graph.get(node, []):  # Проверка на существование ключа
+                if not visited[neighbor]:
+                    topological_sort(neighbor)
+            stack.append(node)
+        
+        for node in entrys:
+            if node in visited:  # Проверка на существование ключа
+                topological_sort(node)
+        
+        return stack
+
+    def generateFromTopology(self, topological_order):
+
+        codeInfo = {nodeid:None for nodeid in topological_order}
+
+        for node_id in topological_order:
+            node_data = self.serializedGraph['nodes'][node_id]
+            class_data = self.getNodeLibData(node_data['class_'])
+
+            node_code = codeInfo[node_id] or class_data['code']
+            node_inputs = class_data['inputs']
+            node_outputs = class_data['outputs']
+
+            execDict = self.getExecPins(node_id)
+            inputDict = self.getInputs(node_id)
+
+            # Переберите все входы и замените их значения в коде
+            for index, input_name, input_value in node_inputs.items():
+                node_code = node_code.replace(f"@in.{index}", input_value)
+
+            # Переберите все выходы и замените их значения в коде
+            for index, output_name, output_value in node_outputs.items():
+                node_code = node_code.replace(f"@out.{index}", output_value)
+
+            #update code
+            codeInfo[node_id] = node_code
+
+        pass
 
     def formatCode(self, instructions):
         def make_prefix(level):
