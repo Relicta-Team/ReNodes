@@ -14,6 +14,8 @@ class GeneratedVariable:
         self.active = True
         self.fromName = None
 
+        self.definedNodeName = None
+
 class CodeGenerator:
     def __init__(self):
         self.generated_code = ""
@@ -328,7 +330,7 @@ class CodeGenerator:
                     codeprep = f"//[{id}]:{className}\n" + codeprep
                 else:
                     #region debug rename nodes
-                    nameinfo = f"[{self._indexer}]:{className}" if not id in self._renamed else "//err_copy_gen"
+                    nameinfo = f"[{self._indexer}]:{className}" if not id in self._renamed else "//err_copy_var"
                     #codeprep = f'{nameinfo}\n' + codeprep
                     #endregion
             
@@ -356,8 +358,8 @@ class CodeGenerator:
 
             #stack check 
             
-            pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId and it_.active),None)
-            if len(stackedGenerated) > 0 and pat:
+            if len(stackedGenerated) > 0 and inpId in path:
+                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId and it_.active),None)
                 # ? как узнать какой элемент стека нужен?
                 #pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId),None)
                 #pat = stackedGenerated[-1] #! последний элемент не прокатит если цикл в цикле+ получение итератора верхнего цикла
@@ -404,7 +406,7 @@ class CodeGenerator:
                     codeprep = f"//ERROR STRUCTURE - WRONG REFERENCE \"{k}\": {self.graphsys.graph.get_node_by_id(inpId).name()}" + "\n" + codeprep
                     continue
             
-            if (inpId == fromid): continue #do not generate from prev node
+            if (inpId == fromid and inpId in path): continue #do not generate from prev node
 
             outcode = self.generateCode(inpId,id,path,backwardConnections,stackedGenerated)
             print(f"{i} < {k} returns: {outcode}")
@@ -436,6 +438,7 @@ class CodeGenerator:
                 #adding accepted paths
                 gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
                 gvObj.fromName = dictKeys[indexOf]
+                gvObj.definedNodeName = self.graphsys.graph.get_node_by_id(id).name()
                 stackedGenerated.append(gvObj)
                 remCount += 1
                 stackvars.append(gvObj)
@@ -456,18 +459,19 @@ class CodeGenerator:
             #    stackGenDoRem = True
             if len(stackvars) > 0:
                 for varobj in stackvars:
-                    if not "@any" in varobj.acceptedPaths:
-                        if not k in varobj.acceptedPaths and varobj.fromName != k:
-                            varobj.active = False
+                    if varobj.fromName != k:
+                        if not "@any" in varobj.acceptedPaths:
+                            if not k in varobj.acceptedPaths:
+                                varobj.active = False
                 pass
 
-            backwardConnections.append([id,k,className,v.get('accepted_paths',['@any'])])
+            backwardConnections.append([id,k,className,v.get('accepted_paths',['@any'])  , self.graphsys.graph.get_node_by_id(id).name()])
             outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
             backwardConnections.pop()
 
             #reset activity
-            for varobj in stackvars:
-                varobj.active = True
+            #for varobj in stackvars:
+            #    varobj.active = True
 
             #if stackGenDoRem:
             #    stackedGenerated.pop()
@@ -483,8 +487,8 @@ class CodeGenerator:
             pass#raise Exception("UNHANDLED DEPRECATED")
 
         if doremgenvar:
-            for i in range(1,remCount):
-                stackedGenerated.pop()
+            for itm in stackvars:
+                stackedGenerated.remove(itm)
 
         #postcheck outputs
         if "@out." in codeprep:
