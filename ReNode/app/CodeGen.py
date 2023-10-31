@@ -15,6 +15,8 @@ class GeneratedVariable:
         self.fromName = None
 
         self.definedNodeName = None
+        
+        self.path = []
 
 class CodeGenerator:
     def __init__(self):
@@ -100,9 +102,9 @@ class CodeGenerator:
 
         self.__generateNames(entrys)
 
-        if True or self.graphsys.graph.question_dialog("Generate order?","Generator"):
+        if self.graphsys.graph.question_dialog("Generate order?","Generator"):
             generated_code = self.generateOrderedCode(entrys)
-            print(generated_code)
+            code += "\n" + generated_code
         #for nodeid in entrys:
             #self.localVariablesUsed = set()
             #data,startPoints = self.generateDfs(nodeid)
@@ -110,8 +112,8 @@ class CodeGenerator:
             #code += "\n" + self.buildCodeFromData(data,startPoints)
             #code += "\n" + self.formatCode(self.generateCode(nodeid))
         #print(code)
-        #from PyQt5.QtWidgets import QApplication
-        #QApplication.clipboard().setText(code)
+        from PyQt5.QtWidgets import QApplication
+        QApplication.clipboard().setText(code)
 
     def __generateNames(self,entry : list):
         import copy
@@ -143,19 +145,15 @@ class CodeGenerator:
         # Создание графа зависимостей
         graph = self.createDependencyGraph()
 
-        # Топологическая сортировка узлов
-        topological_order = self.topologicalSort(entrys, graph)
+        code = ""
 
-        self.generateFromTopology(topological_order)
+        for ent in entrys:
+            self.localVariablesUsed = set()
+            # Топологическая сортировка узлов
+            topological_order = self.topologicalSort(ent, graph)
+            code += self.generateFromTopology(topological_order,ent)
 
-        code = "generated:"
-
-        # for node in topological_order:
-        #     self._resetNodesDisable()
-        #     self.localVariablesUsed = set()
-        #     code += self.generateCodeForNode(node)
-
-        return code
+        return self.formatCode(code)
 
     def createDependencyGraph(self):
         graph = defaultdict(list)
@@ -166,7 +164,7 @@ class CodeGenerator:
             graph[output_node].append(input_node)
         return graph
 
-    def topologicalSort(self, entrys, graph):
+    def topologicalSort(self, entry, graph):
         stack = []
         visited = {node: False for node in graph}
         
@@ -177,10 +175,7 @@ class CodeGenerator:
                     topological_sort(neighbor)
             stack.append(node)
         
-        # for node in entrys:
-        #     if node in visited:  # Проверка на существование ключа
-        #         topological_sort(node)
-        topological_sort(entrys[1])
+        topological_sort(entry)
         
         # реверсим стек от начала к последней точке
         stack.reverse()
@@ -197,6 +192,10 @@ class CodeGenerator:
             self.objectData : dict = None
 
             self.code = ""
+
+            self.generatedVars = []
+
+            self.usedGeneratedVars = []
 
             self._initNodeClassData()
 
@@ -215,21 +214,25 @@ class CodeGenerator:
             return self.refCodegen.getExecPins(self.nodeId)
 
 
-    def generateFromTopology(self, topological_order):
+    def generateFromTopology(self, topological_order, entryId):
 
         codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
 
-        pass
         readyCount = 0
         hasAnyChanges = True # true for enter
         iteration = 0
+        stackGenerated = []
+
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
             iteration += 1
-            for node_id in topological_order:
+
+            stackGenerated = []
+
+            for index_stack, node_id in enumerate(topological_order):
                 obj : CodeGenerator.NodeData = codeInfo[node_id]
                 node_code = obj.code
-                
+
                 if obj.isReady: continue
 
                 node_className = obj.nodeClass
@@ -260,58 +263,105 @@ class CodeGenerator:
                         outputs_fromLib = list(outputs_fromLib)
                         outName = "Значение"
                         outputs_fromLib.append((outName,{'type':self.typesVarNames.get(nameid,None)}))
-                        
 
-                execDict = obj.getConnectionOutputs()
+                createdStackedVars = False        
+                if "@genvar." in node_code:
+                    genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
+                    dictKeys = [k for i,(k,v) in enumerate(outputs_fromLib)]
+                    dictValues = [v for i,(k,v) in enumerate(outputs_fromLib)]
+                    for replClear in genList:
+                        lvar = f'_lvar_{index_stack}'
+                        wordpart = re.sub('\.\d+','',replClear)
+                        numpart = re.sub('\w+\.','',replClear)
+                        indexOf = int(numpart)-1
+
+                        node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+
+                        gvObj = GeneratedVariable(lvar,node_id)
+                        gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
+                        gvObj.fromName = dictKeys[indexOf]
+                        gvObj.definedNodeName = node_id
+                        obj.generatedVars.append(gvObj)
+                        createdStackedVars = True
+
                 inputDict = obj.getConnectionInputs()
+                execDict = obj.getConnectionOutputs()
 
                 # Переберите все входы и замените их значения в коде
                 for index, (input_name, input_props) in enumerate(inputs_fromLib):
                     inpId = inputDict.get(input_name)
-                    
-                    # нечего заменять
-                    if f'@in.{index+1}' not in node_code: 
-                        continue
 
                     # Данных для подключения нет - берем информацию из опции
                     if not inpId:
                         inlineValue = obj_data['custom'].get(input_name,' NULL ')
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
                         node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
-                        hasAnyChanges = True
                         continue
 
 
                     inpObj = codeInfo[inpId]
+                    if len(inpObj.generatedVars) > 0:
+                        for v in inpObj.generatedVars:
+                            if inpId == v.definedNodeId:
+                                v.isUsed = True
+                                obj.usedGeneratedVars.append(v)
+                                node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                            pass
+
+                    # нечего заменять
+                    if f'@in.{index+1}' not in node_code: 
+                        continue
+
                     if inpObj.isReady:
                         node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
-                        hasAnyChanges = True
 
                 # Переберите все выходы и замените их значения в коде
                 for index, (output_name, output_props) in enumerate(outputs_fromLib):
                     outId = execDict.get(output_name)
 
+                    # Выход не подключен
+                    if not outId: 
+                        node_code = node_code.replace(f"@out.{index+1}", "")
+                        continue
+
+                    outputObj = codeInfo[outId]
+
+                    # Пробрасываем переменные созданные на стеке если они в допустимом пути
+                    if createdStackedVars:
+                        for v in obj.generatedVars:
+                            if output_name in v.acceptedPaths or "@any" in v.acceptedPaths or v.fromName == output_name:
+                                outputObj.generatedVars.append(v)
+                            pass
+                    else:
+                        for v in obj.generatedVars:
+                            if v.definedNodeId != node_id:
+                                if v not in outputObj.generatedVars:
+                                    outputObj.generatedVars.append(v)
+
                     # нечего заменять
                     if f'@out.{index+1}' not in node_code:
                         continue
 
-                    # Выход не подключен
-                    if not outId: 
-                        node_code = node_code.replace(f"@out.{index+1}", "")
-                        hasAnyChanges = True
-                        continue
-
-                    outputObj = codeInfo[outId]
                     if outputObj.isReady:
+                        
+                        usedInScopeList = outputObj.usedGeneratedVars # Используемые переменные стека
+                        passedVars = obj.generatedVars #доступные переменные на стеке
+                        owners = [usedVar for usedVar in usedInScopeList if usedVar not in passedVars]
+                        # [usedVar for usedVar in usedInScopeList if usedVar in passedVars] - for get restricted nodes
+                        if len(owners) > 0:
+                            ownText = ", ".join([codeInfo[v.definedNodeId].nodeId for v in owners])
+                            self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений, наложенных: {ownText}")
+                            continue
                         node_code = node_code.replace(f"@out.{index+1}", outputObj.code)
-                        hasAnyChanges = True
-
-                #update code
-                obj.code = node_code
 
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
                     obj.isReady = True
+
+                #update code
+                if not hasAnyChanges:
+                    hasAnyChanges = obj.code != node_code
+                obj.code = node_code
 
             # --- post check stack
             readyCount = 0
@@ -323,7 +373,11 @@ class CodeGenerator:
         if not hasAnyChanges and readyCount != len(codeInfo):
             self.error('Ошибка генерации - невозможно найти порты для генерации')
 
-        pass
+        entryObject = codeInfo[entryId]
+        if not entryObject.isReady:
+            return "NOT_READY:" + entryObject.code
+        
+        return entryObject.code
 
     def formatCode(self, instructions):
         def make_prefix(level):
