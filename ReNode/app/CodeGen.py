@@ -63,6 +63,7 @@ class CodeGenerator:
         code = "generated:"
 
         self.aliasVarNames = {}
+        self.variablePortName = {}
         self.typesVarNames = {}
         self.varCategoryInfo = {}
 
@@ -73,7 +74,7 @@ class CodeGenerator:
                 self.typesVarNames[v['systemname']] = v['type']
                 
                 self.varCategoryInfo[v['systemname']] = vcat
-
+                self.variablePortName[v['systemname']] = v['name']
                 if vcat=='local':
                     self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
                     #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
@@ -99,7 +100,7 @@ class CodeGenerator:
 
         self.__generateNames(entrys)
 
-        if self.graphsys.graph.question_dialog("Generate order?","Generator"):
+        if True or self.graphsys.graph.question_dialog("Generate order?","Generator"):
             generated_code = self.generateOrderedCode(entrys)
             print(generated_code)
         #for nodeid in entrys:
@@ -145,8 +146,7 @@ class CodeGenerator:
         # Топологическая сортировка узлов
         topological_order = self.topologicalSort(entrys, graph)
 
-        self._resetNodesDisable()
-        #self.generateFromTopology(topological_order)
+        self.generateFromTopology(topological_order)
 
         code = "generated:"
 
@@ -177,37 +177,151 @@ class CodeGenerator:
                     topological_sort(neighbor)
             stack.append(node)
         
-        for node in entrys:
-            if node in visited:  # Проверка на существование ключа
-                topological_sort(node)
+        # for node in entrys:
+        #     if node in visited:  # Проверка на существование ключа
+        #         topological_sort(node)
+        topological_sort(entrys[1])
+        
+        # реверсим стек от начала к последней точке
+        stack.reverse()
         
         return stack
 
+    class NodeData:
+        def __init__(self, nodeid, refGraph):
+            self.nodeId : str = nodeid
+            self.refCodegen : CodeGenerator = refGraph
+            self.nodeClass : str = ""
+            self.isReady : bool = False
+            self.classLibData : dict = None
+            self.objectData : dict = None
+
+            self.code = ""
+
+            self._initNodeClassData()
+
+        def _initNodeClassData(self):
+            node_data = self.refCodegen.serialized_graph['nodes'][self.nodeId]
+            self.objectData = node_data
+            self.nodeClass = node_data['class_']
+            self.classLibData = self.refCodegen.getNodeLibData(self.nodeClass)
+
+            self.code = self.classLibData['code']
+
+        def getConnectionInputs(self) -> dict[str,str]:
+            return self.refCodegen.getInputs(self.nodeId)
+        
+        def getConnectionOutputs(self):
+            return self.refCodegen.getExecPins(self.nodeId)
+
+
     def generateFromTopology(self, topological_order):
 
-        codeInfo = {nodeid:None for nodeid in topological_order}
+        codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
 
-        for node_id in topological_order:
-            node_data = self.serializedGraph['nodes'][node_id]
-            class_data = self.getNodeLibData(node_data['class_'])
+        pass
+        readyCount = 0
+        hasAnyChanges = True # true for enter
+        iteration = 0
+        while len(codeInfo) != readyCount and hasAnyChanges:
+            hasAnyChanges = False #reset
+            iteration += 1
+            for node_id in topological_order:
+                obj : CodeGenerator.NodeData = codeInfo[node_id]
+                node_code = obj.code
+                
+                if obj.isReady: continue
 
-            node_code = codeInfo[node_id] or class_data['code']
-            node_inputs = class_data['inputs']
-            node_outputs = class_data['outputs']
+                node_className = obj.nodeClass
+                obj_data = obj.objectData
+                class_data = obj.classLibData
 
-            execDict = self.getExecPins(node_id)
-            inputDict = self.getInputs(node_id)
+                
+                node_inputs = class_data['inputs']
+                node_outputs = class_data['outputs']
 
-            # Переберите все входы и замените их значения в коде
-            for index, input_name, input_value in node_inputs.items():
-                node_code = node_code.replace(f"@in.{index}", input_value)
+                isLocalVar = node_code == "RUNTIME" or obj_data.get('custom',{}).get('nameid')
 
-            # Переберите все выходы и замените их значения в коде
-            for index, output_name, output_value in node_outputs.items():
-                node_code = node_code.replace(f"@out.{index}", output_value)
+                inputs_fromLib = node_inputs.items()
+                outputs_fromLib = node_outputs.items()
 
-            #update code
-            codeInfo[node_id] = node_code
+                if isLocalVar:
+                    nameid = obj_data['custom']['nameid']
+                    #define variable code
+                    node_code, portName, isGet = self.getVariableData(node_className,nameid)
+                    self.localVariablesUsed.add(nameid)
+                    node_code = node_code.replace(nameid,self.aliasVarNames[nameid])
+                    #find key if not "nameid" and "code"
+                    addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
+                    if addedName:
+                        inputs_fromLib = list(inputs_fromLib)
+                        inputs_fromLib.append((addedName,{'type':self.typesVarNames.get(nameid,None)}))
+                    if isGet:
+                        outputs_fromLib = list(outputs_fromLib)
+                        outName = "Значение"
+                        outputs_fromLib.append((outName,{'type':self.typesVarNames.get(nameid,None)}))
+                        
+
+                execDict = obj.getConnectionOutputs()
+                inputDict = obj.getConnectionInputs()
+
+                # Переберите все входы и замените их значения в коде
+                for index, (input_name, input_props) in enumerate(inputs_fromLib):
+                    inpId = inputDict.get(input_name)
+                    
+                    # нечего заменять
+                    if f'@in.{index+1}' not in node_code: 
+                        continue
+
+                    # Данных для подключения нет - берем информацию из опции
+                    if not inpId:
+                        inlineValue = obj_data['custom'].get(input_name,' NULL ')
+                        inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
+                        node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
+                        hasAnyChanges = True
+                        continue
+
+
+                    inpObj = codeInfo[inpId]
+                    if inpObj.isReady:
+                        node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
+                        hasAnyChanges = True
+
+                # Переберите все выходы и замените их значения в коде
+                for index, (output_name, output_props) in enumerate(outputs_fromLib):
+                    outId = execDict.get(output_name)
+
+                    # нечего заменять
+                    if f'@out.{index+1}' not in node_code:
+                        continue
+
+                    # Выход не подключен
+                    if not outId: 
+                        node_code = node_code.replace(f"@out.{index+1}", "")
+                        hasAnyChanges = True
+                        continue
+
+                    outputObj = codeInfo[outId]
+                    if outputObj.isReady:
+                        node_code = node_code.replace(f"@out.{index+1}", outputObj.code)
+                        hasAnyChanges = True
+
+                #update code
+                obj.code = node_code
+
+                # prepare if all replaced
+                if "@in." not in node_code and "@out." not in node_code:
+                    obj.isReady = True
+
+            # --- post check stack
+            readyCount = 0
+            for i in codeInfo.values():
+                if i.isReady:
+                    readyCount += 1
+        
+        #post while events
+        if not hasAnyChanges and readyCount != len(codeInfo):
+            self.error('Ошибка генерации - невозможно найти порты для генерации')
 
         pass
 
@@ -286,351 +400,18 @@ class CodeGenerator:
         result = pretty(instructions)
         return result
 
-    #region Obsoleted
-    
-    def generateBfs(self, start_node_id):
-        from collections import deque
-        visited_nodes = set()
-        result = []
-
-        queue = deque()
-        queue.append(start_node_id)
-        visited_nodes.add(start_node_id)
-
-        while queue:
-            node_id = queue.popleft()
-            node_object = self.serialized_graph['nodes'][node_id]
-
-            exec_dict = self.getExecPins(node_id)
-            input_dict = self.getInputs(node_id)
-
-            node_info = {
-                'node_id': node_id,
-                'class': node_object['class_']
-            }
-
-            children = []
-
-            for _, child_id in input_dict.items():
-                if child_id not in visited_nodes:
-                    queue.append(child_id)
-                    visited_nodes.add(child_id)
-                    children.append({'node_id': child_id, 'class': self.serialized_graph['nodes'][child_id]['class_']})
-
-            for _, child_id in exec_dict.items():
-                if child_id not in visited_nodes:
-                    queue.append(child_id)
-                    visited_nodes.add(child_id)
-                    children.append({'node_id': child_id, 'class': self.serialized_graph['nodes'][child_id]['class_']})
-
-            node_info['children'] = children
-            result.append(node_info)
-
-        return result
-
-    def generateDfs(self,node_id, visited_nodes=None,baseRef=None,startPoints = None):
-        if not visited_nodes:
-            visited_nodes = set()
-        
-        if not startPoints:
-            startPoints = []
-
-        if node_id in visited_nodes:
-            return {}
-
-        visited_nodes.add(node_id)
-        node_object = self.serialized_graph['nodes'][node_id]
-
-        # Обходим все связи (exec и инпуты) текущего узла
-        exec_dict = self.getExecPins(node_id)
-        input_dict = self.getInputs(node_id)
-
-        result = {
-            'node_id': node_id,
-            'class': node_object['class_'],
-            'name': re.sub(r"\<[\w+\ 0-9\"\'\=\:\;\-\/]+\>","",node_object['name'])
-        }
-        tmap = []
-        if baseRef in exec_dict.values():
-            tmap.append("input")
-        if baseRef in input_dict.values():
-            tmap.append("output")
-        if len(tmap) == 0:
-            tmap.append("ERROR")
-
-        result['type'] = ','.join(tmap)
-        result['has_inputs'] = len(input_dict) > 0
-
-        # Рекурсивно обходим дочерние узлы
-
-        for _, child_id in input_dict.items():
-            child_result = self.generateDfs(child_id, visited_nodes,node_id)
-            if child_result:
-                if 'children' not in result:
-                    result['children'] = []
-                result['children'].append(child_result)
-
-        for _, child_id in exec_dict.items():
-            child_result = self.generateDfs(child_id, visited_nodes,node_id)
-            if child_result:
-                if 'children' not in result:
-                    result['children'] = []
-                result['children'].append(child_result)
-
-
-        return result, startPoints
-
-    #endregion
-
-    def generateCode(self, id,fromid=None,path=None,backwardConnections=None,stackedGenerated=None):
-
-        if not path:
-            path = []
-            backwardConnections = []
-        if not stackedGenerated:
-            stackedGenerated = []
-
-        if id in path: return "$CICLE_HANDLED$"
-
-        #if self._finalizedCode.get(id):
-        #    return f'call {self._finalizedCode[id]["value"]};'
-        
-        path.append(id)
-
-        nodeObject = self.serialized_graph['nodes'][id]
-        className = nodeObject['class_']
-        libNode = self.getNodeLibData(className)
-        codeprep = libNode['code']
-        isLocalVar = codeprep == "RUNTIME"
-        if self._addComments:
-            if not self._debug_info:
-                codeprep = f"//[{id}]:{className}\n" + codeprep
-            else:
-            #region debug rename nodes
-                if not id in self._renamed:
-                    nameseg = f'[{self._indexer}]:{className}'
-                    codeprep = f'//{nameseg}\n' + codeprep
-                    self.graphsys.graph.get_node_by_id(id).set_name(nameseg)
-                    self._renamed.add(id)
-                    self._indexer += 1
-                else:
-                    codeprep = f'//err_copy_gen\n' + codeprep
-            #endregion
-
-        execDict = self.getExecPins(id)
-        inputDict = self.getInputs(id)
-        
-        inputsDictFromLib = libNode.get('inputs',{}).items()
-
-        #if codeprep == RUNTIME them get nodeObject['custom']['code']
-        if isLocalVar:
-            #codeprep = nodeObject['custom']['code']
-            nameid = nodeObject['custom']['nameid']
-            #define variable code
-            codeprep = self.getVariableCode(className,nameid)
-
-            if self._addComments:
-                if not self._debug_info:
-                    codeprep = f"//[{id}]:{className}\n" + codeprep
-                else:
-                    #region debug rename nodes
-                    nameinfo = f"[{self._indexer}]:{className}" if not id in self._renamed else "//err_copy_var"
-                    #codeprep = f'{nameinfo}\n' + codeprep
-                    #endregion
-            
-            self.localVariablesUsed.add(nameid)
-            codeprep = codeprep.replace(nameid,self.aliasVarNames[nameid])
-            #find key if not "nameid" and "code"
-            addedName = next((key for key in nodeObject['custom'].keys() if key not in ['nameid','code']),None)
-            if addedName:
-                inputsDictFromLib = list(inputsDictFromLib)
-                inputsDictFromLib.append((addedName,{'type':self.typesVarNames.get(nameid,None)}))
-
-        #process inputs
-        for i,(k,v) in enumerate(inputsDictFromLib):
-            inpId = inputDict.get(k)
-            
-            if f"@in.{i+1}" not in codeprep: continue
-
-            # no input -> generate variable
-            if not inpId:
-                inlineValue = nodeObject['custom'].get(k,' NULL ')
-                inlineValue = self.updateValueDataForType(inlineValue,v['type'])
-                print(f"{i} < {k} is not defined, custom: {inlineValue}")
-                codeprep = codeprep.replace(f'@in.{i+1}', f"{inlineValue}" )
-                continue
-
-            #stack check 
-            
-            if len(stackedGenerated) > 0 and inpId in path:
-                pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId and it_.active),None)
-                # ? как узнать какой элемент стека нужен?
-                #pat = next((it_ for it_ in stackedGenerated if it_.definedNodeId == inpId),None)
-                #pat = stackedGenerated[-1] #! последний элемент не прокатит если цикл в цикле+ получение итератора верхнего цикла
-                if pat:
-                    # поднимаемся вверх по иерархии и находим допустимые пути
-                    idBase = pat.definedNodeId
-                    acp = None
-                    cpyBkwrd = backwardConnections.copy()
-                    cpyBkwrd.reverse()
-                    for itm in cpyBkwrd:
-                        if itm[0] == idBase:
-                            acp = itm[3]
-                            #path valid
-                            if "@any" in acp:
-                                acp = None
-                            else:
-                                #check name
-                                acp = itm[1]
-                                # есть ли в accepted_paths либо это этот же айди (если дургие есть)
-                                if acp in itm[3] or (inpId == idBase and len(itm[3]) > 0):
-                                    acp = None
-                            break
-                    if not acp:
-                        #if idBase == fromid:
-                            pat.isUsed = True
-                            codeprep = codeprep.replace(f'@in.{i+1}',pat.localName)
-                            continue
-                        #else:    
-                            #raise Exception(f"UNHANDLED CONDITION; ID MISSMATCH")
-                        #    pass
-                    else:
-                        #! см ниже... (но с условиями)
-                        node__ = self.graphsys.graph.get_node_by_id(id)
-                        node__.set_disabled(True)
-                        codeprep = codeprep.replace(f'@in.{i+1}',"[FAULT]")
-                        codeprep = f"//ERROR GENERATOR - PATH NOT ACCEPTED \"{acp}\": {self.graphsys.graph.get_node_by_id(id).name()}" + "\n" + codeprep
-                        continue
-                        pass
-                else:
-                    #! Нельзя использовать inpId, так как на ноду id наложены ограничения из другого пути
-                    node__ = self.graphsys.graph.get_node_by_id(id)
-                    node__.set_disabled(True)
-                    codeprep = codeprep.replace(f'@in.{i+1}',"[FAULT]")
-                    codeprep = f"//ERROR STRUCTURE - WRONG REFERENCE \"{k}\": {self.graphsys.graph.get_node_by_id(inpId).name()}" + "\n" + codeprep
-                    continue
-            
-            if (inpId == fromid and inpId in path): continue #do not generate from prev node
-
-            outcode = self.generateCode(inpId,id,path,backwardConnections,stackedGenerated)
-            print(f"{i} < {k} returns: {outcode}")
-            if outcode == "$CICLE_HANDLED$": continue
-            codeprep = codeprep.replace(f'@in.{i+1}',outcode)
-            pass
-
-
-        doremgenvar = False
-        remCount = 0
-        slotsStack = {}
-        stackvars = []
-        if "@genvar." in codeprep:
-            clrvalList = re.findall(r'\@genvar\.(\w+\.\d+)',codeprep)
-            dictValues = list(libNode.get('outputs',{}).values())
-            dictKeys = list(libNode.get('outputs',{}).keys())
-            for clrval in clrvalList:
-                
-                lvar = f'_gv_{len(stackedGenerated)}_{len(stackedGenerated)+1}_{hex(doremgenvar)}'
-                wordpart = re.sub('\.\d+','',clrval)
-                numpart = re.sub('\w+\.','',clrval)
-                indexOf = int(numpart)-1 #because is not a index
-                gvObj = GeneratedVariable(lvar,id)
-                slotsStack[f'@{wordpart}.{numpart}'] = gvObj
-                
-                doremgenvar = True
-                codeprep = codeprep.replace(f'@genvar.{wordpart}.{numpart}',lvar)
-
-                #adding accepted paths
-                gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
-                gvObj.fromName = dictKeys[indexOf]
-                gvObj.definedNodeName = self.graphsys.graph.get_node_by_id(id).name()
-                stackedGenerated.append(gvObj)
-                remCount += 1
-                stackvars.append(gvObj)
-
-            print("---------> MATCHED")
-
-        #process outputs
-        for i,(k,v) in enumerate(libNode.get('outputs',{}).items()):
-            #here we can update custom output
-            
-            if not execDict.get(k): continue
-
-            nameprop = f"@out.{i+1}"
-            stackGenDoRem = False
-
-            #if nameprop in slotsStack:
-            #    stackedGenerated.append(slotsStack[nameprop])
-            #    stackGenDoRem = True
-            if len(stackvars) > 0:
-                for varobj in stackvars:
-                    if varobj.fromName != k:
-                        if not "@any" in varobj.acceptedPaths:
-                            if not k in varobj.acceptedPaths:
-                                varobj.active = False
-                pass
-
-            backwardConnections.append([id,k,className,v.get('accepted_paths',['@any'])  , self.graphsys.graph.get_node_by_id(id).name()])
-            outcode = self.generateCode(execDict.get(k),id,path,backwardConnections,stackedGenerated)
-            backwardConnections.pop()
-
-            #reset activity
-            #for varobj in stackvars:
-            #    varobj.active = True
-
-            #if stackGenDoRem:
-            #    stackedGenerated.pop()
-
-            print(f"{i} > {k} returns: {outcode}")
-            if outcode == "$CICLE_HANDLED$": continue
-
-            codeprep = codeprep.replace(f'@out.{i+1}',outcode)
-            pass
-
-        #postcheck
-        if className == "operators.for_loop" and "@in." in codeprep:
-            pass#raise Exception("UNHANDLED DEPRECATED")
-
-        if doremgenvar:
-            for itm in stackvars:
-                stackedGenerated.remove(itm)
-
-        #postcheck outputs
-        if "@out." in codeprep:
-            codeprep = re.sub(r"@out.\d+","",codeprep)
-
-        #if id not in self._finalizedCode:
-        #    if "@out." not in codeprep and "@in." not in codeprep:
-        #        self._finalizedCode[id] = {"code": codeprep, "value": f'_state_{self.__gethexid(codeprep)}'}
-
-        if "@initvars" in codeprep:
-            initlocalvars = ""
-            for k,vdat in self.getVariableDict().get('local',{}).items():
-                if not k in self.localVariablesUsed: continue
-                lval = self.updateValueDataForType(vdat['value'],vdat['type'])
-                if self._addComments:
-                    initlocalvars += f"\n//[{id}]lv_init:{vdat['name']}"
-                initlocalvars += f'\nprivate {self.aliasVarNames[vdat["systemname"]]} = {lval};'
-            
-            #states = ""
-            #for nodeId, vdat in self._finalizedCode.items():
-            #    if self._addComments:
-            #        states += f"\n//state_init:{nodeId}"
-            #    states += f'\nprivate {vdat["value"]} = {vdat["code"]};'
-            #initlocalvars += states
-
-            codeprep = codeprep.replace("@initvars",initlocalvars)
-
-
-        path.pop()
-
-        return codeprep
-
     def __gethexid(self,v):
         return hex(id(v))
 
-    def getVariableCode(self,className,nameid):
-
+    def getVariableData(self,className,nameid) -> tuple[str,str,bool]:
+        """
+        Возвращает код и тип аксессора переменной
+            :param className: класснейм переменной
+            :param nameid: имя переменной
+            :return: код, имя порта, является ли получением
+        """
         varCat = self.varCategoryInfo[nameid]
+        varPortName = self.variablePortName[nameid]
         isGet = False
 
         if ".get" in className:
@@ -639,13 +420,15 @@ class CodeGenerator:
             isGet = False
         else:
             raise Exception(f"Unknown variable accessor classname: {className}")
-        
+        code = ""
         if varCat == "local":
-            return f"{nameid}" if isGet else f"{nameid} = @in.2; @out.1"
+            code = f"{nameid}" if isGet else f"{nameid} = @in.2; @out.1"
         elif varCat == "class":
-            return f"this getVariable \"{nameid}\"" if isGet else f"this setVariable [\"{nameid}\", @in.2]; @out.1"
+            code = f"this getVariable \"{nameid}\"" if isGet else f"this setVariable [\"{nameid}\", @in.2]; @out.1"
         else:
             raise Exception(f'Unknown variable getter type {varCat}')
+        
+        return code,varPortName,isGet
 
     # returns map: key
     def getExecPins(self,id):
@@ -708,6 +491,15 @@ class CodeGenerator:
         
         return value
     
+    def log(self,text):
+        print(f'[LOG]: {text}')
+
+    def error(self,text):
+        print(f'[ERROR]: {text}')
+
+    def warning(self,text):
+        print(f'[WARNING]: {text}')
+
     def transliterate(self,text):
         translit_dict = {
             'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
