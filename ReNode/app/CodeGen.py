@@ -100,6 +100,7 @@ class CodeGenerator:
         #debug reset node disables
         self._resetNodesDisable()
 
+        self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
         self.__generateNames(entrys)
 
         if self.graphsys.graph.question_dialog("Generate order?","Generator"):
@@ -118,11 +119,13 @@ class CodeGenerator:
     def __generateNames(self,entry : list):
         import copy
         unicalNameDict = dict()
+        self._originalReferenceNames = dict()
         uniIdx = 0
         for k,v in copy.copy(self.serialized_graph['nodes']).items():
             newname = f'[{uniIdx}]{v["class_"]}'
             unicalNameDict[k] = newname
             self.serialized_graph['nodes'][newname] = v
+            self._originalReferenceNames[newname] = k
             self.serialized_graph['nodes'].pop(k)
             uniIdx += 1
 
@@ -197,6 +200,8 @@ class CodeGenerator:
 
             self.usedGeneratedVars = []
 
+            self.hasError = False
+
             self._initNodeClassData()
 
         def _initNodeClassData(self):
@@ -212,6 +217,9 @@ class CodeGenerator:
         
         def getConnectionOutputs(self):
             return self.refCodegen.getExecPins(self.nodeId)
+        
+        def markAsError(self):
+            self.refCodegen.markNodeAsError(self.nodeId)
 
 
     def generateFromTopology(self, topological_order, entryId):
@@ -293,6 +301,9 @@ class CodeGenerator:
 
                     # Данных для подключения нет - берем информацию из опции
                     if not inpId:
+                        if 'custom' not in obj_data: 
+                            #self.warning(f"{node_id} не имеет специальных публичных данных")
+                            continue
                         inlineValue = obj_data['custom'].get(input_name,' NULL ')
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
                         node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
@@ -303,9 +314,10 @@ class CodeGenerator:
                     if len(inpObj.generatedVars) > 0:
                         for v in inpObj.generatedVars:
                             if inpId == v.definedNodeId:
-                                v.isUsed = True
-                                obj.usedGeneratedVars.append(v)
-                                node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                                if v in obj.generatedVars:
+                                    v.isUsed = True
+                                    obj.usedGeneratedVars.append(v)
+                                    node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
                             pass
 
                     # нечего заменять
@@ -330,13 +342,23 @@ class CodeGenerator:
                     if createdStackedVars:
                         for v in obj.generatedVars:
                             if output_name in v.acceptedPaths or "@any" in v.acceptedPaths or v.fromName == output_name:
-                                outputObj.generatedVars.append(v)
-                            pass
+                                if v not in outputObj.generatedVars:
+                                    outputObj.generatedVars.append(v)
+                                    v.path.append(obj.nodeId)
+                                    if outputObj.nodeId not in v.path:
+                                        v.path.append(outputObj.nodeId)
+                                else:
+                                    self.error(f"{obj.nodeId} не может предоставить соединение {outputObj.nodeId} из-за ограничений логики портов")
+                                    obj.markAsError()
+                                    outputObj.markAsError()
                     else:
                         for v in obj.generatedVars:
                             if v.definedNodeId != node_id:
                                 if v not in outputObj.generatedVars:
                                     outputObj.generatedVars.append(v)
+                                
+                                if outputObj.nodeId not in v.path:
+                                    v.path.append(outputObj.nodeId)
 
                     # нечего заменять
                     if f'@out.{index+1}' not in node_code:
@@ -344,13 +366,23 @@ class CodeGenerator:
 
                     if outputObj.isReady:
                         
-                        usedInScopeList = outputObj.usedGeneratedVars # Используемые переменные стека
+                        usedInScopeList = outputObj.generatedVars #usedGeneratedVars # Используемые переменные стека
                         passedVars = obj.generatedVars #доступные переменные на стеке
                         owners = [usedVar for usedVar in usedInScopeList if usedVar not in passedVars]
                         # [usedVar for usedVar in usedInScopeList if usedVar in passedVars] - for get restricted nodes
-                        if len(owners) > 0:
+                        if len(owners) > 0 and len(passedVars) > 0:
                             ownText = ", ".join([codeInfo[v.definedNodeId].nodeId for v in owners])
                             self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений, наложенных: {ownText}")
+                            obj.markAsError()
+                            outputObj.markAsError()
+                            node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
+                            continue
+                        
+                        if len([gvobj for gvobj in outputObj.generatedVars if obj.nodeId not in gvobj.path]) > 0:
+                            self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений логики портов")
+                            obj.markAsError()
+                            outputObj.markAsError()
+                            node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
                             continue
                         node_code = node_code.replace(f"@out.{index+1}", outputObj.code)
 
@@ -457,6 +489,9 @@ class CodeGenerator:
     def __gethexid(self,v):
         return hex(id(v))
 
+    def intersection(self,list_a, list_b):
+        return [ e for e in list_a if e in list_b ]
+
     def getVariableData(self,className,nameid) -> tuple[str,str,bool]:
         """
         Возвращает код и тип аксессора переменной
@@ -553,6 +588,12 @@ class CodeGenerator:
 
     def warning(self,text):
         print(f'[WARNING]: {text}')
+
+    def markNodeAsError(self,node_id):
+        if node_id in self._originalReferenceNames:
+            node_id = self._originalReferenceNames[node_id]
+        
+        self.graphsys.graph.get_node_by_id(node_id).set_disabled(True)
 
     def transliterate(self,text):
         translit_dict = {
