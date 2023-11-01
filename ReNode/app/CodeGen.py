@@ -287,7 +287,7 @@ class CodeGenerator:
                         indexOf = int(numpart)-1
 
                         #node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
-                        node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}\\b',lvar,node_code)
+                        node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
 
                         gvObj = GeneratedVariable(lvar,node_id)
                         gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
@@ -311,7 +311,7 @@ class CodeGenerator:
                         inlineValue = obj_data['custom'].get(input_name,' NULL ')
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
                         #node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
-                        node_code = re.sub(f'@in\.{index+1}\\b', f"{inlineValue}", node_code)
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue
 
 
@@ -323,12 +323,12 @@ class CodeGenerator:
                                     v.isUsed = True
                                     obj.usedGeneratedVars.append(v)
                                     #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
-                                    node_code = re.sub(f'@in\.{index+1}\\b', f"{v.localName}", node_code) 
+                                    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code) 
                             pass
 
                     # нечего заменять
                     #if f'@in.{index+1}' not in node_code: 
-                    if not re.findall(f'@in\.{index+1}\\b',node_code):
+                    if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
                         continue
 
                     if inpObj.isReady:
@@ -353,10 +353,10 @@ class CodeGenerator:
                                 self.error(f'\'{node_id}\' не может быть использован, так как порт \'{v.fromName}\' узла \'{v.definedNodeName}\' накладывает ограничения пути {lockpat}')
                                 obj.markAsError()
                                 #node_code = node_code.replace(f"@in.{index+1}", "<ERROR>")
-                                node_code = re.sub(f'@in\.{index+1}\\b',"<ERROR>",node_code) 
+                                node_code = re.sub(f'@in\.{index+1}(?=\D|$)',"<ERROR>",node_code) 
                                 continue
                         #node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
-                        node_code = re.sub(f'@in\.{index+1}\\b',inpObj.code,node_code) 
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
                 for index, (output_name, output_props) in enumerate(outputs_fromLib):
@@ -365,7 +365,7 @@ class CodeGenerator:
                     # Выход не подключен
                     if not outId: 
                         #node_code = node_code.replace(f"@out.{index+1}", "")
-                        node_code = re.sub(f'@out\.{index+1}\\b',"",node_code) 
+                        node_code = re.sub(f'@out\.{index+1}(?=\D|$)',"",node_code) 
                         continue
 
                     outputObj = codeInfo[outId]
@@ -396,7 +396,7 @@ class CodeGenerator:
 
                     # нечего заменять
                     #if f'@out.{index+1}' not in node_code:
-                    if not re.findall(f'@out\.{index+1}\\b',node_code):
+                    if not re.findall(f'@out\.{index+1}(?=\D|$)',node_code):
                         continue
 
                     if outputObj.isReady:
@@ -432,11 +432,11 @@ class CodeGenerator:
                                 self.error(f'Порт \'{v.fromName}\' узла \'{v.definedNodeName}\' не может быть использован узлом \'{outputObj.nodeId}\', так как в пути есть ограничения {lockpat}')
                                 outputObj.markAsError()
                                 #node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
-                                node_code = re.sub(f"\@out\.{index+1}\\b", "<ERROR>", node_code) 
+                                node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", "<ERROR>", node_code) 
                                 continue
                         
                         #node_code = node_code.replace(f"@out.{index+1}", outputObj.code)                        
-                        node_code = re.sub(f"\@out\.{index+1}\\b", outputObj.code, node_code) 
+                        node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
 
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
