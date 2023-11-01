@@ -18,6 +18,9 @@ class GeneratedVariable:
         
         self.path = [] #ноды доступные в пути
         self.lockedPath = [] #ноды, запрещенные в пути
+    
+    def __repr__(self):
+        return f"{self.definedNodeName}({self.localName})"
 
 class CodeGenerator:
     def __init__(self):
@@ -314,22 +317,21 @@ class CodeGenerator:
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue
 
-
-                    inpObj = codeInfo[inpId]
-                    if len(inpObj.generatedVars) > 0:
-                        for v in inpObj.generatedVars:
-                            if inpId == v.definedNodeId:
-                                if v in obj.generatedVars:
-                                    v.isUsed = True
-                                    obj.usedGeneratedVars.append(v)
-                                    #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
-                                    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code) 
-                            pass
-
                     # нечего заменять
                     #if f'@in.{index+1}' not in node_code: 
                     if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
                         continue
+
+                    inpObj = codeInfo[inpId]
+                    if len(inpObj.generatedVars) > 0:
+                        for v in inpObj.generatedVars:
+                                pathCondition = node_id in v.path and node_id not in v.lockedPath
+                                if v in obj.generatedVars and pathCondition:
+                                    v.isUsed = True
+                                    obj.usedGeneratedVars.append(v)
+                                    #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                                    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code) 
+                        pass
 
                     if inpObj.isReady:
                         for v in inpObj.generatedVars:
@@ -343,7 +345,7 @@ class CodeGenerator:
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
                             prefx = ""#"ERRORED" if secCond else ""
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
-                            self._debug_setName(obj.nodeId,f' {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
+                            self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
 
                             if len(intersections) > 0 and False:
                                 cpy = v.lockedPath.copy()
@@ -420,9 +422,11 @@ class CodeGenerator:
                             definedInOut = v.definedNodeId == outputObj.nodeId
                             
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
+                            secCond = secCond and len(outputObj.usedGeneratedVars) > 0
                             prefx = "ERRORED" if secCond else ""
+                            clr = "red" if secCond else "green"
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
-                            self._debug_setName(outId,f' {nmn}>{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut} {len(intersections)}+{len(v.lockedPath)})')
+                            self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px">    &nbsp;{nmn}>{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut} {len(intersections)}+{len(v.lockedPath)}+{outputObj.usedGeneratedVars})</span>')
 
                             if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
                                 cpy :list = v.lockedPath.copy()
@@ -653,7 +657,8 @@ class CodeGenerator:
         
         orig = self.graphsys.graph.get_node_by_id(node_id)
         oldName = orig.name()
-        orig.set_name(oldName + name)
+        orig.set_name(oldName+name)
+        #orig.set_property("name",oldName + name,False,doNotRename=True)
 
     def transliterate(self,text):
         translit_dict = {
