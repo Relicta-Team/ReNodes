@@ -193,6 +193,28 @@
 				}
 			}
 		},
+		"debug": {
+			"sequence" : {
+				"path":"",
+				"name":"Отладчик x10",
+				"code": "@out.1; @out.2; @out.3; @out.4; @out.5; @out.6; @out.7; @out.8; @out.9; @out.10;",
+				"inputs": {
+					"inp":{"type":"Exec","allowtypes":["Exec"], "display_name": false, "mutliconnect": true}
+				},
+				"outputs": {
+					"Выход 1": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 2": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 3": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 4": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 5": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 6": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 7": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 8": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 9": {"type":"Exec","allowtypes":["Exec"], "display_name": true},
+					"Выход 10": {"type":"Exec","allowtypes":["Exec"], "display_name": true}
+				}
+			}
+		},
 		"variable": {
 			"get": {
 				"isVisibleInLib": false,

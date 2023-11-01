@@ -16,7 +16,8 @@ class GeneratedVariable:
 
         self.definedNodeName = None
         
-        self.path = []
+        self.path = [] #ноды доступные в пути
+        self.lockedPath = [] #ноды, запрещенные в пути
 
 class CodeGenerator:
     def __init__(self):
@@ -59,6 +60,8 @@ class CodeGenerator:
 
         if not layout_data:
             return
+
+        self.log("Старт генерации...")
 
         self.serialized_graph = layout_data
         entrys = self.findNodesByClass("events.onStart")
@@ -283,7 +286,8 @@ class CodeGenerator:
                         numpart = re.sub('\w+\.','',replClear)
                         indexOf = int(numpart)-1
 
-                        node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+                        #node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
+                        node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}\\b',lvar,node_code)
 
                         gvObj = GeneratedVariable(lvar,node_id)
                         gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
@@ -306,7 +310,8 @@ class CodeGenerator:
                             continue
                         inlineValue = obj_data['custom'].get(input_name,' NULL ')
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
-                        node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
+                        #node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
+                        node_code = re.sub(f'@in\.{index+1}\\b', f"{inlineValue}", node_code)
                         continue
 
 
@@ -317,15 +322,41 @@ class CodeGenerator:
                                 if v in obj.generatedVars:
                                     v.isUsed = True
                                     obj.usedGeneratedVars.append(v)
-                                    node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                                    #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                                    node_code = re.sub(f'@in\.{index+1}\\b', f"{v.localName}", node_code) 
                             pass
 
                     # нечего заменять
-                    if f'@in.{index+1}' not in node_code: 
+                    #if f'@in.{index+1}' not in node_code: 
+                    if not re.findall(f'@in\.{index+1}\\b',node_code):
                         continue
 
                     if inpObj.isReady:
-                        node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
+                        for v in inpObj.generatedVars:
+                            intersections = self.intersection(v.path,v.lockedPath)
+                            
+                            existsPathThis = obj.nodeId in v.path
+                            existsFromGenerated = v in obj.generatedVars
+                            outputNotInPath = inpObj.nodeId not in v.path
+                            definedInOut = v.definedNodeId == inpObj.nodeId
+                            
+                            secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
+                            prefx = ""#"ERRORED" if secCond else ""
+                            nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
+                            self._debug_setName(obj.nodeId,f' {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
+
+                            if len(intersections) > 0 and False:
+                                cpy = v.lockedPath.copy()
+                                cpy.remove(node_id)
+                                lockpat = ','.join(cpy)
+                                if len(cpy) > 0: lockpat = ": " + lockpat
+                                self.error(f'\'{node_id}\' не может быть использован, так как порт \'{v.fromName}\' узла \'{v.definedNodeName}\' накладывает ограничения пути {lockpat}')
+                                obj.markAsError()
+                                #node_code = node_code.replace(f"@in.{index+1}", "<ERROR>")
+                                node_code = re.sub(f'@in\.{index+1}\\b',"<ERROR>",node_code) 
+                                continue
+                        #node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
+                        node_code = re.sub(f'@in\.{index+1}\\b',inpObj.code,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
                 for index, (output_name, output_props) in enumerate(outputs_fromLib):
@@ -333,7 +364,8 @@ class CodeGenerator:
 
                     # Выход не подключен
                     if not outId: 
-                        node_code = node_code.replace(f"@out.{index+1}", "")
+                        #node_code = node_code.replace(f"@out.{index+1}", "")
+                        node_code = re.sub(f'@out\.{index+1}\\b',"",node_code) 
                         continue
 
                     outputObj = codeInfo[outId]
@@ -347,21 +379,24 @@ class CodeGenerator:
                                     v.path.append(obj.nodeId)
                                     if outputObj.nodeId not in v.path:
                                         v.path.append(outputObj.nodeId)
-                                else:
-                                    self.error(f"{obj.nodeId} не может предоставить соединение {outputObj.nodeId} из-за ограничений логики портов")
-                                    obj.markAsError()
-                                    outputObj.markAsError()
+                            else:
+                                if outputObj.nodeId not in v.lockedPath:
+                                    v.lockedPath.append(outputObj.nodeId)
                     else:
                         for v in obj.generatedVars:
                             if v.definedNodeId != node_id:
                                 if v not in outputObj.generatedVars:
                                     outputObj.generatedVars.append(v)
                                 
+                                if len(v.lockedPath) > 0 and outputObj.nodeId not in v.lockedPath:
+                                    v.lockedPath.append(outputObj.nodeId)
+
                                 if outputObj.nodeId not in v.path:
                                     v.path.append(outputObj.nodeId)
 
                     # нечего заменять
-                    if f'@out.{index+1}' not in node_code:
+                    #if f'@out.{index+1}' not in node_code:
+                    if not re.findall(f'@out\.{index+1}\\b',node_code):
                         continue
 
                     if outputObj.isReady:
@@ -370,21 +405,38 @@ class CodeGenerator:
                         passedVars = obj.generatedVars #доступные переменные на стеке
                         owners = [usedVar for usedVar in usedInScopeList if usedVar not in passedVars]
                         # [usedVar for usedVar in usedInScopeList if usedVar in passedVars] - for get restricted nodes
-                        if len(owners) > 0 and len(passedVars) > 0:
-                            ownText = ", ".join([codeInfo[v.definedNodeId].nodeId for v in owners])
-                            self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений, наложенных: {ownText}")
-                            obj.markAsError()
-                            outputObj.markAsError()
-                            node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
-                            continue
+                        # if len(owners) > 0 and len(passedVars) > 0:
+                        #     ownText = ", ".join([codeInfo[v.definedNodeId].nodeId for v in owners])
+                        #     self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений, наложенных: {ownText}")
+                        #     obj.markAsError()
+                        #     outputObj.markAsError()
+                        #     node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
+                        #     continue
+                        for v in outputObj.generatedVars:
+                            intersections = self.intersection(v.path,v.lockedPath)
+                            existsPathThis = obj.nodeId in v.path
+                            existsFromGenerated = v in obj.generatedVars
+                            outputNotInPath = outputObj.nodeId not in v.path
+                            definedInOut = v.definedNodeId == outputObj.nodeId
+                            
+                            secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
+                            prefx = "ERRORED" if secCond else ""
+                            nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
+                            self._debug_setName(outId,f' {nmn}>{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut} {len(intersections)}+{len(v.lockedPath)})')
+
+                            if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
+                                cpy :list = v.lockedPath.copy()
+                                if outputObj.nodeId in cpy: cpy.remove(outputObj.nodeId)
+                                lockpat = ','.join(cpy)
+                                if len(cpy) > 0: lockpat = ": " + lockpat
+                                self.error(f'Порт \'{v.fromName}\' узла \'{v.definedNodeName}\' не может быть использован узлом \'{outputObj.nodeId}\', так как в пути есть ограничения {lockpat}')
+                                outputObj.markAsError()
+                                #node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
+                                node_code = re.sub(f"\@out\.{index+1}\\b", "<ERROR>", node_code) 
+                                continue
                         
-                        if len([gvobj for gvobj in outputObj.generatedVars if obj.nodeId not in gvobj.path]) > 0:
-                            self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений логики портов")
-                            obj.markAsError()
-                            outputObj.markAsError()
-                            node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
-                            continue
-                        node_code = node_code.replace(f"@out.{index+1}", outputObj.code)
+                        #node_code = node_code.replace(f"@out.{index+1}", outputObj.code)                        
+                        node_code = re.sub(f"\@out\.{index+1}\\b", outputObj.code, node_code) 
 
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
@@ -594,6 +646,14 @@ class CodeGenerator:
             node_id = self._originalReferenceNames[node_id]
         
         self.graphsys.graph.get_node_by_id(node_id).set_disabled(True)
+
+    def _debug_setName(self,node_id,name):
+        if node_id in self._originalReferenceNames:
+            node_id = self._originalReferenceNames[node_id]
+        
+        orig = self.graphsys.graph.get_node_by_id(node_id)
+        oldName = orig.name()
+        orig.set_name(oldName + name)
 
     def transliterate(self,text):
         translit_dict = {
