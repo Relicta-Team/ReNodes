@@ -235,13 +235,10 @@ class CodeGenerator:
         readyCount = 0
         hasAnyChanges = True # true for enter
         iteration = 0
-        stackGenerated = []
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
             iteration += 1
-
-            stackGenerated = []
 
             for index_stack, node_id in enumerate(topological_order):
                 obj : CodeGenerator.NodeData = codeInfo[node_id]
@@ -265,9 +262,13 @@ class CodeGenerator:
                 if isLocalVar:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
-                    node_code, portName, isGet = self.getVariableData(node_className,nameid)
-                    self.localVariablesUsed.add(nameid)
-                    node_code = node_code.replace(nameid,self.aliasVarNames[nameid])
+                    generated_code, portName, isGet = self.getVariableData(node_className,nameid)
+                    
+                    # update generated code only first time
+                    if node_code == "RUNTIME":
+                        self.localVariablesUsed.add(nameid)
+                        node_code = generated_code.replace(nameid,self.aliasVarNames[nameid])
+                    
                     #find key if not "nameid" and "code"
                     addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
                     if addedName:
@@ -325,12 +326,24 @@ class CodeGenerator:
                     inpObj = codeInfo[inpId]
                     if len(inpObj.generatedVars) > 0:
                         for v in inpObj.generatedVars:
+                                owningGeneratedVar = v in obj.generatedVars
                                 pathCondition = node_id in v.path and node_id not in v.lockedPath
-                                if v in obj.generatedVars and pathCondition:
-                                    v.isUsed = True
-                                    obj.usedGeneratedVars.append(v)
-                                    #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
-                                    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code) 
+                                pathUse = node_id in v.path 
+                                pathLock = node_id not in v.lockedPath
+                                isNearParent = inpId == v.definedNodeId
+                                uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
+                                self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
+                                
+                                if not pathLock and isNearParent: pathLock = not pathLock
+                                usableVariable = owningGeneratedVar and pathUse and pathLock
+                                
+                                if usableVariable:
+                                        v.isUsed = True
+                                        obj.usedGeneratedVars.append(v)
+                                        #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
+                                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code)
+                                    #else:
+                                    #    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', "<ERROR_IN_GET_VAR>", node_code)
                         pass
 
                     if inpObj.isReady:
@@ -424,6 +437,7 @@ class CodeGenerator:
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
                             prefx = "ERRORED" if secCond else ""
+                            if secCond: outputObj.hasError = True
                             clr = "red" if secCond else "green"
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
                             self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px">    &nbsp;{nmn}>{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut} {len(intersections)}+{len(v.lockedPath)}+{outputObj.usedGeneratedVars})</span>')
@@ -457,9 +471,25 @@ class CodeGenerator:
                 if i.isReady:
                     readyCount += 1
         
+        errList = []
+        topoNodes = list(codeInfo.values())
+        topoNodes.pop(0)
+        topoNodes.reverse()
+        firstNonGenerated = topoNodes.pop()
+        for obj in topoNodes:
+            if obj.hasError: 
+                errList.append(obj)
+
+
+        hasNodeError = next((o for o in codeInfo.values() if o.hasError),None)
+        stackGenError = not hasAnyChanges and readyCount != len(codeInfo)
         #post while events
-        if not hasAnyChanges and readyCount != len(codeInfo):
-            self.error('Ошибка генерации - невозможно найти порты для генерации')
+        if stackGenError or hasNodeError:
+            if stackGenError:
+                self.error("Ошибка переполнения стека - отсутствует совместимая информация")
+            strInfo = "; ".join([s.nodeId for s in errList])
+            if not strInfo: strInfo = "-отсутствуют-"
+            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}): {strInfo}\n\tПоследняя неподготовленная нода: {firstNonGenerated.nodeId}')
 
         entryObject = codeInfo[entryId]
         if not entryObject.isReady:
