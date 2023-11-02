@@ -282,16 +282,20 @@ class CodeGenerator:
                 createdStackedVars = False        
                 if "@genvar." in node_code:
                     genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
+
                     dictKeys = [k for i,(k,v) in enumerate(outputs_fromLib)]
                     dictValues = [v for i,(k,v) in enumerate(outputs_fromLib)]
-                    for replClear in genList:
-                        lvar = f'_lvar_{index_stack}'
+                    for _irepl, replClear in enumerate(genList):
+                        lvar = f'_lvar_{index_stack}_{_irepl}'
                         wordpart = re.sub('\.\d+','',replClear)
                         numpart = re.sub('\w+\.','',replClear)
                         indexOf = int(numpart)-1
 
                         #node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
                         node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
+
+                        #replacing @locvar.out.1
+                        node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
 
                         gvObj = GeneratedVariable(lvar,node_id)
                         gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
@@ -427,6 +431,9 @@ class CodeGenerator:
                         #     outputObj.markAsError()
                         #     node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
                         #     continue
+                        def btext(val):
+                            return "TRUE" if val else "FALSE"
+                        
                         for v in outputObj.generatedVars:
                             intersections = self.intersection(v.path,v.lockedPath)
                             existsPathThis = obj.nodeId in v.path
@@ -438,9 +445,11 @@ class CodeGenerator:
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
                             prefx = "ERRORED" if secCond else ""
                             if secCond: outputObj.hasError = True
-                            clr = "red" if secCond else "green"
+                            clr = "red" if secCond else "#1aff00"
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
-                            self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px">    &nbsp;{nmn}>{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut} {len(intersections)}+{len(v.lockedPath)}+{outputObj.usedGeneratedVars})</span>')
+                            sg_ = "    &nbsp;"
+                            alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
+                            self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
 
                             if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
                                 cpy :list = v.lockedPath.copy()
