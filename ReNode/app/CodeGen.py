@@ -436,19 +436,28 @@ class CodeGenerator:
                         
                         for v in outputObj.generatedVars:
                             intersections = self.intersection(v.path,v.lockedPath)
+                            
                             existsPathThis = obj.nodeId in v.path
                             existsFromGenerated = v in obj.generatedVars
                             outputNotInPath = outputObj.nodeId not in v.path
+
                             definedInOut = v.definedNodeId == outputObj.nodeId
+
+                            outInLocked = outputObj.nodeId in v.lockedPath
                             
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
+                            #! last change
+                            if not secCond:
+                                if len(outputObj.usedGeneratedVars) > 0 and outInLocked:
+                                    secCond = True
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
+                            
                             prefx = "ERRORED" if secCond else ""
                             if secCond: outputObj.hasError = True
                             clr = "red" if secCond else "#1aff00"
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
                             sg_ = "    &nbsp;"
-                            alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
+                            alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
                             self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
 
                             if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
@@ -482,9 +491,12 @@ class CodeGenerator:
         
         errList = []
         topoNodes = list(codeInfo.values())
-        topoNodes.pop(0)
+        if len(topoNodes) > 0:
+            topoNodes.pop(0)
         topoNodes.reverse()
-        firstNonGenerated = topoNodes.pop()
+        firstNonGenerated = None
+        if len(topoNodes) > 0:
+            firstNonGenerated = topoNodes.pop()
         for obj in topoNodes:
             if obj.hasError: 
                 errList.append(obj)
@@ -498,7 +510,8 @@ class CodeGenerator:
                 self.error("Ошибка переполнения стека - отсутствует совместимая информация")
             strInfo = "; ".join([s.nodeId for s in errList])
             if not strInfo: strInfo = "-отсутствуют-"
-            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}): {strInfo}\n\tПоследняя неподготовленная нода: {firstNonGenerated.nodeId}')
+            fngTex = firstNonGenerated.nodeId if firstNonGenerated else "-нет-"
+            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}): {strInfo}\n\tПоследняя неподготовленная нода: {fngTex}')
 
         entryObject = codeInfo[entryId]
         if not entryObject.isReady:
