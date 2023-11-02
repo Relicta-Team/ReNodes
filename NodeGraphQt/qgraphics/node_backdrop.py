@@ -125,6 +125,9 @@ class BackdropNodeItem(AbstractNodeItem):
         self._textItem = NodeTextItemForBackdrop("", self)
         self._textItem.setDefaultTextColor(QtGui.QColor(*self.text_color))
         
+        textFont = self._textItem.font()
+        textFont.setPointSize(12)
+        self._textItem.setFont(textFont)
         #Yodes: todo:fix history backdrop
         #self.baseBackdrop = None
 
@@ -219,6 +222,12 @@ class BackdropNodeItem(AbstractNodeItem):
         for pos in [top_rect.left(), top_rect.right() - 5.0]:
             painter.drawRect(
                 QtCore.QRectF(pos, top_rect.bottom() - 5.0, 5.0, 5.0))
+
+        #region Custom adjust size to text
+        font = painter.font()
+        font.setPointSize(15)
+        painter.setFont(font)
+        #endregion
 
         if self.backdrop_text:
             painter.setPen(QtGui.QColor(*self.text_color))
