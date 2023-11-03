@@ -435,6 +435,7 @@ class CodeGenerator:
                             return "TRUE" if val else "FALSE"
                         
                         for v in outputObj.generatedVars:
+                            #!!!! ============== переписать ==============
                             intersections = self.intersection(v.path,v.lockedPath)
                             
                             existsPathThis = obj.nodeId in v.path
@@ -448,7 +449,7 @@ class CodeGenerator:
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
                             #! last change
                             if not secCond:
-                                if len(outputObj.usedGeneratedVars) > 0 and outInLocked:
+                                if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
                                     secCond = True
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
                             
