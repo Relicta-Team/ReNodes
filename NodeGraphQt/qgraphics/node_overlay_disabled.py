@@ -209,7 +209,9 @@ class XErrorItem(QtWidgets.QGraphicsItem):
                                          (rect.height() / 2) - (txt_h / 2),
                                          txt_w, txt_h)
             painter.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0), 0.5))
-            painter.setBrush(QtGui.QColor(*self.color))
+            clr = QtGui.QColor(*self.color)
+            clr.setAlpha(180)
+            painter.setBrush(clr)
             painter.drawRoundedRect(text_bg_rect, 2, 2)
 
             text_rect = QtCore.QRectF((rect.width() / 2) - (font_width / 2),
