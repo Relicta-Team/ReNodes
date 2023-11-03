@@ -227,6 +227,9 @@ class CodeGenerator:
         def markAsError(self):
             self.refCodegen.markNodeAsError(self.nodeId)
 
+        def getConnectionType(self,inout,portname):
+            return self.refCodegen.getNodeConnectionType(self.nodeId,inout,portname)
+
 
     def generateFromTopology(self, topological_order, entryId):
 
@@ -255,6 +258,8 @@ class CodeGenerator:
                 node_outputs = class_data['outputs']
 
                 isLocalVar = node_code == "RUNTIME" or obj_data.get('custom',{}).get('nameid')
+
+                hasRuntimePorts = class_data.get('runtime_ports')
 
                 inputs_fromLib = node_inputs.items()
                 outputs_fromLib = node_outputs.items()
@@ -316,7 +321,17 @@ class CodeGenerator:
                         if 'custom' not in obj_data: 
                             #self.warning(f"{node_id} не имеет специальных публичных данных")
                             continue
-                        inlineValue = obj_data['custom'].get(input_name,' NULL ')
+                        if hasRuntimePorts:
+                            if not obj.getConnectionType("in",input_name):
+                                obj.hasError = True
+                                self.error(f'Входной порт \'{input_name}\' узла \'{obj.nodeId}\' не имеет типа и требует подключения')
+                            
+                        inlineValue = obj_data['custom'].get(input_name,'NULL')
+
+                        if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL":
+                            obj.hasError = True
+                            self.error(f'Порт \'{input_name}\' узла \'{obj.nodeId}\' требует подключения, так как не имеет пользовательского свойства')
+
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
                         #node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
@@ -383,6 +398,11 @@ class CodeGenerator:
 
                     # Выход не подключен
                     if not outId: 
+                        if hasRuntimePorts:
+                            if not obj.getConnectionType("out",output_name):
+                                obj.hasError = True
+                                self.error(f'Выходной порт \'{output_name}\' узла \'{obj.nodeId}\' не имеет типа и требует подключения')
+                        
                         #node_code = node_code.replace(f"@out.{index+1}", "")
                         node_code = re.sub(f'@out\.{index+1}(?=\D|$)',"",node_code) 
                         continue
@@ -698,15 +718,27 @@ class CodeGenerator:
     def warning(self,text):
         print(f'[WARNING]: {text}')
 
-    def markNodeAsError(self,node_id):
+    def _sanitizeNodeName(self,node_id):
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]
-        
+        return node_id
+
+    def markNodeAsError(self,node_id):
+        node_id = self._sanitizeNodeName(node_id)
         self.graphsys.graph.get_node_by_id(node_id).set_disabled(True)
+    
+    def getNodeConnectionType(self,node_id,inout,portname):
+        node_id = self._sanitizeNodeName(node_id)
+        obj = self.graphsys.graph.get_node_by_id(node_id)
+        if inout == "in":
+            return obj.inputs()[portname].view.port_typeName
+        elif inout == "out":
+            return obj.outputs()[portname].view.port_typeName
+        else:
+            raise Exception(f"Unknown connection type: {inout}")
 
     def _debug_setName(self,node_id,name):
-        if node_id in self._originalReferenceNames:
-            node_id = self._originalReferenceNames[node_id]
+        node_id = self._sanitizeNodeName(node_id)
         
         orig = self.graphsys.graph.get_node_by_id(node_id)
         oldName = orig.name()
