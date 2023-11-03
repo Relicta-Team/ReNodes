@@ -14,7 +14,7 @@ from NodeGraphQt.constants import (
 )
 from NodeGraphQt.errors import NodeWidgetError
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
-from NodeGraphQt.qgraphics.node_overlay_disabled import XDisabledItem
+from NodeGraphQt.qgraphics.node_overlay_disabled import XDisabledItem,XErrorItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
 from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem, ScriptedCustomPortItem
 
@@ -47,8 +47,22 @@ class NodeItem(AbstractNodeItem):
         self._proxy_mode = False
         self._proxy_mode_threshold = 70
 
+        self._error_item = XErrorItem(self,"ОШИБКА","")
+
         # Tuple of (port,widget, sizeH)
         self._tupleWidgetData : list[tuple] = None
+
+    def setErrorText(self,text="",header="ОШИБКА"):
+        self._error_item.setVisible(True)
+        if not header: header = "ОШИБКА"
+        self._error_item.desc = text
+        self._error_item.text = header
+
+        self.draw_node()
+        pass
+
+    def resetError(self):
+        self._error_item.setVisible(False)
 
     def post_init(self, viewer, pos=None):
         """
@@ -846,6 +860,8 @@ class NodeItem(AbstractNodeItem):
 
         # disable overlay item.
         self._x_item.proxy_mode = self._proxy_mode
+
+        self._error_item.proxy_mode = self._proxy_mode
 
         # node widget visibility.
         for w in self._widgets.values():

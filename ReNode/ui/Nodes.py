@@ -168,6 +168,12 @@ class RuntimeNode(BaseNode):
 			port.view._syncTooltip()
 
 		pass
+	
+	def setErrorText(self,text="",head=None):
+		self.view.setErrorText(text,head)
+	
+	def resetError(self):
+		self.view.resetError()
 
 
 class RuntimeGroup(GroupNode):
