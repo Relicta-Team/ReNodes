@@ -14,6 +14,7 @@ class CGBaseException:
         self.src = kwargs.get('src') or ""
         self.portname = kwargs.get('portname') or ""
         self.targ = kwargs.get('targ') or ""
+        self.ctx = kwargs.get('ctx') or ""
     
     def getExceptionText(self,addText = False):
         class_ = self.__class__
@@ -22,7 +23,8 @@ class CGBaseException:
         return f"ERR-{class_.id} :" + class_.text.format(
             src=self.src,
             portname=self.portname,
-            targ=self.targ
+            targ=self.targ,
+            ctx=self.ctx
         ) + postText
 
 
@@ -46,3 +48,7 @@ class CGPortRequiredConnectionException(CGBaseException):
     text = "Порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет пользовательского свойства"
     desc = "Порт \"{portname}\" в узле не имеет опции пользовательских данных и требует подключенного значения."
 
+class CGLocalVariableDuplicateUseException(CGBaseException):
+    id = 5
+    text = "Переменная \"{ctx}\" уже используется в событии \"{src}\""
+    desc = "Локальные переменные можно использовать только в одном узле. Создайте другую переменную для \"{targ}\""
