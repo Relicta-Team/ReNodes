@@ -179,12 +179,12 @@
 					"Элемент": {
 						"type": "",
 						"typeget": "array;@value.1",
-						"accepted_paths": ["Итерация"],
+						"accepted_paths": ["Итерация","Индекс"],
 						"color": [255,255,255,255]
 					},
 					"Индекс": {
 						"type": "int",
-						"accepted_paths": ["Итерация"]
+						"accepted_paths": ["Итерация","Элемент"]
 					},
 					"При завершении": {
 						"type": "Exec",
