@@ -151,6 +151,11 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack = (
             kwargs.get('undo_stack') or QtWidgets.QUndoStack(self)
         )
+
+        #todo: reset errors for all nodes on change history
+        self.hasScriptErrors = False
+        self._undo_stack.indexChanged
+
         self._widget = None
         self._sub_graphs = {}
         self._viewer = (

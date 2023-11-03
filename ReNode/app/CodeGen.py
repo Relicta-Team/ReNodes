@@ -3,6 +3,7 @@ import json
 import re
 import enum
 import asyncio
+from ReNode.app.CodeGenExceptions import *
 
 class GeneratedVariable:
     def __init__(self,locname,definedNodeId,acceptedPaths = None):
@@ -13,7 +14,6 @@ class GeneratedVariable:
         
         self.active = True
         self.fromName = None
-
         self.definedNodeName = None
         
         self.path = [] #ноды доступные в пути
@@ -105,6 +105,8 @@ class CodeGenerator:
 
         #debug reset node disables
         self._resetNodesDisable()
+
+        self._resetNodesError()
 
         self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
         self.__generateNames(entrys)
@@ -229,6 +231,11 @@ class CodeGenerator:
 
         def getConnectionType(self,inout,portname):
             return self.refCodegen.getNodeConnectionType(self.nodeId,inout,portname)
+        
+        def getNodeObject(self):
+            cg = self.refCodegen
+            nodeid = cg._sanitizeNodeName(self.nodeId)
+            return cg.graphsys.graph.get_node_by_id(nodeid)
 
 
     def generateFromTopology(self, topological_order, entryId):
@@ -480,6 +487,8 @@ class CodeGenerator:
                             sg_ = "    &nbsp;"
                             alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
                             self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
+                            if secCond:
+                                obj.getNodeObject().setErrorText("Ошибка узла: " + obj.nodeId)
 
                             if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
                                 cpy :list = v.lockedPath.copy()
@@ -692,6 +701,10 @@ class CodeGenerator:
     def _resetNodesDisable(self):
         for node_id in self.serialized_graph["nodes"].keys():
             self.graphsys.graph.get_node_by_id(node_id).set_disabled(False)
+
+    def _resetNodesError(self):
+        for node_id in self.serialized_graph['nodes'].keys():
+            self.graphsys.graph.get_node_by_id(node_id).resetError()
 
     def findNodesByClass(self, class_to_find):
         node_ids = []
