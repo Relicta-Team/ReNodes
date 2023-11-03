@@ -3,20 +3,46 @@
 class CGBaseException:
     id = 0
     text = "Неизвестная ошибка"
-    def __init__(self,**kwargs) -> None:
-        self.sourceNode = kwargs.get('src') or ""
-        self.portName = kwargs.get('portname') or ""
-        self.targetNode = kwargs.get('targ') or ""
-    
-    def getExceptionText(self):
-        class_ = self.__class__
-        f"ERR-{class_.id} :" + class_.text.format(
-            src=self.sourceNode,
-            portname=self.portName,
-            targ=self.targetNode
-        )
+    desc = ""
 
+    def __init__(self,**kwargs) -> None:
+        """
+            `src` - узел источник проблемы
+            `portname` - имя порта
+            `targ` - узел цель
+        """
+        self.src = kwargs.get('src') or ""
+        self.portname = kwargs.get('portname') or ""
+        self.targ = kwargs.get('targ') or ""
+    
+    def getExceptionText(self,addText = False):
+        class_ = self.__class__
+        postText = class_.text if addText else ""
+
+        return f"ERR-{class_.id} :" + class_.text.format(
+            src=self.src,
+            portname=self.portname,
+            targ=self.targ
+        ) + postText
+
+
+class CGStackError(CGBaseException):
+    id = 1
+    text = "Ошибка стека генерации - отсутствует совместимая информация для генерации"
+    desc = "При обработке отсортированного дерева узлов кодогенератор не смог найти допустимых замен без которых обработка не может выполняться."
 
 class CGVariablePathAccessException(CGBaseException):
-    id = 1
-    text = "Порт \"{portname}\" узла \"{sourceNode}\" не может быть использован из-за ограничений пути"
+    id = 2
+    text = "Порт \"{portname}\" узла \"{src}\" не может быть использован из-за ограничений пути"
+    desc = "Проверьте пути до узла \"{portname}\". Вероятнее до него идёт два или более конфликтующих порта цилка"
+
+class CGPortTypeRequiredException(CGBaseException):
+    id = 3
+    text = "Порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет типа"
+    desc = "Некоторые узлы получают типы своих портов при подключении к ним других узлов. Подключите к узлу \"{src}\" определяющий узел"
+
+class CGPortRequiredConnectionException(CGBaseException):
+    id = 4
+    text = "Порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет пользовательского свойства"
+    desc = "Порт \"{portname}\" в узле не имеет опции пользовательских данных и требует подключенного значения."
+
