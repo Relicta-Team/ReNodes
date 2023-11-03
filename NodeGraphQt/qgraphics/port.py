@@ -248,12 +248,37 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._syncTooltip()
 
     def _syncTooltip(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent, NodeFactory
         conn_type = 'Мульт.' if self.multi_connection else 'Одиноч.'
         tooltip = '{}: ({})'.format(self.name, conn_type)
         if self._locked:
             tooltip += ' (Заблокирован)'
         
-        self.setToolTip('[{}] {}: ({})'.format(self.port_typeName, self.name, conn_type))
+        postInfo = ""
+
+        data = NodeGraphComponent.refObject.getFactory().getNodeLibData(self.node.nodeClass)
+        if data:
+            pgetter = 'inputs' if self._port_type=='in' else "outputs"
+            
+            if pgetter == 'outputs':
+                postInfo = "\nДоступные пути: "
+                if self._name in data[pgetter]:
+                    portData = data[pgetter][self._name]
+                    if portData.get("accepted_paths"):
+                        acp = portData.get("accepted_paths")
+                        if "@any" in acp:
+                            postInfo += "все"
+                        else:
+                            postInfo += "этот порт, " + ", ".join(acp)
+                    else:
+                        postInfo += "только от этого порта"
+                else:
+                    postInfo += "без ограничений"
+            else:
+                pass
+
+
+        self.setToolTip('[{}] {}: ({}){}'.format(self.port_typeName, self.name, conn_type,postInfo))
 
     @property
     def port_type(self):
