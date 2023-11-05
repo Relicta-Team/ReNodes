@@ -20,20 +20,27 @@ class CGBaseException:
     def getShortErrorInfo(self):
         return f'ERR-{self.__class__.id}'
 
-    def getExceptionText(self,addDesc = False):
-        class_ = self.__class__
-        postText = class_.desc if addDesc else ""
-
-        if postText:
-            postText = "\n--- Описание:\n\t" + postText.format(
+    def getExceptionDescription(self):
+        desc = self.__class__.desc
+        if desc:
+            desc = desc.format(
                 src=self.src,
                 portname=self.portname,
                 targ=self.targ,
                 ctx=self.ctx,
                 entry=self.entry
             )
+        return desc
 
-        return f"ERR-{class_.id}: " + class_.text.format(
+    def getExceptionText(self,addDesc = False):
+        class_ = self.__class__
+        postText = class_.desc if addDesc else ""
+
+        if postText:
+            postText = "<span style='color:#FFF2B0;'>"+self.getExceptionDescription()+"</span>"
+            postText = "\n- Подробнее: " + postText
+            #postText = '<p title="tootip">some block of text</p>'
+        return f"<b>ERR-{class_.id}</b>: " + class_.text.format(
             src=self.src,
             portname=self.portname,
             targ=self.targ,
@@ -52,7 +59,7 @@ class CGUnhandledException(CGBaseException):
 
 class CGUnhandledObjectException(CGUnhandledException):
     id = 2
-    text = "Узел \"{src}\" вызвал необработанное исключение. Контекст: {ctx}"
+    text = "Узел {src} вызвал необработанное исключение. Контекст: {ctx}"
 
 class CGStackError(CGBaseException):
     id = 3
@@ -65,17 +72,17 @@ class CGStackError(CGBaseException):
 
 class CGPortTypeRequiredException(CGBaseException):
     id = 101
-    desc = "Некоторые узлы получают типы своих портов при подключении к ним других узлов. Подключите к узлу \"{src}\" определяющий узел"
+    desc = "Некоторые узлы получают типы своих портов при подключении к ним других узлов. Подключите к {src} узел, который определит тип портов"
 
 class CGInputPortTypeRequiredException(CGPortTypeRequiredException):
-    text = "Входной порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет типа"
+    text = "Входной порт \"{portname}\" узла {src} требует подключения, так как не имеет типа"
 
 class CGOutputPortTypeRequiredException(CGPortTypeRequiredException):
-    text = "Выходной порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет типа"
+    text = "Выходной порт \"{portname}\" узла {src} требует подключения, так как не имеет типа"
 
 class CGPortRequiredConnectionException(CGBaseException):
     id = 102
-    text = "Входной порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет пользовательского свойства"
+    text = "Входной порт \"{portname}\" узла {src} требует подключения, так как не имеет пользовательского свойства"
     desc = "Порт \"{portname}\" в узле не имеет опции пользовательских данных и требует подключенного значения."
 
 # ----------------------------------------
@@ -84,7 +91,7 @@ class CGPortRequiredConnectionException(CGBaseException):
 
 class CGVariablePathAccessException(CGBaseException):
     id = 301
-    text = "Порт \"{portname}\" узла \"{src}\" не может быть использован из-за ограничений пути, наложенных \"{targ}\""
+    text = "Порт \"{portname}\" узла {src} не может быть использован из-за ограничений пути, наложенных {targ}"
     desc = "Проверьте пути до узла \"{portname}\". Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
 
 # ----------------------------------------
@@ -93,5 +100,5 @@ class CGVariablePathAccessException(CGBaseException):
 
 class CGLocalVariableDuplicateUseException(CGBaseException):
     id = 601
-    text = "Локальная переменная \"{src}\" ({ctx}) уже используется в событии \"{targ}\""
-    desc = "Локальные переменные можно использовать только внутри одного события. Создайте новую переменную для использования в \"{entry}\""
+    text = "Локальная переменная {src} ({ctx}) уже используется в событии {targ}"
+    desc = "Локальные переменные можно использовать только внутри одного события. Создайте новую переменную для использования в {entry}"
