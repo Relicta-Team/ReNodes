@@ -4,6 +4,7 @@ import re
 import enum
 import asyncio
 from ReNode.app.CodeGenExceptions import *
+import traceback
 
 class GeneratedVariable:
     def __init__(self,locname,definedNodeId,acceptedPaths = None):
@@ -78,10 +79,11 @@ class CodeGenerator:
                 lvData = {}
                 self.localVariableData[v['systemname']] = lvData
                 lvData['type'] = v['type']
-                lvData['usedin'] = []
+                lvData['usedin'] = None
                 
                 lvData['category'] = vcat
                 lvData['portname'] = v['name']
+                lvData['varname'] = v['name']
                 #self.transliterate(v['name']) for get transliterate name
                 if vcat=='local':
                     lvData['alias'] = f"_LVAR{i+1}"
@@ -100,6 +102,7 @@ class CodeGenerator:
             
         self._renamed = set()
         self._indexer = 0
+        self._exceptions : list[CGBaseException] = [] #список исключений
 
         #debug reset node disables
         self._resetNodesDisable()
@@ -121,6 +124,13 @@ class CodeGenerator:
         #print(code)
         from PyQt5.QtWidgets import QApplication
         QApplication.clipboard().setText(code)
+
+        if self._exceptions:
+            self.error(f"\n\t- Ошибок: {len(self._exceptions)}\n\t- Генерация завершена с ошибками")
+        else:
+            self.log("\n\t- Генерация завершена")
+        self.log("================================")
+            
 
     def __generateNames(self,entry : list):
         import copy
@@ -151,18 +161,23 @@ class CodeGenerator:
             conn['out'][0] = unicalNameDict[outOld]
 
     def generateOrderedCode(self, entrys):
-        # Создание графа зависимостей
-        graph = self.createDependencyGraph()
+        try:
+            # Создание графа зависимостей
+            graph = self.createDependencyGraph()
 
-        code = ""
+            code = ""
 
-        for ent in entrys:
-            self.localVariablesUsed = set()
-            # Топологическая сортировка узлов
-            topological_order = self.topologicalSort(ent, graph)
-            code += self.generateFromTopology(topological_order,ent)
+            for ent in entrys:
+                self.localVariablesUsed = set()
+                # Топологическая сортировка узлов
+                topological_order = self.topologicalSort(ent, graph)
+                code += self.generateFromTopology(topological_order,ent)
 
-        return self.formatCode(code)
+            return self.formatCode(code)
+        except Exception as e:
+            strFullException = traceback.format_exc()
+            self.exception(CGUnhandledException,context=strFullException)
+            return f"//unhandled exception\n"
 
     def createDependencyGraph(self):
         graph = defaultdict(list)
@@ -231,6 +246,13 @@ class CodeGenerator:
             cg = self.refCodegen
             nodeid = cg._sanitizeNodeName(self.nodeId)
             return cg.graphsys.graph.get_node_by_id(nodeid)
+    
+        def markAsError(self):
+            alreadyError = self.hasError
+            if not alreadyError:
+                self.hasError = True
+                alreadyError = not alreadyError
+            return alreadyError
 
 
     def generateFromTopology(self, topological_order, entryId):
@@ -269,18 +291,25 @@ class CodeGenerator:
                 if isLocalVar:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
-                    generated_code, portName, isGet = self.getVariableData(node_className,nameid)
+                    generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid)
                     
                     # update generated code only first time
                     if node_code == "RUNTIME":
-                        self.localVariablesUsed.add(nameid)
+                        if varCat == "local":
+                            usedIn = self.localVariableData[nameid]['usedin']
+                            entryObj = codeInfo[entryId]
+                            if not usedIn or usedIn == entryObj:
+                                self.localVariablesUsed.add(nameid)
+                                self.localVariableData[nameid]['usedin'] = entryObj
+                            else:
+                                self.exception(CGLocalVariableDuplicateUseException,source=obj,context=self.localVariableData[nameid]['varname'],entry=entryObj,target=usedIn)
                         node_code = generated_code.replace(nameid,self.localVariableData[nameid]['alias'])
                     
                     #find key if not "nameid" and "code"
                     addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
-                    if addedName:
+                    if not isGet:
                         inputs_fromLib = list(inputs_fromLib)
-                        inputs_fromLib.append((addedName,{'type':self.localVariableData[nameid]['type']}))
+                        inputs_fromLib.append((portName,{'type':self.localVariableData[nameid]['type']}))
                     if isGet:
                         outputs_fromLib = list(outputs_fromLib)
                         outName = "Значение"
@@ -298,7 +327,6 @@ class CodeGenerator:
                         numpart = re.sub('\w+\.','',replClear)
                         indexOf = int(numpart)-1
 
-                        #node_code = node_code.replace(f'@genvar.{wordpart}.{numpart}',lvar)
                         node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
 
                         #replacing @locvar.out.1
@@ -325,22 +353,18 @@ class CodeGenerator:
                             continue
                         if hasRuntimePorts:
                             if not obj.getConnectionType("in",input_name):
-                                obj.hasError = True
-                                self.error(f'Входной порт \'{input_name}\' узла \'{obj.nodeId}\' не имеет типа и требует подключения')
+                                self.exception(CGInputPortTypeRequiredException,source=obj,portname=input_name)
                             
                         inlineValue = obj_data['custom'].get(input_name,'NULL')
 
                         if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL":
-                            obj.hasError = True
-                            self.error(f'Порт \'{input_name}\' узла \'{obj.nodeId}\' требует подключения, так как не имеет пользовательского свойства')
+                            self.exception(CGPortRequiredConnectionException,source=obj,portname=input_name)
 
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
-                        #node_code = node_code.replace(f'@in.{index+1}', f"{inlineValue}" )
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue
 
                     # нечего заменять
-                    #if f'@in.{index+1}' not in node_code: 
                     if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
                         continue
 
@@ -352,8 +376,10 @@ class CodeGenerator:
                                 pathUse = node_id in v.path 
                                 pathLock = node_id not in v.lockedPath
                                 isNearParent = inpId == v.definedNodeId
-                                uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
-                                self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
+
+                                if self._debug_rename:
+                                    uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
+                                    self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
                                 
                                 if not pathLock and isNearParent: pathLock = not pathLock
                                 usableVariable = owningGeneratedVar and pathUse and pathLock
@@ -361,11 +387,7 @@ class CodeGenerator:
                                 if usableVariable:
                                         v.isUsed = True
                                         obj.usedGeneratedVars.append(v)
-                                        #node_code = node_code.replace(f"@in.{index+1}", f"{v.localName}")
                                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code)
-                                    #else:
-                                    #    node_code = re.sub(f'@in\.{index+1}(?=\D|$)', "<ERROR_IN_GET_VAR>", node_code)
-                        pass
 
                     if inpObj.isReady:
                         for v in inpObj.generatedVars:
@@ -377,11 +399,15 @@ class CodeGenerator:
                             definedInOut = v.definedNodeId == inpObj.nodeId
                             
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
-                            prefx = ""#"ERRORED" if secCond else ""
-                            nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
-                            self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
+                            
+                            if self._debug_rename:
+                                prefx = ""#"ERRORED" if secCond else ""
+                                nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
+                                self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
 
-                        #node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
+                            if secCond:
+                                self.exception(CGUnhandledObjectException,source=obj,context=f"Ошибка входного порта \'{input_name}\'")
+
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
@@ -392,10 +418,8 @@ class CodeGenerator:
                     if not outId: 
                         if hasRuntimePorts:
                             if not obj.getConnectionType("out",output_name):
-                                obj.hasError = True
-                                self.error(f'Выходной порт \'{output_name}\' узла \'{obj.nodeId}\' не имеет типа и требует подключения')
+                                self.exception(CGOutputPortTypeRequiredException,source=obj,portname=output_name)
                         
-                        #node_code = node_code.replace(f"@out.{index+1}", "")
                         node_code = re.sub(f'@out\.{index+1}(?=\D|$)',"",node_code) 
                         continue
 
@@ -426,7 +450,6 @@ class CodeGenerator:
                                     v.path.append(outputObj.nodeId)
 
                     # нечего заменять
-                    #if f'@out.{index+1}' not in node_code:
                     if not re.findall(f'@out\.{index+1}(?=\D|$)',node_code):
                         continue
 
@@ -448,23 +471,25 @@ class CodeGenerator:
                             outInLocked = outputObj.nodeId in v.lockedPath
                             
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
-                            #! last change
+                            
                             if not secCond:
                                 if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
                                     secCond = True
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
                             
-                            prefx = "ERRORED" if secCond else ""
                             if secCond: outputObj.hasError = True
-                            clr = "red" if secCond else "#1aff00"
-                            nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
-                            sg_ = "    &nbsp;"
-                            alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
-                            self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
+
+                            if self._debug_rename:
+                                prefx = "ERRORED" if secCond else ""
+                                clr = "red" if secCond else "#1aff00"
+                                nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
+                                sg_ = "    &nbsp;"
+                                alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
+                                self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
+                            
                             if secCond:
-                                obj.getNodeObject().setErrorText("Ошибка узла: " + obj.nodeId)
-                        
-                        #node_code = node_code.replace(f"@out.{index+1}", outputObj.code)                        
+                                self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
+                                               
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
 
                 # prepare if all replaced
@@ -598,7 +623,7 @@ class CodeGenerator:
         Возвращает код и тип аксессора переменной
             :param className: класснейм переменной
             :param nameid: имя переменной
-            :return: код, имя порта, является ли получением
+            :return: код, имя порта, является ли получением, категория переменной
         """
         varData = self.localVariableData[nameid]
         varCat = varData['category']
@@ -619,7 +644,7 @@ class CodeGenerator:
         else:
             raise Exception(f'Unknown variable getter type {varCat}')
         
-        return code,varPortName,isGet
+        return code,varPortName,isGet,varCat
 
     # returns map: key
     def getExecPins(self,id):
@@ -695,6 +720,41 @@ class CodeGenerator:
     def warning(self,text):
         print(f'[WARNING]: {text}')
 
+    def exception(self,
+                  exType,source:NodeData | None=None,
+                  portname:str|None=None,
+                  target:NodeData | None=None, 
+                  entry:NodeData | None=None,
+                  context=None):
+        sourceId = None
+        targetId = None
+        entryId = None
+        if source: sourceId = source.nodeId
+        if target: targetId = target.nodeId
+        if entry: entryId = entry.nodeId
+
+        params = {
+            "src": sourceId,
+            "portname": portname,
+            "targ": targetId,
+            "ctx": context,
+            "entry": entryId
+        }
+        ex : CGBaseException = exType(**params)
+
+        self.error(ex.getExceptionText(addDesc=True))
+
+        if sourceId:
+            if source.markAsError():
+                source.getNodeObject().addErrorText(f'Узел {sourceId}:\n{ex.getExceptionText()}',head=f'ОШИБКА <{sourceId}>')
+        if targetId:
+            if target.markAsError():
+                target.getNodeObject().addErrorText(f'Узел {targetId}:\nОшибка в {sourceId}')
+        if entryId:
+            if entry.markAsError():
+                entry.getNodeObject().addErrorText(f'Старт {entryId}:\nОшибка в {sourceId}')
+
+        self._exceptions.append(ex)
     def _sanitizeNodeName(self,node_id):
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]

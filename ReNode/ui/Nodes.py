@@ -169,12 +169,17 @@ class RuntimeNode(BaseNode):
 
 		pass
 	
+	#region Ошибки
 	def setErrorText(self,text="",head=None):
 		self.view.setErrorText(text,head)
 	
+	def addErrorText(self,text="",head=None):
+		self.view.addErrorText(text,head)
+
 	def resetError(self):
 		self.view.resetError()
 
+	#endregion
 
 class RuntimeGroup(GroupNode):
 	__identifier__ = 'runtime_domain'

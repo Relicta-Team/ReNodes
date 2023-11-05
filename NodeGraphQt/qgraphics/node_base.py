@@ -61,6 +61,13 @@ class NodeItem(AbstractNodeItem):
         self.draw_node()
         pass
 
+    def addErrorText(self,text="",header="ОШИБКА"):
+        if not text: return
+        oldText = self._error_item.desc
+        if oldText:
+            oldText += "\n"
+        self.setErrorText(oldText+text,header)
+
     def resetError(self):
         self._error_item.setVisible(False)
 
