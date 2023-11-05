@@ -131,11 +131,16 @@ class CodeGenerator:
         from PyQt5.QtWidgets import QApplication
         QApplication.clipboard().setText(code)
 
+        
+
         if self._exceptions:
-            self.error(f"\n\t- Ошибок: {len(self._exceptions)}\n\t- Генерация завершена с ошибками")
+            self.log(f"\t- Ошибок: {len(self._exceptions)}")
+            self.log("- <span style=\"color:red;\">Генерация завершена с ошибками</span>")
         else:
-            self.log("\n\t- Генерация завершена")
+            self.log("- <span style=\"color:green;\">Генерация завершена</span>")
+        
         self.log("================================")
+        
             
 
     def __generateNames(self,entry : list):
