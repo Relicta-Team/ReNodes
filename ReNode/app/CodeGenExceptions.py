@@ -27,28 +27,32 @@ class CGBaseException:
             ctx=self.ctx
         ) + postText
 
+class CGUnhandledException(CGBaseException):
+    id = 1
+    text = "Необработанное исключение: {ctx}"
+    desc = "Обратитесь к разработчику для решения данной проблемы"
 
 class CGStackError(CGBaseException):
-    id = 1
+    id = 2
     text = "Ошибка стека генерации - отсутствует совместимая информация для генерации"
     desc = "При обработке отсортированного дерева узлов кодогенератор не смог найти допустимых замен без которых обработка не может выполняться."
 
 class CGVariablePathAccessException(CGBaseException):
-    id = 2
+    id = 3
     text = "Порт \"{portname}\" узла \"{src}\" не может быть использован из-за ограничений пути"
     desc = "Проверьте пути до узла \"{portname}\". Вероятнее до него идёт два или более конфликтующих порта цилка"
 
 class CGPortTypeRequiredException(CGBaseException):
-    id = 3
+    id = 4
     text = "Порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет типа"
     desc = "Некоторые узлы получают типы своих портов при подключении к ним других узлов. Подключите к узлу \"{src}\" определяющий узел"
 
 class CGPortRequiredConnectionException(CGBaseException):
-    id = 4
+    id = 5
     text = "Порт \"{portname}\" узла \"{src}\" требует подключения, так как не имеет пользовательского свойства"
     desc = "Порт \"{portname}\" в узле не имеет опции пользовательских данных и требует подключенного значения."
 
 class CGLocalVariableDuplicateUseException(CGBaseException):
-    id = 5
+    id = 6
     text = "Переменная \"{ctx}\" уже используется в событии \"{src}\""
     desc = "Локальные переменные можно использовать только в одном узле. Создайте другую переменную для \"{targ}\""

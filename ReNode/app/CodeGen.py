@@ -32,13 +32,11 @@ class CodeGenerator:
         self._addComments = False # Добавляет мета-информацию внутрь кодовой структуры
 
         self._debug_info = True # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
+        self._debug_rename = False #отладочная переименовка узлов
 
         #TODO: need write
         self._optimizeCodeSize = False # включает оптимизацию кода. Меньше разрмер 
 
-        self.aliasVarNames = {} # преобразовванные имена переменныъ
-        self.typesVarNames = {} # тип данных переменной
-        self.varCategoryInfo = {} # дикт с категориями переменных (класс, локальная)
         # те переменные, которые хоть раз используют установку или получение должны быть сгенерены
         self.localVariablesUsed = set()
 
@@ -68,27 +66,27 @@ class CodeGenerator:
 
         self.serialized_graph = layout_data
         entrys = self.findNodesByClass("events.onStart")
-        code = "generated:"
+        code = "// Code generated:\n"
 
-        self.aliasVarNames = {}
-        self.variablePortName = {}
-        self.typesVarNames = {}
-        self.varCategoryInfo = {}
+        # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
+        self.localVariableData = {}
 
         self._finalizedCode = {} #k,v: nodeid, code (only finalized) !(work in _optimizeCodeSize)
 
         for vcat,vval in self.getVariableDict().items():
             for i, (k,v) in enumerate(vval.items()):
-                self.typesVarNames[v['systemname']] = v['type']
+                lvData = {}
+                self.localVariableData[v['systemname']] = lvData
+                lvData['type'] = v['type']
+                lvData['usedin'] = []
                 
-                self.varCategoryInfo[v['systemname']] = vcat
-                self.variablePortName[v['systemname']] = v['name']
+                lvData['category'] = vcat
+                lvData['portname'] = v['name']
+                #self.transliterate(v['name']) for get transliterate name
                 if vcat=='local':
-                    self.aliasVarNames[v['systemname']] = f"_LVAR{i+1}"
-                    #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
+                    lvData['alias'] = f"_LVAR{i+1}"
                 elif vcat=='class':
-                    self.aliasVarNames[v['systemname']] = f"classMember_{i+1}"
-                    #self.aliasVarNames[v['systemname']] = self.transliterate(v['name'])
+                    lvData['alias'] = f"classMember_{i+1}"
                 else:
                     continue
 
@@ -98,7 +96,7 @@ class CodeGenerator:
             
             if self._addComments:
                 code += f"\n//cv_init:{vdat['name']}"
-            code += "\n" + f'var({self.aliasVarNames[vdat["systemname"]]},{varvalue});'
+            code += "\n" + f'var({self.localVariableData[vdat["systemname"]]["alias"]},{varvalue});'
             
         self._renamed = set()
         self._indexer = 0
@@ -137,8 +135,8 @@ class CodeGenerator:
             self.serialized_graph['nodes'].pop(k)
             uniIdx += 1
 
-            self.graphsys.graph.get_node_by_id(k).set_name(newname)
-        pass
+            if self._debug_rename:
+                self.graphsys.graph.get_node_by_id(k).set_name(newname)
         
         #entry update
         for its in copy.copy(entry):
@@ -225,9 +223,6 @@ class CodeGenerator:
         
         def getConnectionOutputs(self):
             return self.refCodegen.getExecPins(self.nodeId)
-        
-        def markAsError(self):
-            self.refCodegen.markNodeAsError(self.nodeId)
 
         def getConnectionType(self,inout,portname):
             return self.refCodegen.getNodeConnectionType(self.nodeId,inout,portname)
@@ -279,17 +274,17 @@ class CodeGenerator:
                     # update generated code only first time
                     if node_code == "RUNTIME":
                         self.localVariablesUsed.add(nameid)
-                        node_code = generated_code.replace(nameid,self.aliasVarNames[nameid])
+                        node_code = generated_code.replace(nameid,self.localVariableData[nameid]['alias'])
                     
                     #find key if not "nameid" and "code"
                     addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
                     if addedName:
                         inputs_fromLib = list(inputs_fromLib)
-                        inputs_fromLib.append((addedName,{'type':self.typesVarNames.get(nameid,None)}))
+                        inputs_fromLib.append((addedName,{'type':self.localVariableData[nameid]['type']}))
                     if isGet:
                         outputs_fromLib = list(outputs_fromLib)
                         outName = "Значение"
-                        outputs_fromLib.append((outName,{'type':self.typesVarNames.get(nameid,None)}))
+                        outputs_fromLib.append((outName,{'type':self.localVariableData[nameid]['type']}))
 
                 createdStackedVars = False        
                 if "@genvar." in node_code:
@@ -386,16 +381,6 @@ class CodeGenerator:
                             nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
                             self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
 
-                            if len(intersections) > 0 and False:
-                                cpy = v.lockedPath.copy()
-                                cpy.remove(node_id)
-                                lockpat = ','.join(cpy)
-                                if len(cpy) > 0: lockpat = ": " + lockpat
-                                self.error(f'\'{node_id}\' не может быть использован, так как порт \'{v.fromName}\' узла \'{v.definedNodeName}\' накладывает ограничения пути {lockpat}')
-                                obj.markAsError()
-                                #node_code = node_code.replace(f"@in.{index+1}", "<ERROR>")
-                                node_code = re.sub(f'@in\.{index+1}(?=\D|$)',"<ERROR>",node_code) 
-                                continue
                         #node_code = node_code.replace(f"@in.{index+1}", inpObj.code)
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
@@ -447,17 +432,6 @@ class CodeGenerator:
 
                     if outputObj.isReady:
                         
-                        usedInScopeList = outputObj.generatedVars #usedGeneratedVars # Используемые переменные стека
-                        passedVars = obj.generatedVars #доступные переменные на стеке
-                        owners = [usedVar for usedVar in usedInScopeList if usedVar not in passedVars]
-                        # [usedVar for usedVar in usedInScopeList if usedVar in passedVars] - for get restricted nodes
-                        # if len(owners) > 0 and len(passedVars) > 0:
-                        #     ownText = ", ".join([codeInfo[v.definedNodeId].nodeId for v in owners])
-                        #     self.error(f"{outputObj.nodeId} не может быть использован из-за ограничений, наложенных: {ownText}")
-                        #     obj.markAsError()
-                        #     outputObj.markAsError()
-                        #     node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
-                        #     continue
                         def btext(val):
                             return "TRUE" if val else "FALSE"
                         
@@ -489,17 +463,6 @@ class CodeGenerator:
                             self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
                             if secCond:
                                 obj.getNodeObject().setErrorText("Ошибка узла: " + obj.nodeId)
-
-                            if len(intersections) > 0 and False:#or len(v.lockedPath)==0 and (outId not in v.path): #or node_id not in v.path
-                                cpy :list = v.lockedPath.copy()
-                                if outputObj.nodeId in cpy: cpy.remove(outputObj.nodeId)
-                                lockpat = ','.join(cpy)
-                                if len(cpy) > 0: lockpat = ": " + lockpat
-                                self.error(f'Порт \'{v.fromName}\' узла \'{v.definedNodeName}\' не может быть использован узлом \'{outputObj.nodeId}\', так как в пути есть ограничения {lockpat}')
-                                outputObj.markAsError()
-                                #node_code = node_code.replace(f"@out.{index+1}", "<ERROR>")
-                                node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", "<ERROR>", node_code) 
-                                continue
                         
                         #node_code = node_code.replace(f"@out.{index+1}", outputObj.code)                        
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
@@ -637,8 +600,9 @@ class CodeGenerator:
             :param nameid: имя переменной
             :return: код, имя порта, является ли получением
         """
-        varCat = self.varCategoryInfo[nameid]
-        varPortName = self.variablePortName[nameid]
+        varData = self.localVariableData[nameid]
+        varCat = varData['category']
+        varPortName = varData['portname']
         isGet = False
 
         if ".get" in className:
@@ -735,10 +699,6 @@ class CodeGenerator:
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]
         return node_id
-
-    def markNodeAsError(self,node_id):
-        node_id = self._sanitizeNodeName(node_id)
-        self.graphsys.graph.get_node_by_id(node_id).set_disabled(True)
     
     def getNodeConnectionType(self,node_id,inout,portname):
         node_id = self._sanitizeNodeName(node_id)
