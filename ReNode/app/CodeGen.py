@@ -5,6 +5,7 @@ import enum
 import asyncio
 from ReNode.app.CodeGenExceptions import *
 from ReNode.app.Logger import *
+from ReNode.ui.LoggerConsole import LoggerConsole
 import traceback
 
 class GeneratedVariable:
@@ -530,10 +531,10 @@ class CodeGenerator:
         if stackGenError or hasNodeError:
             if stackGenError:
                 self.error("Ошибка переполнения стека - отсутствует совместимая информация")
-            strInfo = "; ".join([s.nodeId for s in errList])
+            strInfo = "\n\t".join([LoggerConsole.wrapNodeLink(self._sanitizeNodeName(s.nodeId),s.nodeId) for s in errList])
             if not strInfo: strInfo = "-отсутствуют-"
             fngTex = firstNonGenerated.nodeId if firstNonGenerated else "-нет-"
-            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}): {strInfo}\n\tПоследняя неподготовленная нода: {fngTex}')
+            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}):\n{strInfo}\n\tПоследняя неподготовленная нода: {fngTex}')
 
         entryObject = codeInfo[entryId]
         if not entryObject.isReady:
@@ -733,31 +734,43 @@ class CodeGenerator:
         sourceId = None
         targetId = None
         entryId = None
-        if source: sourceId = source.nodeId
-        if target: targetId = target.nodeId
-        if entry: entryId = entry.nodeId
+
+        linkSourceId = None
+        linkTargetId = None
+        linkEntryId = None
+
+        if source: 
+            sourceId = source.nodeId
+            linkSourceId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(sourceId),sourceId)
+        if target: 
+            targetId = target.nodeId
+            linkTargetId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(targetId),targetId)
+        if entry: 
+            entryId = entry.nodeId
+            linkEntryId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryId),entryId)
 
         params = {
-            "src": sourceId,
+            "src": linkSourceId,
             "portname": portname,
-            "targ": targetId,
+            "targ": linkTargetId,
             "ctx": context,
-            "entry": entryId
+            "entry": linkEntryId
         }
         ex : CGBaseException = exType(**params)
 
         self.error(ex.getExceptionText(addDesc=True))
-        self.error(f'<a href="ref::{sourceId}" style="text-decoration: underline; white-space: pre-wrap; color: red;">Перейти к {sourceId}</a>')
+        #self.error(f)
 
         if sourceId:
             if source.markAsError():
-                source.getNodeObject().addErrorText(f'Узел {sourceId}:\n{ex.getExceptionText()}',head=f'ОШИБКА <{sourceId}>')
+                source.getNodeObject().addErrorText(f'Узел {sourceId}:\nОшибка {ex.getShortErrorInfo()}')
         if targetId:
             if target.markAsError():
-                target.getNodeObject().addErrorText(f'Узел {targetId}:\nОшибка в {sourceId}')
+                target.getNodeObject().addErrorText(f'Узел {targetId}:\n> Ошибка в {sourceId}')
         if entryId:
             if entry.markAsError():
-                entry.getNodeObject().addErrorText(f'Старт {entryId}:\nОшибка в {sourceId}')
+                entry.getNodeObject().addErrorText(f'Старт {entryId}:\n> Ошибка в {sourceId}')
+
 
         self._exceptions.append(ex)
     def _sanitizeNodeName(self,node_id):

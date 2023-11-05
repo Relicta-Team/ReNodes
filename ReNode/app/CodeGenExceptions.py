@@ -1,3 +1,4 @@
+from ReNode.ui.LoggerConsole import LoggerConsole
 
 class CGBaseException:
     id = 0
@@ -16,6 +17,9 @@ class CGBaseException:
         self.ctx = kwargs.get('ctx') or ""
         self.entry = kwargs.get('entry') or ""
     
+    def getShortErrorInfo(self):
+        return f'ERR-{self.__class__.id}'
+
     def getExceptionText(self,addDesc = False):
         class_ = self.__class__
         postText = class_.desc if addDesc else ""

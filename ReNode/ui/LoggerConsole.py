@@ -23,9 +23,12 @@ class ClickableTextBrowser(QTextBrowser):
             super().mousePressEvent(event)
 
 
-class LoggerWidget(QDockWidget):    
+class LoggerConsole(QDockWidget):    
 	
+    refObject = None
+
     def __init__(self):
+        LoggerConsole.refObject = self
         super().__init__("Консоль")
 
         self.log_text = ClickableTextBrowser() #QTextEdit()
@@ -37,7 +40,16 @@ class LoggerWidget(QDockWidget):
         self.maxMessages = 400
 
         def on_link_clicked(link):
-            print("Link clicked:", link)
+            from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+            print("Node Link clicked:", link)
+            graphObj = NodeGraphComponent.refObject.graph
+            node = graphObj.get_node_by_id(link)
+            if node:
+                graphObj.clear_selection()
+                node.set_selected(True)
+                graphObj.viewer().center_selection([node.view])
+
+
         text_browser = self.log_text
         text_browser.setOpenExternalLinks(False)
         text_browser.setOpenLinks(False)
@@ -102,14 +114,6 @@ class LoggerWidget(QDockWidget):
         if levelname in self.dictColorCat:
             color = self.dictColorCat[levelname]
             prefix = f'<font color="{color}">{prefix}</font>'
-        
-        html_code = """
-<tcode>
-// Ваш код здесь
-def my_function():
-    return "Hello, World!"
-</tcode>
-"""
 
         text = prefix + text
 
@@ -125,6 +129,10 @@ def my_function():
         self.log_text.setHtml(fulltext)
 
         self.log_text.verticalScrollBar().setValue(self.log_text.verticalScrollBar().maximum())
+
+    def wrapNodeLink(nodeid,text=None,color='#17E62C'):
+        if not text: text = nodeid
+        return f'<a href="ref::{nodeid}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
 
     def init_ui(self):
         widget = QWidget()

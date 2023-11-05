@@ -378,10 +378,10 @@ class NodeGraphComponent:
 		pass
 
 	def _initLoggerDock(self):
-		from ReNode.ui.LoggerWidget import LoggerWidget
+		from ReNode.ui.LoggerConsole import LoggerConsole
 		from ReNode.app.Logger import registerConsoleLoggers
 
-		self.log_dock = LoggerWidget()
+		self.log_dock = LoggerConsole()
 		#self.log_dock.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
 		self.log_dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas)
 		self.log_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)

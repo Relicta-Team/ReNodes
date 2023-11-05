@@ -18,6 +18,32 @@ from NodeGraphQt.qgraphics.node_overlay_disabled import XDisabledItem,XErrorItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
 from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem, ScriptedCustomPortItem
 
+from PyQt5.QtCore import QPropertyAnimation, QRectF
+from PyQt5.QtWidgets import QGraphicsItem, QWidget
+
+#! use this for animated node
+# class AnimatedItem(QGraphicsItem):
+#     def __init__(self):
+#         super().__init__()
+#         self.rect = self.boundingRect()
+#         self.color = Qt.red
+#         self.timer = QTimer(self)
+#         self.timer.timeout.connect(self.animate)
+#         self.timer.start(1000)  # Change color every second
+
+#     def boundingRect(self):
+#         return self.rect
+
+#     def paint(self, painter, option, widget):
+#         painter.fillRect(self.rect, self.color)
+
+#     def animate(self):
+#         # Toggle between red and blue
+#         if self.color == Qt.red:
+#             self.color = Qt.blue
+#         else:
+#             self.color = Qt.red
+#         self.update()  # Redraw the item
 
 class NodeItem(AbstractNodeItem):
     """
@@ -69,6 +95,8 @@ class NodeItem(AbstractNodeItem):
         self.setErrorText(oldText+text,header)
 
     def resetError(self):
+        self._error_item.desc = ""
+        self._error_item.text = ""
         self._error_item.setVisible(False)
 
     def post_init(self, viewer, pos=None):
