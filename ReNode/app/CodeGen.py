@@ -92,6 +92,7 @@ class CodeGenerator:
                 #self.transliterate(v['name']) for get transliterate name
                 if vcat=='local':
                     lvData['alias'] = f"_LVAR{i+1}"
+                    lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
                 elif vcat=='class':
                     lvData['alias'] = f"classMember_{i+1}"
                 else:
@@ -253,11 +254,10 @@ class CodeGenerator:
             return cg.graphsys.graph.get_node_by_id(nodeid)
     
         def markAsError(self):
-            alreadyError = self.hasError
-            if not alreadyError:
+            if not self.hasError:
                 self.hasError = True
-                alreadyError = not alreadyError
-            return alreadyError
+                return True
+            return False
 
 
     def generateFromTopology(self, topological_order, entryId):
@@ -481,8 +481,6 @@ class CodeGenerator:
                                 if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
                                     secCond = True
                             secCond = secCond and len(outputObj.usedGeneratedVars) > 0
-                            
-                            if secCond: outputObj.hasError = True
 
                             if self._debug_rename:
                                 prefx = "ERRORED" if secCond else ""
@@ -493,6 +491,11 @@ class CodeGenerator:
                                 self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
                             
                             if secCond:
+                                # oname = "НЕИЗВЕСТНО"
+                                # for kin,vin in outputObj.getConnectionInputs().items():
+                                #     if vin == node_id:
+                                #         oname = kin
+                                #         break
                                 self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
                                                
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
@@ -500,6 +503,12 @@ class CodeGenerator:
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
                     obj.isReady = True
+
+                if obj.isReady and "@initvars" in node_code:
+                    initVarsCode = ""
+                    for nameid in self.localVariablesUsed:
+                        initVarsCode += f'private {self.localVariableData[nameid]["alias"]} = {self.localVariableData[nameid]["initvalue"]};\n'
+                    node_code = node_code.replace("@initvars",initVarsCode)
 
                 #update code
                 if not hasAnyChanges:
@@ -764,12 +773,18 @@ class CodeGenerator:
         if sourceId:
             if source.markAsError():
                 source.getNodeObject().addErrorText(f'Узел {sourceId}:\nОшибка {ex.getShortErrorInfo()}')
+            else:
+                source.getNodeObject().addErrorText(f'Ошибка {ex.getShortErrorInfo()}')
         if targetId:
             if target.markAsError():
                 target.getNodeObject().addErrorText(f'Узел {targetId}:\n> Ошибка в {sourceId}')
+            else:
+                target.getNodeObject().addErrorText(f'> Ошибка в {sourceId}')
         if entryId:
             if entry.markAsError():
                 entry.getNodeObject().addErrorText(f'Старт {entryId}:\n> Ошибка в {sourceId}')
+            else:
+                entry.getNodeObject().addErrorText(f'> Ошибка в {sourceId}')
 
 
         self._exceptions.append(ex)

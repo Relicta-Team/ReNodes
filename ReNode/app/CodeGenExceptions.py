@@ -91,8 +91,8 @@ class CGPortRequiredConnectionException(CGBaseException):
 
 class CGVariablePathAccessException(CGBaseException):
     id = 301
-    text = "Порт \"{portname}\" узла {src} не может быть использован из-за ограничений пути, наложенных {targ}"
-    desc = "Проверьте пути до узла \"{portname}\". Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
+    text = "Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
+    desc = "Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
 
 # ----------------------------------------
 #   601-700 - variables exceptions
