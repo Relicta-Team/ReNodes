@@ -78,6 +78,7 @@ class MainWindow( QMainWindow ):
 		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
 
 		self.switchVariableViewerAction = QAction("&Переключить виджет переменных",self,triggered=self.switchVariableViewer,shortcut="Alt+1")
+		self.switchLoggerAction = QAction("&Переключить виджет логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+2")
 
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
@@ -96,6 +97,7 @@ class MainWindow( QMainWindow ):
 
 		self.windows = menubar.addMenu("&Окна")
 		self.windows.addAction(self.switchVariableViewerAction)
+		self.windows.addAction(self.switchLoggerAction)
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")
@@ -166,4 +168,7 @@ class MainWindow( QMainWindow ):
 	def switchVariableViewer(self):
 		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())
 		self.nodeGraph.variable_manager.syncActionText()
-		
+	
+	def switchLoggerVisual(self):
+		self.nodeGraph.log_dock.setVisible(not self.nodeGraph.log_dock.isVisible())
+		self.nodeGraph.log_dock.syncActionText()

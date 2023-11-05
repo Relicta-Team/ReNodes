@@ -4,6 +4,7 @@ import re
 import enum
 import asyncio
 from ReNode.app.CodeGenExceptions import *
+from ReNode.app.Logger import *
 import traceback
 
 class GeneratedVariable:
@@ -25,6 +26,9 @@ class GeneratedVariable:
 
 class CodeGenerator:
     def __init__(self):
+
+        self.logger = RegisterLogger("CodeGen")
+
         self.generated_code = ""
         self.graphsys = None
 
@@ -712,13 +716,13 @@ class CodeGenerator:
         return value
     
     def log(self,text):
-        print(f'[LOG]: {text}')
+        self.logger.info(text)
 
     def error(self,text):
-        print(f'[ERROR]: {text}')
+        self.logger.error(text)
 
     def warning(self,text):
-        print(f'[WARNING]: {text}')
+        self.logger.warning(text)
 
     def exception(self,
                   exType,source:NodeData | None=None,
@@ -743,6 +747,7 @@ class CodeGenerator:
         ex : CGBaseException = exType(**params)
 
         self.error(ex.getExceptionText(addDesc=True))
+        self.error(f'<a href="ref::{sourceId}" style="text-decoration: underline; white-space: pre-wrap; color: red;">Перейти к {sourceId}</a>')
 
         if sourceId:
             if source.markAsError():

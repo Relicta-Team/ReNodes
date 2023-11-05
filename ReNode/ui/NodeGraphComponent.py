@@ -45,16 +45,20 @@ class NodeGraphComponent:
 
 		self.variable_manager = None
 
+		notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
+		notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks
+		self.mainWindow.setDockOptions(notNested)
+
 		dock = QDockWidget("Editor main")
 		dock.setWidget(graph.widget)
-		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
+		#dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
 		dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		#dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
 		dock.setWindowTitle("Граф")#upper title
 		#dock.setWindowFlags(Qt.Widget)
 		# Скройте заголовок и кнопки закрытия, максимизации и сворачивания.
 		#dock.setTitleBarWidget(QWidget())
-		mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+		mainWindow.addDockWidget(Qt.BottomDockWidgetArea, dock)
 		graph.show()
 
 		self._initTabs(dock)
@@ -71,6 +75,8 @@ class NodeGraphComponent:
 		#	graph.widget.tabBar().addTab("testvalue")
 
 		self._initVariableManager()
+
+		self._initLoggerDock()
 
 		self._addEvents()
 		self.contextMenuLoad()
@@ -370,6 +376,22 @@ class NodeGraphComponent:
 		self.getFactory().updateLibTypes()
 
 		pass
+
+	def _initLoggerDock(self):
+		from ReNode.ui.LoggerWidget import LoggerWidget
+		from ReNode.app.Logger import registerConsoleLoggers
+
+		self.log_dock = LoggerWidget()
+		#self.log_dock.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+		self.log_dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas)
+		self.log_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+		self.log_dock.setTitleBarWidget(QWidget())
+		self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+		self.log_dock.setMinimumHeight(1)
+
+		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.log_dock, QtCore.Qt.Orientation.Vertical)
+		self.log_dock.syncActionText(True)
+		registerConsoleLoggers(self.log_dock)
 
 	def addVariableToScene(self,getorset,varid,pos):
 		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)
