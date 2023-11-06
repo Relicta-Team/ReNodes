@@ -25,31 +25,34 @@ class NodeGraphComponent:
 	refObject = None
 
 	def __init__(self,mainWindow) -> None:
-		
+		from ReNode.ui.AppWindow import MainWindow
+		# global reference to object instance		
 		NodeGraphComponent.refObject = self
 
-		from ReNode.ui.AppWindow import MainWindow
-		graph = NodeGraph()
-		self.graph = graph
+		#common props
+		self.variable_manager = None
 		self.mainWindow : MainWindow = mainWindow
 		self.nodeFactory : NodeFactory = mainWindow.nodeFactory
+
+		#graph setup
+		graph = NodeGraph()
+		self.graph = graph
 		
 		#ref from native graph to custom factory
 		graph._factoryRef = self.nodeFactory
 
-		self.codegen = CodeGenerator()
-		self.codegen.graphsys = self
-
 		self.tabSearch : TabSearchMenu = graph._viewer._tabSearch
 		graph._viewer._tabSearch.nodeGraphComponent = self
 
-		self.variable_manager = None
+		self.codegen = CodeGenerator()
+		self.codegen.graphsys = self
 
 		notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
 		notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks
 		self.mainWindow.setDockOptions(notNested)
 
 		dock = QDockWidget("Editor main")
+		self.editorDock = dock
 		dock.setWidget(graph.widget)
 		#dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
 		dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
@@ -75,12 +78,10 @@ class NodeGraphComponent:
 		#	graph.widget.tabBar().addTab("testvalue")
 
 		self._initVariableManager()
-
 		self._initLoggerDock()
 
 		self._addEvents()
 		self.contextMenuLoad()
-
 		self.registerNodes()
 
 		graph.auto_layout_nodes() 
