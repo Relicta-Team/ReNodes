@@ -163,17 +163,6 @@ def AppMain():
 	logger = RegisterLogger('main')
 	logger.info(f"Loading {Application.appName} (version {Application.getVersionString()})")
 
-	"""graph = NodeGraph()
-	graph.show()
-
-	graph.register_node(FooNode)
-	#create random 50 nodes 
-	for i in range(50):
-		#random colo
-		graph.create_node('testident.FooNode', name='Узел ' + str(i))
-	sfx_graph_panel = NodeGraphPanel(graph)
-	application.mainWindow.addDockWidget(QtCore.Qt.TopDockWidgetArea,sfx_graph_panel)"""
-
 	# при обновлении файла стиля вызывает метод onReloadStyle
 	# filewatcher
 	fs_watcher = QtCore.QFileSystemWatcher()

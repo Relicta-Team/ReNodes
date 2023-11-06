@@ -22,28 +22,10 @@ class MainWindow( QMainWindow ):
 
 
 	def initUI(self):
-		self.setWindowTitle("Unnamed window")
+		self.setWindowTitle("Main")
 		self.setWindowIcon(QtGui.QIcon('./data/pic.png'))
-		
-		#self.tabWidget = QTabWidget()
-		#self.setCentralWidget(self.tabWidget)
 
 		#style setup
-		"""self.setStyleSheet('''
-		    QMainWindow {
-		     	border: 1px solid #ffffff; 
-				background-color: #1F1F29; 
-				color: #FAFAFF; 
-				padding: 2px; 
-				font-family: Arial, sans-serif; 
-				font-size: 12px;
-			}
-
-		   	QMenuBar::item:selected {
-				background-color: #ff0000;
-				color: #ffffff;
-			}
-		    ''')"""
 		self.setStyleSheet(loadStylesheet("./data/qss/default.qss"))
 		#self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
 		# maybee need custom winframe??
@@ -65,7 +47,6 @@ class MainWindow( QMainWindow ):
 		self.mdiArea.setTabsMovable(True)
 		#self.setCentralWidget(self.mdiArea)
 
-		self.createInspectorDock()
 		self.createWindowGraphEditor()
 	
 	def createMenu(self):
@@ -124,36 +105,6 @@ class MainWindow( QMainWindow ):
 		self.statusBar().showMessage("")
 		self.status_mouse_pos = QLabel("")
 		self.statusBar().addPermanentWidget(self.status_mouse_pos)
-		
-	def createInspectorDock(self):
-		return
-		dockWidget = QDockWidget("Инспектор", self)
-		dockWidget.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
-		dockWidget.setFeatures(QDockWidget.DockWidgetMovable)
-		#dockWidget.setFixedHeight(300)
-		
-		dockWidget.setMaximumWidth(400)
-		dockWidget.setMinimumWidth(100)
-		# Create a widget to hold the contents of the inspector
-		inspectorWidget = QWidget()
-
-		# Create a layout for the inspector widget
-		layout = QVBoxLayout()
-		layout.setObjectName('inspectorLayout')
-		inspectorWidget.setLayout(layout)
-
-		# Set the inspector widget as the contents of the dock widget
-		dockWidget.setWidget(inspectorWidget)
-
-		# Add the dock widget to the main window
-		self.addDockWidget(Qt.LeftDockWidgetArea, dockWidget)
-
-		# TEST--------
-		#addButton = QPushButton("+")
-		#addButton.clicked.connect(self.addTextBox)
-		#layout.addWidget(addButton, alignment=Qt.AlignTop)
-		# Keep track of the number of text boxes
-		#self.textboxCount = 0
 		
 	def createWindowGraphEditor(self):
 		self.nodeGraph = NodeGraphComponent(self)
