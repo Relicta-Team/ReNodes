@@ -25,6 +25,16 @@ class ClickableTextBrowser(QTextBrowser):
             super().mousePressEvent(event)
 
 
+class CmdInputLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super(CmdInputLineEdit, self).__init__(parent)
+    
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.key() == Qt.Key_Return:
+            LoggerConsole.refObject.execute_command()
+            return
+        return super().keyPressEvent(a0)
+
 class LoggerConsole(QDockWidget):    
 	
     refObject = None
@@ -37,7 +47,7 @@ class LoggerConsole(QDockWidget):
 
         self.log_text = ClickableTextBrowser() #QTextEdit()
         self.log_text.setReadOnly(True)
-        self.command_input = QLineEdit()
+        self.command_input = CmdInputLineEdit()
         self.send_button = QPushButton("Отправить")
 
         self.messages = []
@@ -162,11 +172,13 @@ class LoggerConsole(QDockWidget):
         #! now input in debug not enabled
         #log_layout.removeItem(input_layout)
 
-        self.command_input.returnPressed.connect(self.execute_command)
+        #self.command_input.returnPressed.connect(self.execute_command)
         self.command_input.editingFinished.connect(lambda: self.showStatusTipMessage())
 
         self.command_completer = QCompleter(self)
+        self.command_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.command_completer.setFilterMode(Qt.MatchContains)
+        self.command_completer.setWrapAround(False)
         self.command_input.setCompleter(self.command_completer)
         def __onselectcmd(text):
             cmd = self._findCmdByName(text)
@@ -194,10 +206,11 @@ class LoggerConsole(QDockWidget):
         NodeGraphComponent.refObject.mainWindow.statusBar().showMessage(mes)
 
     def execute_command(self):
+        
         if self.command_completer.popup().isVisible(): 
             self.command_completer.popup().setVisible(False)
             #self.showStatusTipMessage("")
-            return
+            #return
         
         # Получаем введенную команду
         command = self.command_input.text()
