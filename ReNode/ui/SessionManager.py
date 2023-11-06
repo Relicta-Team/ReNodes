@@ -12,12 +12,39 @@ class TabData:
         self.isActive = False
         self.isUnsaved = True
 
+        # Here located all graph backend for this session
+        self.graph = SessionManager.refObject.newInstanceGraph()
+
     def __repr__(self) -> str:
         return f'{self.name} {hex(id(self))}'
 
+    def loadTabLogic(self):
+        graphComponent = SessionManager.refObject.graphSystem
+        #hide old graph
+        if graphComponent.graph:
+            graphComponent.graph.widget.hide()
+        
+        #reassign tabSearch
+        graphComponent.tabSearch = self.graph._viewer._tabSearch
+
+        # set to dock
+        graphComponent.editorDock.setWidget(self.graph.widget)
+
+        #show this graph
+        self.graph.show()
+
+        pass
+
+
+
+
 class SessionManager(QTabWidget):
+    refObject = None
+
     def __init__(self,graph) -> None:
         super().__init__()
+        SessionManager.refObject = self
+
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         self.graphSystem : NodeGraphComponent = graph
 
@@ -95,9 +122,8 @@ class SessionManager(QTabWidget):
         return fs_watcher
 
     def handleTabChange(self, index):
-        print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')
-
-        self.newInstanceGraph()
+        print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')  
+        self.getTabData(index).loadTabLogic()
 
     def handleTabClose(self, index):
         tabData = self.getTabData(index)
@@ -127,22 +153,30 @@ class SessionManager(QTabWidget):
         tabData = self.getTabData(index)
 
     def newInstanceGraph(self):
+        """
+            Create and initialize new graph backend object
+        """
         from NodeGraphQt import NodeGraph
         graphComponent = self.graphSystem #.editorDock
-        graph : NodeGraph = self.graphSystem.graph
-        oldVwr = graph._viewer
-        oldModel = graph._model
-        factory = graph._node_factory #copyable
-        stack = graph._undo_stack
-        undoView = graph._undo_view
+        #graph : NodeGraph = self.graphSystem.graph
+        #oldVwr = graph._viewer
+        #oldModel = graph._model
+        #factory = graph._node_factory #copyable
+        #stack = graph._undo_stack
+        #undoView = graph._undo_view
+        
+        #save old graphComponent props
+        oldTabSearch = graphComponent.tabSearch
+        oldGraph = graphComponent.graph
 
         #hide old graph
-        graphComponent.editorDock.setWidget(None)
+        #graphComponent.editorDock.setWidget(None)
         
         args = {
             #'factory': factory,
         }
         graph = NodeGraph(**args)
+        
         #here self is graphComponent
         graphComponent.graph = graph
         
@@ -152,7 +186,7 @@ class SessionManager(QTabWidget):
         graphComponent.tabSearch = graph._viewer._tabSearch
         graph._viewer._tabSearch.nodeGraphComponent = graphComponent
         
-        graphComponent.editorDock.setWidget(graph.widget)
+        #! do not add: graphComponent.editorDock.setWidget(graph.widget)
         
         #add events and common setup
         graphComponent._addEvents()
@@ -162,4 +196,10 @@ class SessionManager(QTabWidget):
         graphComponent.generateTreeDict()
 
         #show graph
-        graph.show()
+        #! do not show: graph.show()
+
+        #reset graphComponent props to old
+        graphComponent.tabSearch = oldTabSearch
+        graphComponent.graph = oldGraph
+
+        return graph
