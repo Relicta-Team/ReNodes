@@ -18,8 +18,8 @@ class TabData:
 class SessionManager(QTabWidget):
     def __init__(self,graph) -> None:
         super().__init__()
-        
-        self.graphSystem = graph
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        self.graphSystem : NodeGraphComponent = graph
 
         self.setMovable(True)  # Разрешите перетаскивание вкладок.
         self.setTabsClosable(True)
@@ -97,6 +97,8 @@ class SessionManager(QTabWidget):
     def handleTabChange(self, index):
         print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')
 
+        self.newInstanceGraph()
+
     def handleTabClose(self, index):
         tabData = self.getTabData(index)
         if tabData.isUnsaved:
@@ -122,3 +124,42 @@ class SessionManager(QTabWidget):
     
     def switchToTab(self, index):
         self.setCurrentIndex(index)
+        tabData = self.getTabData(index)
+
+    def newInstanceGraph(self):
+        from NodeGraphQt import NodeGraph
+        graphComponent = self.graphSystem #.editorDock
+        graph : NodeGraph = self.graphSystem.graph
+        oldVwr = graph._viewer
+        oldModel = graph._model
+        factory = graph._node_factory #copyable
+        stack = graph._undo_stack
+        undoView = graph._undo_view
+
+        #hide old graph
+        graphComponent.editorDock.setWidget(None)
+        
+        args = {
+            #'factory': factory,
+        }
+        graph = NodeGraph(**args)
+        #here self is graphComponent
+        graphComponent.graph = graph
+        
+        #ref from native graph to custom factory
+        graph._factoryRef = graphComponent.nodeFactory
+
+        graphComponent.tabSearch = graph._viewer._tabSearch
+        graph._viewer._tabSearch.nodeGraphComponent = graphComponent
+        
+        graphComponent.editorDock.setWidget(graph.widget)
+        
+        #add events and common setup
+        graphComponent._addEvents()
+        graphComponent.contextMenuLoad()
+        graphComponent.registerNodes()
+
+        graphComponent.generateTreeDict()
+
+        #show graph
+        graph.show()
