@@ -1719,7 +1719,7 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack.clear()
         self._model.session = ''
 
-    def _serialize(self, nodes):
+    def _serialize(self, nodes,serializeMouse=False):
         """
         serialize nodes to a dict.
         (used internally by the node graph)
@@ -1747,6 +1747,10 @@ class NodeGraph(QtCore.QObject):
         #serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
 
         serial_data['graph']['variables'] = nodeSystem.variable_manager.variables
+
+        if serializeMouse:
+            serial_data['graph']['mpos'] = self.viewer().scene_rect()
+            serial_data['graph']['mzoom'] = self.viewer().get_zoom()
 
         # serialize nodes.
         for n in nodes:
@@ -1789,7 +1793,7 @@ class NodeGraph(QtCore.QObject):
 
         return serial_data
 
-    def _deserialize(self, data, relative_pos=False, pos=None):
+    def _deserialize(self, data, relative_pos=False, pos=None, loadMousePos=False):
         """
         deserialize node data.
         (used internally by the node graph)
@@ -1804,6 +1808,8 @@ class NodeGraph(QtCore.QObject):
         """
 
         nodeSystem = self._viewer._tabSearch.nodeGraphComponent
+        sceneRect = None
+        zoom = None
 
         # update node graph properties.
         for attr_name, attr_value in data.get('graph', {}).items():
@@ -1826,6 +1832,10 @@ class NodeGraph(QtCore.QObject):
 
             elif attr_name == "variables":
                 nodeSystem.variable_manager.loadVariables(attr_value)
+            elif attr_name == "mpos" and loadMousePos:
+                sceneRect = attr_value
+            elif attr_name == "mzoom" and loadMousePos:
+                zoom = attr_value
 
         # build the nodes.
         nodes = {}
@@ -1900,6 +1910,13 @@ class NodeGraph(QtCore.QObject):
         elif pos:
             self._viewer.move_nodes([n.view for n in node_objs], pos=pos)
             [setattr(n.model, 'pos', n.view.xy_pos) for n in node_objs]
+
+        if loadMousePos and sceneRect:
+            self.viewer().set_scene_rect(sceneRect)
+            pass
+        if loadMousePos and zoom:
+            self.viewer().set_zoom(zoom)
+            pass
 
         return node_objs
 
@@ -2036,6 +2053,16 @@ class NodeGraph(QtCore.QObject):
             return True
         return False
 
+    def serializedGraphToString(self,serial_data):
+        def default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            return obj
+        serial_str = json.dumps(serial_data,default=default,ensure_ascii=False)
+        if serial_str:
+            return f"v{self._factoryRef.version}@" + serial_str
+        return ''
+
     def cut_nodes(self, nodes=None):
         """
         Cut nodes to the clipboard.
@@ -2108,6 +2135,32 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack.beginMacro('pasted nodes')
         self.clear_selection()
         nodes = self._deserialize(serial_data, relative_pos=True)
+        [n.set_selected(True) for n in nodes]
+        self._undo_stack.endMacro()
+        return nodes
+
+    def loadGraphFromString(self,cb_text,loadMousePos=False):
+        if not cb_text:
+            return
+
+        import re
+        mnum = re.match("^v(\d+)\@",cb_text)
+        if not mnum:
+            return
+        if (int(mnum[1]) != self._factoryRef.version):
+            return
+        cb_text = re.sub("^v\d+\@","",cb_text,1)
+
+        try:
+            serial_data = json.loads(cb_text)
+        except json.decoder.JSONDecodeError as e:
+            print('ERROR: Can\'t Decode Clipboard Data:\n'
+                  '"{}"'.format(cb_text))
+            return
+
+        self._undo_stack.beginMacro('load session from string')
+        self.clear_selection()
+        nodes = self._deserialize(serial_data, relative_pos=False,loadMousePos=loadMousePos)
         [n.set_selected(True) for n in nodes]
         self._undo_stack.endMacro()
         return nodes
