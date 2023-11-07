@@ -28,11 +28,34 @@ class ClickableTextBrowser(QTextBrowser):
 class CmdInputLineEdit(QLineEdit):
     def __init__(self, parent=None):
         super(CmdInputLineEdit, self).__init__(parent)
+        self.stackCommands = []
+        self.maxStackCommands = 1000
+        self.cmdIndex = 0
+        self._enableHistory = False
     
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         if a0.key() == Qt.Key_Return:
             LoggerConsole.refObject.execute_command()
+            self.stackCommands.append(self.text())
+            if len(self.stackCommands) > self.maxStackCommands:
+                self.stackCommands.pop(0)
+            self.cmdIndex = len(self.stackCommands)
             return
+        if self._enableHistory and event.key() == Qt.Key_Up and not LoggerConsole.refObject.command_completer.popup().isVisible():
+            self.cmdIndex -= 1
+            if self.cmdIndex < 0:
+                self.cmdIndex = 0
+            self.setText(self.stackCommands[self.cmdIndex])
+            return
+        if self._enableHistory and a0.key() == Qt.Key_Down and not LoggerConsole.refObject.command_completer.popup().isVisible():
+            self.cmdIndex += 1
+            if self.cmdIndex >= len(self.stackCommands):
+                self.cmdIndex = len(self.stackCommands)
+                self.setText("")
+            else:
+                self.setText(self.stackCommands[self.cmdIndex])
+            return
+        self.cmdIndex = len(self.stackCommands)
         return super().keyPressEvent(a0)
 
 class LoggerConsole(QDockWidget):    
@@ -47,6 +70,7 @@ class LoggerConsole(QDockWidget):
 
         self.log_text = ClickableTextBrowser() #QTextEdit()
         self.log_text.setReadOnly(True)
+        self.log_text.setMinimumHeight(20)
         self.command_input = CmdInputLineEdit()
         self.send_button = QPushButton("Отправить")
 
@@ -218,20 +242,27 @@ class LoggerConsole(QDockWidget):
         # Очищаем поле ввода команды
         self.command_input.clear()
         
+        baseCmdData = command
+        cmdname = ''
+        args = [] 
+
         cmdList = command.split(' ')
         if len(cmdList) == 0:
             return
-        command = cmdList[0]
-        args = []
+        cmdname = cmdList[0]
         if len(cmdList) > 1:
             args = cmdList[1:]
 
-        cmd = self._findCmdByName(command)
+        cmd = self._findCmdByName(cmdname)
         if not cmd:
-            self.logger.error(f"<span style=\"color:yellow\">Unknown command: {command}</span>")
+            self.logger.error(f"<span style=\"color:yellow\">Unknown command: {cmdname}</span>")
             return
+        
+        if cmd.__class__.argsAsString:
+            args = command.removeprefix(cmdname)
+
         # Выполняем команду (замените этот код на реальную логику выполнения команд)
-        self.logger.debug(f"Executing command: {command} with args {args}")
+        self.logger.debug(f"Executing command: {cmdname} with args {args}")
         cmd.onCall(args)
 
     def _registerCommand(self, command_type):
@@ -257,10 +288,12 @@ class LoggerConsole(QDockWidget):
         self._registerCommand(HelpCommand)
         self._registerCommand(SessionClipSaveCommand)
         self._registerCommand(SessionClipLoadCommand)
+        self._registerCommand(EvalCodeCommand)
 
 class ConsoleCommand:
     name = "default command"
     desc = "no description"
+    argsAsString = False
     def __init__(self,name=None,desc=None) -> None:
         if not name:
             name = self.__class__.name
@@ -318,3 +351,16 @@ class SessionClipLoadCommand(ConsoleCommand):
             if data:
                 graph.loadGraphFromString(data,loadMousePos=True)
                 self.logger.info("Данные загружены")
+
+class EvalCodeCommand(ConsoleCommand):
+    name = "run"
+    desc = "Отладочное выполнение кода"
+    argsAsString = True
+    def onCall(self,args):
+        code = args
+        try:
+            from sys import getsizeof
+            evalueated = eval(code,globals(),locals())
+            self.logger.debug(f"ret:{evalueated}")
+        except Exception as e:
+            self.logger.error(f"exept:{e}")
