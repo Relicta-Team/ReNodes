@@ -16,14 +16,36 @@ class TabData:
         self.graph = SessionManager.refObject.newInstanceGraph()
 
     def __repr__(self) -> str:
-        return f'{self.name} {hex(id(self))}'
+        from sys import getsizeof
+        return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'
+
+    def __del__(self):
+        graphComponent = SessionManager.refObject.graphSystem
+        graphComponent.editorDock.setWidget(None)#!DONT DO THIS 
+        
+        self.graph.clear_undo_stack()
+        self.graph.clear_session()
+        self.graph.close()
+        self.graph.widget.deleteLater()
+        self.graph.deleteLater()
+        QApplication.processEvents()
+
+        graphComponent.graph = None
+        graphComponent.tabSearch = None
+
+        print(f'{self.name} {hex(id(self))} deleted')
+        pass
 
     def loadTabLogic(self):
+        from PyQt5.sip import isdeleted
         graphComponent = SessionManager.refObject.graphSystem
         #hide old graph
-        if graphComponent.graph:
+        if graphComponent.graph and graphComponent.graph.widget and not isdeleted(graphComponent.graph.widget):
             graphComponent.graph.widget.hide()
         
+        #update graph reference
+        graphComponent.graph = self.graph
+
         #reassign tabSearch
         graphComponent.tabSearch = self.graph._viewer._tabSearch
 
@@ -86,6 +108,7 @@ class SessionManager(QTabWidget):
         if tdata.isUnsaved:
             unsafe = "*"
         self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
+        self.tabBar().setTabToolTip(idx,"Без описания")
 
     def handleMoved(self,index):
         #print(f"moved to {index}")
@@ -122,6 +145,9 @@ class SessionManager(QTabWidget):
         return fs_watcher
 
     def handleTabChange(self, index):
+        if index < 0:
+            print("Теперь нет активной вкладки")
+            return
         print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')  
         self.getTabData(index).loadTabLogic()
 
@@ -134,6 +160,7 @@ class SessionManager(QTabWidget):
 
             if reply == QMessageBox.Yes:
                 self.removeTab(index)
+                del tabData
 
     def showContextMenu(self):
             menu = QMenu(self)
