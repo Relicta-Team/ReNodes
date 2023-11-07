@@ -96,7 +96,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             if not self._active:
                 pen.setColor(QtGui.QColor(*PipeEnum.DISABLED_COLOR.value))
                 pen.setStyle(PIPE_STYLES.get(PipeEnum.DRAW_TYPE_DOTTED.value))
-                pen.setWidth(int(pen.width() * 1.25)) #fic convert type error (not expected float)
+                pen.setWidthF(pen.width() * 1.25) # RESTORED / fic convert type error (not expected float)
 
         painter.setPen(pen)
         painter.setBrush(self.brush())
@@ -424,7 +424,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             style (int): pipe style.
         """
         pen = self.pen()
-        pen.setWidth(int(width))
+        pen.setWidthF(width)
         pen.setColor(QtGui.QColor(*color))
         pen.setStyle(PIPE_STYLES.get(style))
         pen.setJoinStyle(QtCore.Qt.MiterJoin)
@@ -435,7 +435,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         pen = self._dir_pointer.pen()
         pen.setJoinStyle(QtCore.Qt.MiterJoin)
         pen.setCapStyle(QtCore.Qt.RoundCap)
-        pen.setWidth(int(width))
+        pen.setWidthF(width)
         pen.setColor(QtGui.QColor(*color))
         self._dir_pointer.setPen(pen)
         self._dir_pointer.setBrush(QtGui.QColor(*color).darker(200))
@@ -444,7 +444,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self._active = True
         self.set_pipe_styling(
             color=PipeEnum.ACTIVE_COLOR.value,
-            width=2.5,
+            width=PipeEnum.WIDTH_ACTIVATED.value,
             style=PipeEnum.DRAW_TYPE_DEFAULT.value
         )
 
@@ -455,7 +455,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self._highlight = True
         self.set_pipe_styling(
             color=PipeEnum.HIGHLIGHT_COLOR.value,
-            width=2.5,
+            width=PipeEnum.WIDTH_SELECTED.value,
             style=PipeEnum.DRAW_TYPE_DEFAULT.value
         )
 
@@ -468,7 +468,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         """
         self._active = False
         self._highlight = False
-        self.set_pipe_styling(color=self.color, width=1.2, style=self.style)
+        self.set_pipe_styling(color=self.color, width=PipeEnum.WIDTH.value, style=self.style)
         self._draw_direction_pointer()
 
     def set_connections(self, port1, port2):
@@ -555,7 +555,7 @@ class LivePipeItem(PipeItem):
 
         self.color = PipeEnum.ACTIVE_COLOR.value
         self.style = PipeEnum.DRAW_TYPE_DASHED.value
-        self.set_pipe_styling(color=self.color, width=2.8, style=self.style)
+        self.set_pipe_styling(color=self.color, width=PipeEnum.WIDTH_DRAGGED_LIVEPIPE.value, style=self.style)
 
         self.shift_selected = False
 

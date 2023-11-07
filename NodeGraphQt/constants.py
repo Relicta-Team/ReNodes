@@ -160,7 +160,14 @@ class PipeEnum(Enum):
     :py:mod:`NodeGraphQt.constants.PipeEnum`
     """
     #: default width.
-    WIDTH = 1.2
+    WIDTH = 2.1
+    #dragged size
+    WIDTH_DRAGGED_LIVEPIPE = 2.1
+    #selected size
+    WIDTH_SELECTED = 2.5
+    #on mouse move in pipe
+    WIDTH_ACTIVATED = 2.1
+
     #: default color.
     COLOR = (175, 95, 30, 255)
     #: pipe color to a node when it's disabled.
