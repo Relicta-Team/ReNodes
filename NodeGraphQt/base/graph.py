@@ -550,7 +550,7 @@ class NodeGraph(QtCore.QObject):
         """
         if self._undo_view is None:
             self._undo_view = QtWidgets.QUndoView(self._undo_stack)
-            self._undo_view.setWindowTitle('Undo History')
+            self._undo_view.setWindowTitle('История изменений')
         return self._undo_view
 
     def cursor_pos(self):
@@ -1705,6 +1705,8 @@ class NodeGraph(QtCore.QObject):
         """
         Clears the current node graph session.
         """
+        from PyQt5.sip import delete
+        from gc import collect
         for n in self.all_nodes():
             if isinstance(n, BaseNode):
                 for p in n.input_ports():
@@ -1716,8 +1718,12 @@ class NodeGraph(QtCore.QObject):
                         p.set_locked(False, connected_ports=False)
                     p.clear_connections()
             self._undo_stack.push(NodeRemovedCmd(self, n))
+            
+            #cleanup c++ objects
+            delete(n.view)
         self._undo_stack.clear()
         self._model.session = ''
+        collect()
 
     def _serialize(self, nodes,serializeMouse=False):
         """
