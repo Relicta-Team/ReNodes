@@ -44,6 +44,9 @@ def RegisterLoggerStdoutHandler(logobject : logging.Logger):
         stdout_hndl.setFormatter(logging.Formatter('[%(name)s::%(levelname)s] - %(message)s'))
         logobject.addHandler(stdout_hndl)
 
+        #fh = logging.FileHandler('.\\application.log')
+        #logobject.addHandler(fh)
+
 def getAllLoggers():
     loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     return loggers	

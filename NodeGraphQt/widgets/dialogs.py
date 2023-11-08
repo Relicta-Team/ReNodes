@@ -1,6 +1,6 @@
 import os
 
-from Qt import QtWidgets
+from Qt import QtWidgets, QtGui
 
 _current_user_directory = os.path.expanduser('~')
 
@@ -42,9 +42,12 @@ class FileDialog(object):
 
 class BaseDialog(object):
 
+    dialogIcon = QtGui.QIcon("data\\icon.ico")
+
     @staticmethod
     def message_dialog(text='', title='Message'):
         dlg = QtWidgets.QMessageBox()
+        dlg.setIcon(BaseDialog.dialogIcon)
         dlg.setWindowTitle(title)
         dlg.setInformativeText(text)
         dlg.setStandardButtons(QtWidgets.QMessageBox.Ok)
@@ -53,6 +56,7 @@ class BaseDialog(object):
     @staticmethod
     def question_dialog(text='', title='Are you sure?'):
         dlg = QtWidgets.QMessageBox()
+        dlg.setIcon(BaseDialog.dialogIcon)
         dlg.setWindowTitle(title)
         dlg.setInformativeText(text)
         dlg.setStandardButtons(
@@ -65,7 +69,8 @@ class BaseDialog(object):
     def input_dialog(text='', title='Input',deftext=''):
         dlg = QtWidgets.QInputDialog()
         dlg.setWindowTitle(title)
+        dlg.setWindowIcon(BaseDialog.dialogIcon)
         dlg.setLabelText(text)
         dlg.setTextValue(deftext)
         result = dlg.exec_()
-        return dlg.textValue(), result
+        return dlg.textValue(), bool(result)
