@@ -53,7 +53,9 @@ def updateIconColor(icon : QIcon, color) -> QIcon:
 
     return QIcon(pixmap)
 
-def updatePixmapColor(pixmap: QPixmap, color: QColor) -> QPixmap:
+def updatePixmapColor(pixmap: QPixmap, color: QColor | str) -> QPixmap:
+    if isinstance(color, str):
+        color = QColor(color)
     image = pixmap.toImage()
     for x in range(image.width()):
         for y in range(image.height()):
@@ -63,3 +65,11 @@ def updatePixmapColor(pixmap: QPixmap, color: QColor) -> QPixmap:
             pixel_color.setRgb(color.red(), color.green(), color.blue(),pixel_color.alpha())
             image.setPixelColor(x, y, pixel_color)
     return QPixmap.fromImage(image)
+
+def mergePixmaps(pixmapSource: QPixmap, pixmapAdd: QPixmap):
+    pixmap = pixmapSource
+    #pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.drawPixmap(0, 0, pixmapAdd)
+    painter.end()
+    return pixmap

@@ -131,8 +131,7 @@ class RuntimeNode(BaseNode):
 				port.view._syncTooltip()
 
 		if anySet:
-			dat = [self.icon(),QtGui.QColor(*clr)]
-			self.set_icon(dat,False)
+			self.update_icon_part_color(0,QtGui.QColor(*clr),False)
 
 	def onAutoPortDisconnected(self,src_port_info : Port):
 		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип
@@ -159,7 +158,7 @@ class RuntimeNode(BaseNode):
 
 		data = self.get_property('autoportdata')
 		self.set_property("autoportdata",{},False)
-		self.set_icon([self.icon(),None],False)
+		self.update_icon_part_color(0,None,False)
 		for port in portList:
 			port.color = data['color']
 			port.border_color = data['border_color']
@@ -169,6 +168,53 @@ class RuntimeNode(BaseNode):
 
 		pass
 	
+	def update_icon_part_color(self,index=0,clr=None,push_undo=True):
+		dat = self.icon()
+		if not isinstance(dat,list):
+			dat = [dat,None]
+		dat[index+1] = clr
+		#validation: if 2 items and color is none 
+		if len(dat) == 2 and dat[1] is None:
+			dat = dat[0]
+		self.set_icon(dat,push_undo)
+
+	def update_icon_part_picture(self,index=0,picture=None,push_undo=True):
+		dat = self.icon()
+		if not isinstance(dat,list):
+			dat = [dat,None]
+		dat[index] = picture
+		if len(dat) == 2 and dat[1] is None:
+			dat = dat[0]
+		self.set_icon(dat,push_undo)
+
+	def update_icon_parts(self,parts,push_undo=True):
+		
+		if not isinstance(parts,list):
+			parts = [parts,None]
+		
+		if len(parts)%2 != 0:
+			raise Exception(f"(update_icon_parts) - parts must be even: {parts}")
+		for i in range(0,len(parts),2):
+			if not isinstance(parts[i],str):
+				raise Exception(f"(update_icon_parts) - part picture (index {i}) must be string: <{parts[i]}>")
+			clr = parts[i+1]
+			if not isinstance(clr,QtGui.QColor) and not isinstance(clr,str):
+				raise Exception(f"(update_icon_parts) - part color (index {i+1}) must be color or string: <{clr}>")
+		
+		self.set_icon(parts,push_undo)
+
+	def set_icon_part_count(self,count,push_undo=True):
+		raise NotImplementedError("TODO: implement set_icon_part_count")
+		if count <= 1:
+			raise Exception("(set_icon_part_count) - Count must be greater than 1")
+		dat = self.icon()
+		if not isinstance(dat,list):
+			dat = [dat,None]
+		for i in range(0,count):
+			dat.append("")
+			dat.append(None)
+		self.set_icon(dat,push_undo)
+
 	#region Ошибки
 	def setErrorText(self,text="",head=None):
 		self.view.setErrorText(text,head)

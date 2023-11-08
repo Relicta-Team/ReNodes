@@ -513,8 +513,8 @@ class VariableManager(QDockWidget):
             doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 
-        #need rewrite code for set icon
-        #nodeObj.set_icon([varDt.icon,varInfo.color])
+        #setup partial icon with color support
+        nodeObj.update_icon_parts([varDt.icon,varInfo.color],False)
 
         code = ""
         inval = "@in.2"

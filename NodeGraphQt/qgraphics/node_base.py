@@ -21,6 +21,8 @@ from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem, ScriptedCustomP
 from PyQt5.QtCore import QPropertyAnimation, QRectF
 from PyQt5.QtWidgets import QGraphicsItem, QWidget
 
+from ReNode.app.utils import updatePixmapColor, mergePixmaps
+
 #! use this for animated node
 # class AnimatedItem(QGraphicsItem):
 #     def __init__(self):
@@ -927,32 +929,56 @@ class NodeItem(AbstractNodeItem):
 
     @icon.setter
     def icon(self, path=None):
-        from ReNode.app.utils import updatePixmapColor
         
-        applyColor = None
+        path = path or ICON_NODE_BASE
+        baseValue = path
+
+        icondataList = []
 
         #update color icon
         if isinstance(path,list):
-            applyColor = path[1]
-            path = path[0]
+            baseValue = baseValue.copy()
+            if not len(baseValue)%2==0:
+                raise Exception(f'Invalid color structure: {baseValue}')
+            for i in range(0,len(baseValue),2):
+                clr = baseValue[i+1]
+                icondataList.append((baseValue[i],clr))
+                if isinstance(clr, QtGui.QColor):
+                    baseValue[i+1] = clr.name()
         
-        self._properties['icon'] = path
-        path = path or ICON_NODE_BASE
-        pixmap = QtGui.QPixmap(path)
-        if pixmap.size().height() > NodeEnum.ICON_SIZE.value:
-            pixmap = pixmap.scaledToHeight(
-                NodeEnum.ICON_SIZE.value,
-                QtCore.Qt.SmoothTransformation
-            )
+        self._properties['icon'] = baseValue
         
-        if applyColor:
-            pixmap = updatePixmapColor(pixmap, applyColor)
+        if not icondataList:
+            icondataList = [(path,None)]
+
+        pixmap = None
+        pixList = []
+        for pt_,clr_ in icondataList:
+            #create pixmap
+            pmCur = QtGui.QPixmap(pt_)
+            if pmCur.size().height() > NodeEnum.ICON_SIZE.value:
+                pmCur = pmCur.scaledToHeight(NodeEnum.ICON_SIZE.value,QtCore.Qt.SmoothTransformation)
+            
+            # update color
+            if clr_:
+                pmCur = updatePixmapColor(pmCur, clr_)
+
+            pixList.append(pmCur)
+
+        #merge colorized parts
+        for pix in pixList:
+            if not pixmap:
+                pixmap = pix
+            else:
+                pixmap = mergePixmaps(pixmap, pix)
 
         self._icon_item.setPixmap(pixmap)
         if self.scene():
             self.post_init()
 
         self.update()
+        del icondataList
+        del pixList
 
     @AbstractNodeItem.layout_direction.setter
     def layout_direction(self, value=0):
