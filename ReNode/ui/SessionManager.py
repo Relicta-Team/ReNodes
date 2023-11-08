@@ -15,6 +15,8 @@ class TabData:
         # Here located all graph backend for this session
         self.graph = SessionManager.refObject.newInstanceGraph()
 
+        self.variables = {}
+
     def __repr__(self) -> str:
         from sys import getsizeof
         return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'
@@ -54,6 +56,10 @@ class TabData:
 
         #show this graph
         self.graph.show()
+
+        #load variables
+        graphComponent.variable_manager.variables = self.variables
+        graphComponent.variable_manager.syncVariableManagerWidget()
 
         pass
 
@@ -160,6 +166,7 @@ class SessionManager(QTabWidget):
 
             if reply == QMessageBox.Yes:
                 self.removeTab(index)
+                #self.tabBar().removeTab(index)
                 del tabData
 
     def showContextMenu(self):

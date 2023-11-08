@@ -6,9 +6,11 @@ from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
+from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
+import datetime
 
 class VariableInfo:
     def __init__(self):
@@ -327,29 +329,40 @@ class VariableManager(QDockWidget):
         if dt.dataType != "value":
             var_typename = f"{dt.dataType}[{var_typename}]"
             variable_type = dt.text
+        
+        itm = datetime.datetime.now()
+        #variableSystemName = hex(id(itm))
+        variableSystemName = f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
 
-        # Создайте новый элемент дерева для переменной и добавьте его в дерево
-        defvalstr = str(default_value) if not isinstance(default_value,str) else default_value
-        item = QTreeWidgetItem([variable_name, variable_type, defvalstr])
-        item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
-        variableSystemName = hex(id(item))
-        item.setData(0, QtCore.Qt.UserRole, variableSystemName)
-        icn = QtGui.QIcon(dt.icon)
-        icn = updateIconColor(icn,varInfo.color)
-        item.setIcon(1, icn)
-
-        itmsTree = self.widVarTree.findItems(category_tree_name,Qt.MatchExactly)
-        if itmsTree:
-            itmsTree[0].addChild(item)
-        else:
-            itmsTree = QTreeWidgetItem([category_tree_name])
-            itmsTree.setFlags(itmsTree.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
-            self.widVarTree.addTopLevelItem(itmsTree)
-            itmsTree.addChild(item)
 
         if not self.variables.get(cat_sys_name):
             self.variables[cat_sys_name] = {}
-        self.variables[cat_sys_name][variableSystemName] = {
+        
+        if variableSystemName in self.variables[cat_sys_name]:
+            self.showErrorMessageBox(f"Коллизия системных имен переменных. Айди '{variableSystemName}' уже существует!")
+            return
+        
+        for cat,stor in self.variables.items():
+            if variableSystemName in stor:
+                self.showErrorMessageBox(f"Коллизия системных имен переменных. Айди '{variableSystemName}' уже существует в другой категории - {cat}")
+                return
+
+        # self.variables[cat_sys_name][variableSystemName] = {
+        #     "name": variable_name,
+        #     "type": var_typename,
+        #     "datatype": dt.dataType,
+        #     "typename": variable_type,
+        #     "value": default_value,
+        #     "category": cat_sys_name,
+        #     "systemname": variableSystemName,
+
+        #     "reprType": str(varInfo),
+        #     "reprDataType": str(dt),
+        # }
+        # # синхронизируем визуал
+        # self.syncVariableManagerWidget()
+
+        vardict = {
             "name": variable_name,
             "type": var_typename,
             "datatype": dt.dataType,
@@ -361,10 +374,15 @@ class VariableManager(QDockWidget):
             "reprType": str(varInfo),
             "reprDataType": str(dt),
         }
+        self.getUndoStack().push(VariableCreatedCommand(self,cat_sys_name,vardict))
+
 
         # Очистите поля ввода
         self.widVarName.clear()
         self.widInitVal.set_value(self._initialValue)
+
+    def getUndoStack(self) -> QUndoStack:
+        return self.nodeGraphComponent.graph._undo_stack
 
     def setupContextMenu(self):
         # Создайте контекстное меню
@@ -384,7 +402,8 @@ class VariableManager(QDockWidget):
         item = self.widVarTree.itemAt(pos)
         # Отображайте контекстное меню только если курсор мыши находится над элементом
         if item:
-            if item.childCount() > 0:
+            isVariable = item.flags() & QtCore.Qt.ItemFlag.ItemIsDragEnabled
+            if not isVariable: #item.childCount() > 0:
                 # Это категория (ветка), не отображаем контекстное меню
                 return
             self.current_variable_item = item
@@ -423,22 +442,11 @@ class VariableManager(QDockWidget):
                     if node.get_property('nameid') == variable_system_name:
                         graph.delete_node(node,False)
 
-            # Удалите переменную из дерева
-            parent = item.parent() if item.parent() else self.widVarTree
-            parent.removeChild(item)
-
             # Удалите переменную из словаря переменных
             if category in self.variables and variable_system_name in self.variables[category]:
                 del self.variables[category][variable_system_name]
 
-            if parent.childCount() == 0:
-                # Если у родительского элемента больше нет детей, удаляем его
-                parent_index = self.widVarTree.indexOfTopLevelItem(parent)
-                if parent_index >= 0:
-                    self.widVarTree.takeTopLevelItem(parent_index)
-                    # Удалите категорию из словаря переменных, если она пуста
-                    if category in self.variables:
-                        del self.variables[category]
+            self.syncVariableManagerWidget()
 
     def _updateNode(self,nodeObj:RuntimeNode,id,getorset):
         from ReNode.app.NodeFactory import NodeFactory
@@ -523,6 +531,9 @@ class VariableManager(QDockWidget):
 
         return reprVar,reprDt
 
+    def syncVariableManagerWidget(self):
+        self.loadVariables(self.variables,False)
+
     def loadVariables(self, dictData,clearPrevDict = False):
         # Очистите существующие переменные из self.variables и дерева
         self.clearVariables(doCleanupVars = clearPrevDict)
@@ -580,3 +591,5 @@ class VariableManager(QDockWidget):
                 item.setIcon(1, icn)
 
                 category_item.addChild(item)
+        
+        self.widVarTree.expandAll()

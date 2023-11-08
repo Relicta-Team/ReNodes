@@ -454,3 +454,21 @@ class PortVisibleCmd(QtWidgets.QUndoCommand):
         
     def redo(self):
         self.set_visible(self.visible)
+
+# ========================= custom commands ===========================
+
+class VariableCreatedCommand(QtWidgets.QUndoCommand):
+    def __init__(self, varmgr, cat,variable):
+        super(VariableCreatedCommand, self).__init__()
+        self.setText('Создание переменной "{}"'.format(variable['name']))
+        self._variable = variable
+        self._category = cat
+        self._varmgr = varmgr
+
+    def undo(self):
+        self._varmgr.variables[self._category].pop(self._variable['systemname'])
+        self._varmgr.syncVariableManagerWidget()
+    
+    def redo(self):
+        self._varmgr.variables[self._category][self._variable['systemname']] = self._variable
+        self._varmgr.syncVariableManagerWidget()
