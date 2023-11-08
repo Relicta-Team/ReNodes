@@ -314,6 +314,7 @@ class VariableManager(QDockWidget):
         variable_type = self.widVarType.currentText()
         variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')
         default_value = self.widInitVal.get_value()
+        variable_group = self.widVarGroup.text().rstrip(' ').lstrip(' ')
         
         current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
 
@@ -382,6 +383,7 @@ class VariableManager(QDockWidget):
             "typename": variable_type,
             "value": default_value,
             "category": cat_sys_name,
+            "group": variable_group,
             "systemname": variableSystemName,
 
             "reprType": str(varInfo),
@@ -402,9 +404,12 @@ class VariableManager(QDockWidget):
         self.context_menu = QMenu(self)
         #TODO rename action, duplicate
         #self.rename_action = self.context_menu.addAction("Переименовать")
+        
+        self.change_group_action = self.context_menu.addAction("Изменить группу")
         self.delete_action = self.context_menu.addAction("Удалить переменную")
         self.cancel = self.context_menu.addAction("Отмена")
         self.delete_action.triggered.connect(self.deleteSelectedVariable)
+        self.change_group_action.triggered.connect(self.changeSelectedVariableGroup)
         #self.rename_action.triggered.connect(self.renameSelectedVariable)
 
         # Подключите событие customContextMenuRequested для показа контекстного меню
@@ -425,8 +430,11 @@ class VariableManager(QDockWidget):
     def deleteSelectedVariable(self):
         if hasattr(self, "current_variable_item"):
             self.deleteVariable(self.current_variable_item)
-            self.syncActionText()
     
+    def changeSelectedVariableGroup(self):
+        if hasattr(self, "current_variable_item"):
+            self.changeVariableGroup(self.current_variable_item)
+
     def renameSelectedVariable(self):
         if hasattr(self, "current_variable_item"):
             #self.widVarTree.editItem(self.current_variable_item,0)
@@ -436,6 +444,25 @@ class VariableManager(QDockWidget):
             if ok:
                 # Выводим введенный текст
                 print('Вы ввели:', text)
+
+    def changeVariableGroup(self, item):
+        if item:
+            variable_system_name = item.data(0, Qt.UserRole)
+            
+            # Получите категорию переменной из имени элемента
+            vardata = self.getVariableDataById(variable_system_name)
+            if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
+
+            oldname = vardata.get('group',"")
+            newname,result = self.nodeGraphComponent.graph.input_dialog("Введите новое имя группы. Удалите текст для того, чтобы разгрупировать переменную",
+                title="Изменение группы переменной", deftext=oldname)
+
+            if not result: return
+            newname = newname.rstrip(' ').lstrip(' ')
+            if oldname == newname: return
+
+            hstack = self.getUndoStack()
+            hstack.push(VariableChangePropertyCommand(self,vardata['category'],variable_system_name,'group',newname,""))
 
     def deleteVariable(self, item):
         if item:
@@ -584,6 +611,9 @@ class VariableManager(QDockWidget):
         self.widVarTree.clear()
 
     def populateVariableTree(self):
+
+        dictGroup = {} # key: group name, value: groupwidget
+
         # Пересоздайте переменные в дереве на основе данных в self.variables
         for category, variables in self.variables.items():
             category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.category == category),None)
@@ -599,6 +629,7 @@ class VariableManager(QDockWidget):
                 name = variable_data['name']
                 variable_type = variable_data['typename']
                 value = variable_data['value']
+                group = variable_data.get('group',"")
                 defvalstr = str(value) if not isinstance(value, str) else value
 
                 varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
@@ -613,6 +644,16 @@ class VariableManager(QDockWidget):
                 icn = updateIconColor(icn,varInfo.color)
                 item.setIcon(1, icn)
 
-                category_item.addChild(item)
+                if group == "":
+                    category_item.addChild(item)
+                else:
+                    if group not in dictGroup:
+                        group_item = QTreeWidgetItem([group])
+                        group_item.setFlags(group_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
+                        category_item.addChild(group_item)
+                        dictGroup[group] = group_item
+                    dictGroup[group].addChild(item)
+                    
         
+        del dictGroup
         self.widVarTree.expandAll()

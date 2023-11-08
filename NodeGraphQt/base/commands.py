@@ -488,3 +488,28 @@ class VariableDeletedCommand(QtWidgets.QUndoCommand):
     def redo(self):
         self._varmgr.variables[self._category].pop(self._variable['systemname'])
         self._varmgr.syncVariableManagerWidget()
+
+class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
+
+    blockedProps = set(["systemname","reprType","reprDataType"])
+
+    def __init__(self, varmgr, cat,varname,prop,value,defaultvalue):
+        super(VariableChangePropertyCommand, self).__init__()
+
+        if prop in VariableChangePropertyCommand.blockedProps:
+            raise Exception(f"Property {prop} is blocked for change")
+
+        self._varStorage = varmgr.variables[cat][varname]
+        self.setText('Изменение свойств переменной "{}"'.format(self._varStorage['name']))
+        self._varmgr = varmgr
+        self._name = prop
+        self._value = value
+        self._oldvaule = self._varStorage.get(self._name,defaultvalue)
+    
+    def undo(self):
+        self._varStorage[self._name] = self._oldvaule
+        self._varmgr.syncVariableManagerWidget()
+
+    def redo(self):
+        self._varStorage[self._name] = self._value
+        self._varmgr.syncVariableManagerWidget()
