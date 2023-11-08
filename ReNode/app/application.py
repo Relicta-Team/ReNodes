@@ -170,5 +170,5 @@ def AppMain():
 	#print fws files
 	fs_watcher.fileChanged.connect(application.mainWindow.onReloadStyle)
 
-	logger.info("Application loaded. Start main loop")
+	logger.info("Application loaded.")
 	sys.exit(app.exec_())

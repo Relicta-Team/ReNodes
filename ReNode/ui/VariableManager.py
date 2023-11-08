@@ -171,7 +171,9 @@ class VariableManager(QDockWidget):
         layout = QVBoxLayout()
         self.widLayout = layout
 
-        layout.addWidget(QLabel("Категория переменной:"))
+        __lbl = QLabel("Категория переменной:")
+        __lbl.setToolTip("Категория переменной:\nЛокальная переменная - это переменная, создаваемая и существующая в пределах одного события\nПеременная графа - это переменная, существующая и доступная внутри этого графа")
+        layout.addWidget(__lbl)
         self.widCat = QComboBox()
         for vcat in self.variableCategoryList:
             self.widCat.addItem(vcat.categoryTextName)
@@ -199,12 +201,23 @@ class VariableManager(QDockWidget):
         self.widDataType.currentIndexChanged.connect(self._onDataTypeChanged)
         type_layout.addWidget(self.widDataType)
 
-        layout.addWidget(QLabel("Имя:"))
+        __lbl = QLabel("Имя:")
+        __lbl.setToolTip("Имя переменной")
+        layout.addWidget(__lbl)
         self.widVarName = QLineEdit()
         self.widVarName.setMaxLength(128)
         layout.addWidget(self.widVarName)
 
-        layout.addWidget(QLabel("Начальное значение:"))
+        __lbl = QLabel("Группа:")
+        __lbl.setToolTip("Имя группы для переменной (опционально)")
+        layout.addWidget(__lbl)
+        self.widVarGroup = QLineEdit()
+        self.widVarGroup.setMaxLength(128)
+        layout.addWidget(self.widVarGroup)
+
+        __lbl = QLabel("Начальное значение:")
+        __lbl.setToolTip("Значение, которое будет присвоено переменной при создании")
+        layout.addWidget(__lbl)
         self.widInitVal = QLineEdit()
         layout.addWidget(self.widInitVal)
         self._initialValue = None
