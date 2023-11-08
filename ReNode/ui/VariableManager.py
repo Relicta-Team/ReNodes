@@ -433,20 +433,30 @@ class VariableManager(QDockWidget):
             vardata = self.getVariableDataById(variable_system_name)
             if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
             category = vardata['category']
-            
+            hstack = self.getUndoStack()
+
+            canDeleteVariable =  category in self.variables and variable_system_name in self.variables[category]
+            if not canDeleteVariable:
+                self.showErrorMessageBox(f"Невозможно удалить несуществующую переменную {vardata['name']} из категории {category}")
+                return
+
+            hstack.beginMacro(f"Удаление переменной {vardata['name']}")
             # Удаляем переменную из графа
             graph = self.nodeGraphComponent.graph
             allnodes = graph.get_nodes_by_class(None)
             for node in allnodes:
                 if node.has_property('nameid'):
                     if node.get_property('nameid') == variable_system_name:
-                        graph.delete_node(node,False)
+                        graph.delete_node(node,True) #push undo for history
 
-            # Удалите переменную из словаря переменных
-            if category in self.variables and variable_system_name in self.variables[category]:
-                del self.variables[category][variable_system_name]
+            # # Удалите переменную из словаря переменных
+            # if category in self.variables and variable_system_name in self.variables[category]:
+            #     del self.variables[category][variable_system_name]
+            # self.syncVariableManagerWidget()
 
-            self.syncVariableManagerWidget()
+            hstack.push(VariableDeletedCommand(self,category,self.variables[category][variable_system_name]))
+
+            hstack.endMacro()
 
     def _updateNode(self,nodeObj:RuntimeNode,id,getorset):
         from ReNode.app.NodeFactory import NodeFactory

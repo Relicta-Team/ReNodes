@@ -472,3 +472,19 @@ class VariableCreatedCommand(QtWidgets.QUndoCommand):
     def redo(self):
         self._varmgr.variables[self._category][self._variable['systemname']] = self._variable
         self._varmgr.syncVariableManagerWidget()
+
+class VariableDeletedCommand(QtWidgets.QUndoCommand):
+    def __init__(self, varmgr, cat,variable):
+        super(VariableDeletedCommand, self).__init__()
+        self.setText('Удаление переменной "{}"'.format(variable['name']))
+        self._variable = variable
+        self._category = cat
+        self._varmgr = varmgr
+
+    def undo(self):
+        self._varmgr.variables[self._category][self._variable['systemname']] = self._variable
+        self._varmgr.syncVariableManagerWidget()
+    
+    def redo(self):
+        self._varmgr.variables[self._category].pop(self._variable['systemname'])
+        self._varmgr.syncVariableManagerWidget()
