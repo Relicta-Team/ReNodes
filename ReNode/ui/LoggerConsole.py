@@ -75,7 +75,7 @@ class LoggerConsole(QDockWidget):
         self.send_button = QPushButton("Отправить")
 
         self.messages = []
-        self.maxMessages = 400
+        self.maxMessages = 1024*2
 
         def on_link_clicked(link):
             from ReNode.ui.NodeGraphComponent import NodeGraphComponent
