@@ -60,3 +60,12 @@ class BaseDialog(object):
         )
         result = dlg.exec_()
         return bool(result == QtWidgets.QMessageBox.Yes)
+
+    @staticmethod
+    def input_dialog(text='', title='Input',deftext=''):
+        dlg = QtWidgets.QInputDialog()
+        dlg.setWindowTitle(title)
+        dlg.setLabelText(text)
+        dlg.setTextValue(deftext)
+        result = dlg.exec_()
+        return dlg.textValue(), result

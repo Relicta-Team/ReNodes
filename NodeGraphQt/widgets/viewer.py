@@ -1360,6 +1360,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.clear_key_state()
         return BaseDialog.question_dialog(text, title)
 
+    def input_dialog(self, text, title='Input', deftext=''):
+        self.clear_key_state()
+        return BaseDialog.input_dialog(text, title, deftext)
+
     def message_dialog(self, text, title='Node Graph'):
         """
         Prompt node viewer message dialog widget with "ok" button.

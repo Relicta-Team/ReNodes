@@ -2410,6 +2410,9 @@ class NodeGraph(QtCore.QObject):
         """
         return self._viewer.question_dialog(text, title)
 
+    def input_dialog(self, text, title='Input', deftext=''):
+        return self._viewer.input_dialog(text, title, deftext)
+
     def message_dialog(self, text, title='Node Graph'):
         """
         Prompts a file open dialog in the node graph.
