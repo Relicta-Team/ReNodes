@@ -1,6 +1,6 @@
 import os
 
-from Qt import QtWidgets, QtGui
+from Qt import QtWidgets, QtGui, QtCore
 
 _current_user_directory = os.path.expanduser('~')
 
@@ -42,13 +42,12 @@ class FileDialog(object):
 
 class BaseDialog(object):
 
-    dialogIcon = QtGui.QIcon("data\\icon.ico")
-
     @staticmethod
     def message_dialog(text='', title='Message'):
         dlg = QtWidgets.QMessageBox()
-        dlg.setIcon(BaseDialog.dialogIcon)
+        dlg.setWindowIcon(QtGui.QIcon("data\\icon.ico"))
         dlg.setWindowTitle(title)
+        dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         dlg.setInformativeText(text)
         dlg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         dlg.exec_()
@@ -56,8 +55,9 @@ class BaseDialog(object):
     @staticmethod
     def question_dialog(text='', title='Are you sure?'):
         dlg = QtWidgets.QMessageBox()
-        dlg.setIcon(BaseDialog.dialogIcon)
+        dlg.setWindowIcon(QtGui.QIcon("data\\icon.ico"))
         dlg.setWindowTitle(title)
+        dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         dlg.setInformativeText(text)
         dlg.setStandardButtons(
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
@@ -69,8 +69,9 @@ class BaseDialog(object):
     def input_dialog(text='', title='Input',deftext=''):
         dlg = QtWidgets.QInputDialog()
         dlg.setWindowTitle(title)
-        dlg.setWindowIcon(BaseDialog.dialogIcon)
+        dlg.setWindowIcon(QtGui.QIcon("data\\icon.ico"))
+        dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         dlg.setLabelText(text)
         dlg.setTextValue(deftext)
         result = dlg.exec_()
-        return dlg.textValue(), bool(result)
+        return dlg.textValue(), bool(result == QtWidgets.QInputDialog.Accepted)
