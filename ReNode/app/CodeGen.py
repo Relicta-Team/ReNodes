@@ -567,13 +567,14 @@ class CodeGenerator:
         for obj in topoNodes:
             if obj.hasError: 
                 errList.append(obj)
-        
+
         hasNodeError = next((o for o in codeInfo.values() if o.hasError),None)
         stackGenError = not hasAnyChanges and readyCount != len(codeInfo)
 
+        entryObj = codeInfo[entryId]
+
         #post while events
         if stackGenError:
-            entryObj = codeInfo[entryId]
             self.exception(CGStackError,entry=entryObj,source=firstNonGenerated)
 
         if hasNodeError:
@@ -582,14 +583,14 @@ class CodeGenerator:
                 strInfo = "-отсутствуют-" 
             else: 
                 strInfo = "\n\t" + strInfo
-            self.error(f'Узлы, требующие проверки/исправления ({len(errList)}):{strInfo}')
+            self.error(f'Узлы, требующие проверки/исправления из события {LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryObj.nodeId),entryObj.nodeId)} (всего {len(errList)}):{strInfo}')
 
 
-        entryObject = codeInfo[entryId]
-        if not entryObject.isReady:
-            return "NOT_READY:" + entryObject.code
+        entryObj = codeInfo[entryId]
+        if not entryObj.isReady:
+            return "NOT_READY:" + entryObj.code
         
-        return entryObject.code
+        return entryObj.code
 
     def formatCode(self, instructions):
         def make_prefix(level):
