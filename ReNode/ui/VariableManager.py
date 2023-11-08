@@ -384,7 +384,7 @@ class VariableManager(QDockWidget):
             "value": default_value,
             "category": cat_sys_name,
             "group": variable_group,
-            "systemname": variableSystemName,
+            "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
 
             "reprType": str(varInfo),
             "reprDataType": str(dt),
@@ -407,26 +407,50 @@ class VariableManager(QDockWidget):
         
         self.change_group_action = self.context_menu.addAction("Изменить группу")
         self.delete_action = self.context_menu.addAction("Удалить переменную")
-        self.cancel = self.context_menu.addAction("Отмена")
         self.delete_action.triggered.connect(self.deleteSelectedVariable)
         self.change_group_action.triggered.connect(self.changeSelectedVariableGroup)
         #self.rename_action.triggered.connect(self.renameSelectedVariable)
+        self.variableContextActions = [
+            self.change_group_action,
+            self.delete_action
+        ]
+
+        self.rename_group_action = self.context_menu.addAction("Переименовать группу")
+        self.rename_group_action.triggered.connect(self.renameSelectedGroup)
+        self.delete_group_action = self.context_menu.addAction("Удалить группу")
+        #self.delete_group_action.triggered.connect(self.deleteSelectedGroup)
+
+        self.groupContextActions = [
+            self.rename_group_action,
+            self.delete_group_action
+        ]
+
+        self.cancel = self.context_menu.addAction("Отмена")
 
         # Подключите событие customContextMenuRequested для показа контекстного меню
         self.widVarTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.widVarTree.customContextMenuRequested.connect(self.showContextMenu)
+
+    const_groupDataToken = "@group"
 
     def showContextMenu(self, pos):
         item = self.widVarTree.itemAt(pos)
         # Отображайте контекстное меню только если курсор мыши находится над элементом
         if item:
             isVariable = item.flags() & QtCore.Qt.ItemFlag.ItemIsDragEnabled
-            if not isVariable: #item.childCount() > 0:
-                # Это категория (ветка), не отображаем контекстное меню
-                return
+            isGroup = item.data(0,QtCore.Qt.UserRole)
             self.current_variable_item = item
-            self.context_menu.exec_(QtGui.QCursor.pos())
-
+            if isVariable:
+                [act.setVisible(True) for act in self.variableContextActions]
+                [act.setVisible(False) for act in self.groupContextActions]
+                self.context_menu.exec_(QtGui.QCursor.pos())
+                return
+            if isGroup:
+                [act.setVisible(False) for act in self.variableContextActions]
+                [act.setVisible(True) for act in self.groupContextActions]
+                self.context_menu.exec_(QtGui.QCursor.pos())
+                return
+            self.current_variable_item = None
     def deleteSelectedVariable(self):
         if hasattr(self, "current_variable_item"):
             self.deleteVariable(self.current_variable_item)
@@ -434,6 +458,26 @@ class VariableManager(QDockWidget):
     def changeSelectedVariableGroup(self):
         if hasattr(self, "current_variable_item"):
             self.changeVariableGroup(self.current_variable_item)
+
+    def renameSelectedGroup(self):
+        if hasattr(self, "current_variable_item"):
+            item = self.current_variable_item
+            if item:
+                oldName = item.text(0)
+                newname,result = self.nodeGraphComponent.graph.input_dialog("Введите новое имя группы. Удалите текст для того, чтобы разгрупировать переменную",
+                title="Изменение группы переменных", deftext=oldName)
+                if not result: return
+                newname = newname.rstrip(' ').lstrip(' ')
+                if oldName == newname: return
+                hstack = self.getUndoStack()
+                if item.childCount()==0:
+                    self.showErrorMessageBox("Невозможно изменить название группы '{}' - список элементов пуст".format(oldName))
+                    return
+                variable_system_name = item.child(0).data(0,QtCore.Qt.UserRole)
+                vardata = self.getVariableDataById(variable_system_name)
+                if not vardata: raise Exception(f"Cant find variable by system name for rename group: {variable_system_name}")
+                cat = vardata['category']
+                hstack.push(ChangeGroupNameForVariables(self,cat,oldName,newname))
 
     def renameSelectedVariable(self):
         if hasattr(self, "current_variable_item"):
@@ -453,7 +497,7 @@ class VariableManager(QDockWidget):
             vardata = self.getVariableDataById(variable_system_name)
             if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
 
-            oldname = vardata.get('group',"")
+            oldname = vardata.get('group',"")            
             newname,result = self.nodeGraphComponent.graph.input_dialog("Введите новое имя группы. Удалите текст для того, чтобы разгрупировать переменную",
                 title="Изменение группы переменной", deftext=oldname)
 
@@ -650,6 +694,7 @@ class VariableManager(QDockWidget):
                     if group not in dictGroup:
                         group_item = QTreeWidgetItem([group])
                         group_item.setFlags(group_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
+                        group_item.setData(0, QtCore.Qt.UserRole, VariableManager.const_groupDataToken)
                         category_item.addChild(group_item)
                         dictGroup[group] = group_item
                     dictGroup[group].addChild(item)

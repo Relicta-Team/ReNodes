@@ -506,3 +506,32 @@ class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
     def redo(self):
         self._varStorage[self._name] = self._value
         self._varmgr.syncVariableManagerWidget()
+
+class ChangeGroupNameForVariables(QtWidgets.QUndoCommand):
+    def __init__(self,varmgr,cat,oldgroup,newgroup):
+        super(ChangeGroupNameForVariables, self).__init__()
+        self.setText('Изменение имени группы переменных "{}" на "{}"'.format(oldgroup,newgroup))
+        self._varmgr = varmgr
+        self._category = cat
+        self._oldgroup = oldgroup
+        self._newgroup = newgroup
+        vdatvals = self._varmgr.variables[self._category].values()
+        self._changedvarsId = set([vardat['systemname'] for vardat in vdatvals if vardat.get('group',None) == oldgroup])
+    
+    def undo(self):
+        for sysname,vardat in self._varmgr.variables[self._category].items():
+            if sysname in self._changedvarsId:
+                if self._oldgroup:
+                    vardat['group'] = self._oldgroup
+                else:
+                    vardat.pop('group')
+        self._varmgr.syncVariableManagerWidget()
+
+    def redo(self):
+        for sysname,vardat in self._varmgr.variables[self._category].items():
+            if sysname in self._changedvarsId:
+                if self._newgroup:
+                    vardat['group'] = self._newgroup
+                else:
+                    vardat.pop('group')
+        self._varmgr.syncVariableManagerWidget()
