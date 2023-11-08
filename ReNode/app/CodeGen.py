@@ -187,6 +187,27 @@ class CodeGenerator:
             return self.formatCode(code)
         except Exception as e:
             strFullException = traceback.format_exc()
+
+            styleinfo = '''
+                background: #13f4f4f4;
+                border: 1px solid #ddd;
+                border-left: 3px solid #ffD90000;
+                border-right: 3px solid #ffD90000;
+                border-top: 3px solid #ffD90000;
+                border-bottom: 30px solid #ffD90000;
+                border-radius: 10px;
+                color: #EBEBEB;
+                font-size: 15px;
+                line-height: 1.2;
+                max-width: 100%;
+                overflow: auto;
+                padding: 1em 1.5em;
+                display: block;
+                page-break-inside: avoid;
+                word-wrap: normal;
+            '''
+            styleinfo = styleinfo.replace("\n","")
+            strFullException = f'{e.__class__.__name__}<pre style="{styleinfo}">\n{strFullException}</pre>'
             self.exception(CGUnhandledException,context=strFullException)
             return f"//unhandled exception\n"
 
@@ -502,7 +523,16 @@ class CodeGenerator:
                                 #         oname = kin
                                 #         break
                                 self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
-                                               
+                            else:
+                                # дополнительная проверка с отловом локальных переменных за пределами цикла
+                                if output_name in CGVariableUnhandledPathAccessException.checkedNodes.get(node_className,[]):
+                                    varNames = [varObj.localName for varObj in obj.generatedVars if node_id == varObj.definedNodeId]
+                                    if len(varNames) > 0:
+                                        for varName_ in varNames:
+                                            if varName_ in outputObj.code:
+                                                self.exception(CGVariableUnhandledPathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
+                                                break   
+                                         
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
 
                 # prepare if all replaced
@@ -537,18 +567,23 @@ class CodeGenerator:
         for obj in topoNodes:
             if obj.hasError: 
                 errList.append(obj)
-
-
+        
         hasNodeError = next((o for o in codeInfo.values() if o.hasError),None)
         stackGenError = not hasAnyChanges and readyCount != len(codeInfo)
+
         #post while events
-        if stackGenError or hasNodeError:
-            if stackGenError:
-                self.error("Ошибка переполнения стека - отсутствует совместимая информация")
+        if stackGenError:
+            entryObj = codeInfo[entryId]
+            self.exception(CGStackError,entry=entryObj,source=firstNonGenerated)
+
+        if hasNodeError:
             strInfo = "\n\t".join([LoggerConsole.wrapNodeLink(self._sanitizeNodeName(s.nodeId),s.nodeId) for s in errList])
-            if not strInfo: strInfo = "-отсутствуют-"
-            fngTex = firstNonGenerated.nodeId if firstNonGenerated else "-нет-"
-            self.error(f'Ошибка генерации. \n\tНоды с ошибками ({len(errList)}):\n{strInfo}\n\tПоследняя неподготовленная нода: {fngTex}')
+            if not strInfo: 
+                strInfo = "-отсутствуют-" 
+            else: 
+                strInfo = "\n\t" + strInfo
+            self.error(f'Узлы, требующие проверки/исправления ({len(errList)}):{strInfo}')
+
 
         entryObject = codeInfo[entryId]
         if not entryObject.isReady:
