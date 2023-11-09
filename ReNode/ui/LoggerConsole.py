@@ -70,7 +70,7 @@ class LoggerConsole(QDockWidget):
 
         self.log_text = ClickableTextBrowser() #QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setMinimumHeight(20)
+        #self.log_text.setMinimumHeight(20)
         self.command_input = CmdInputLineEdit()
         self.send_button = QPushButton("Отправить")
 

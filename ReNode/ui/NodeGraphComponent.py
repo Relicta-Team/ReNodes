@@ -368,7 +368,7 @@ class NodeGraphComponent:
 		#dock.setWidget(self.mainWindow)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
 		variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
-		#dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		#variable_manager.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, variable_manager)
 		#graph.set_pipe_slicing(True) #enabled by default
 
@@ -387,8 +387,8 @@ class NodeGraphComponent:
 		self.log_dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas)
 		self.log_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		self.log_dock.setTitleBarWidget(QWidget())
-		self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-		self.log_dock.setMinimumHeight(1)
+		#self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		#self.log_dock.setMinimumHeight(1)
 
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.log_dock, QtCore.Qt.Orientation.Vertical)
 		self.log_dock.syncActionText(True)
