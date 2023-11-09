@@ -721,6 +721,12 @@ class VariableManager(QDockWidget):
                 if not varInfo or not dt:
                     raise Exception(f"Невозможно загрузить переменную {variable_id}; Информация и данные о типе: {varInfo}; {dt}")
 
+                if dt.dataType != "value":
+                    if isinstance(varInfo,list):
+                        variable_type = f'{variable_type} ({", ".join([o__.variableTextName for o__ in varInfo])})'
+                    else:
+                        variable_type = f'{variable_type} ({varInfo.variableTextName})'
+
                 item = QTreeWidgetItem([name, variable_type, defvalstr])
                 item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 item.setData(0, QtCore.Qt.UserRole, variable_id)
