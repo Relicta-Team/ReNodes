@@ -47,7 +47,7 @@ class Application:
 	def getVersionString():
 		return f"{Application.appVersion[0]}.{Application.appVersion[1]}.{Application.appRevision}"
 
-	def isExecutable(self):
+	def isExecutable():
 		return getattr(sys, 'frozen', False)
 
 	#construct
