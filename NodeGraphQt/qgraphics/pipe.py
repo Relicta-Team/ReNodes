@@ -594,6 +594,15 @@ class LivePipeItem(PipeItem):
                 will be the draw end point.
             color (list[int]): override arrow index pointer color. (r, g, b)
         """
+
+        #Yodes: dragged livepipe getting color from port color
+        if start_port.color != self.color:
+            self.color = start_port.color
+            pen = self.pen()
+            lineColor = QtGui.QColor(*self.color)
+            lineColor.lighter(20)
+            pen.setColor(lineColor)
+            self.setPen(pen)
         super(LivePipeItem, self).draw_path(start_port, end_port, cursor_pos)
         self.draw_index_pointer(start_port, cursor_pos, color)
 
