@@ -11,6 +11,7 @@ from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
 import datetime
+from ReNode.app.Logger import RegisterLogger
 
 class VariableInfo:
     def __init__(self):
@@ -114,6 +115,7 @@ class VariableManager(QDockWidget):
     def __init__(self,actionVarViewer = None,nodeSystem=None):
         VariableManager.refObject = self
         super().__init__("Переменные")
+        self.logger = RegisterLogger("VariableManager")
         self.nodeGraphComponent = nodeSystem
         
         self.actionVarViewer = actionVarViewer
@@ -596,6 +598,7 @@ class VariableManager(QDockWidget):
         code = ""
         inval = "@in.2"
         
+        self.logger.warning("TODO: remove obsolete option 'code' from variable accessors")
         if lvdata['category']=='local':
             code = f"{lvdata['systemname']}" if getorset == "get" else f"{lvdata['systemname']} = {inval}; @out.1"
         elif lvdata['category']=='class':
@@ -624,7 +627,10 @@ class VariableManager(QDockWidget):
             }
             fact.addInput(nodeObj,lvdata['name'],vardict)
 
-            #todo: add output with multiconnect
+            #Adding output with multiconnect
+            vardict = vardict.copy()
+            vardict["mutliconnect"] = True
+            fact.addOutput(nodeObj,lvdata['name'],vardict)
         else:
             vardict = {
                 "type":realType,

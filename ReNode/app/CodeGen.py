@@ -319,11 +319,13 @@ class CodeGenerator:
                 inputs_fromLib = node_inputs.items()
                 outputs_fromLib = node_outputs.items()
 
+                createdStackedVars = False
+
                 if isLocalVar:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
                     generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid)
-                    
+                    isSet = not isGet
                     # update generated code only first time
                     if node_code == "RUNTIME":
                         if varCat == "local":
@@ -334,19 +336,30 @@ class CodeGenerator:
                                 self.localVariableData[nameid]['usedin'] = entryObj
                             else:
                                 self.exception(CGLocalVariableDuplicateUseException,source=obj,context=self.localVariableData[nameid]['varname'],entry=entryObj,target=usedIn)
-                        node_code = generated_code.replace(nameid,self.localVariableData[nameid]['alias'])
+                        lvar_alias = self.localVariableData[nameid]['alias']
+                        node_code = generated_code.replace(nameid,lvar_alias)
+                        if isSet:
+                            #generate variable out
+                            gvObj = GeneratedVariable(lvar_alias,node_id)
+                            gvObj.acceptedPaths = ["@any"] #constant
+                            gvObj.fromName = portName
+                            gvObj.definedNodeName = node_id
+                            obj.generatedVars.append(gvObj)
+                            createdStackedVars = True
+
                     
                     #find key if not "nameid" and "code"
-                    addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
-                    if not isGet:
+                    #addedName = next((key for key in obj_data['custom'].keys() if key not in ['nameid','code']),None)
+                    if isSet:
                         inputs_fromLib = list(inputs_fromLib)
                         inputs_fromLib.append((portName,{'type':self.localVariableData[nameid]['type']}))
+                        outputs_fromLib = list(outputs_fromLib)
+                        outputs_fromLib.append((portName,{'type':self.localVariableData[nameid]['type']}))
                     if isGet:
                         outputs_fromLib = list(outputs_fromLib)
                         outName = "Значение"
                         outputs_fromLib.append((outName,{'type':self.localVariableData[nameid]['type']}))
-
-                createdStackedVars = False        
+        
                 if "@genvar." in node_code:
                     genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
 
