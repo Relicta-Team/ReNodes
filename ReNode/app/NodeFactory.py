@@ -4,6 +4,7 @@ from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
 from ReNode.ui.NodePainter import draw_plus_port, draw_square_port,draw_triangle_port
 import logging
+import re
 logger : logging.Logger = None
 class NodeFactory:
 	
@@ -78,17 +79,34 @@ class NodeFactory:
 			clrList = [objInfo.color.red(),objInfo.color.green(),objInfo.color.blue(),objInfo.color.alpha()]
 			typecolor[objInfo.variableType] = clrList
 
+		isDefaultColor = None
+		portType = None
 		for val in self.nodes.values():
 			if val['inputs']:
 				for v in val['inputs'].values():
-					if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
-						v['color'] = typecolor[v['type']]
+					portType = v['type']
+
+					if re.findall('[\[\]\,]',portType):
+						portType = f'array[{portType}]'
+						typeinfo = re.findall('\w+',portType)
+						portType = typeinfo[1]
+					
+					isDefaultColor = v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
+					if portType in typecolor and isDefaultColor:
+						v['color'] = typecolor[portType]
 						v['border_color'] = None
 			
 			if val['outputs']:
 				for v in val['outputs'].values():
-					if v['type'] in typecolor and (v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]):
-						v['color'] = typecolor[v['type']]
+					portType = v['type']
+
+					if re.findall('[\[\]\,]',portType):
+						typeinfo = re.findall('\w+',portType)
+						portType = typeinfo[1]
+
+					isDefaultColor = v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
+					if portType in typecolor and isDefaultColor:
+						v['color'] = typecolor[portType]
 						v['border_color'] = None
 
 	def registerNodeInLib(self,category,name,data : dict):
