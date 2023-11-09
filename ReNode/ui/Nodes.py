@@ -67,6 +67,9 @@ class RuntimeNode(BaseNode):
 		if evalType != toPort.port_typeName:
 			return False
 
+		if "dict" in evalType:
+			return False
+
 		return True
 
 	#
