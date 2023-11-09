@@ -249,19 +249,6 @@ class VariableManager(QDockWidget):
         vart : VariableTypedef = self.variableTempateData[newIndex]
         tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
         self._updateVariableValueVisual(vart,tobj)
-        """typeInstance = vart.classInstance
-        #print(f"New variable type is {vart}")
-        idx = self.widLayout.indexOf(self.widInitVal)
-        self.widInitVal.deleteLater()
-        objInstance = None
-        if vart.classInstanceParam:
-            objInstance = typeInstance(vart.classInstanceParam)
-        else:
-            objInstance = typeInstance()
-        self.widInitVal = objInstance
-        self.widLayout.insertWidget(idx,self.widInitVal)
-
-        self._initialValue = self.widInitVal.get_value()"""
         pass
 
     def _onDataTypeChanged(self,*args,**kwargs):
@@ -361,21 +348,6 @@ class VariableManager(QDockWidget):
                 self.showErrorMessageBox(f"Коллизия системных имен переменных. Айди '{variableSystemName}' уже существует в другой категории - {cat}")
                 return
 
-        # self.variables[cat_sys_name][variableSystemName] = {
-        #     "name": variable_name,
-        #     "type": var_typename,
-        #     "datatype": dt.dataType,
-        #     "typename": variable_type,
-        #     "value": default_value,
-        #     "category": cat_sys_name,
-        #     "systemname": variableSystemName,
-
-        #     "reprType": str(varInfo),
-        #     "reprDataType": str(dt),
-        # }
-        # # синхронизируем визуал
-        # self.syncVariableManagerWidget()
-
         vardict = {
             "name": variable_name,
             "type": var_typename,
@@ -418,7 +390,7 @@ class VariableManager(QDockWidget):
         self.rename_group_action = self.context_menu.addAction("Переименовать группу")
         self.rename_group_action.triggered.connect(self.renameSelectedGroup)
         self.delete_group_action = self.context_menu.addAction("Удалить группу")
-        #self.delete_group_action.triggered.connect(self.deleteSelectedGroup)
+        self.delete_group_action.triggered.connect(self.deleteSelectedGroup)
 
         self.groupContextActions = [
             self.rename_group_action,
@@ -479,6 +451,34 @@ class VariableManager(QDockWidget):
                 cat = vardata['category']
                 hstack.push(ChangeGroupNameForVariables(self,cat,oldName,newname))
 
+    def deleteSelectedGroup(self):
+        if hasattr(self,"current_variable_item"):
+            item = self.current_variable_item
+            if item:
+                groupname = item.text(0)
+                result = self.nodeGraphComponent.graph.question_dialog(
+                    f"Вы уверены, что хотите удалить группу '{groupname}'?\nВсе переменные из этой группы будут удалены.",
+                    "Удаление группы")
+                if result:
+                    hstack = self.getUndoStack()
+
+                    if item.childCount()==0:
+                        self.showErrorMessageBox("Невозможно удалить группу '{}' - список элементов пуст".format(groupname))
+                        return
+                    variable_system_name = item.child(0).data(0,QtCore.Qt.UserRole)
+                    vardata = self.getVariableDataById(variable_system_name)
+                    if not vardata: raise Exception(f"Cant find variable by system name for delete group: {variable_system_name}")
+                    cat = vardata['category']
+
+                    hstack.beginMacro(f"Удаление группы '{groupname}'")
+
+                    cmd = DeleteGroupForVariables(self,cat,groupname)
+                    cmd.deleteVariableInGraph()
+                    hstack.push(cmd)
+
+                    hstack.endMacro()
+
+
     def renameSelectedVariable(self):
         if hasattr(self, "current_variable_item"):
             #self.widVarTree.editItem(self.current_variable_item,0)
@@ -532,11 +532,6 @@ class VariableManager(QDockWidget):
                 if node.has_property('nameid'):
                     if node.get_property('nameid') == variable_system_name:
                         graph.delete_node(node,True) #push undo for history
-
-            # # Удалите переменную из словаря переменных
-            # if category in self.variables and variable_system_name in self.variables[category]:
-            #     del self.variables[category][variable_system_name]
-            # self.syncVariableManagerWidget()
 
             hstack.push(VariableDeletedCommand(self,category,self.variables[category][variable_system_name]))
 

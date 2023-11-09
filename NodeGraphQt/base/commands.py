@@ -535,3 +535,42 @@ class ChangeGroupNameForVariables(QtWidgets.QUndoCommand):
                 else:
                     vardat.pop('group')
         self._varmgr.syncVariableManagerWidget()
+
+class DeleteGroupForVariables(QtWidgets.QUndoCommand):
+    def __init__(self,varmgr,cat,group):
+        super(DeleteGroupForVariables, self).__init__()
+        self.setText('Удаление группы переменных "{}"'.format(group))
+        self._varmgr = varmgr
+        self._category = cat
+        self._group = group
+        vdatvals = self._varmgr.variables[self._category].values()
+        self._changedvarsId = set([vardat['systemname'] for vardat in vdatvals if vardat.get('group',None) == group])
+        self._variableData = {sysname:vardat for sysname,vardat in self._varmgr.variables[self._category].items() if sysname in self._changedvarsId}
+    
+    def deleteVariableInGraph(self):
+        graph = self._varmgr.nodeGraphComponent.graph
+        allNodes = graph.get_nodes_by_class(None)
+
+        #Удаляем ноды с графа
+        for node in allNodes:
+            if node.has_property("nameid"):
+                if node.get_property("nameid") in self._changedvarsId:
+                    graph.delete_node(node,True)
+
+    def undo(self):
+        varstorage = self._varmgr.variables[self._category]
+        graph = self._varmgr.nodeGraphComponent.graph
+        
+        #Возвращаем в хранилище удаленные переменные
+        for sysname,vardat in self._variableData.items():
+                varstorage[sysname] = vardat
+
+        self._varmgr.syncVariableManagerWidget()
+
+    def redo(self):
+        varstorage = self._varmgr.variables[self._category]
+        for sysname,dat in self._variableData.items():
+            del varstorage[sysname]
+        
+        self._varmgr.syncVariableManagerWidget()
+
