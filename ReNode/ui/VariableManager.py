@@ -7,7 +7,7 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
 from NodeGraphQt.base.commands import *
-from ReNode.app.utils import updateIconColor
+from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
 import datetime
@@ -23,6 +23,11 @@ class VariableTypedef:
         self.classInstance = classMaker
         self.dictProp = dictProp
         self.color : QColor = color
+
+        if "|" in self.variableType:
+            raise Exception(f"{self.variableType} is not a valid typename; Token \"|\" is not allowed in typename")
+        if "|" in self.variableTextName:
+            raise Exception(f"{self.variableTextName} is not a valid textname; Token \"|\" is not allowed in textname")
     
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
@@ -37,7 +42,7 @@ class VariableDataType:
     def __init__(self,vartext='',vartype='',varicon='',instancer=None):
         self.text = vartext
         self.dataType = vartype
-        self.icon = varicon
+        self.icon = varicon #string or list of string
         self.instance = instancer
     
     def __repr__(self):
@@ -105,8 +110,9 @@ class ExtendedComboBox(QComboBox):
         super(ExtendedComboBox, self).setModelColumn(column)   
 
 class VariableManager(QDockWidget):
+    refObject = None
     def __init__(self,actionVarViewer = None,nodeSystem=None):
-        
+        VariableManager.refObject = self
         super().__init__("Переменные")
         self.nodeGraphComponent = nodeSystem
         
@@ -148,7 +154,7 @@ class VariableManager(QDockWidget):
         self.variableDataType = [
             VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
             VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
-            #VariableDataType("Словарь","dict","data\\icons\\ArrayPin.png",DictWidget),
+            VariableDataType("Словарь","dict",["data\\icons\\pillmapkey_16x.png","data\\icons\\pillmapvalue_16x.png"],DictWidget),
             VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
         ]
 
@@ -197,7 +203,17 @@ class VariableManager(QDockWidget):
 
         self.widDataType = QComboBox()
         for vobj in self.variableDataType:
-            self.widDataType.addItem(QtGui.QIcon(vobj.icon),vobj.text)
+            icn = None
+            if isinstance(vobj.icon,list):
+                for pat in vobj.icon:
+                    icntemp = QtGui.QPixmap(pat)
+                    if icn:
+                        icntemp = mergePixmaps(icn,icntemp)
+                    icn = icntemp
+                icn = QtGui.QIcon(icn)
+            else:
+                icn = QtGui.QIcon(vobj.icon)
+            self.widDataType.addItem(icn,vobj.text)
         self.widDataType.currentIndexChanged.connect(self._onDataTypeChanged)
         type_layout.addWidget(self.widDataType)
 
@@ -327,6 +343,16 @@ class VariableManager(QDockWidget):
 
         dt : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
 
+        reprType = str(varInfo)
+
+        #update 
+        if isinstance(self.widInitVal,DictWidget) and dt.dataType == "dict":
+            kv_valtypeTextname = self.widInitVal.selectType.currentText()
+            kv_itemInfo = next((obj for obj in self.variableTempateData if obj.variableTextName == kv_valtypeTextname),None)
+            var_typename += "," + kv_itemInfo.variableType
+            reprType += "|" + str(kv_itemInfo)
+            pass
+
         if dt.dataType != "value":
             var_typename = f"{dt.dataType}[{var_typename}]"
             variable_type = dt.text
@@ -358,7 +384,7 @@ class VariableManager(QDockWidget):
             "group": variable_group,
             "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
 
-            "reprType": str(varInfo),
+            "reprType": reprType,
             "reprDataType": str(dt),
         }
         self.getUndoStack().push(VariableCreatedCommand(self,cat_sys_name,vardict))
@@ -552,8 +578,20 @@ class VariableManager(QDockWidget):
             doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 
+        portColor = None
+
         #setup partial icon with color support
-        nodeObj.update_icon_parts([varDt.icon,varInfo.color],False)
+        kvdat = []
+        if isinstance(varInfo,list):
+            for i,varInfoElement in enumerate(varInfo):
+                if i==0:
+                    portColor = [*varInfoElement.color.getRgb()]
+                kvdat.append(varDt.icon[i])
+                kvdat.append(varInfoElement.color)
+        else:
+            kvdat = [varDt.icon,varInfo.color]
+            portColor = [*varInfo.color.getRgb()]
+        nodeObj.update_icon_parts(kvdat,False)
 
         code = ""
         inval = "@in.2"
@@ -579,7 +617,7 @@ class VariableManager(QDockWidget):
                 "type":realType, #varInfo.variableType
                 "allowtypes":[realType],
                 #"color":[255,0,0,255],
-                "color": [*varInfo.color.getRgb()],
+                "color": portColor,
                 "display_name":True,
                 "mutliconnect":False,
                 "style":None,
@@ -592,7 +630,7 @@ class VariableManager(QDockWidget):
                 "type":realType,
                 "allowtypes":[realType],
                 #"color":[255,0,0,255],
-                "color": [*varInfo.color.getRgb()],
+                "color": portColor,
                 "display_name":True,
                 "mutliconnect":False,
                 "style":None,
@@ -615,7 +653,15 @@ class VariableManager(QDockWidget):
         return None
     
     def _getVarDataByRepr(self,vartRepr,vardtRepr):
-        reprVar = next((obj for obj in self.variableTempateData if str(obj) == vartRepr),None)
+        reprVar = None
+        if "|" in vartRepr:
+            searcher = vartRepr.split("|")
+            listRet = []
+            for search_pattern in searcher:
+                listRet.append(next((obj for obj in self.variableTempateData if str(obj) == search_pattern),None))
+            reprVar = listRet
+        else:
+            reprVar = next((obj for obj in self.variableTempateData if str(obj) == vartRepr),None)
         reprDt = next((obj for obj in self.variableDataType if str(obj) == vardtRepr),None)
 
         return reprVar,reprDt
@@ -679,9 +725,14 @@ class VariableManager(QDockWidget):
                 item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 item.setData(0, QtCore.Qt.UserRole, variable_id)
 
-                icn = QtGui.QIcon(dt.icon)
-                icn = updateIconColor(icn,varInfo.color)
-                item.setIcon(1, icn)
+                if isinstance(varInfo,list):
+                    pathes = dt.icon
+                    colors = [o__.color for o__ in varInfo]
+                    item.setIcon(1,QtGui.QIcon(generateIconParts(pathes,colors)))
+                else:
+                    icn = QtGui.QIcon(dt.icon)
+                    icn = updateIconColor(icn,varInfo.color)
+                    item.setIcon(1, icn)
 
                 if group == "":
                     category_item.addChild(item)

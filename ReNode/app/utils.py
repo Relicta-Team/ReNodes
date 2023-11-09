@@ -73,3 +73,23 @@ def mergePixmaps(pixmapSource: QPixmap, pixmapAdd: QPixmap):
     painter.drawPixmap(0, 0, pixmapAdd)
     painter.end()
     return pixmap
+
+
+def generateIconParts(pixList: list, colorList: list):
+    pixmap = None
+    pixOutList = []
+    for i,pixPath in enumerate(pixList):
+        pix = QPixmap(pixPath)
+        _clr = colorList[i]
+        if _clr:
+            pix = updatePixmapColor(pix, _clr)
+        pixOutList.append(pix)
+    
+    for pix in pixOutList:
+        if not pixmap:
+            pixmap = pix
+        else:
+            pixmap = mergePixmaps(pixmap, pix)
+
+    del pixOutList
+    return pixmap

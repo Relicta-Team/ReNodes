@@ -100,7 +100,7 @@ class SessionManager(QTabWidget):
     @property
     def tabData(self) -> list[TabData]:
         tdat = []
-
+        raise Exception("CHECK COUNT OF TABS")
         for i in range(0,self.count() - 1):
             tdat.append(self.tabBar().tabData(i))
         return tdat

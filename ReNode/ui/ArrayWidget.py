@@ -126,8 +126,10 @@ class ArrayWidget(QWidget):
 class DictWidget(QWidget):
     def __init__(self, instancer,widVarType):
         super(DictWidget, self).__init__()
+        from ReNode.ui.VariableManager import VariableManager, ExtendedComboBox
+        self.varmgr = VariableManager.refObject
         self.instancer = instancer
-        self.widVarTypeRef :QComboBox = widVarType
+        self.widVarTypeRef :ExtendedComboBox = widVarType
         self.initUI()
 
     def initUI(self):
@@ -140,10 +142,17 @@ class DictWidget(QWidget):
 
         self.selectType = self.widVarTypeRef.__class__()
         laydat.addWidget(self.selectType)
-        for idx in range(0,self.widVarTypeRef.count()-1):
+        for idx in range(0,self.widVarTypeRef.count()):
             txt = self.widVarTypeRef.itemText(idx)
             icn = self.widVarTypeRef.itemIcon(idx)
             self.selectType.addItem(icn,txt)
+
+        def __curIdxChanged(newIndex,*args,**kwargs):
+            if len(self.arrayElements) > 0:
+                for item in self.arrayElements.copy():
+                    self.removeArrayElement(item)
+                return
+        self.selectType.currentIndexChanged.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента
         self.addButton = QPushButton("Добавить элемент")
@@ -173,10 +182,12 @@ class DictWidget(QWidget):
         self.updateCountText()
 
     def updateCountText(self):
-        self.countInfo.setText(f"Количество элементов: {len(self.arrayElements)}")
+        self.countInfo.setText(f"Количество элементов: {len(self.arrayElements)}\nКлюч : значение")
 
     def get_value(self):
-        return [element.itemAt(0).widget().get_value() for element in self.arrayElements]
+        return {
+            element.itemAt(0).widget().get_value() : element.itemAt(1).widget().get_value() for element in self.arrayElements
+        }
 
     def set_value(self, values):
         for elementLayout in self.arrayElements.copy():
@@ -185,12 +196,13 @@ class DictWidget(QWidget):
         self.arrayElements.clear()
         
         for v in values:
-            self.addArrayElement(val=v)
+            self.addArrayElement(keyVal=v)
 
         self.updateCountText()
         return
 
-    def addArrayElement(self,val=None):
+    def addArrayElement(self,keyVal=None,valItem=None):
+        from ReNode.ui.VariableManager import VariableManager
         # Создайте горизонтальный контейнер для нового элемента
         elementLayout = QHBoxLayout()
 
@@ -198,11 +210,18 @@ class DictWidget(QWidget):
         elementValueWidget = None
         if self.instancer:
             elementValueWidget = self.instancer()
-            if val:
-                elementValueWidget.set_value(val)
+            if keyVal:
+                elementValueWidget.set_value(keyVal)
         else:
             elementValueWidget = QLineEdit()
         elementLayout.addWidget(elementValueWidget)
+
+        idx__ = self.selectType.currentIndex()
+        instancerValue = VariableManager.refObject.variableTempateData[idx__].classInstance()
+        if valItem:
+            instancerValue.set_value(valItem)
+        elementLayout.addWidget(instancerValue)
+
 
         # Создайте кнопки для перемещения элемента вверх и вниз
         moveUpButton = QPushButton("")
