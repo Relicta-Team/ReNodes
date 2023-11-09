@@ -199,7 +199,7 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_combo_menu(self, name, label='', items=None, tab=None, default=None): #Yodes: added default item
+    def add_combo_menu(self, name, label='', items=None, tab=None, default=None,disabledListInputs=[],typingList=[]): #Yodes: added default item
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QComboBox` widget
@@ -215,19 +215,31 @@ class BaseNode(NodeObject):
             items (list[str]): items to be added into the menu.
             tab (str): name of the widget tab to display in.
         """
-        curidx = 0
+        currentItem = None
+        itemList = []
         if items and default:
-            curidx = items.index(default)
+            for itm in items:
+                if isinstance(itm,list):
+                    itemList.append(itm[0])
+                else:
+                    itemList.append(itm)
+            
+            currentItem = itemList[itemList.index(default)]
+                
         self.create_property(
             name,
-            value=items[curidx] if items else None,
-            items=items or [],
+            value=currentItem,
+            items=itemList or [],
             widget_type=NodePropWidgetEnum.QCOMBO_BOX.value,
             tab=tab
         )
-        widget = NodeComboBox(self.view, name, label, items)
+        widget = NodeComboBox(self.view, name, label, itemList,disabledListInputs,typingList)
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
+
+        #sync visual node
+        widget._syncPortVisible()
+
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
@@ -281,6 +293,7 @@ class BaseNode(NodeObject):
             widget_type=NodePropWidgetEnum.QSPIN_BOX.value,
             tab=tab
         )
+        range = range or {"min":-999999,"max":999999}
         widget = NodeSpinBox(self.view, name, label, text,range)
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
@@ -295,6 +308,8 @@ class BaseNode(NodeObject):
             widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value,
             tab=tab
         )
+        range=range or {"min":-999999,"max":999999}
+        floatspindata=floatspindata or {'step': 0.01,"decimals": 3}
         widget = NodeFloatSpinBox(self.view, name, label, text,range,floatspindata)
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)

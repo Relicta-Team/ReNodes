@@ -247,6 +247,17 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._multi_connection = mode
         self._syncTooltip()
 
+    def setPortTypeName(self,port_type,sync_color=False):
+        self.port_typeName = port_type
+        self._syncTooltip()
+        if sync_color:
+            from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+            newcolor = NodeGraphComponent.refObject.getFactory().getColorByType(port_type,retAsQColor=False)
+            if newcolor:
+                self.color=newcolor
+                self.border_color = [min([255, max([0, i + 80])]) for i in newcolor]
+
+
     def _syncTooltip(self):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent, NodeFactory
         conn_type = 'Мульт.' if self.multi_connection else 'Одиноч.'

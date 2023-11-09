@@ -66,6 +66,24 @@ class NodeFactory:
 				self.registerNodeInLib(nodecat,node,data)
 
 
+	def getColorByType(self,type_name,retAsQColor=False):
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		varMgr = NodeGraphComponent.refObject.variable_manager
+
+		if re.findall('[\[\]\,]',type_name):
+			portType = f'array[{type_name}]'
+			typeinfo = re.findall('\w+',portType)
+			type_name = typeinfo[1]
+
+		for objInfo in varMgr.variableTempateData:
+			if objInfo.variableType == type_name:
+				if retAsQColor:
+					return objInfo.color
+				else:
+					return [objInfo.color.red(),objInfo.color.green(),objInfo.color.blue(),objInfo.color.alpha()]
+		
+		return NodeFactory.defaultColor
+
 	# Синхронизирует цвета нодов в библиотеке с цветом типов 
 	def updateLibTypes(self):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -233,6 +251,7 @@ class NodeFactory:
 		else:
 			node = graphref.create_node(nodename,pos=pos,forwardedCustomFactory={'name':nodename},color=cfg.get('color'))
 		
+		node._graph = graphref #fix get graph from set_locked
 		node.nodeClass = nodename
 		node._view.nodeClass = nodename
 		#node.create_property("class_",nodename)
@@ -303,7 +322,9 @@ class NodeFactory:
 		if type == "fspin":
 			node.add_float_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'),floatspindata=optvals.get('floatspindata'))
 		if type=="list":
-			node.add_combo_menu(name=optname,label=optvals.get('text',''),items=optvals.get('values',[]),default=optvals.get('default'))
+			node.add_combo_menu(
+				name=optname,label=optvals.get('text',''),items=optvals.get('values',[]),default=optvals.get('default'),
+				disabledListInputs=optvals.get('disabledListInputs'),typingList=optvals.get('typingList'))
 		if type=="vec2":
 			node.add_vector2(name=optname,label=optvals.get('text',''),value=optvals.get('default',[0,0]))
 		if type=="vec3":

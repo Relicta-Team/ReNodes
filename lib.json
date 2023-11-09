@@ -404,6 +404,43 @@
 				}
 			}
 		},
+		"methods": {
+			"debug_method": {
+				"name": "Тестовый метод",
+				"path": "Debug",
+				"code": "@genvar.out.2 = [@in.2, @in.3, @in.4] call (@in.2 getVariable \"proto\" getVariable \"debug_method\"); @out.1",
+				"options": {
+					"Цель": {
+						"type":"list",
+						"disabledListInputs": ["Этот объект"],
+						"text": "Целевой объект",
+						"default": "Этот объект",
+						"values": [["Этот объект","thisObj"], "Цель"],
+						"typingList": ["int","float"]
+					},
+					"Входное булево": {
+						"type":"bool",
+						"text":"Входное булево",
+						"default": true
+					},
+					"Входное целое число": {
+						"type":"spin",
+						"text":"Входное целое число",
+						"default": 0
+					}
+				},
+				"inputs": {
+					"Flow": {"type":"Exec"},
+					"Цель": {"type": "self"},
+					"Входное булево": {"type":"bool"},
+					"Входное целое число": {"type":"int"}
+				},
+				"outputs": {
+					"Flow": {"type":"Exec"},
+					"Результат": {"type":"array[string]"}
+				}
+			}
+		},
 		"events": {
 			"main": {
 				"name": "Main",

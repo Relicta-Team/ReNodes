@@ -382,6 +382,9 @@ class CodeGenerator:
                         if 'custom' not in obj_data: 
                             #self.warning(f"{node_id} не имеет специальных публичных данных")
                             continue
+                        # нечего заменять в этом порте
+                        if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
+                            continue
                         if hasRuntimePorts:
                             if not obj.getConnectionType("in",input_name):
                                 self.exception(CGInputPortTypeRequiredException,source=obj,portname=input_name)
@@ -390,6 +393,17 @@ class CodeGenerator:
 
                         if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL":
                             self.exception(CGPortRequiredConnectionException,source=obj,portname=input_name)
+
+                        libOption = class_data['options'].get(input_name)
+                        if libOption and libOption['type'] == "list":
+                            for optList in libOption['values']:
+                                if isinstance(optList,list):
+                                    if optList[0] == inlineValue:
+                                        inlineValue = optList[1]
+                                else:
+                                    if optList == inlineValue:
+                                        self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
+                                        break
 
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)

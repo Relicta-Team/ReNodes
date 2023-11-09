@@ -119,7 +119,7 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         self.setZValue(Z_VAL_NODE_WIDGET)
         self._name = name
         self._label = label
-        self._node = None
+        self._node = parent
 
     def setToolTip(self, tooltip):
         tooltip = tooltip.replace('\n', '<br/>')
@@ -278,13 +278,18 @@ class NodeComboBox(NodeBaseWidget):
         :meth:`NodeGraphQt.BaseNode.add_combo_menu`
     """
 
-    def __init__(self, parent=None, name='', label='', items=None):
+    def __init__(self, parent=None, name='', label='', items=None,disabledListInputs=None,typingList=None):
         super(NodeComboBox, self).__init__(parent, name, label)
         self.setZValue(Z_VAL_NODE_WIDGET + 1)
         
         combo_view = QtWidgets.QListView()
         #combo_view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         
+        # тут хранятся ключи которые заблокируют порт при назначении
+        self.disabledListInputs = disabledListInputs
+        # тут хранится заменитель типа для порта. Каждая опция отвечает за свой цвет порта
+        self.typingList = typingList
+
         combo = QtWidgets.QComboBox()
         combo.setView(combo_view)
         combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
@@ -321,7 +326,40 @@ class NodeComboBox(NodeBaseWidget):
             combo_box.setToolTip("")
         else:
             combo_box.setToolTip(f'{text}')
+        self._syncPortVisible()
         return super().on_value_changed(*args, **kwargs)
+
+    def _syncPortVisible(self):
+        text = self.get_value()
+        combo_box : QtWidgets.QComboBox = self.get_custom_widget()
+        
+        if not combo_box: return
+        newPortType = None
+        if self.typingList:
+            indexTyping = combo_box.currentIndex()
+            if indexTyping < len(self.typingList):
+                tempTyping = self.typingList[indexTyping]
+                #check exists and not empty string
+                if tempTyping and tempTyping != "":
+                    newPortType = tempTyping
+
+
+                
+        if self.disabledListInputs:
+            for port in self.node.inputs:
+                if self._name == port.name:
+                    if text in self.disabledListInputs:
+                        port.refPort.clear_connections(push_undo=False)
+                        port.refPort.set_locked(True,connected_ports=False,push_undo=False)
+                        if newPortType:
+                            port.setPortTypeName(newPortType,sync_color=False)
+                            port.color = [0,0,0,0]
+                            port.border_color = [0,0,0,0]
+                    else:
+                        port.refPort.set_locked(False,connected_ports=False,push_undo=False)
+                        if newPortType:                            
+                            port.setPortTypeName(newPortType,sync_color=True)
+                    break
 
     def get_value(self):
         """

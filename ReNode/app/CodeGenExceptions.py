@@ -102,6 +102,12 @@ class CGVariableUnhandledPathAccessException(CGVariablePathAccessException):
         "operators.foreach_loop": ["При завершении"],
         "operators.for_loop": ["При завершении"]
     }
+
+class CGLogicalOptionListEvalException(CGBaseException):
+    id = 303
+    text = "Узел {src} вызвал необработанную ошибку опции листа"
+    desc = "Для элемента \"{ctx}\" листа \"{portname}\" не найдено значения для замены. Обратитесь к разработчику для решения этой проблемы"
+
 # ----------------------------------------
 #   601-700 - variables exceptions
 # ----------------------------------------

@@ -83,7 +83,7 @@ class NodeObject(object):
         Args:
             qgraphics_item (AbstractNodeItem): QGraphicsItem used for drawing.
         """
-        self._graph = None
+        self._graph = None #! Yodes: this almost not used...
         self._model = NodeModel()
         self._model.type_ = self.type_
         self._model.name = self.NODE_NAME
