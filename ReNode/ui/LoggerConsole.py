@@ -285,10 +285,8 @@ class LoggerConsole(QDockWidget):
         return None
 
     def _registerStandartCommands(self):
-        self._registerCommand(HelpCommand)
-        self._registerCommand(SessionClipSaveCommand)
-        self._registerCommand(SessionClipLoadCommand)
-        self._registerCommand(EvalCodeCommand)
+        for class_ in ConsoleCommand.__subclasses__():
+            self._registerCommand(class_)
 
 class ConsoleCommand:
     name = "default command"
@@ -364,3 +362,59 @@ class EvalCodeCommand(ConsoleCommand):
             self.logger.debug(f"ret:{evalueated}")
         except Exception as e:
             self.logger.error(f"exept:{e}")
+
+class GetVisualInfoCommand(ConsoleCommand):
+    name = "get_visual_info"
+    desc = "Получает информацию о созданных виджетах и окнах в приложении"
+
+    def onCall(self,args):
+        from ReNode.app.application import Application
+        qapp = Application.refObject.appInstance
+        self.logger.info(f'Все - виджетов {len(qapp.allWidgets())}; окон {len(qapp.allWindows())};')
+        self.logger.info(f'Верх - виджетов {len(qapp.topLevelWidgets())}; окон {len(qapp.topLevelWindows())}')
+
+#region Memory helpers -  https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc
+class StartTracemalloc(ConsoleCommand):
+    name = "start_mem_info"
+    desc = "Запуск отслеживания памяти"
+
+    def onCall(self,args):
+        import tracemalloc
+        if tracemalloc.is_tracing():
+            tracemalloc.stop()
+        tracemalloc.start()
+
+class StopTracemalloc(ConsoleCommand):
+    name = "stop_mem_info"
+    desc = "Остановка отслеживания памяти"
+
+    def onCall(self,args):
+        import tracemalloc
+        tracemalloc.stop()
+
+
+class GetTraceSnapshot(ConsoleCommand):
+    name = "get_mem_info"
+    desc = "Вывод строк с информацией о памяти"
+    argsAsString = True
+    def onCall(self,args):
+        import tracemalloc
+        
+        if not tracemalloc.is_tracing():
+            self.logger.warning("Tracemalloc не запущен")
+            return
+
+        if not args:
+            args = 10
+        else:
+            args = max(int(args),1)
+
+        import tracemalloc
+        snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.statistics('lineno')
+
+        for stat in top_stats[:min(args, len(top_stats))]:
+            stat = str(stat).replace("<",'&lt;').replace('>','&gt;')
+            self.logger.info(stat)
+
+#endregion

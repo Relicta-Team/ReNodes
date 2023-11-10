@@ -42,17 +42,34 @@ class Application:
 	appName = "ReNodes"
 	appVersion = (global_version[0],global_version[1])
 	appRevision = global_revision
+	arguments = []
+	debugMode = False
+
+	refObject = None
 
 	# string representation of version
 	def getVersionString():
 		return f"{Application.appVersion[0]}.{Application.appVersion[1]}.{Application.appRevision}"
 
+	def getArguments():
+		return Application.arguments
+
+	def hasArgument(arg):
+		return arg in Application.arguments
+
 	def isExecutable():
 		return getattr(sys, 'frozen', False)
+	
+	def isDebugMode():
+		return Application.debugMode
 
 	#construct
-	def __init__(self,args):
-		
+	def __init__(self,appInstance : QApplication):
+		Application.refObject = self
+		self.appInstance = appInstance
+		self._initArguments()
+		self._initExitEvents()
+
 		pixmap = QtGui.QPixmap("data/splash.png").scaled(600, 400) #, QtCore.Qt.KeepAspectRatio
 		#pixmap.fill(QtGui.QColor(0,0,0))
 		splash = QtWidgets.QSplashScreen(pixmap,QtCore.Qt.WindowStaysOnTopHint)
@@ -62,7 +79,7 @@ class Application:
 		label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
 		label.setGeometry(0, pixmap.height() - 30, pixmap.width(), 30)
 		label.setText(f'{self.appName} {Application.getVersionString()}')
-		splashEnabled =  not "-nosplash" in args
+		splashEnabled =  not Application.hasArgument("-nosplash")
 		if splashEnabled: splash.show()
 
 		handler = SplashScreenHandler(splash)
@@ -95,7 +112,8 @@ class Application:
 		self.nodeFactory = NodeFactory()
 
 		self.mainWindow = MainWindow(self.nodeFactory)
-		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()})")
+		debugText = " [DEBUG]" if Application.isDebugMode() else ""
+		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
 		
 		if splashEnabled: time.sleep(3)
 		splash.finish(self.mainWindow)
@@ -104,12 +122,16 @@ class Application:
 
 		self.mainWindow.show()
 		self.mainWindow.showMaximized()
-
-
-	#destructor
-	def __del__(self):
-		Config.saveConfig()
+	
+	def _initArguments(self):
+		args = self.appInstance.arguments()
+		Application.arguments = args
+		Application.debugMode = Application.hasArgument("-debug")
 		pass
+
+	def _initExitEvents(self):
+		import atexit
+		atexit.register(Config.saveConfig)
 
 class ExceptionHandler:
 	def __init__(self):
@@ -159,9 +181,12 @@ def AppMain():
 	app.installTranslator(trans)
 
 	QApplication.setStyle( "Fusion" )
-	application = Application(arguments) 
+	application = Application(app) 
 	logger = RegisterLogger('main')
-	logger.info(f"Loading {Application.appName} (version {Application.getVersionString()})")
+	appload_text = f"Loading {Application.appName} (version {Application.getVersionString()})"
+	if Application.isDebugMode():
+		appload_text += " [DEBUG MODE]"
+	logger.info(appload_text)
 
 	# при обновлении файла стиля вызывает метод onReloadStyle
 	# filewatcher

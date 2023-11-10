@@ -6,14 +6,16 @@ import logging
 configValues = {
     "main": {
         "version": 1,
-        "tempvalue": True
+        #"tempvalue": True
+    },
+    "internal": {
+
     },
     "visual": {
-        "testvalue": "test stringg"
+        #"testvalue": "test stringg"
     }
 }
-class CONFIG:
-    pass
+
 class Config:
     
     parser : iniparser2.INI

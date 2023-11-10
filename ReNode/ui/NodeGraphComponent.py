@@ -66,17 +66,6 @@ class NodeGraphComponent:
 
 		self._initTabs(dock)
 
-		#testing tabs system
-		"""graph.widget.tabBar().addTab("testvalue")
-		tabbar = graph.widget.tabBar()
-		tabbar.setWindowTitle("titletest")
-		tabbar.setTabsClosable(True)
-		tabbar.removeTab(0)"""
-
-		# add 20 tabs
-		#for i in range(1,20):
-		#	graph.widget.tabBar().addTab("testvalue")
-
 		self._initVariableManager()
 		self._initLoggerDock()
 
