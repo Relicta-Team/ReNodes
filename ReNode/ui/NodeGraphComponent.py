@@ -47,27 +47,39 @@ class NodeGraphComponent:
 		self.codegen = CodeGenerator()
 		self.codegen.graphsys = self
 
-		notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
-		notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks
-		self.mainWindow.setDockOptions(notNested)
+		#notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
+		#notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks
+		#self.mainWindow.setDockOptions(notNested)
+
+		self.mdiArea = QMdiArea()
+		self.mdiArea.setBackground(QtGui.QColor(0, 0, 0, 0))
+		self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		self.mdiArea.setViewMode(QMdiArea.TabbedView)
+		self.mdiArea.setDocumentMode(True)
+		self.mdiArea.setTabsClosable(True)
+		self.mdiArea.setTabsMovable(True)
 
 		dock = QDockWidget("Editor main")
 		self.editorDock = dock
 		dock.setWidget(graph.widget)
 		#dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
-		dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+		#dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		#dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
 		dock.setWindowTitle("Граф")#upper title
 		#dock.setWindowFlags(Qt.Widget)
 		# Скройте заголовок и кнопки закрытия, максимизации и сворачивания.
 		#dock.setTitleBarWidget(QWidget())
-		mainWindow.addDockWidget(Qt.BottomDockWidgetArea, dock)
+		mainWindow.addDockWidget(Qt.RightDockWidgetArea, dock)
 		graph.show()
+
+		self.mainWindow.setCentralWidget(self.editorDock)
 
 		self._initTabs(dock)
 
 		self._initVariableManager()
 		self._initLoggerDock()
+		self._initHistoryDock()
 
 		self._addEvents()
 		self.contextMenuLoad()
@@ -356,12 +368,10 @@ class NodeGraphComponent:
 		self.variable_manager = variable_manager
 		#dock.setWidget(self.mainWindow)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
-		variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
+		#variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		#variable_manager.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, variable_manager)
+		self.mainWindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, variable_manager)
 		#graph.set_pipe_slicing(True) #enabled by default
-
-		variable_manager.syncActionText(True)
 
 		self.getFactory().updateLibTypes()
 
@@ -372,16 +382,22 @@ class NodeGraphComponent:
 		from ReNode.app.Logger import registerConsoleLoggers
 
 		self.log_dock = LoggerConsole()
+
 		#self.log_dock.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
-		self.log_dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas)
-		self.log_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
-		self.log_dock.setTitleBarWidget(QWidget())
-		#self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		#self.log_dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas)
+		#self.log_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+		#upperDrag = QWidget()
+		#self.log_dock.setTitleBarWidget(QWidget())
+		#self.log_dock.titleBarWidget().setFixedHeight(3)
+		#self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
 		#self.log_dock.setMinimumHeight(1)
 
-		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.log_dock, QtCore.Qt.Orientation.Vertical)
-		self.log_dock.syncActionText(True)
+		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.log_dock)
 		registerConsoleLoggers(self.log_dock)
+
+	def _initHistoryDock(self):
+		self.undoView_dock = QDockWidget("История")
+		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.undoView_dock)
 
 	def addVariableToScene(self,getorset,varid,pos):
 		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)

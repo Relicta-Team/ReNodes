@@ -133,18 +133,6 @@ class LoggerConsole(QDockWidget):
         "DEBUG": "blue",
     }
 
-    def syncActionText(self,initState=None):
-        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-
-        loggerAct = NodeGraphComponent.refObject.mainWindow.switchLoggerAction
-        condition = self.isVisible()
-        if initState:
-            condition = initState
-        newtext = "&Скрыть консоль" if condition else "&Показать консоль"
-        if not condition:
-            self.command_input.clearFocus()
-        loggerAct.setText(newtext)
-
     def addLog(self, text,levelname="INFO",logname=""):
         text = text.replace('\n', '<br/>')
         text = text.replace('\t', '&nbsp;' * 4)

@@ -115,7 +115,7 @@ class Application:
 		debugText = " [DEBUG]" if Application.isDebugMode() else ""
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
 		
-		if splashEnabled: time.sleep(3)
+		#if splashEnabled: time.sleep(3)
 		splash.finish(self.mainWindow)
 		logger.removeHandler(handler)
 		

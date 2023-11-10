@@ -61,6 +61,9 @@ class TabData:
         graphComponent.variable_manager.variables = self.variables
         graphComponent.variable_manager.syncVariableManagerWidget()
 
+        #load history widget
+        graphComponent.undoView_dock.setWidget(self.graph.undo_view)
+
         pass
 
 

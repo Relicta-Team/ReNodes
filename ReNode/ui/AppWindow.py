@@ -37,14 +37,15 @@ class MainWindow( QMainWindow ):
 		self.createMenu()
 		self.createStatusBar()
 
-		self.mdiArea = QMdiArea()
-		self.mdiArea.setBackground(QtGui.QColor(0, 0, 0, 0))
-		self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-		self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-		self.mdiArea.setViewMode(QMdiArea.TabbedView)
-		self.mdiArea.setDocumentMode(True)
-		self.mdiArea.setTabsClosable(True)
-		self.mdiArea.setTabsMovable(True)
+		#moved to NodeGraphComponent.mdiArea
+		# self.mdiArea = QMdiArea()
+		# self.mdiArea.setBackground(QtGui.QColor(0, 0, 0, 0))
+		# self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		# self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+		# self.mdiArea.setViewMode(QMdiArea.TabbedView)
+		# self.mdiArea.setDocumentMode(True)
+		# self.mdiArea.setTabsClosable(True)
+		# self.mdiArea.setTabsMovable(True)
 		#self.setCentralWidget(self.mdiArea)
 
 		self.createWindowGraphEditor()
@@ -58,8 +59,9 @@ class MainWindow( QMainWindow ):
 
 		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
 
-		self.switchVariableViewerAction = QAction("&Переключить виджет переменных",self,triggered=self.switchVariableViewer,shortcut="Alt+1")
-		self.switchLoggerAction = QAction("&Переключить виджет логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+2")
+		self.switchVariableViewerAction = QAction("Переключить окно &переменных",self,triggered=self.switchVariableViewer,shortcut="Alt+1",statusTip="Переключает видимость окна переменных")
+		self.switchLoggerAction = QAction("Переключить окно &логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+2",statusTip="Переключает видимость окна консоли")
+		self.switchHistoryAction = QAction("Переключить окно &истории",self,triggered=self.switchHistoryVisual,shortcut="Alt+3",statusTip="Переключает видимость окна истории")
 
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
@@ -79,6 +81,7 @@ class MainWindow( QMainWindow ):
 		self.windows = menubar.addMenu("&Окна")
 		self.windows.addAction(self.switchVariableViewerAction)
 		self.windows.addAction(self.switchLoggerAction)
+		self.windows.addAction(self.switchHistoryAction)
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")
@@ -118,8 +121,9 @@ class MainWindow( QMainWindow ):
 
 	def switchVariableViewer(self):
 		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())
-		self.nodeGraph.variable_manager.syncActionText()
 	
 	def switchLoggerVisual(self):
 		self.nodeGraph.log_dock.setVisible(not self.nodeGraph.log_dock.isVisible())
-		self.nodeGraph.log_dock.syncActionText()
+
+	def switchHistoryVisual(self):
+		self.nodeGraph.undoView_dock.setVisible(not self.nodeGraph.undoView_dock.isVisible())

@@ -162,13 +162,6 @@ class VariableManager(QDockWidget):
 
         self.initUI()
         self.setupContextMenu()
-        
-    def syncActionText(self,initState=None):
-        condition = self.isVisible()
-        if initState:
-            condition = initState
-        newtext = "&Скрыть окно переменных" if condition else "&Показать окно переменных"
-        self.actionVarViewer.setText(newtext)
 
     def initUI(self):
         # Создайте центральный виджет для док-зоны
