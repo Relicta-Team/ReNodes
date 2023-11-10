@@ -20,7 +20,6 @@ class MainWindow( QMainWindow ):
 		self.nodeFactory = factory
 		self.initUI()
 
-
 	def initUI(self):
 		self.setWindowTitle("Main")
 		self.setWindowIcon(QtGui.QIcon('./data/pic.png'))

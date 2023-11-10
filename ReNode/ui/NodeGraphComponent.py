@@ -19,6 +19,7 @@ from NodeGraphQt.nodes.base_node import *
 from ReNode.ui.TabSearchMenu import TabSearchMenu
 
 from ReNode.ui.VariableManager import VariableManager
+from ReNode.app.config import Config
 
 class NodeGraphComponent:
 
@@ -94,6 +95,19 @@ class NodeGraphComponent:
 		with  open(".\\templates_tests.txt",encoding='utf-8') as f:
 			QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
 		self.graph.paste_nodes()
+		
+		from ReNode.app.application import Application
+		
+		stateStr:str = Config.get("winstate","internal")
+		winposStr:str = Config.get("winpos","internal")
+		#convert from str to bytes
+		stateBytes = QByteArray(eval(stateStr))
+		winposBytes = QByteArray(eval(winposStr))
+
+		if not self.mainWindow.restoreState(stateBytes):
+			Application.refObject.logger.error("Failed to restore window state")
+		if not self.mainWindow.restoreGeometry(winposBytes):
+			Application.refObject.logger.error("Failed to restore window position")
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
@@ -370,6 +384,7 @@ class NodeGraphComponent:
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
 		#variable_manager.setFeatures(QDockWidget.NoDockWidgetFeatures)
 		#variable_manager.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+		variable_manager.setObjectName("VariableManager")
 		self.mainWindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, variable_manager)
 		#graph.set_pipe_slicing(True) #enabled by default
 
@@ -391,12 +406,14 @@ class NodeGraphComponent:
 		#self.log_dock.titleBarWidget().setFixedHeight(3)
 		#self.log_dock.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
 		#self.log_dock.setMinimumHeight(1)
-
+		self.log_dock.setObjectName("LoggerConsole")
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.log_dock)
 		registerConsoleLoggers(self.log_dock)
 
 	def _initHistoryDock(self):
 		self.undoView_dock = QDockWidget("История")
+
+		self.undoView_dock.setObjectName("HistoryDock")
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.undoView_dock)
 
 	def addVariableToScene(self,getorset,varid,pos):

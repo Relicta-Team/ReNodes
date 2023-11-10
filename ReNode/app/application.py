@@ -87,6 +87,7 @@ class Application:
 		handler.setFormatter(formatter)
 
 		logger = logging.getLogger("main")
+		self.logger = logger
 		logger.setLevel(logging.DEBUG)
 		logger.addHandler(handler)
 
