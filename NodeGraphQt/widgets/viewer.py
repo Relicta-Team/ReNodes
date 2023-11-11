@@ -1239,7 +1239,8 @@ class NodeViewer(QtWidgets.QGraphicsView):
         #Yodes: TODO set color from port typekind...
         #color=start_port.color
         #pipe = PipeItem(color=color)
-        pipe = PipeItem(color=start_port.color)
+        curPort = start_port if start_port.port_typeName != "" else end_port
+        pipe = PipeItem(color=curPort.color)
         self.scene().addItem(pipe)
         pipe.set_connections(start_port, end_port)
         pipe.draw_path(pipe.input_port, pipe.output_port)
