@@ -155,6 +155,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         text = f"Ошибка [{className}] "
         if libInfo:
             text = f'<span style="font-size: 24pt">{self._lastItem.name} ({className})</span>'
+            # if hasattr(self._lastItem,"_error_item"):
+            #     if self._lastItem._error_item.isVisible():
+            #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/>Путь: {libInfo.get("path") or "нет"}<br/>'
 
             iTxt = ",".join([o.name for o in self._lastItem.inputs])
