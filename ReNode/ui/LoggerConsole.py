@@ -159,7 +159,11 @@ class LoggerConsole(QDockWidget):
 
         self.log_text.verticalScrollBar().setValue(self.log_text.verticalScrollBar().maximum())
 
-            
+    def clearConsole(self):
+        self.messages = []
+        if not self.log_text: return
+        if isdeleted(self.log_text): return
+        self.log_text.setHtml(self.styleText + "")
 
     def wrapNodeLink(nodeid,text=None,color='#17E62C'):
         if not text: text = nodeid
@@ -201,8 +205,7 @@ class LoggerConsole(QDockWidget):
         self.command_completer.highlighted.connect(__onselectcmd)
         
         self._commands = []
-        self.completer_model :QStringListModel = QStringListModel()
-        
+        self.completer_model :QSortFilterProxyModel = QStringListModel()
         self.command_completer.setModel(self.completer_model)
         self.command_completer.setCaseSensitivity(Qt.CaseInsensitive)
 
@@ -238,6 +241,8 @@ class LoggerConsole(QDockWidget):
         if len(cmdList) == 0:
             return
         cmdname = cmdList[0]
+        if cmdname == '' or cmdname.strip(' ') == "":
+            return
         if len(cmdList) > 1:
             args = cmdList[1:]
 
@@ -276,20 +281,53 @@ class LoggerConsole(QDockWidget):
         for class_ in ConsoleCommand.__subclasses__():
             self._registerCommand(class_)
 
+# Обертка для вызова команд, например через QAction
+class CommandDelegate:
+    def __init__(self,object,args) -> None:
+        self.cls = object
+        self.args = args
+    def __call__(self):
+        return self.cls.refObject.onCall(self.args)
+
+
 class ConsoleCommand:
-    name = "default command"
+    name = ""
     desc = "no description"
     argsAsString = False
+    refObject = None
     def __init__(self,name=None,desc=None) -> None:
+        self.__class__.refObject = self
+
         if not name:
-            name = self.__class__.name
+            _name = self.__class__.name
+            if _name == "":
+                _name = self.__class__.__name__
+                # split remove command from end name (if exists)
+                if _name.endswith("Command"):
+                    _name = _name.rstrip("Command")
+                
+                # change command: split words and add _ (example: TestCall -> test_call)
+                name = '_'.join(re.findall(r'[A-Z][^A-Z]*', _name)).lower()
+            else:
+                name = _name
         if not desc:
             desc = self.__class__.desc
         self.name = name
         self.desc = desc
 
+
         self.logger = LoggerConsole.refObject.logger
     
+    def getCommandDelegate(class_,args = None):
+        """
+            Возвращает делегат для команды
+            class_ - класс команды
+            args - аргументы команды
+        """
+        if not issubclass(class_,ConsoleCommand):
+            return None
+        return CommandDelegate(class_,args)
+
     def getCmdInfo(self):
         return f'{self.name} - {self.desc}'
 
@@ -309,6 +347,10 @@ class HelpCommand(ConsoleCommand):
             cmdData += f'\n\t{cmd.name} - {cmd.desc}'
         self.logger.info(f'<span style="color:lightblue">{cmdData}</span>')
 
+class ClearConsoleCommand(ConsoleCommand):
+    desc = "Очищает консоль"
+    def onCall(self,args):
+        self.getLoggerInstance().clearConsole()
 
 class SessionClipSaveCommand(ConsoleCommand):
     name = "clip_save"

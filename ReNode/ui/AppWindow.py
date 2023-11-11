@@ -50,6 +50,7 @@ class MainWindow( QMainWindow ):
 		self.createWindowGraphEditor()
 	
 	def createMenu(self):
+		from ReNode.ui.LoggerConsole import ConsoleCommand,ClearConsoleCommand
 		self.newAction = QAction('&Новый скрипт', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Новый скрипт")
 		self.openAction = QAction('&Открыть', self, triggered=self.onOpenFile, shortcut="Ctrl+O", statusTip="Открыть")
 		self.saveAction = QAction('&Сохранить', self, triggered=self.onSaveFile, shortcut="Ctrl+S", statusTip="Сохранить")
@@ -81,6 +82,7 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(self.switchVariableViewerAction)
 		self.windows.addAction(self.switchLoggerAction)
 		self.windows.addAction(self.switchHistoryAction)
+		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")
