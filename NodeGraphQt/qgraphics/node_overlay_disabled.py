@@ -190,6 +190,13 @@ class XErrorItem(QtWidgets.QGraphicsItem):
             txt_w = font_width * 1.25
             txt_h = font_height * 2.25
             text_rect = QtCore.QRectF(dis_rect)
+            
+            grad = QtGui.QLinearGradient(text_rect.center().x(), text_rect.topLeft().y(),
+                                         text_rect.center().x(), text_rect.bottomLeft().y())
+            grad.setColorAt(0.0, QtGui.QColor(255, 0, 0))
+            grad.setColorAt(1.0, QtGui.QColor(70, 0, 0,40))
+            painter.setBrush(grad)
+            painter.drawRoundedRect(text_rect, 2, 2)
 
             painter.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255), 1))
             painter.drawText(text_rect, self.desc)
@@ -209,9 +216,14 @@ class XErrorItem(QtWidgets.QGraphicsItem):
                                          (rect.height() / 2) - (txt_h / 2),
                                          txt_w, txt_h)
             painter.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0), 0.5))
-            clr = QtGui.QColor(*self.color)
-            clr.setAlpha(180)
-            painter.setBrush(clr)
+            # clr = QtGui.QColor(*self.color)
+            # clr.setAlpha(180)
+            # painter.setBrush(clr)
+            grad = QtGui.QLinearGradient(text_bg_rect.center().x(), text_bg_rect.topLeft().y(),
+                                         text_bg_rect.center().x(), text_bg_rect.bottomLeft().y())
+            grad.setColorAt(0.0, QtGui.QColor(255, 0, 0))
+            grad.setColorAt(1.0, QtGui.QColor(70, 0, 0))
+            painter.setBrush(grad)
             painter.drawRoundedRect(text_bg_rect, 2, 2)
 
             text_rect = QtCore.QRectF((rect.width() / 2) - (font_width / 2),

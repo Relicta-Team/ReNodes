@@ -18,7 +18,7 @@ from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem
 from NodeGraphQt.qgraphics.port import PortItem
-from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
+from NodeGraphQt.qgraphics.slicer import SlicerPipeItem, DescriptionItem
 from NodeGraphQt.widgets.dialogs import BaseDialog, FileDialog
 from NodeGraphQt.widgets.scene import NodeScene
 from NodeGraphQt.widgets.tab_search import TabSearchMenuWidget
@@ -154,6 +154,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._SLICER_PIPE = SlicerPipeItem()
         self._SLICER_PIPE.setVisible(False)
         self.scene().addItem(self._SLICER_PIPE)
+
+        self._DESCRIPTION = DescriptionItem(self)
+        self.scene().addItem(self._DESCRIPTION)
 
         self._search_widget = TabSearchMenuWidget()
         self._search_widget.search_submitted.connect(self._on_search_submitted)
@@ -361,7 +364,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         x, y = pos.x() - width, pos.y() - height
         rect = QtCore.QRectF(x, y, width, height)
         items = []
-        excl = [self._LIVE_PIPE, self._SLICER_PIPE]
+        excl = [self._LIVE_PIPE, self._SLICER_PIPE, self._DESCRIPTION]
         for item in self.scene().items(rect):
             if item in excl:
                 continue
@@ -845,12 +848,15 @@ class NodeViewer(QtWidgets.QGraphicsView):
             event (QtWidgets.QGraphicsSceneMouseEvent):
                 The event handler from the QtWidgets.QGraphicsScene
         """
+        pos = event.scenePos()
+
+        self._DESCRIPTION.movingEvent(pos)
+        
         if not self._LIVE_PIPE.isVisible():
             return
         if not self._start_port:
             return
 
-        pos = event.scenePos()
         pointer_color = None
         for item in self.scene().items(pos):
             if not isinstance(item, PortItem):
@@ -1430,7 +1436,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         Returns:
             list[PipeItem]: instances of pipe items.
         """
-        excl = [self._LIVE_PIPE, self._SLICER_PIPE]
+        excl = [self._LIVE_PIPE, self._SLICER_PIPE,self._DESCRIPTION]
         return [i for i in self.scene().items()
                 if isinstance(i, PipeItem) and i not in excl]
 
