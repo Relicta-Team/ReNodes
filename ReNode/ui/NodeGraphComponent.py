@@ -100,14 +100,15 @@ class NodeGraphComponent:
 		
 		stateStr:str = Config.get("winstate","internal")
 		winposStr:str = Config.get("winpos","internal")
-		#convert from str to bytes
-		stateBytes = QByteArray(eval(stateStr))
-		winposBytes = QByteArray(eval(winposStr))
+		if stateStr:
+			#convert from str to bytes
+			stateBytes = QByteArray(eval(stateStr))
+			winposBytes = QByteArray(eval(winposStr))
 
-		if not self.mainWindow.restoreState(stateBytes):
-			Application.refObject.logger.error("Failed to restore window state")
-		if not self.mainWindow.restoreGeometry(winposBytes):
-			Application.refObject.logger.error("Failed to restore window position")
+			if not self.mainWindow.restoreState(stateBytes):
+				Application.refObject.logger.error("Failed to restore window state")
+			if not self.mainWindow.restoreGeometry(winposBytes):
+				Application.refObject.logger.error("Failed to restore window position")
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
