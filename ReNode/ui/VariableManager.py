@@ -569,7 +569,7 @@ class VariableManager(QDockWidget):
         _class = nodeObj.nodeClass
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         cfg = fact.getNodeLibData(_class)
-        nodeObj.set_property('name',f'<span style=\'font-family: Arial; font-size: 11pt;\'><b>{cfg["name"].format(lvdata["name"])}</b></span>',False,
+        nodeObj.set_property('name',f'{cfg["name"].format("<b>"+lvdata["name"]+"</b>")}',False,
             doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 

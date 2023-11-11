@@ -1016,9 +1016,15 @@ class NodeItem(AbstractNodeItem):
     @AbstractNodeItem.name.setter
     def name(self, name=''):
         AbstractNodeItem.name.fset(self, name)
-        if name == self._text_item.toHtml():
+        if name == self._text_item.toPlainText():
             return
-        self._text_item.setHtml(name)
+        desc = None
+        if "@desc:" in name:
+            name,desc = name.split("@desc:")
+        nametext = f'<span style=\'font-family: Arial; font-size: 11pt;\'>{name}</span>'
+        if desc:
+            nametext += f'<br/><font size=""4"><i>{desc}</i></font>'
+        self._text_item.setHtml(nametext)
         if self.scene():
             self.align_label()
         self.update()
