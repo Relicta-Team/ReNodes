@@ -115,7 +115,7 @@ class NodeGraphComponent:
 		return self.graph
 	def getFactory(self) -> NodeFactory:
 		"""Get NodeFactory object"""
-		return self.graph._factoryRef
+		return self.nodeFactory #self.graph._factoryRef
 	def getTabSearch(self) -> TabSearchMenu:
 		"""Get TabSearchMenu object"""
 		return self.graph._viewer._tabSearch
