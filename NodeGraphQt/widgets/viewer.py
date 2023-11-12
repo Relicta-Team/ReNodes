@@ -1382,7 +1382,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.clear_key_state()
         BaseDialog.message_dialog(text, title)
 
-    def load_dialog(self, current_dir=None, ext=None):
+    def load_dialog(self, current_dir=None, ext=None,kwargs={}):
         """
         Prompt node viewer file load dialog widget.
 
@@ -1394,13 +1394,22 @@ class NodeViewer(QtWidgets.QGraphicsView):
             str: selected file path.
         """
         self.clear_key_state()
-        ext = '*{} '.format(ext) if ext else ''
-        ext_filter = ';;'.join([
-            'Node Graph ({}*json)'.format(ext), 'All Files (*)'
-        ])
-        file_dlg = FileDialog.getOpenFileName(
-            self, 'Open File', current_dir, ext_filter)
-        file = file_dlg[0] or None
+        if kwargs.get("customSave"):
+            ext = kwargs.get("ext","graph")
+            ext_filter = ';;'.join([
+                'Граф (*.{})'.format(ext), 'Все файлы (*)'
+            ])
+            file_dlg = FileDialog.getOpenFileName(
+                self, 'Открытие', current_dir, ext_filter)
+            file = file_dlg[0] or None
+        else:
+            ext = '*{} '.format(ext) if ext else ''
+            ext_filter = ';;'.join([
+                'Node Graph ({}*json)'.format(ext), 'All Files (*)'
+            ])
+            file_dlg = FileDialog.getOpenFileName(
+                self, 'Открытие', current_dir, ext_filter)
+            file = file_dlg[0] or None
         return file
 
     def save_dialog(self, current_dir=None, ext=None, kwargs={}):

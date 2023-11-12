@@ -2427,7 +2427,7 @@ class NodeGraph(QtCore.QObject):
         """
         self._viewer.message_dialog(text, title)
 
-    def load_dialog(self, current_dir=None, ext=None):
+    def load_dialog(self, current_dir=None, ext=None, kwargs=None):
         """
         Prompts a file open dialog in the node graph.
 
@@ -2442,7 +2442,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             str: selected file path.
         """
-        return self._viewer.load_dialog(current_dir, ext)
+        return self._viewer.load_dialog(current_dir, ext,kwargs)
 
     def save_dialog(self, current_dir=None, ext=None, kwargs=None):
         """

@@ -5,34 +5,54 @@ from PyQt5.QtWidgets import *
 from Qt import QtWidgets, QtCore
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.FileManager import FileManagerHelper
+import os
 
 class TabData:
     def __init__(self,name='',file='') -> None:
         self.filePath = file
         self.name = name
-        self.serializedData = None
-        self.isActive = False
-        self.isUnsaved = True
+        #self.serializedData = None
+        #self.isActive = False
+        self.isUnsaved = False
 
         # Here located all graph backend for this session
         self.graph = SessionManager.refObject.newInstanceGraph()
-
+        
+        if self.filePath:
+            self.graph.load_session(self.filePath)
+        
         self.variables = {}
 
     def __repr__(self) -> str:
         from sys import getsizeof
         return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'
     
+    def getIndex(self):
+        for idx, it in enumerate(SessionManager.refObject.tabData):
+            if it == self: return idx
+        return -1
+
+    def save(self):
+        if not self.filePath:
+            return
+        self.graph.save_session(self.filePath)
+        self.isUnsaved = False
+        SessionManager.refObject.syncTabName(self.getIndex())
+
+    #выгрузка и очистка вкладки
     def unloadTabLogic(self):
         graphComponent = SessionManager.refObject.graphSystem
         graphComponent.editorDock.setWidget(None)#!DONT DO THIS 
         
         self.graph.clear_undo_stack()
+        self.graph.undo_stack().indexChanged.disconnect(self._historyChangeEvent)
         self.graph.clear_session()
         self.graph.close()
         self.graph.widget.deleteLater()
         self.graph.deleteLater()
         QApplication.processEvents()
+
+        
 
         graphComponent.graph = None
         graphComponent.tabSearch = None
@@ -64,7 +84,11 @@ class TabData:
         graphComponent.undoView_dock.setWidget(self.graph.undo_view)
 
         pass
-
+    
+    def _historyChangeEvent(self):
+        if self and not self.isUnsaved:
+            self.isUnsaved = True
+            SessionManager.refObject.syncTabName(self.getIndex())
 
 
 
@@ -120,19 +144,23 @@ class SessionManager(QTabWidget):
         if tdata.isUnsaved:
             unsafe = "*"
         self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
-        self.tabBar().setTabToolTip(idx,"Без описания")
+        self.tabBar().setTabToolTip(idx,f"Расположение: {tdata.filePath}")
 
     def handleMoved(self,index):
         #print(f"moved to {index}")
         pass
 
-    def newTab(self,switchTo=False):
+    def newTab(self,switchTo=False,loader=''):
         idx = self.addTab(QWidget(),"tab")
-        tabCtx = TabData("Новый граф")
+        tabCtx = TabData("Новый граф",loader)
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
+        
+        tabCtx.graph.undo_stack().indexChanged.connect(tabCtx._historyChangeEvent)
         if switchTo:
             self.setActiveTab(idx)
+        
+        return tabCtx
 
     def setActiveTab(self,index):
         if index < 0 or index >= self.count():
@@ -141,17 +169,35 @@ class SessionManager(QTabWidget):
         self.handleTabChange(index)
 
     def openFile(self):
-        pass
+        path = self.graphSystem.dummyGraph.load_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
+        if not path: return
+        path = FileManagerHelper.getGraphPathRelative(path)
+        allTabs = self.tabData
+        if path in [tab.filePath for tab in allTabs]:
+            self.setActiveTab([tab.filePath for tab in allTabs].index(path))
+            self.logger.info(f"Граф {path} уже открыт. Переключение активной вкладки")
+            return
+        self.newTab(True,path)
 
     def saveFile(self):
-        if not self.getActiveTabData():
+        tdata = self.getActiveTabData()
+        if not tdata:
             self.logger.warning("Нет активной вкладки для сохранения файла")
             return
-        path = self.graphSystem.graph.save_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
+        
+        #save if filePath not empty
+        if tdata.filePath:
+            tdata.save()
+            self.logger.info(f'Сохранение {tdata.filePath}')
+            return
+
+        path = self.graphSystem.dummyGraph.save_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
         if not path:
             return
         path = FileManagerHelper.getGraphPathRelative(path)
-        self.logger.info(f'Сохранение в файл {path}')
+        tdata.filePath = path
+        tdata.save()
+        self.logger.info(f'Сохранение {tdata.filePath}')
         pass
 
     def validateExit(self):
@@ -181,17 +227,19 @@ class SessionManager(QTabWidget):
 
     def handleTabClose(self, index):
         tabData = self.getTabData(index)
+        condition = True
         if tabData.isUnsaved:
             # В этом методе вы можете запросить подтверждение пользователя перед закрытием вкладки
             reply = QMessageBox.question(self, 'Закрыть вкладку', 'Вы уверены, что хотите закрыть эту вкладку?\nВсе несохраненные данные будут утеряны.',
                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-            if reply == QMessageBox.Yes:
-                self.removeTab(index)
-                tabData.unloadTabLogic()
-                #self.tabBar().removeTab(index)
-                del tabData
+            condition = reply == QMessageBox.Yes
 
+        if condition:
+            self.removeTab(index)
+            tabData.unloadTabLogic()
+            del tabData
+            self.setActiveTab(self.count()-1)
     def showContextMenu(self):
             menu = QMenu(self)
 

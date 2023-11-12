@@ -38,6 +38,7 @@ class NodeGraphComponent:
 		#graph setup
 		graph = NodeGraph()
 		self.graph = graph
+		self.dummyGraph = graph #first loaded graph 
 		
 		#ref from native graph to custom factory
 		graph._factoryRef = self.nodeFactory
