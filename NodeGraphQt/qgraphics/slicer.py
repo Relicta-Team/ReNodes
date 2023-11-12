@@ -142,7 +142,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         from PyQt5.QtCore import QTimer
         timer = QTimer(view__)
         timer.setSingleShot(True)
-        timer.setInterval(1000)
+        timer.setInterval(2000)
         timer.timeout.connect(self.onTimer)
         self.timer = timer
 
