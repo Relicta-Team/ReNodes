@@ -108,7 +108,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         
         self.setAcceptHoverEvents(True)
         #add text and background box
-        text = 'Your text here 123 123 123 12 312 3123 124 213 123 '
+        text = 'Test'
         background_rect = QtCore.QRectF(0, 0, 100, 50)  # adjust the size as needed
         #background_color = QtGui.QColor(255, 255, 255)  # adjust the color as needed
 
@@ -128,6 +128,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         #                 background_rect.center().y() - text_item.boundingRect().height() / 2)
         
         self.text_item = text_item
+        self.text_item.setTextWidth(600)
 
         self._lastItem = None
         self._pos = None
@@ -160,9 +161,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/>Путь: {libInfo.get("path") or "нет"}<br/>'
 
-            iTxt = ",".join([o.name for o in self._lastItem.inputs])
+            iTxt = ", ".join([o.name for o in self._lastItem.inputs])
             text += f'<br/>Входные порты: {iTxt if iTxt else "отсутствуют"}'
-            oTxt = ",".join([o.name for o in self._lastItem.outputs])
+            oTxt = ", ".join([o.name for o in self._lastItem.outputs])
             text += f'<br/>Выходные порты: {oTxt if oTxt else "отсутствуют"}'
             text += f'<br/><br/>Описание: {libInfo.get("desc") or "отсутствует"}'
 
@@ -221,7 +222,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         self.setPos(self._pos + QtCore.QPointF(10, 10))
         self.loadText()
     def onTimer(self):
-        print("Called timer")
+        #print("Called timer")
         if self._lastItem:
             self.doRender()
         pass
