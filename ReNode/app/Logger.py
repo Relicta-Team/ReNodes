@@ -16,7 +16,8 @@ class StdOutLoggerHandler(logging.StreamHandler):
             #msg = msg.replace('\n', '<br/>')
             #self.doc.setHtml(msg)
             #msg = self.doc.tex
-            msg = BeautifulSoup(msg, 'html.parser').text
+            if "<" in msg:
+                msg = BeautifulSoup(msg, 'html.parser').text
             
             stream = self.stream
             stream.write(msg + self.terminator)
