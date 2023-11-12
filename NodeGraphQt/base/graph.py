@@ -2444,7 +2444,7 @@ class NodeGraph(QtCore.QObject):
         """
         return self._viewer.load_dialog(current_dir, ext)
 
-    def save_dialog(self, current_dir=None, ext=None):
+    def save_dialog(self, current_dir=None, ext=None, kwargs=None):
         """
         Prompts a file save dialog in the node graph.
 
@@ -2459,7 +2459,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             str: selected file path.
         """
-        return self._viewer.save_dialog(current_dir, ext)
+        return self._viewer.save_dialog(current_dir, ext, kwargs)
 
     # group node / sub graph.
     # --------------------------------------------------------------------------

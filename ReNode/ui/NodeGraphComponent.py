@@ -91,10 +91,6 @@ class NodeGraphComponent:
 		#n_backdrop.wrap_nodes([groupnode, node])
 
 		self.generateTreeDict()
-		#self.graph.load_session(".\\session.json")
-		with  open(".\\templates_tests.txt",encoding='utf-8') as f:
-			QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
-		self.graph.paste_nodes()
 		
 		from ReNode.app.application import Application
 		
@@ -109,6 +105,14 @@ class NodeGraphComponent:
 				Application.refObject.logger.error("Failed to restore window state")
 			if not self.mainWindow.restoreGeometry(winposBytes):
 				Application.refObject.logger.error("Failed to restore window position")
+		
+		if Application.isDebugMode():
+			#self.graph.load_session(".\\session.json")
+			with  open(".\\templates_tests.txt",encoding='utf-8') as f:
+				QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
+			self.graph.paste_nodes()
+		else:
+			self.editorDock.setWidget(None)
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:

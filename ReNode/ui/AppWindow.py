@@ -86,7 +86,7 @@ class MainWindow( QMainWindow ):
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")
-		self.nodeGraph.sessionManager.newTab()
+		self.nodeGraph.sessionManager.newTab(switchTo=True)
 	
 	def onOpenFile(self):
 		#logger.info("Открыть")
@@ -117,8 +117,10 @@ class MainWindow( QMainWindow ):
 		pass
 
 	def generateCode(self):
-		self.nodeGraph.codegen.generateProcess()
-		pass
+		if self.nodeGraph.sessionManager.getActiveTabData():
+			self.nodeGraph.codegen.generateProcess()
+		else:
+			self.nodeGraph.codegen.logger.warning("Нет активной вкладки для генерации")
 
 	def switchVariableViewer(self):
 		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())

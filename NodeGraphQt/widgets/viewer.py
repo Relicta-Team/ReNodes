@@ -1403,7 +1403,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         file = file_dlg[0] or None
         return file
 
-    def save_dialog(self, current_dir=None, ext=None):
+    def save_dialog(self, current_dir=None, ext=None, kwargs={}):
         """
         Prompt node viewer file save dialog widget.
 
@@ -1415,18 +1415,33 @@ class NodeViewer(QtWidgets.QGraphicsView):
             str: selected file path.
         """
         self.clear_key_state()
-        ext_label = '*{} '.format(ext) if ext else ''
-        ext_type = '.{}'.format(ext) if ext else '.json'
-        ext_map = {'Node Graph ({}*json)'.format(ext_label): ext_type,
-                   'All Files (*)': ''}
-        file_dlg = FileDialog.getSaveFileName(
-            self, 'Save Session', current_dir, ';;'.join(ext_map.keys()))
-        file_path = file_dlg[0]
-        if not file_path:
-            return
-        ext = ext_map[file_dlg[1]]
-        if ext and not file_path.endswith(ext):
-            file_path += ext
+        if kwargs.get("customSave"):
+            ext = kwargs.get("ext","graph")
+            ext_map = {'Граф (*.{})'.format(ext): ext,
+                    'Все файлы (*)': ''}
+            file_dlg = FileDialog.getSaveFileName(
+                self, kwargs.get("title","Сохранение"),
+                current_dir, ';;'.join(ext_map.keys())
+            )
+            file_path = file_dlg[0]
+            if not file_path:
+                return
+            ext = ext_map[file_dlg[1]]
+            if ext and not file_path.endswith(ext):
+                file_path += ext
+        else:
+            ext_label = '*{} '.format(ext) if ext else ''
+            ext_type = '.{}'.format(ext) if ext else '.json'
+            ext_map = {'Граф ({}*json)'.format(ext_label): ext_type,
+                    'Все файлы (*)': ''}
+            file_dlg = FileDialog.getSaveFileName(
+                self, 'Сохранение', current_dir, ';;'.join(ext_map.keys()))
+            file_path = file_dlg[0]
+            if not file_path:
+                return
+            ext = ext_map[file_dlg[1]]
+            if ext and not file_path.endswith(ext):
+                file_path += ext
 
         return file_path
 

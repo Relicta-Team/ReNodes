@@ -67,6 +67,12 @@ class CodeGenerator:
 
         if not layout_data:
             return
+        if not layout_data.get('nodes'):
+            self.warning("Добавьте узлы в граф")
+            return
+        if not layout_data.get('connections'):
+            self.warning("Добавьте связи в граф")
+            return
 
         self.log("Старт генерации...")
 

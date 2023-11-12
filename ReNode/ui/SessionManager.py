@@ -3,6 +3,8 @@ from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
 from Qt import QtWidgets, QtCore
+from ReNode.app.Logger import RegisterLogger
+from ReNode.app.FileManager import FileManagerHelper
 
 class TabData:
     def __init__(self,name='',file='') -> None:
@@ -20,8 +22,8 @@ class TabData:
     def __repr__(self) -> str:
         from sys import getsizeof
         return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'
-
-    def __del__(self):
+    
+    def unloadTabLogic(self):
         graphComponent = SessionManager.refObject.graphSystem
         graphComponent.editorDock.setWidget(None)#!DONT DO THIS 
         
@@ -34,9 +36,6 @@ class TabData:
 
         graphComponent.graph = None
         graphComponent.tabSearch = None
-
-        print(f'{self.name} {hex(id(self))} deleted')
-        pass
 
     def loadTabLogic(self):
         from PyQt5.sip import isdeleted
@@ -75,6 +74,7 @@ class SessionManager(QTabWidget):
     def __init__(self,graph) -> None:
         super().__init__()
         SessionManager.refObject = self
+        self.logger = RegisterLogger("Session")
 
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         self.graphSystem : NodeGraphComponent = graph
@@ -103,10 +103,13 @@ class SessionManager(QTabWidget):
     @property
     def tabData(self) -> list[TabData]:
         tdat = []
-        raise Exception("CHECK COUNT OF TABS")
-        for i in range(0,self.count() - 1):
+        for i in range(self.count()):
             tdat.append(self.tabBar().tabData(i))
         return tdat
+
+    def getActiveTabData(self):
+        if self.tabBar().count() == 0: return None
+        return self.getTabData(self.currentIndex())
 
     def getTabData(self,index) -> TabData:
         return self.tabBar().tabData(index)
@@ -123,16 +126,32 @@ class SessionManager(QTabWidget):
         #print(f"moved to {index}")
         pass
 
-    def newTab(self):
+    def newTab(self,switchTo=False):
         idx = self.addTab(QWidget(),"tab")
         tabCtx = TabData("Новый граф")
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
+        if switchTo:
+            self.setActiveTab(idx)
+
+    def setActiveTab(self,index):
+        if index < 0 or index >= self.count():
+            return
+        self.tabBar().setCurrentIndex(index)
+        self.handleTabChange(index)
 
     def openFile(self):
         pass
 
     def saveFile(self):
+        if not self.getActiveTabData():
+            self.logger.warning("Нет активной вкладки для сохранения файла")
+            return
+        path = self.graphSystem.graph.save_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
+        if not path:
+            return
+        path = FileManagerHelper.getGraphPathRelative(path)
+        self.logger.info(f'Сохранение в файл {path}')
         pass
 
     def validateExit(self):
@@ -169,6 +188,7 @@ class SessionManager(QTabWidget):
 
             if reply == QMessageBox.Yes:
                 self.removeTab(index)
+                tabData.unloadTabLogic()
                 #self.tabBar().removeTab(index)
                 del tabData
 

@@ -5,7 +5,8 @@ import logging
 
 configValues = {
     "main": {
-        "version": 2,
+        "version": 1,
+        "workdir": ".",
         #"tempvalue": True
     },
     "internal": {
