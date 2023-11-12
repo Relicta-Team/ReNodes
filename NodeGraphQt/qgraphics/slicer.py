@@ -5,6 +5,7 @@ from Qt import QtCore, QtGui, QtWidgets
 
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, PipeSlicerEnum
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
+from NodeGraphQt.qgraphics.node_base import NodeItem
 
 
 class SlicerPipeItem(QtWidgets.QGraphicsPathItem):
@@ -204,7 +205,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         if self._lockUpdate: return
 
         self._pos = pos
-        near = self.view._items_near(pos, AbstractNodeItem, 1, 1)
+        near = self.view._items_near(pos, NodeItem, 1, 1)
         if len(near) > 0:
             if self.isVisible():
                 if near[0] != self._lastItem:
