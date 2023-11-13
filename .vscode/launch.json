@@ -19,7 +19,7 @@
 			"name": "Debug (no-splash)",
 			"type": "python",
 			"request": "launch",
-			"args": ["-nosplash"],
+			"args": ["-nosplash","-debug"],
 			// uses main in rootdir
 			"program": "./main.py",
 			"cwd": "${workspaceFolder}",

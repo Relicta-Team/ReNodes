@@ -6,6 +6,8 @@ from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_slider import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_value_edit import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_color_picker import *
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
@@ -124,9 +126,10 @@ class VariableManager(QDockWidget):
         self.variables = {}
 
         self.variableTempateData = [
+            #base types
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
-				"range": {"min":-999999,"max":99999}
+				"range": {"min":-999999,"max":999999}
             }},color=QtGui.QColor("Sea green")),
             VariableTypedef("float","Дробное число",FloatValueEdit,{"fspin": {
                 "text": "Число",
@@ -144,7 +147,47 @@ class VariableManager(QDockWidget):
             }},color=QtGui.QColor("Magenta")),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
-            }},color=QtGui.QColor("Maroon"))
+            }},color=QtGui.QColor("Maroon")),
+
+            #colors
+            VariableTypedef("color","Цвет",PropColorPickerRGB,{"color": {
+                "text": "Цвет"
+            }},color=QtGui.QColor("#00C7B3")),
+            VariableTypedef("color","Цвет с альфа-каналом",PropColorPickerRGBA,{"color": {
+                "text": "Цвет"
+            }},color=QtGui.QColor("#048C7F")),
+
+            #vectors
+            VariableTypedef("vector2","2D Вектор",PropVector2,{"vec2": {
+                "text": "Вектор"
+            }},color=QtGui.QColor("#D4A004")),
+            VariableTypedef("vector3","3D Вектор",PropVector3,{"vec3": {
+                "text": "Вектор"
+            }},color=QtGui.QColor("#D48104")),
+            #TODO need specwidget for use this
+            # VariableTypedef("vector4","4D Вектор",PropVector4,{"vector": {
+            #     "text": "Вектор"
+            # }},color=QtGui.QColor("#D45B04")),
+
+            #platform specific objects
+            VariableTypedef("object","Объект",PropLineEdit
+                # ,{"input": {
+                #     "text": "Объект"
+                #     }
+                # }
+            ,color=QtGui.QColor("#1087C7")),
+            VariableTypedef("model","Модель",PropLineEdit
+                # ,{"input": {
+                # "text": "Модель"
+                # }}
+            ,color=QtGui.QColor("#4C4CA8")),
+            VariableTypedef("handle","Дескриптор события",IntValueEdit
+                # ,{"spin": {
+                # "text": "Число",
+				# "range": {"min":0,"max":999999}
+                # }}
+            ,color=QtGui.QColor("Sea green").lighter(50)),
+
         ]
 
         self.variableCategoryList = [
