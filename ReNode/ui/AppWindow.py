@@ -62,6 +62,7 @@ class MainWindow( QMainWindow ):
 		self.switchVariableViewerAction = QAction("Переключить окно &переменных",self,triggered=self.switchVariableViewer,shortcut="Alt+1",statusTip="Переключает видимость окна переменных")
 		self.switchLoggerAction = QAction("Переключить окно &логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+2",statusTip="Переключает видимость окна консоли")
 		self.switchHistoryAction = QAction("Переключить окно &истории",self,triggered=self.switchHistoryVisual,shortcut="Alt+3",statusTip="Переключает видимость окна истории")
+		self.switchInspectorAction = QAction("Переключить окно &инспектора",self,triggered=self.switchInspectorVisual,shortcut="Alt+4",statusTip="Переключает видимость окна инспектора")
 
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
@@ -82,6 +83,8 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(self.switchVariableViewerAction)
 		self.windows.addAction(self.switchLoggerAction)
 		self.windows.addAction(self.switchHistoryAction)
+		self.windows.addAction(self.switchInspectorAction)
+		self.windows.addAction(QAction("Сбросить позиции окон",self,triggered=self.resetWindows))
 		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
 	
 	def onNewFile(self):
@@ -130,3 +133,10 @@ class MainWindow( QMainWindow ):
 
 	def switchHistoryVisual(self):
 		self.nodeGraph.undoView_dock.setVisible(not self.nodeGraph.undoView_dock.isVisible())
+
+	def switchInspectorVisual(self):
+		self.nodeGraph.inspector.setVisible(not self.nodeGraph.inspector.isVisible())
+
+	def resetWindows(self):
+		self.restoreState(self.nodeGraph._defaultState)
+		self.restoreGeometry(self.nodeGraph._defaultGeometry)

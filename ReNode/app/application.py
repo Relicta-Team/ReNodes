@@ -122,7 +122,9 @@ class Application:
 		
 
 		self.mainWindow.show()
-		self.mainWindow.showMaximized()
+		#self.mainWindow.showMaximized()
+
+		self.mainWindow.nodeGraph._loadWinStateFromConfig()
 	
 	def _initArguments(self):
 		args = self.appInstance.arguments()

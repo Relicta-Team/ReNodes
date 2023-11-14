@@ -80,8 +80,13 @@ class NodeGraphComponent:
 		self._initTabs(dock)
 
 		self._initVariableManager()
+		self._initInspector()
 		self._initLoggerDock()
 		self._initHistoryDock()
+		
+		#для сброса на настройки по умолчанию
+		self._defaultState = self.mainWindow.saveState()
+		self._defaultGeometry = self.mainWindow.saveGeometry()
 
 		self._addEvents()
 		self.contextMenuLoad()
@@ -93,6 +98,16 @@ class NodeGraphComponent:
 
 		self.generateTreeDict()
 		
+		from ReNode.app.application import Application
+		if Application.isDebugMode():
+			#self.graph.load_session(".\\session.json")
+			with  open(".\\templates_tests.txt",encoding='utf-8') as f:
+				QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
+			self.graph.paste_nodes()
+		else:
+			self.editorDock.setWidget(None)
+
+	def _loadWinStateFromConfig(self):
 		from ReNode.app.application import Application
 		
 		stateStr:str = Config.get("winstate","internal")
@@ -106,14 +121,6 @@ class NodeGraphComponent:
 				Application.refObject.logger.error("Failed to restore window state")
 			if not self.mainWindow.restoreGeometry(winposBytes):
 				Application.refObject.logger.error("Failed to restore window position")
-		
-		if Application.isDebugMode():
-			#self.graph.load_session(".\\session.json")
-			with  open(".\\templates_tests.txt",encoding='utf-8') as f:
-				QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
-			self.graph.paste_nodes()
-		else:
-			self.editorDock.setWidget(None)
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
@@ -397,6 +404,12 @@ class NodeGraphComponent:
 		self.getFactory().updateLibTypes()
 
 		pass
+
+	def _initInspector(self):
+		from ReNode.ui.PropertyInspector import Inspector
+		self.inspector = Inspector(self)
+		self.inspector.setObjectName("PropertyInspector")
+		self.mainWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.inspector)
 
 	def _initLoggerDock(self):
 		from ReNode.ui.LoggerConsole import LoggerConsole
