@@ -37,11 +37,18 @@ def getTokens(content):
 	return re.split(r'(?<!\\):', content)
 
 class NodeObjectHandler:
-	def __init__(self,objName,objectType,globaldict,classMetadata):
-		self.dictRef = globaldict
-		self.classMetadata = classMetadata
-		self.objectNameFull = objName
-		self.objectType = objectType
+	def __init__(self,objName,objectType,nodeLibDict,classMetadata,__lineList):
+		self.nodeLib = nodeLibDict #ссылка на базовый словарь узлов
+		self.classMetadata = classMetadata #ссылка на словарь метаданных классов
+		self.objectNameFull = objName #базовое полное имя члена
+		self.objectType = objectType #тип-категория члена (метод, поле, функция)
+
+		self.lineList = __lineList #ссылка на список обрабатываемых строк
+
+		self.isField = self.objectType == 'f'
+		self.isMethod = self.objectType == 'm'
+		self.isSystem = self.objectType == 'node'
+
 		self.memberData = {
 			"inputs": {},
 			"outputs": {}
@@ -50,6 +57,18 @@ class NodeObjectHandler:
 
 	def __repr__(self) -> str:
 		return f'Node:{self.objectNameFull} at {hex(id(self))}'
+
+	#for add line once
+	def insertLine(self,string):
+		self.lineList.insert(1,string)
+	#for add lines (example: input)
+	def insertLines(self,stringList):
+		self.lineList[1:1] = stringList
+	
+	def copy(self):
+		src = self
+		dst = NodeObjectHandler(self.objectNameFull,self.objectType,self.nodeLib,self.classMetadata,self.lineList)
+		dst.memberData = src.memberData.copy()
 
 	def handleTokens(self,tokens):
 		tokenType = tokens[0]
@@ -72,7 +91,7 @@ class NodeObjectHandler:
 		elif tokenType == 'prop':
 			propType = tokens[1]
 			if propType not in ['all','get','set','none']:
-				raise ValueError(f"[{curMember}]: Wrong prop type: {propType}")
+				raise ValueError(f"[{self.objectNameFull}]: Wrong prop type: {propType}")
 			self.memberData['prop'] = propType
 			pass
 		# видимость ноды в инспекторе
@@ -88,7 +107,7 @@ class NodeObjectHandler:
 		elif tokenType == 'type':
 			mtype = tokens[1]
 			if mtype not in ['method','event','get','const']:
-				raise ValueError(f"[{curMember}]: Wrong method type: {mtype}")
+				raise ValueError(f"[{self.objectNameFull}]: Wrong method type: {mtype}")
 			self.memberData['type'] = mtype
 			#todo define icon and node color by type
 			#const - add classProp
@@ -97,20 +116,20 @@ class NodeObjectHandler:
 		elif tokenType == 'exec':
 			execType = tokens[1]
 			if execType not in ['in','out','none','all']:
-				raise ValueError(f"[{curMember}]: Wrong exec type: {execType}")
+				raise ValueError(f"[{self.objectNameFull}]: Wrong exec type: {execType}")
 			if execType != 'none':
 				_addIn = execType in ['in','all']
 				_addOut = execType in ['out','all']
 				if _addIn:
 					if self.memberData['inputs']:
-						raise Exception(f'[{curMember}]: inputs must be empty after adding exec port')
+						raise Exception(f'[{self.objectNameFull}]: inputs must be empty after adding exec port')
 					self.memberData['inputs']['Вход'] = {
 						'type':"Exec",
 						'mutliconnect':True
 					}
 				if _addOut:
 					if self.memberData['outputs']:
-						raise Exception(f'[{curMember}]: outputs must be empty after adding exec port')
+						raise Exception(f'[{self.objectNameFull}]: outputs must be empty after adding exec port')
 					self.memberData['outputs']['Выход'] = {
 						'type':"Exec",
 						'mutliconnect':False
@@ -122,7 +141,7 @@ class NodeObjectHandler:
 			}
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = tokens[3]
-			memberData['inputs'][tokens[2]] = self.lastPortRef
+			self.memberData['inputs'][tokens[2]] = self.lastPortRef
 		elif tokenType == "out":
 			
 			self.lastPortRef = {
@@ -131,7 +150,7 @@ class NodeObjectHandler:
 			}
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = tokens[3]
-			memberData['outputs'][tokens[2]] = self.lastPortRef
+			self.memberData['outputs'][tokens[2]] = self.lastPortRef
 			pass
 		elif tokenType == 'opt':
 			for tInside in tokens[1:]:
@@ -146,11 +165,25 @@ class NodeObjectHandler:
 		curMember = self.objectNameFull
 		curMemberType = self.objectType
 		classmeta = self.classMetadata
+		memberData = self.memberData
 		if re.match(r'_\d+$',curMember):
 			clearMem = curMember[:curMember.rfind('_')]
 		else:
 			clearMem = curMember
 		className_, memName_ = clearMem.lower().split('.')
+		memberRealName = f'{className_}.{memName_}'
+		memberRegion = "unknown"
+		if curMemberType == 'f':
+			memberRegion = "fields"
+		elif curMemberType == 'm':
+			memberRegion = "methods"
+		elif curMemberType == 'node':
+			memberRegion = "nodes"
+		else:
+			raise Exception(f'Unknown member type: {curMemberType}')
+
+		if memberRegion not in self.nodeLib:
+			self.nodeLib[memberRegion] = {}
 
 		# Проверка возвращаемого типа и его автоопределение
 		if 'returnType' not in memberData:
@@ -170,7 +203,8 @@ class NodeObjectHandler:
 			if curPropType == 'none':
 				memberData = None
 			elif curPropType in ['all','get','set']:
-				orig_curMember = curMember
+				#TODO refactoring
+				orig_curMember = memberRealName
 				curMember = [orig_curMember + ".get",orig_curMember + '.set']
 				memberData = [memberData.copy(),memberData.copy()]
 				memberData[0]['code'] = f'this getVariable "{memName_}"'
@@ -183,9 +217,63 @@ class NodeObjectHandler:
 		if memberData:
 			if isinstance(curMember,list):
 				for i,cm in enumerate(curMember):
-					self.dictRef[cm] = memberData[i]
+					self.nodeLib[cm] = memberData[i]
 			else: 
-				self.dictRef[curMember] = memberData
+				self.nodeLib[memberRegion][memberRealName] = memberData
+
+def compileRegion(members,nodeLib,classmeta):
+	curMember = None
+	
+	lineList = members.splitlines()
+	while len(members) > 0:
+		__line = lineList[0]
+		line = __line.lstrip('\t ')
+		if not line: continue
+		printDebug(f'compile line: {line}')
+		tokens = getTokens(line) # def,type,memname
+		if not tokens: raise ValueError(f"Wrong member line: {line}")
+		tokenType = tokens[0]
+		if tokenType == "def":
+			#new define
+			if curMember:
+				curMember.finalizeObject()
+				del curMember
+				curMember = None
+			if len(tokens) < 3: raise ValueError(f"Wrong define member line: {line}")
+			
+			memName = tokens[2]
+			memType = tokens[1]
+			curMember = NodeObjectHandler(memName,memType,nodeLib,classmeta,lineList)
+			lineList.pop(0)
+			continue
+		
+		curMember.handleTokens(tokens)
+		lineList.pop(0)
+
+	for __line in members.splitlines():
+		line = __line.lstrip('\t ')
+		if not line: continue
+		printDebug(f'compile line: {line}')
+		tokens = getTokens(line) # def,type,memname
+		if not tokens: raise ValueError(f"Wrong member line: {line}")
+		tokenType = tokens[0]
+		if tokenType == "def":
+			#new define
+			if curMember:
+				curMember.finalizeObject()
+				curMember = None
+			if len(tokens) < 3: raise ValueError(f"Wrong define member line: {line}")
+			
+			memName = tokens[2]
+			memType = tokens[1]
+			curMember = NodeObjectHandler(memName,memType,nodeLib,classmeta)
+		
+		curMember.handleTokens(tokens)
+		continue
+		
+	if curMember:
+		curMember.finalizeObject()
+		del curMember
 
 # generate lib (using flag -genlib)
 def GenerateLibFromObj():
@@ -208,7 +296,8 @@ def GenerateLibFromObj():
 
 	versionNum = int(dat[1])
 	outputData['system'] = {'version':versionNum}
-	outputData['nodes'] = {}
+	nodeLib = {}
+	outputData['nodes'] = nodeLib
 	outputData['classes'] = {}
 	print(f"Version objfile: {versionNum}")
 
@@ -230,7 +319,7 @@ def GenerateLibFromObj():
 	functions = getRegionData(content,"functions")
 	if not functions: 
 		print(f'Empty functions data')
-
+	#compileRegion(functions,nodeLib,classmeta)
 	
 	print("---------- Prep class members region ----------")
 	if not checkRegionName(content,"CLASSMEM"):
@@ -238,84 +327,7 @@ def GenerateLibFromObj():
 		return -4
 	
 	members = getRegionData(content,"CLASSMEM")
-	global memberData
-	global curMemberType
-	global curMember
-	memberData = None
-	lastPortRef = None
-
-	curMember = None
-	curMemberType = None
-	nodeList = {}
-	def finalizeNode():
-		global memberData
-		global curMemberType
-		global curMember
-
-		if re.match(r'_\d+$',curMember):
-			clearMem = curMember[:curMember.rfind('_')]
-		else:
-			clearMem = curMember
-		className_, memName_ = clearMem.lower().split('.')
-
-		# Проверка возвращаемого типа и его автоопределение
-		if 'returnType' not in memberData:
-			#if curMember endswith regex _\d+ then remove postfix
-			
-			if curMemberType == 'f':
-				memberData['returnType'] = classmeta[className_]['fields']['defined'].get(memName_,'NULLTYPE_ALLOC')
-			else:
-				memberData['returnType'] = "return_void"
-
-		# Определение свойств поля (геттеры, сеттеры)
-		if curMemberType == 'f':
-			if 'prop' not in memberData:
-				memberData['prop'] = 'all'
-			curPropType = memberData['prop']
-			del memberData['prop']
-			if curPropType == 'none':
-				memberData = None
-			elif curPropType in ['all','get','set']:
-				orig_curMember = curMember
-				curMember = [orig_curMember + ".get",orig_curMember + '.set']
-				memberData = [memberData.copy(),memberData.copy()]
-				memberData[0]['code'] = f'this getVariable "{memName_}"'
-				memberData[1]['code'] = f'this setVariable ["{memName_}",@in.2]; @out.1'
-				if curPropType != "all":
-					__idx = 0 if curPropType == 'get' else 1
-					curMember = curMember[__idx]
-					memberData = memberData[__idx]
-		
-		if memberData:
-			if isinstance(curMember,list):
-				for i,cm in enumerate(curMember):
-					nodeList[cm] = memberData[i]
-			else: 
-				nodeList[curMember] = memberData
-		curMember = None
-		
-	for __line in members.splitlines():
-		line = __line.lstrip('\t ')
-		if not line: continue
-		printDebug(f'compile line: {line}')
-		tokens = getTokens(line) # def,type,memname
-		if not tokens: raise ValueError(f"Wrong member line: {line}")
-		tokenType = tokens[0]
-		if tokenType == "def":
-			#new define
-			if curMember:
-				curMember.finalizeNode()
-			if len(tokens) < 3: raise ValueError(f"Wrong define member line: {line}")
-			
-			memName = tokens[2]
-			memType = tokens[1]
-			curMember = NodeObjectHandler(memName,memType,nodeList,classmeta)
-		
-		curMember.handleTokens(tokens)
-		continue
-		
-
-	finalizeNode()
+	compileRegion(members,nodeLib,classmeta)
 
 	return 0
 	print("Writing lib.json")
