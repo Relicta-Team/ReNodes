@@ -36,6 +36,157 @@ def printDebug(str):
 def getTokens(content):
 	return re.split(r'(?<!\\):', content)
 
+class NodeObjectHandler:
+	def __init__(self,objName,objectType,globaldict,classMetadata):
+		self.dictRef = globaldict
+		self.classMetadata = classMetadata
+		self.objectNameFull = objName
+		self.objectType = objectType
+		self.memberData = {
+			"inputs": {},
+			"outputs": {}
+		}
+		self.lastPortRef = None
+
+	def __repr__(self) -> str:
+		return f'Node:{self.objectNameFull} at {hex(id(self))}'
+
+	def handleTokens(self,tokens):
+		tokenType = tokens[0]
+		# Имя ноды
+		if tokenType == "name":
+			self.memberData['name'] = tokens[1]
+			pass
+		# имя ноды в дереве выбора
+		elif tokenType == "namelib":
+			self.memberData['namelib'] = tokens[1]
+			pass
+		# описание ноды
+		elif tokenType == "desc":
+			self.memberData['desc'] = tokens[1]
+		# возвращаемое значение
+		elif tokenType == "return":
+			self.memberData['returnType'] = tokens[1]
+			if len(tokens) > 2:
+				self.memberData['returnDesc'] = tokens[2]
+		elif tokenType == 'prop':
+			propType = tokens[1]
+			if propType not in ['all','get','set','none']:
+				raise ValueError(f"[{curMember}]: Wrong prop type: {propType}")
+			self.memberData['prop'] = propType
+			pass
+		# видимость ноды в инспекторе
+		elif tokenType == 'classprop':
+			clsprop = intTryParse(tokens[1])
+			if clsprop:
+				#todo need return type
+				self.memberData['classProp'] = clsprop
+			pass
+		#method specific data
+
+		#method type: method,event,get,const
+		elif tokenType == 'type':
+			mtype = tokens[1]
+			if mtype not in ['method','event','get','const']:
+				raise ValueError(f"[{curMember}]: Wrong method type: {mtype}")
+			self.memberData['type'] = mtype
+			#todo define icon and node color by type
+			#const - add classProp
+			if mtype == "const":
+				self.memberData['classProp'] = 1
+		elif tokenType == 'exec':
+			execType = tokens[1]
+			if execType not in ['in','out','none','all']:
+				raise ValueError(f"[{curMember}]: Wrong exec type: {execType}")
+			if execType != 'none':
+				_addIn = execType in ['in','all']
+				_addOut = execType in ['out','all']
+				if _addIn:
+					if self.memberData['inputs']:
+						raise Exception(f'[{curMember}]: inputs must be empty after adding exec port')
+					self.memberData['inputs']['Вход'] = {
+						'type':"Exec",
+						'mutliconnect':True
+					}
+				if _addOut:
+					if self.memberData['outputs']:
+						raise Exception(f'[{curMember}]: outputs must be empty after adding exec port')
+					self.memberData['outputs']['Выход'] = {
+						'type':"Exec",
+						'mutliconnect':False
+					}
+		elif tokenType == "in":
+			
+			self.lastPortRef = {
+				'type': tokens[1],
+			}
+			if len(tokens) > 3:
+				self.lastPortRef['desc'] = tokens[3]
+			memberData['inputs'][tokens[2]] = self.lastPortRef
+		elif tokenType == "out":
+			
+			self.lastPortRef = {
+				'type': tokens[1],
+				'mutliconnect':True
+			}
+			if len(tokens) > 3:
+				self.lastPortRef['desc'] = tokens[3]
+			memberData['outputs'][tokens[2]] = self.lastPortRef
+			pass
+		elif tokenType == 'opt':
+			for tInside in tokens[1:]:
+				if tInside.startswith("mul"):
+					self.lastPortRef['mutliconnect'] = intTryParse(tInside.split('=')[1]) > 0
+				if tInside.startswith("dname"):
+					self.lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
+				if tInside.startswith('allowtypes'):
+					self.lastPortRef['allowtypes'] = tInside.split('|')
+		pass
+	def finalizeObject(self):
+		curMember = self.objectNameFull
+		curMemberType = self.objectType
+		classmeta = self.classMetadata
+		if re.match(r'_\d+$',curMember):
+			clearMem = curMember[:curMember.rfind('_')]
+		else:
+			clearMem = curMember
+		className_, memName_ = clearMem.lower().split('.')
+
+		# Проверка возвращаемого типа и его автоопределение
+		if 'returnType' not in memberData:
+			#if curMember endswith regex _\d+ then remove postfix
+			
+			if curMemberType == 'f':
+				memberData['returnType'] = classmeta[className_]['fields']['defined'].get(memName_,'NULLTYPE_ALLOC')
+			else:
+				memberData['returnType'] = "return_void"
+
+		# Определение свойств поля (геттеры, сеттеры)
+		if curMemberType == 'f':
+			if 'prop' not in memberData:
+				memberData['prop'] = 'all'
+			curPropType = memberData['prop']
+			del memberData['prop']
+			if curPropType == 'none':
+				memberData = None
+			elif curPropType in ['all','get','set']:
+				orig_curMember = curMember
+				curMember = [orig_curMember + ".get",orig_curMember + '.set']
+				memberData = [memberData.copy(),memberData.copy()]
+				memberData[0]['code'] = f'this getVariable "{memName_}"'
+				memberData[1]['code'] = f'this setVariable ["{memName_}",@in.2]; @out.1'
+				if curPropType != "all":
+					__idx = 0 if curPropType == 'get' else 1
+					curMember = curMember[__idx]
+					memberData = memberData[__idx]
+		
+		if memberData:
+			if isinstance(curMember,list):
+				for i,cm in enumerate(curMember):
+					self.dictRef[cm] = memberData[i]
+			else: 
+				self.dictRef[curMember] = memberData
+
 # generate lib (using flag -genlib)
 def GenerateLibFromObj():
 	objFile = os.path.join("lib.obj")
@@ -153,104 +304,16 @@ def GenerateLibFromObj():
 		if tokenType == "def":
 			#new define
 			if curMember:
-				finalizeNode()
+				curMember.finalizeNode()
 			if len(tokens) < 3: raise ValueError(f"Wrong define member line: {line}")
-			memberData = {
-				"inputs": {},
-				"outputs": {}
-			}
-			curMember = tokens[2]
-			curMemberType = tokens[1]
-
-		# Имя ноды
-		if tokenType == "name":
-			memberData['name'] = tokens[1]
-			pass
-		# имя ноды в дереве выбора
-		elif tokenType == "namelib":
-			memberData['namelib'] = tokens[1]
-			pass
-		# описание ноды
-		elif tokenType == "desc":
-			memberData['desc'] = tokens[1]
-		# возвращаемое значение
-		elif tokenType == "return":
-			memberData['returnType'] = tokens[1]
-			if len(tokens) > 2:
-				memberData['returnDesc'] = tokens[2]
-		elif tokenType == 'prop':
-			propType = tokens[1]
-			if propType not in ['all','get','set','none']:
-				raise ValueError(f"[{curMember}]: Wrong prop type: {propType}")
-			memberData['prop'] = propType
-			pass
-		# видимость ноды в инспекторе
-		elif tokenType == 'classprop':
-			clsprop = intTryParse(tokens[1])
-			if clsprop:
-				#todo need return type
-				memberData['classProp'] = clsprop
-			pass
-		#method specific data
-
-		#method type: method,event,get,const
-		elif tokenType == 'type':
-			mtype = tokens[1]
-			if mtype not in ['method','event','get','const']:
-				raise ValueError(f"[{curMember}]: Wrong method type: {mtype}")
-			memberData['type'] = mtype
-			#todo define icon and node color by type
-			#const - add classProp
-			if mtype == "const":
-				memberData['classProp'] = 1
-		elif tokenType == 'exec':
-			execType = tokens[1]
-			if execType not in ['in','out','none','all']:
-				raise ValueError(f"[{curMember}]: Wrong exec type: {execType}")
-			if execType == 'none':
-				continue
-			_addIn = execType in ['in','all']
-			_addOut = execType in ['out','all']
-			if _addIn:
-				if memberData['inputs']:
-					raise Exception(f'[{curMember}]: inputs must be empty after adding exec port')
-				memberData['inputs']['Вход'] = {
-					'type':"Exec",
-					'mutliconnect':True
-				}
-			if _addOut:
-				if memberData['outputs']:
-					raise Exception(f'[{curMember}]: outputs must be empty after adding exec port')
-				memberData['outputs']['Выход'] = {
-					'type':"Exec",
-					'mutliconnect':False
-				}
-		elif tokenType == "in":
 			
-			lastPortRef = {
-				'type': tokens[1],
-			}
-			if len(tokens) > 3:
-				lastPortRef['desc'] = tokens[3]
-			memberData['inputs'][tokens[2]] = lastPortRef
-		elif tokenType == "out":
-			
-			lastPortRef = {
-				'type': tokens[1],
-				'mutliconnect':True
-			}
-			if len(tokens) > 3:
-				lastPortRef['desc'] = tokens[3]
-			memberData['outputs'][tokens[2]] = lastPortRef
-			pass
-		elif tokenType == 'opt':
-			for tInside in tokens[1:]:
-				if tInside.startswith("mul"):
-					lastPortRef['mutliconnect'] = intTryParse(tInside.split('=')[1]) > 0
-				if tInside.startswith("dname"):
-					lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
-				if tInside.startswith('allowtypes'):
-					lastPortRef['allowtypes'] = tInside.split('|')
+			memName = tokens[2]
+			memType = tokens[1]
+			curMember = NodeObjectHandler(memName,memType,nodeList,classmeta)
+		
+		curMember.handleTokens(tokens)
+		continue
+		
 
 	finalizeNode()
 
