@@ -53,10 +53,14 @@ class NodeObjectHandler:
 		self.refAllObjects : list = None #Ссылка на все объекты
 		self.counterCopy = 0
 
+		self.execTypes = 'all' #all,in,out,none
+
 		self.memberData = {
-			"inputs": {},
-			"outputs": {},
-			"options": {}
+			# порты при финализации конвертируются в словарь
+			# записанные значения: tuple(name:str,data:dict)
+			"inputs": [],#{},
+			"outputs": [],#{},
+			"options": [],#{}
 		}
 		self.lastPortRef = None
 
@@ -138,7 +142,7 @@ class NodeObjectHandler:
 
 	def prepareCode(self,code):
 		if self.isMethod:
-			code = code.replace('@thisMethod',self.memberName)
+			code = code.replace('@thisName',self.memberName)
 			if "@thisParams" in code:
 				
 				paramList = ['\'this\'']
@@ -150,6 +154,22 @@ class NodeObjectHandler:
 				paramCtx = f'params [{", ".join(paramList)}]'
 				code = code.replace('@thisParams',paramCtx)
 		
+		return code
+
+	def generateMethodCodeCall(self):
+		code = '[this'
+		addingParams = []
+		for i, (k,v) in enumerate(self['inputs'].items()):
+			if v['type'] != "Exec" and v['type'] != "":
+				addingParams.append(f'@in.{i+1}')
+		
+		paramString = ", ".join(addingParams)
+		if paramString: paramString = ", " + paramString
+		code += paramString + f"] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"{self.memberName}\")"
+		
+		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
+		#if self.memberData.get('returnType') not in ['void','null','']:
+		#	code = f'@genvar.out.2 = {code}; @locvar.out.2'
 		return code
 
 	def handleTokens(self,tokens):
@@ -176,43 +196,27 @@ class NodeObjectHandler:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong prop type: {propType}")
 			self.memberData['prop'] = propType
 			pass
+		elif tokenType == 'code':
+			self.memberData['code'] = tokens[1]
+		elif tokenType == 'defcode':
+			self.memberData['defcode'] = tokens[1]
 		# видимость ноды в инспекторе
 		elif tokenType == 'classprop':
 			clsprop = intTryParse(tokens[1])
-			if clsprop:
-				self.memberData['classProp'] = clsprop
-			pass
+			self.memberData['classProp'] = clsprop
 		#method specific data
 
 		#method type: method,event,get,const
 		elif tokenType == 'type':
 			mtype = tokens[1]
 			self.memberData['type'] = mtype
-
-			#const - add classProp
+			if mtype in ['event','get','const']:
+				self.execTypes = 'out'
 			if mtype == "const":
 				self.memberData['classProp'] = 1
 		elif tokenType == 'exec':
 			execType = tokens[1]
-			if execType not in ['in','out','none','all']:
-				raise ValueError(f"[{self.objectNameFull}]: Wrong exec type: {execType}")
-			if execType != 'none':
-				_addIn = execType in ['in','all']
-				_addOut = execType in ['out','all']
-				if _addIn:
-					if self.memberData['inputs']:
-						raise Exception(f'[{self.objectNameFull}]: inputs must be empty after adding exec port')
-					self.memberData['inputs']['Вход'] = {
-						'type':"Exec",
-						'mutliconnect':True
-					}
-				if _addOut:
-					if self.memberData['outputs']:
-						raise Exception(f'[{self.objectNameFull}]: outputs must be empty after adding exec port')
-					self.memberData['outputs']['Выход'] = {
-						'type':"Exec",
-						'mutliconnect':False
-					}
+			self.execTypes = execType
 		elif tokenType == "in":
 			
 			self.lastPortRef = {
@@ -220,7 +224,8 @@ class NodeObjectHandler:
 			}
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = tokens[3]
-			self.memberData['inputs'][tokens[2]] = self.lastPortRef
+			#self.memberData['inputs'][tokens[2]] = self.lastPortRef
+			self.memberData['inputs'].append((tokens[2],self.lastPortRef))
 		elif tokenType == "out":
 			
 			self.lastPortRef = {
@@ -229,8 +234,8 @@ class NodeObjectHandler:
 			}
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = tokens[3]
-			self.memberData['outputs'][tokens[2]] = self.lastPortRef
-			pass
+			#self.memberData['outputs'][tokens[2]] = self.lastPortRef
+			self.memberData['outputs'].append((tokens[2],self.lastPortRef))
 		elif tokenType == 'opt':
 			for tInside in tokens[1:]:
 				if tInside.startswith("mul"):
@@ -288,7 +293,7 @@ class NodeObjectHandler:
 			if self.isField:
 				memberData['returnType'] = classmeta[self.memberClass]['fields']['defined'].get(self.memberName,'NULLTYPE_ALLOC')
 			else:
-				memberData['returnType'] = "return_void"
+				memberData['returnType'] = "null"
 
 		# Проверка типа и его автоопределение
 		if 'type' not in memberData:
@@ -307,17 +312,20 @@ class NodeObjectHandler:
 			if mtype not in tableTypes:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong method type: {mtype}")
 
-			_canOverrideCode = "code" not in self.memberData
+			# register member ports
+			#if mtype
+
+			_canOverrideCodeDef = "defcode" not in self.memberData
 			_canOverrideColor = "color" not in self.memberData
 			_canOverrideIcon = 'icon' not in self.memberData
-			if _canOverrideCode:
+			if _canOverrideCodeDef:
 				if mtype == "get":
-					newcode = 'func(@thisMethod) {@thisParams; @out.1}'
+					newcode = 'func(@thisName) {@thisParams; @out.1}'
 				elif mtype == "const":
-					newcode = 'func(@thisMethod) { @propvalue }'
+					newcode = 'func(@thisName) { @propvalue }'
 				else:
-					newcode = 'func(@thisMethod) {@thisParams; @out.1}'
-				self['code'] = newcode
+					newcode = 'func(@thisName) {@thisParams; @out.1}'
+				self['defcode'] = newcode
 			if _canOverrideColor:
 				nodeColorList = [
 					[255,255,255],#method
@@ -359,39 +367,72 @@ class NodeObjectHandler:
 					newobj = self.copy(True)
 					newobj.objectNameFull += f".get"
 					newobj['code'] = f'this getVariable "{newobj.memberName}"'
+					newobj.execTypes = 'all'
 					newobj.pushBackLines([
-						"exec:out",
 						f'out:{newobj["returnType"]}:Значение'
 					])
 				if _hasSet:
 					newobj = self.copy(True)
 					newobj.objectNameFull += f".set"
 					newobj['code'] = f'this setVariable ["{newobj.memberName}",@in.2]; @out.1'
-					newobj.pushBackLines([
-						"exec:all",
+					newobj.execTypes = 'all'
+					_setterLines = [
 						f"in:{newobj['returnType']}:Значение",
 						f'out:{newobj["returnType"]}:Новое значение'
-					])
+					]
+					if newobj.memberData.get('classProp',0) > 0 and _hasGet:
+						_setterLines.append('classprop:0') #disable classprop for setter because getter already setup
+					newobj.pushBackLines(_setterLines)
+					
 				
 				#set memdata to null 
 				memberData = None
 		
+
+		# регистрация узла
 		if memberData:
 			
-			isInspectorProp = 'classProp' in memberData
+			#prep ports
+			if self.execTypes in ['all','in']:
+				self['inputs'].insert(0,('Вход',{
+							'type':"Exec",
+							'mutliconnect':True
+				}))
+			if self.execTypes in ['all','out']:
+				self['outputs'].insert(0,('Выход',{
+							'type':"Exec",
+							'mutliconnect':False
+				}))
+			
+			dataInputs = dict(self['inputs'])
+			dataOutputs = dict(self['outputs'])
+			self['inputs'] = dataInputs
+			self['outputs'] = dataOutputs
+			self['options'] = dict(self['options'])
+
+			if 'code' not in memberData:
+				self['code'] = self.generateMethodCodeCall()
+
+			isInspectorProp = memberData.get('classProp',0) > 0
+			if 'classProp' in memberData: del memberData['classProp']
 
 			#prep code and icon
 			if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
 			if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
+			if 'defcode' in memberData: self['defcode'] = self.prepareCode(self['defcode'])
 
-			#removing classprop
+			#register inspector prop
 			if isInspectorProp:
-				del memberData['classProp']
-
 				# регистрируем свойство для видимости в инспекторе
 				prps__ = classmeta[self.memberClass]
-				if not 'inspectorProps' in prps__: prps__['inspectorProps'] = []
-				prps__['inspectorProps'].append(self.objectNameFull)
+				if not 'inspectorProps' in prps__: prps__['inspectorProps'] = {
+					"fields": {}, #поля, доступные в инспекторе
+					"methods": {} #методы, доступные в инспекторе
+				}
+				if self.isField:
+					prps__['inspectorProps']['fields'][self.memberName] = self.objectNameFull
+				elif self.isMethod:
+					prps__['inspectorProps']['methods'][self.memberName] = self.objectNameFull
 
 			# add to main lib
 			self.nodeLib[memberRegion][self.objectNameFull] = memberData
