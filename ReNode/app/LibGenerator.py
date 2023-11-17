@@ -46,6 +46,7 @@ class NodeObjectHandler:
 
 		self.lineList : list = __lineList #ссылка на список обрабатываемых строк
 
+		self.isClass = self.objectType == 'c'
 		self.isField = self.objectType == 'f'
 		self.isMethod = self.objectType == 'm'
 		self.isSystem = self.objectType == 'node'
@@ -54,6 +55,10 @@ class NodeObjectHandler:
 		self.counterCopy = 0
 
 		self.execTypes = 'all' #all,in,out,none
+
+		self.path = "" # путь до узла в дереве
+
+		self.defCode = "" #код инициализации (опциональный). помещается 
 
 		self.memberData = {
 			# порты при финализации конвертируются в словарь
@@ -69,12 +74,15 @@ class NodeObjectHandler:
 		self.memberName = None
 		self.memberNameFull = None
 
+		if self.isClass:
+			self.memberClass = objName
+
 		if self.isMethod or self.isField:
 			if re.findall('_\d+$',objName): #if curMember endswith regex _\d+ then remove postfix
 				clearMem = re.sub(r'_\d+$',"",objName)#curMember[:curMember.rfind('_')]
 			else:
 				clearMem = objName
-			className_, memName_ = clearMem.lower().split('.',1)
+			className_, memName_ = clearMem.split('.',1)
 			self.memberClass = className_
 			self.memberName = memName_
 			self.memberNameFull = f'{className_}.{memName_}'
@@ -146,7 +154,6 @@ class NodeObjectHandler:
 			if "@thisParams" in code:
 				
 				paramList = ['\'this\'']
-				ctr = 0
 				for indexVar, (outKey,outValues) in enumerate(self['outputs'].items()):
 					if outValues['type'] != "Exec" and outValues['type'] != "":
 						paramList.append('\"@genvar.out.{}\"'.format(indexVar+1))
@@ -157,7 +164,7 @@ class NodeObjectHandler:
 		return code
 
 	def generateMethodCodeCall(self):
-		code = '[this'
+		code = '[@in.2'
 		addingParams = []
 		for i, (k,v) in enumerate(self['inputs'].items()):
 			if v['type'] != "Exec" and v['type'] != "":
@@ -165,7 +172,7 @@ class NodeObjectHandler:
 		
 		paramString = ", ".join(addingParams)
 		if paramString: paramString = ", " + paramString
-		code += paramString + f"] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"{self.memberName}\")"
+		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"{self.memberName}\")"
 		
 		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
 		#if self.memberData.get('returnType') not in ['void','null','']:
@@ -185,6 +192,8 @@ class NodeObjectHandler:
 		# описание ноды
 		elif tokenType == "desc":
 			self.memberData['desc'] = tokens[1]
+		elif tokenType == "path":
+			self.memberData['path'] = tokens[1]
 		# возвращаемое значение
 		elif tokenType == "return":
 			self.memberData['returnType'] = tokens[1]
@@ -199,7 +208,7 @@ class NodeObjectHandler:
 		elif tokenType == 'code':
 			self.memberData['code'] = tokens[1]
 		elif tokenType == 'defcode':
-			self.memberData['defcode'] = tokens[1]
+			self.defCode = tokens[1]
 		# видимость ноды в инспекторе
 		elif tokenType == 'classprop':
 			clsprop = intTryParse(tokens[1])
@@ -270,7 +279,18 @@ class NodeObjectHandler:
 				self['options'][k] = v
 
 		pass
+
+	def finalizeClass(self):
+		classDict = self.classMetadata[self.memberClass]
+		#saving pathes etc.
+		if 'name' in self.memberData: classDict['name'] = self['name']
+		if 'desc' in self.memberData: classDict['desc'] = self['desc']
+		if 'path' in self.memberData: classDict['path'] = self['path']
+
 	def finalizeObject(self):
+		if self.isClass:
+			self.finalizeClass()
+			return
 		classmeta = self.classMetadata
 		memberData = self.memberData
 
@@ -315,7 +335,7 @@ class NodeObjectHandler:
 			# register member ports
 			#if mtype
 
-			_canOverrideCodeDef = "defcode" not in self.memberData
+			_canOverrideCodeDef = self.defCode == ''
 			_canOverrideColor = "color" not in self.memberData
 			_canOverrideIcon = 'icon' not in self.memberData
 			if _canOverrideCodeDef:
@@ -325,7 +345,7 @@ class NodeObjectHandler:
 					newcode = 'func(@thisName) { @propvalue }'
 				else:
 					newcode = 'func(@thisName) {@thisParams; @out.1}'
-				self['defcode'] = newcode
+				self.defCode = newcode
 			if _canOverrideColor:
 				nodeColorList = [
 					[255,255,255],#method
@@ -392,6 +412,10 @@ class NodeObjectHandler:
 		# регистрация узла
 		if memberData:
 			
+			#Если пути нет - генерируем его
+			if 'path' not in memberData:
+				memberData['path'] = classmeta[self.memberClass].get('path','')
+
 			#prep ports
 			if self.execTypes in ['all','in']:
 				self['inputs'].insert(0,('Вход',{
@@ -404,6 +428,19 @@ class NodeObjectHandler:
 							'mutliconnect':False
 				}))
 			
+			# Помещаем инстансер
+			if self.isMethod:
+				self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+				instanceOption = ("Цель", {
+						"type":"list",
+						"disabledListInputs": ["Этот объект"],
+						"text": "Вызывающий",
+						"default": "Этот объект",
+						"values": [["Этот объект","this"], "Объект"],
+						"typingList": ["self",f"{self.memberClass}^"]
+					})
+				self['options'].insert(0,instanceOption)
+
 			dataInputs = dict(self['inputs'])
 			dataOutputs = dict(self['outputs'])
 			self['inputs'] = dataInputs
@@ -419,7 +456,7 @@ class NodeObjectHandler:
 			#prep code and icon
 			if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
 			if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
-			if 'defcode' in memberData: self['defcode'] = self.prepareCode(self['defcode'])
+			self.defCode = self.prepareCode(self.defCode)
 
 			#register inspector prop
 			if isInspectorProp:
@@ -429,10 +466,15 @@ class NodeObjectHandler:
 					"fields": {}, #поля, доступные в инспекторе
 					"methods": {} #методы, доступные в инспекторе
 				}
+				propData = {
+					'node': self.objectNameFull,
+					'return': self['returnType'],
+					'defCode': self.defCode,
+				}
 				if self.isField:
-					prps__['inspectorProps']['fields'][self.memberName] = self.objectNameFull
+					prps__['inspectorProps']['fields'][self.memberName] = propData
 				elif self.isMethod:
-					prps__['inspectorProps']['methods'][self.memberName] = self.objectNameFull
+					prps__['inspectorProps']['methods'][self.memberName] = propData
 
 			# add to main lib
 			self.nodeLib[memberRegion][self.objectNameFull] = memberData
@@ -485,10 +527,9 @@ def compileRegion(members,nodeLib,classmeta):
 	if curMember:
 		objectList.append(curMember)
 
-	# generate libs
 	while len(objectList) > 0:
 		obj = objectList[0]
-		obj.generateJson()
+		obj.generateJson() #generate main
 
 # generate lib (using flag -genlib)
 def GenerateLibFromObj():

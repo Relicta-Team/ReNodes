@@ -52,7 +52,7 @@ class Inspector(QDockWidget):
         self.setWidget(self.propertyListWidget)
         
 
-        №for i in range(1,100):
+        for i in range(1,100):
             self.addProperty(f"inspector prop {i}",QLabel("TEST VALUE" + " e" * 100))
 
     def addProperty(self,propName,propObject):
