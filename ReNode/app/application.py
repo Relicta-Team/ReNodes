@@ -171,6 +171,9 @@ def AppMain():
 
 	if "-genlib" in arguments:
 		sys.exit(GenerateLibFromObj())
+	
+	if "-genlib_run" in arguments:
+		GenerateLibFromObj()
 
 	if getattr(sys, 'frozen', False):
 		# Инициализация обработчика исключений

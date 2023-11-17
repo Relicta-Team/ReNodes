@@ -2,6 +2,7 @@
 from Qt import QtCore, QtGui
 
 from NodeGraphQt import BaseNode
+from NodeGraphQt.constants import PortEnum
 
 
 def draw_triangle_port(painter, rect, info):
@@ -39,12 +40,16 @@ def draw_triangle_port(painter, rect, info):
 
     # mouse over port color.
     if info['hovered']:
-        color = QtGui.QColor(14, 45, 59)
-        border_color = QtGui.QColor(136, 255, 35)
+        # color = QtGui.QColor(14, 45, 59)
+        # border_color = QtGui.QColor(136, 255, 35)
+        color = QtGui.QColor(*PortEnum.HOVER_COLOR.value)
+        border_color = QtGui.QColor(*PortEnum.HOVER_BORDER_COLOR.value)
     # port connected color.
     elif info['connected']:
-        color = QtGui.QColor(195, 60, 60)
-        border_color = QtGui.QColor(200, 130, 70)
+        # color = QtGui.QColor(195, 60, 60)
+        # border_color = QtGui.QColor(200, 130, 70)
+        color = QtGui.QColor(*PortEnum.ACTIVE_COLOR.value)
+        border_color = QtGui.QColor(*PortEnum.ACTIVE_BORDER_COLOR.value)
     # default port color
     else:
         color = QtGui.QColor(*info['color'])

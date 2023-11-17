@@ -27,6 +27,17 @@
 			"justMyCode": true,
 		},
 		{
+			"name": "Debug - Generate lib and run",
+			"type": "python",
+			"request": "launch",
+			"args": ["-nosplash","-debug","-genlib_run"],
+			// uses main in rootdir
+			"program": "./main.py",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+		},
+		{
 			"name": "Generate library",
 			"type": "python",
 			"request": "launch",

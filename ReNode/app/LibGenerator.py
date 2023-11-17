@@ -125,6 +125,15 @@ class NodeObjectHandler:
 				break
 		return dictInfo
 
+	def getVarlibColorByType(self,type):
+		typeList = NodeObjectHandler.varLib.typeList
+		if type.endswith("^"):
+			type = 'object'
+		for objVar in typeList:
+			if objVar.variableType == type:
+				return objVar.color.name()
+		return '#ffffff'
+
 	def generateJson(self):
 		for tokens in self.lineList:
 			self.handleTokens(tokens)
@@ -426,7 +435,7 @@ class NodeObjectHandler:
 					newobj.execTypes = 'all'
 					_setterLines = [
 						f"in:{newobj['returnType']}:Значение",
-						f'out:{newobj["returnType"]}:Новое значение'
+						f'out:{newobj["returnType"]}:Новое значение',
 						"opt:mul=0"
 					]
 					if newobj.memberData.get('classProp',0) > 0 and _hasGet:
@@ -440,105 +449,114 @@ class NodeObjectHandler:
 
 		# регистрация узла
 		if memberData:
-			
-			#Если пути нет - генерируем его
-			if 'path' not in memberData:
-				memberData['path'] = classmeta[self.memberClass].get('path','')
+			self.registerNode(memberRegion)
 
+	def registerNode(self,memberRegion):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+		
+		#Если пути нет - генерируем его
+		if 'path' not in memberData:
+			memberData['path'] = classmeta[self.memberClass].get('path','')
+
+		if self.isField:
+			# подписываем приписку к полю (если есть)
+			if self.objectNameFull.endswith('.get'):
+				memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Получить)"
+			elif self.objectNameFull.endswith('.set'):
+				memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
+
+			# Устанавливаем цвет поля
+			if 'color' not in memberData:
+				self['color'] = hexToRGBA("212f3b")
+			if 'icon' not in memberData:
+				self['icon'] = ['data\\icons\\pill_16x',self.getVarlibColorByType(memberData['returnType'])]
+
+		#prep ports
+		if self.execTypes in ['all','in']:
+			self['inputs'].insert(0,('Вход',{
+						'type':"Exec",
+						'mutliconnect':True,
+						"style": "triangle",
+			}))
+		if self.execTypes in ['all','out']:
+			self['outputs'].insert(0,('Выход',{
+						'type':"Exec",
+						'mutliconnect':False,
+						"style": "triangle"
+			}))
+		
+		# Помещаем инстансер
+		if self.isMethod:
+			if self['memtype'] != 'event':
+				self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+				instanceOption = ("Цель", {
+						"type":"list",
+						"disabledListInputs": ["Этот объект"],
+						"text": "Вызывающий",
+						"default": "Этот объект",
+						"values": [["Этот объект","this"], "Цель"],
+						"typingList": ["self",f"{self.memberClass}^"]
+					})
+				self['options'].insert(0,instanceOption)
+
+		dataInputs = dict(self['inputs'])
+		dataOutputs = dict(self['outputs'])
+		self['inputs'] = dataInputs
+		self['outputs'] = dataOutputs
+		self['options'] = dict(self['options'])
+
+		# Добавляем опции
+		for k,v in dataInputs.items():
+			if v.get('use_custom',False):
+				opt = self.getVarlibOptionByType(v.get('type'))
+				if opt:
+					self['options'][k] = opt
+
+		if 'code' not in memberData:
+			self['code'] = self.generateMethodCodeCall()
+
+		isInspectorProp = memberData.get('classProp',0) > 0
+		if 'classProp' in memberData: del memberData['classProp']
+
+		#prep code and icon
+		#if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
+		if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
+		self.defCode = self.prepareCode(self.defCode)
+
+		#register inspector prop
+		if isInspectorProp:
+			# регистрируем свойство для видимости в инспекторе
+			prps__ = classmeta[self.memberClass]
+			if not 'inspectorProps' in prps__: prps__['inspectorProps'] = {
+				"fields": {}, #поля, доступные в инспекторе
+				"methods": {} #методы, доступные в инспекторе
+			}
+			propData = {
+				'node': self.objectNameFull,
+				'return': self['returnType'],
+				'defCode': self.defCode,
+			}
 			if self.isField:
-				# подписываем приписку к полю (если есть)
-				if self.objectNameFull.endswith('.get'):
-					memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Получить)"
-				elif self.objectNameFull.endswith('.set'):
-					memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
+				prps__['inspectorProps']['fields'][self.memberName] = propData
+			elif self.isMethod:
+				prps__['inspectorProps']['methods'][self.memberName] = propData
 
-				# Устанавливаем цвет поля
-				if 'color' not in memberData:
-					self['color'] = hexToRGBA("212f3b")
+		# add to main lib
+		self.nodeLib[memberRegion][self.objectNameFull] = memberData
 
-			#prep ports
-			if self.execTypes in ['all','in']:
-				self['inputs'].insert(0,('Вход',{
-							'type':"Exec",
-							'mutliconnect':True
-				}))
-			if self.execTypes in ['all','out']:
-				self['outputs'].insert(0,('Выход',{
-							'type':"Exec",
-							'mutliconnect':False
-				}))
+		#add node inside class zone
+		if self.isField:
+			flds = classmeta[self.memberClass]['fields']
 			
-			# Помещаем инстансер
-			if self.isMethod:
-				if self['memtype'] != 'event':
-					self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
-					instanceOption = ("Цель", {
-							"type":"list",
-							"disabledListInputs": ["Этот объект"],
-							"text": "Вызывающий",
-							"default": "Этот объект",
-							"values": [["Этот объект","this"], "Цель"],
-							"typingList": ["self",f"{self.memberClass}^"]
-						})
-					self['options'].insert(0,instanceOption)
+			if 'nodes' not in flds: flds['nodes'] = []
+			flds['nodes'].append(self.objectNameFull)
 
-			dataInputs = dict(self['inputs'])
-			dataOutputs = dict(self['outputs'])
-			self['inputs'] = dataInputs
-			self['outputs'] = dataOutputs
-			self['options'] = dict(self['options'])
-
-			# Добавляем опции
-			for k,v in dataInputs.items():
-				if v.get('use_custom',False):
-					opt = self.getVarlibOptionByType(v.get('type'))
-					if opt:
-						self['options'][k] = opt
-
-			if 'code' not in memberData:
-				self['code'] = self.generateMethodCodeCall()
-
-			isInspectorProp = memberData.get('classProp',0) > 0
-			if 'classProp' in memberData: del memberData['classProp']
-
-			#prep code and icon
-			#if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
-			if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
-			self.defCode = self.prepareCode(self.defCode)
-
-			#register inspector prop
-			if isInspectorProp:
-				# регистрируем свойство для видимости в инспекторе
-				prps__ = classmeta[self.memberClass]
-				if not 'inspectorProps' in prps__: prps__['inspectorProps'] = {
-					"fields": {}, #поля, доступные в инспекторе
-					"methods": {} #методы, доступные в инспекторе
-				}
-				propData = {
-					'node': self.objectNameFull,
-					'return': self['returnType'],
-					'defCode': self.defCode,
-				}
-				if self.isField:
-					prps__['inspectorProps']['fields'][self.memberName] = propData
-				elif self.isMethod:
-					prps__['inspectorProps']['methods'][self.memberName] = propData
-
-			# add to main lib
-			self.nodeLib[memberRegion][self.objectNameFull] = memberData
-
-			#add node inside class zone
-			if self.isField:
-				flds = classmeta[self.memberClass]['fields']
-				
-				if 'nodes' not in flds: flds['nodes'] = []
-				flds['nodes'].append(self.objectNameFull)
-
-			if self.isMethod:
-				mtds = classmeta[self.memberClass]['methods']
-				
-				if 'nodes' not in mtds: mtds['nodes'] = []
-				mtds['nodes'].append(self.objectNameFull)
+		if self.isMethod:
+			mtds = classmeta[self.memberClass]['methods']
+			
+			if 'nodes' not in mtds: mtds['nodes'] = []
+			mtds['nodes'].append(self.objectNameFull)
 
 def compileRegion(members,nodeLib,classmeta):
 	curMember = None
