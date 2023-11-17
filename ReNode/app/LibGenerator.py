@@ -112,7 +112,7 @@ class NodeObjectHandler:
 	def __setitem__(self, key, value):
 		self.memberData[key] = value
 
-	def getVarlibOptionByType(self,type):
+	def getVarlibOptionByType(self,type,textName=None):
 		typeList = NodeObjectHandler.varLib.typeList
 		dictInfo = {}
 		for objVar in typeList:
@@ -121,6 +121,8 @@ class NodeObjectHandler:
 				for pname,pvals in props.items():
 					dictInfo.update(pvals)
 					dictInfo['type'] = pname
+					if textName:
+						dictInfo['text'] = textName
 					break
 				break
 		return dictInfo
@@ -509,7 +511,7 @@ class NodeObjectHandler:
 		# Добавляем опции
 		for k,v in dataInputs.items():
 			if v.get('use_custom',False):
-				opt = self.getVarlibOptionByType(v.get('type'))
+				opt = self.getVarlibOptionByType(v.get('type'),k)
 				if opt:
 					self['options'][k] = opt
 

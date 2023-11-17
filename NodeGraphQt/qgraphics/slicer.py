@@ -162,11 +162,33 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/>Путь: {libInfo.get("path") or "нет"}<br/>'
 
-            iTxt = ", ".join([o.name for o in self._lastItem.inputs])
-            text += f'<br/>Входные порты: {iTxt if iTxt else "отсутствуют"}'
-            oTxt = ", ".join([o.name for o in self._lastItem.outputs])
-            text += f'<br/>Выходные порты: {oTxt if oTxt else "отсутствуют"}'
-            text += f'<br/><br/>Описание: {libInfo.get("desc") or "отсутствует"}'
+            text += f'<br/>Описание: {libInfo.get("desc") or "отсутствует"}<br/>'
+
+            iTxt = []
+            for o in self._lastItem.inputs:
+                desc = libInfo['inputs'].get(o.name)
+                if desc:
+                    desc = desc.get("desc",'')
+                if desc:
+                    desc = ": " + desc
+                else:
+                    desc = ""
+                iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
+            iTxt = "<br/>".join(iTxt)
+            text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'
+            
+            oTxt = []
+            for o in self._lastItem.outputs:
+                desc = libInfo['outputs'].get(o.name)
+                if desc:
+                    desc = desc.get("desc",'')
+                if desc:
+                    desc = ": " + desc
+                else:
+                    desc = ""
+                oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
+            oTxt = "<br/>".join(oTxt)
+            text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Выходные порты: {"<br/>" + oTxt if oTxt else "отсутствуют"}</span>'
 
         self.text_item.setHtml('<span style="font-family: Arial; font-size: 12pt;">' + text + '</span>')
 
