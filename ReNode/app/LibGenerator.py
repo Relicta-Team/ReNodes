@@ -4,6 +4,16 @@ import os
 import json
 import copy
 from ReNode.app.utils import intTryParse
+from ReNode.ui.VariableManager import VariableLibrary
+
+def hexToRGBA(hex):
+	hex = hex.rstrip("#")
+	if len(hex) == (6):
+		hex += "ff"
+	return list(int(hex[i:i+2], 16) for i in (0, 2, 4, 6))
+
+def unescape(text):
+	return text.replace('\\n','\n').replace('\\t','\t')
 
 def checkRegionName(content,regname : str):
 	upperName = regname.upper()
@@ -38,6 +48,7 @@ def getTokens(content):
 	return re.split(r'(?<!\\):', content)
 
 class NodeObjectHandler:
+	varLib = None
 	def __init__(self,objName,objectType,nodeLibDict,classMetadata,__lineList):
 		self.nodeLib = nodeLibDict #ссылка на базовый словарь узлов
 		self.classMetadata = classMetadata #ссылка на словарь метаданных классов
@@ -45,6 +56,9 @@ class NodeObjectHandler:
 		self.objectType = objectType #тип-категория члена (метод, поле, функция)
 
 		self.lineList : list = __lineList #ссылка на список обрабатываемых строк
+
+		if NodeObjectHandler.varLib is None:
+			NodeObjectHandler.varLib = VariableLibrary()
 
 		self.isClass = self.objectType == 'c'
 		self.isField = self.objectType == 'f'
@@ -97,6 +111,19 @@ class NodeObjectHandler:
 		return self.memberData[key]
 	def __setitem__(self, key, value):
 		self.memberData[key] = value
+
+	def getVarlibOptionByType(self,type):
+		typeList = NodeObjectHandler.varLib.typeList
+		dictInfo = {}
+		for objVar in typeList:
+			if objVar.variableType == type:
+				props = objVar.dictProp
+				for pname,pvals in props.items():
+					dictInfo.update(pvals)
+					dictInfo['type'] = pname
+					break
+				break
+		return dictInfo
 
 	def generateJson(self):
 		for tokens in self.lineList:
@@ -191,14 +218,14 @@ class NodeObjectHandler:
 			pass
 		# описание ноды
 		elif tokenType == "desc":
-			self.memberData['desc'] = tokens[1]
+			self.memberData['desc'] = unescape(tokens[1])
 		elif tokenType == "path":
 			self.memberData['path'] = tokens[1]
 		# возвращаемое значение
 		elif tokenType == "return":
 			self.memberData['returnType'] = tokens[1]
 			if len(tokens) > 2:
-				self.memberData['returnDesc'] = tokens[2]
+				self.memberData['returnDesc'] = unescape(tokens[2])
 		elif tokenType == 'prop':
 			propType = tokens[1]
 			if propType not in ['all','get','set','none']:
@@ -230,10 +257,10 @@ class NodeObjectHandler:
 			
 			self.lastPortRef = {
 				'type': tokens[1],
+				"use_custom": tokens[1] not in ['Exec',"","void","null"]
 			}
 			if len(tokens) > 3:
-				self.lastPortRef['desc'] = tokens[3]
-			#self.memberData['inputs'][tokens[2]] = self.lastPortRef
+				self.lastPortRef['desc'] = unescape(tokens[3])
 			self.memberData['inputs'].append((tokens[2],self.lastPortRef))
 		elif tokenType == "out":
 			
@@ -242,8 +269,7 @@ class NodeObjectHandler:
 				'mutliconnect':True
 			}
 			if len(tokens) > 3:
-				self.lastPortRef['desc'] = tokens[3]
-			#self.memberData['outputs'][tokens[2]] = self.lastPortRef
+				self.lastPortRef['desc'] = unescape(tokens[3])
 			self.memberData['outputs'].append((tokens[2],self.lastPortRef))
 		elif tokenType == 'opt':
 			for tInside in tokens[1:]:
@@ -253,6 +279,8 @@ class NodeObjectHandler:
 					self.lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
 				if tInside.startswith('allowtypes'):
 					self.lastPortRef['allowtypes'] = tInside.split('|')
+				if tInside.startswith("custom"):
+					self.lastPortRef['use_custom'] = tInside.split('=')[1] > 0
 		
 		# -------------------- common spec options -------------------- 
 		
@@ -284,7 +312,7 @@ class NodeObjectHandler:
 		classDict = self.classMetadata[self.memberClass]
 		#saving pathes etc.
 		if 'name' in self.memberData: classDict['name'] = self['name']
-		if 'desc' in self.memberData: classDict['desc'] = self['desc']
+		if 'desc' in self.memberData: classDict['desc'] = unescape(self['desc'])
 		if 'path' in self.memberData: classDict['path'] = self['path']
 
 	def finalizeObject(self):
@@ -348,19 +376,19 @@ class NodeObjectHandler:
 				self.defCode = newcode
 			if _canOverrideColor:
 				nodeColorList = [
-					[255,255,255],#method
-					[255,255,255],#event
-					[255,255,255],#getter
-					[255,255,255],#constant
+					hexToRGBA("004568"),#method
+					hexToRGBA("6d0101"),#event
+					hexToRGBA("25888F"),#getter
+					hexToRGBA("124d41"),#constant
 				]
 				newColor = nodeColorList[tableTypes.index(mtype)]
 				self['color'] = newColor
 			if _canOverrideIcon:
 				iconList = [
-					"test.png",#method
-					"test.png",#event
-					"test.png",#getter
-					"test.png",#constant
+					"data\\icons\\icon_BluePrintEditor_Function_16px",#method
+					"data\\icons\\icon_Blueprint_Event_16x",#event
+					"data\\icons\\FIB_VarGet",#getter
+					"data\\icons\\Icon_Sequencer_Key_Part_24x",#["data\\icons\\FIB_VarGet","#14CCA7"],#constant
 				]
 				self['icon'] = iconList[tableTypes.index(mtype)]
 
@@ -399,6 +427,7 @@ class NodeObjectHandler:
 					_setterLines = [
 						f"in:{newobj['returnType']}:Значение",
 						f'out:{newobj["returnType"]}:Новое значение'
+						"opt:mul=0"
 					]
 					if newobj.memberData.get('classProp',0) > 0 and _hasGet:
 						_setterLines.append('classprop:0') #disable classprop for setter because getter already setup
@@ -416,6 +445,17 @@ class NodeObjectHandler:
 			if 'path' not in memberData:
 				memberData['path'] = classmeta[self.memberClass].get('path','')
 
+			if self.isField:
+				# подписываем приписку к полю (если есть)
+				if self.objectNameFull.endswith('.get'):
+					memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Получить)"
+				elif self.objectNameFull.endswith('.set'):
+					memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
+
+				# Устанавливаем цвет поля
+				if 'color' not in memberData:
+					self['color'] = hexToRGBA("212f3b")
+
 			#prep ports
 			if self.execTypes in ['all','in']:
 				self['inputs'].insert(0,('Вход',{
@@ -430,22 +470,30 @@ class NodeObjectHandler:
 			
 			# Помещаем инстансер
 			if self.isMethod:
-				self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
-				instanceOption = ("Цель", {
-						"type":"list",
-						"disabledListInputs": ["Этот объект"],
-						"text": "Вызывающий",
-						"default": "Этот объект",
-						"values": [["Этот объект","this"], "Объект"],
-						"typingList": ["self",f"{self.memberClass}^"]
-					})
-				self['options'].insert(0,instanceOption)
+				if self['memtype'] != 'event':
+					self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+					instanceOption = ("Цель", {
+							"type":"list",
+							"disabledListInputs": ["Этот объект"],
+							"text": "Вызывающий",
+							"default": "Этот объект",
+							"values": [["Этот объект","this"], "Цель"],
+							"typingList": ["self",f"{self.memberClass}^"]
+						})
+					self['options'].insert(0,instanceOption)
 
 			dataInputs = dict(self['inputs'])
 			dataOutputs = dict(self['outputs'])
 			self['inputs'] = dataInputs
 			self['outputs'] = dataOutputs
 			self['options'] = dict(self['options'])
+
+			# Добавляем опции
+			for k,v in dataInputs.items():
+				if v.get('use_custom',False):
+					opt = self.getVarlibOptionByType(v.get('type'))
+					if opt:
+						self['options'][k] = opt
 
 			if 'code' not in memberData:
 				self['code'] = self.generateMethodCodeCall()
@@ -454,7 +502,7 @@ class NodeObjectHandler:
 			if 'classProp' in memberData: del memberData['classProp']
 
 			#prep code and icon
-			if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
+			#if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
 			if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
 			self.defCode = self.prepareCode(self.defCode)
 
@@ -585,7 +633,7 @@ def GenerateLibFromObj():
 	members = getRegionData(content,"CLASSMEM")
 	compileRegion(members,nodeLib,classmeta)
 
-	return 0
+	#return 0
 	print("Writing lib.json")
 	with open("lib.json", 'w',encoding="utf-8") as fp:
 		json.dump(

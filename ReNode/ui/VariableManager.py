@@ -112,20 +112,9 @@ class ExtendedComboBox(QComboBox):
         self.pFilterModel.setFilterKeyColumn(column)
         super(ExtendedComboBox, self).setModelColumn(column)   
 
-class VariableManager(QDockWidget):
-    refObject = None
-    def __init__(self,actionVarViewer = None,nodeSystem=None):
-        VariableManager.refObject = self
-        super().__init__("Переменные")
-        self.logger = RegisterLogger("VariableManager")
-        self.nodeGraphComponent = nodeSystem
-        
-        self.actionVarViewer = actionVarViewer
-        
-        #varmap: class, local
-        self.variables = {}
-
-        self.variableTempateData = [
+class VariableLibrary:
+    def __init__(self):
+        self.typeList = [
             #base types
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
@@ -189,6 +178,23 @@ class VariableManager(QDockWidget):
             ,color=QtGui.QColor("Sea green").lighter(50)),
 
         ]
+
+class VariableManager(QDockWidget):
+    refObject = None
+    def __init__(self,actionVarViewer = None,nodeSystem=None):
+        VariableManager.refObject = self
+        super().__init__("Переменные")
+        
+        self.logger = RegisterLogger("VariableManager")
+        self.nodeGraphComponent = nodeSystem
+        
+        self.actionVarViewer = actionVarViewer
+        
+        #varmap: class, local
+        self.variables = {}
+        self._typeData = VariableLibrary()
+
+        self.variableTempateData = self._typeData.typeList
 
         self.variableCategoryList = [
             VariableCategory('local',"Локальная переменная","Локальные переменные"),

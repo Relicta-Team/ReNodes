@@ -135,14 +135,19 @@ class NodeFactory:
 		typename = category+"."+name
 		defcolor = NodeFactory.defaultColor
 		defborder = (255,0,0,255)
-		kind = data.get('kind',None) # function,control,operator etc for define icon
+		
 		struct['name'] = data.get('name','')
+		struct['namelib'] = data.get('namelib',struct['name'])
 		struct['path'] = data.get('path','')
 		struct['desc'] = data.get('desc', '')
-		struct['icon'] = self._nodeKindToIcon(kind)
+		struct['icon'] = self._nodeIconPrepare(data.get('icon'))
 		struct['color'] = data.get('color',defcolor)
 		struct['border_color'] = data.get('border_color',defborder)
 		struct['code'] = data.get('code',"")
+		
+		struct['returnType'] = data.get('returnType')
+		struct['returnDesc'] = data.get('returnDesc')
+
 
 		struct['runtime_ports'] = data.get('runtime_ports',False)
 
@@ -180,6 +185,7 @@ class NodeFactory:
 			valdata['allowtypes'] = val.get('allowtypes')
 			valdata['type'] = val.get('type',key)
 			valdata['typeget'] = val.get('typeget',"")
+			valdata['desc'] = val.get('desc','')
 			if not isInput:
 				valdata['accepted_paths'] = val.get('accepted_paths',["@any"])
 			cons[key] = valdata
@@ -204,18 +210,23 @@ class NodeFactory:
 		return opts
 
 	#region internal deserialize lib helpers
-	_kindTypeIcons = {
-		"function": "data\\function_sim.png",
-		"event": "data\\function_sim.png"
-	}
-	def _nodeKindToIcon(self,kind):
-		if kind is None:
+
+	def _nodeIconPrepare(self,iconpath):
+		if isinstance(iconpath,list):
+			for i in range(0,len(iconpath),2):
+				iconpath[i] = self._nodeIconPrepare(iconpath[i])
+			return iconpath
+		else:
+			return self._nodeIconPrepare_Internal(iconpath)
+		
+
+	def _nodeIconPrepare_Internal(self,path):
+		if path is None:
 			return None
-		if "data\\" in kind.lower():
-			return kind
-		if not kind in self._kindTypeIcons:
-			return None
-		return NodeFactory._kindTypeIcons[kind]
+		if path == '': return None
+		if "data\\" in path.lower():
+			return path
+		return "data\\" + path
 
 	_kindPortStyleTypes = {
 		"default": None,

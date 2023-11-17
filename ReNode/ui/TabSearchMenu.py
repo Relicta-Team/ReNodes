@@ -10,7 +10,7 @@ import asyncio
 from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
 from NodeGraphQt.qgraphics.pipe import PipeItem
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
-
+from ReNode.app.utils import generateIconParts
 
 class TabSearchMenu(QWidget):
     def __init__(self,parent=None):
@@ -205,15 +205,25 @@ class TabSearchMenu(QWidget):
                 if len(values) > 0:
                     for value in values:
                         #if searchFilter and self.__containsFilter(value,searchFilter):
+                        libInfo = NodeGraphComponent.refObject.getFactory().getNodeLibData(value)
                         item_name = value
                         if self.nodeGraphComponent:
                             item_name = self._getAssociatedNodeName(value)
                         value_item = QTreeWidgetItem(item, [item_name])
                         value_item.setFlags(value_item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                         value_item.setData(0, QtCore.Qt.UserRole, value)
-                        icn = NodeGraphComponent.refObject.getFactory().getNodeLibData(value)['icon']
+                        value_item.setToolTip(0, libInfo.get('desc',""))
+                        newname = libInfo.get('namelib',item_name)
+                        value_item.setText(0,newname)
+                        icn = libInfo['icon']
                         if icn and not isinstance(icn,str):
-                            raise Exception("TODO: custom icon making")
+                            listPix = []
+                            listClrs = []
+                            for i in range(0,len(icn),2):
+                                listPix.append(icn[i])
+                                listClrs.append(icn[i+1])
+                            
+                            icn = generateIconParts(listPix,listClrs)
                         if icn:
                             value_item.setIcon(0,QtGui.QIcon(icn))
                         
