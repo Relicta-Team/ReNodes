@@ -183,6 +183,29 @@ class NodeObjectHandler:
 				dst.refAllObjects.insert(1,dst)
 		return dst
 
+	def safecopy(self):
+		dst = NodeObjectHandler(self.objectNameFull,self.objectType,self.nodeLib,self.classMetadata,self.lineList.copy())
+		
+		dst.refAllObjects = self.refAllObjects
+		
+		if len(dst.refAllObjects) <= 1:
+			dst.refAllObjects.append(dst)
+		else:
+			dst.refAllObjects.insert(1,dst)
+		return dst
+
+	def findLinesByToken(self,tok):
+		ltokList = []
+
+		for ltok_it in self.lineList:
+			if ltok_it[0] == tok:
+				ltokList.append(ltok_it)
+
+		return ltokList
+
+	def removeLinesByToken(self,tok):
+		raise NotImplementedError("TODO: implement removeLinesByToken")
+
 	def preparePath(self,path):
 		return path.replace('\\\\','\\').replace('\\','\\\\')
 
@@ -367,7 +390,7 @@ class NodeObjectHandler:
 			self['memtype'] = mtype
 			del memberData['type']
 
-			tableTypes = ["method","event","get","const"]
+			tableTypes = ["method","event","get","const","def"]
 			if mtype not in tableTypes:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong method type: {mtype}")
 
@@ -391,6 +414,7 @@ class NodeObjectHandler:
 					hexToRGBA("6d0101"),#event
 					hexToRGBA("25888F"),#getter
 					hexToRGBA("124d41"),#constant
+					hexToRGBA("955e00"),#def
 				]
 				newColor = nodeColorList[tableTypes.index(mtype)]
 				self['color'] = newColor
@@ -400,9 +424,49 @@ class NodeObjectHandler:
 					"data\\icons\\icon_Blueprint_Event_16x",#event
 					"data\\icons\\FIB_VarGet",#getter
 					"data\\icons\\Icon_Sequencer_Key_Part_24x",#["data\\icons\\FIB_VarGet","#14CCA7"],#constant
+					"data\\icons\\icon_BluePrintEditor_Function_16px",#def
 				]
 				self['icon'] = iconList[tableTypes.index(mtype)]
 
+			#if mtype method or getter then add method def prop
+			if mtype in ['method','get']:
+				cpyObj = self.safecopy()
+				#adding postfix to method define
+				cpyObj.objectNameFull += ".def"
+
+				#change name
+				names = cpyObj.findLinesByToken("name")
+				origName = names[0][1] if len(names) > 0 else ""
+				for name in names: 
+					origName = name[1]
+					name[1] = f"Определение \"{name[1]}\""
+				
+				#change namelib
+				nlibs = cpyObj.findLinesByToken("namelib")
+				if not nlibs:
+					if origName: cpyObj.pushBackLines([f"namelib:{origName} (опред.)"])
+				else:
+					for nlib in nlibs: nlib[1] = f"{nlib[1]} (опред.)"
+
+				#change inputs to outputs
+				ins = cpyObj.findLinesByToken('in')
+				for line in ins: line[0] = 'out'
+
+				#change execs
+				execs = cpyObj.findLinesByToken('exec')
+				if not execs:
+					cpyObj.insertLines(["exec:out"])
+				else:
+					for execLine in execs: execLine[1] = 'out'
+				
+				#change type from method/get to def
+				types_ = cpyObj.findLinesByToken('type')
+				if not types_:
+					cpyObj.pushBackLines(["type:def"])
+				else:
+					for type_ in types_: type_[1] = 'def'
+
+				#todo add more override options
 
 		if "classProp" in memberData:
 			if 'returnType' not in memberData:
@@ -490,7 +554,7 @@ class NodeObjectHandler:
 		
 		# Помещаем инстансер
 		if self.isMethod:
-			if self['memtype'] != 'event':
+			if self['memtype'] not in  ['event',"def"]:
 				self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
 				instanceOption = ("Цель", {
 						"type":"list",
