@@ -14,6 +14,7 @@ from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
 import datetime
 from ReNode.app.Logger import RegisterLogger
+import re
 
 class VariableInfo:
     def __init__(self):
@@ -179,6 +180,41 @@ class VariableLibrary:
 
         ]
 
+        self.valueTypeList = [
+            VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
+            VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
+            VariableDataType("Словарь","dict",["data\\icons\\pillmapkey_16x.png","data\\icons\\pillmapvalue_16x.png"],DictWidget),
+            VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
+        ]
+
+    def getTypeIcon(self,typ:str,colorize=False):
+        valueType = "value"
+        compareType = typ
+        if typ.startswith("array") or typ.startswith("set") or typ.startswith("dict"):
+            vdat = re.findall('\w+',compareType)
+            valueType = vdat[0]
+            compareType = [vdat[1],vdat[2]]
+        
+        icon = None
+        for vdt in self.valueTypeList:
+            if vdt.dataType == valueType:
+                icon = vdt.icon
+                break
+        if not icon: return None
+
+        if not colorize: return icon
+
+        if not isinstance(icon,list): icon = [icon]
+        if not isinstance(compareType,list): compareType = [compareType]
+        colorList = []
+
+        for comptype in compareType:
+            for t in self.typeList:
+                if t.variableType == comptype:
+                    colorList.append(t.color.name())
+
+        return [icon,colorList]
+
 class VariableManager(QDockWidget):
     refObject = None
     def __init__(self,actionVarViewer = None,nodeSystem=None):
@@ -202,12 +238,7 @@ class VariableManager(QDockWidget):
             #TODO constants
         ]
 
-        self.variableDataType = [
-            VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
-            VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
-            VariableDataType("Словарь","dict",["data\\icons\\pillmapkey_16x.png","data\\icons\\pillmapvalue_16x.png"],DictWidget),
-            VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
-        ]
+        self.variableDataType = self._typeData.valueTypeList
 
         self.initUI()
         self.setupContextMenu()
