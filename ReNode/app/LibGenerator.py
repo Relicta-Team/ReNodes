@@ -71,7 +71,7 @@ class NodeObjectHandler:
 		self.execTypes = 'all' #all,in,out,none
 
 		self.path = "" # путь до узла в дереве
-
+		#TODO remove var
 		self.defCode = "" #код инициализации (опциональный). помещается 
 
 		self.memberData = {
@@ -183,6 +183,29 @@ class NodeObjectHandler:
 				dst.refAllObjects.insert(1,dst)
 		return dst
 
+	def safecopy(self):
+		dst = NodeObjectHandler(self.objectNameFull,self.objectType,self.nodeLib,self.classMetadata,self.lineList.copy())
+		
+		dst.refAllObjects = self.refAllObjects
+		
+		if len(dst.refAllObjects) <= 1:
+			dst.refAllObjects.append(dst)
+		else:
+			dst.refAllObjects.insert(1,dst)
+		return dst
+
+	def findLinesByToken(self,tok):
+		ltokList = []
+
+		for ltok_it in self.lineList:
+			if ltok_it[0] == tok:
+				ltokList.append(ltok_it)
+
+		return ltokList
+
+	def removeLinesByToken(self,tok):
+		raise NotImplementedError("TODO: implement removeLinesByToken")
+
 	def preparePath(self,path):
 		return path.replace('\\\\','\\').replace('\\','\\\\')
 
@@ -245,8 +268,8 @@ class NodeObjectHandler:
 			pass
 		elif tokenType == 'code':
 			self.memberData['code'] = tokens[1]
-		elif tokenType == 'defcode':
-			self.defCode = tokens[1]
+		#elif tokenType == 'defcode':
+		#	self.defCode = tokens[1]
 		# видимость ноды в инспекторе
 		elif tokenType == 'classprop':
 			clsprop = intTryParse(tokens[1])
@@ -257,7 +280,7 @@ class NodeObjectHandler:
 		elif tokenType == 'type':
 			mtype = tokens[1]
 			self.memberData['type'] = mtype
-			if mtype in ['event','get','const']:
+			if mtype in ['event','def']:
 				self.execTypes = 'out'
 			if mtype == "const":
 				self.memberData['classProp'] = 1
@@ -367,30 +390,34 @@ class NodeObjectHandler:
 			self['memtype'] = mtype
 			del memberData['type']
 
-			tableTypes = ["method","event","get","const"]
+			tableTypes = ["method","event","get","const","def"]
 			if mtype not in tableTypes:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong method type: {mtype}")
 
 			# register member ports
 			#if mtype
 
-			_canOverrideCodeDef = self.defCode == ''
+			_canOverrideCode = 'code' not in self.memberData
 			_canOverrideColor = "color" not in self.memberData
 			_canOverrideIcon = 'icon' not in self.memberData
-			if _canOverrideCodeDef:
-				if mtype == "get":
-					newcode = 'func(@thisName) {@thisParams; @out.1}'
-				elif mtype == "const":
-					newcode = 'func(@thisName) { @propvalue }'
-				else:
-					newcode = 'func(@thisName) {@thisParams; @out.1}'
-				self.defCode = newcode
+			if _canOverrideCode:
+				codeList_ = [
+					"",# call method(generated runtime at generateMethodCodeCall)
+					"func(@thisName) {@thisParams; @out.1}",# event define (события не вызываются пользователем)
+					"", #method getter runtme at generateMethodCodeCall
+					"func(@thisName) { @propvalue }", #const (!USED AS DEFINE)
+					"func(@thisName) {@thisParams; @out.1}", #define method
+				]
+				curCode_ = codeList_[tableTypes.index(mtype)]
+				if curCode_: self['code'] = curCode_
+
 			if _canOverrideColor:
 				nodeColorList = [
 					hexToRGBA("004568"),#method
-					hexToRGBA("6d0101"),#event
+					hexToRGBA("5b0802"),#event old:6d0101
 					hexToRGBA("25888F"),#getter
 					hexToRGBA("124d41"),#constant
+					hexToRGBA("955e00"),#def
 				]
 				newColor = nodeColorList[tableTypes.index(mtype)]
 				self['color'] = newColor
@@ -400,9 +427,49 @@ class NodeObjectHandler:
 					"data\\icons\\icon_Blueprint_Event_16x",#event
 					"data\\icons\\FIB_VarGet",#getter
 					"data\\icons\\Icon_Sequencer_Key_Part_24x",#["data\\icons\\FIB_VarGet","#14CCA7"],#constant
+					"data\\icons\\icon_BluePrintEditor_Function_16px",#def
 				]
 				self['icon'] = iconList[tableTypes.index(mtype)]
 
+			#if mtype method or getter then add method def prop
+			if mtype in ['method','get']:
+				cpyObj = self.safecopy()
+				#adding postfix to method define
+				cpyObj.objectNameFull += ".def"
+
+				#change name
+				names = cpyObj.findLinesByToken("name")
+				origName = names[0][1] if len(names) > 0 else ""
+				for name in names: 
+					origName = name[1]
+					name[1] = f"Определение \"{name[1]}\""
+				
+				#change namelib
+				nlibs = cpyObj.findLinesByToken("namelib")
+				if not nlibs:
+					if origName: cpyObj.pushBackLines([f"namelib:{origName} (опред.)"])
+				else:
+					for nlib in nlibs: nlib[1] = f"{nlib[1]} (опред.)"
+
+				#change execs
+				execs = cpyObj.findLinesByToken('exec')
+				if not execs:
+					cpyObj.insertLines(["exec:out"])
+				else:
+					for execLine in execs: execLine[1] = 'out'
+
+				#change inputs to outputs
+				ins = cpyObj.findLinesByToken('in')
+				for line in ins: line[0] = 'out'
+				
+				#change type from method/get to def
+				types_ = cpyObj.findLinesByToken('type')
+				if not types_:
+					cpyObj.pushBackLines(["type:def"])
+				else:
+					for type_ in types_: type_[1] = 'def'
+
+				#todo add more override options
 
 		if "classProp" in memberData:
 			if 'returnType' not in memberData:
@@ -453,26 +520,62 @@ class NodeObjectHandler:
 		if memberData:
 			self.registerNode(memberRegion)
 
-	def registerNode(self,memberRegion):
+	def _preregField(self):
 		memberData = self.memberData
 		classmeta = self.classMetadata
-		
+
+		# подписываем приписку к полю (если есть)
+		if self.objectNameFull.endswith('.get'):
+			memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Получить)"
+		elif self.objectNameFull.endswith('.set'):
+			memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
+
+		# Устанавливаем цвет поля
+		if 'color' not in memberData:
+			self['color'] = hexToRGBA("212f3b")
+		if 'icon' not in memberData:
+			self['icon'] = ['data\\icons\\pill_16x',self.getVarlibColorByType(memberData['returnType'])]
+	
+	def _preregMethod(self):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+
+		# Помещаем инстансер
+		if self['memtype'] not in  ['event',"def"]:
+			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+			instanceOption = ("Цель", {
+					"type":"list",
+					"disabledListInputs": ["Этот объект"],
+					"text": "Вызывающий",
+					"default": "Этот объект",
+					"values": [["Этот объект","this"], "Цель"],
+					"typingList": ["self",f"{self.memberClass}^"]
+				})
+			self['options'].insert(0,instanceOption)
+
+			#if get and const insert return value
+			if self['returnType'] not in ['null','void','Exec','']:
+				retTpDict = {
+					"type": self['returnType'],
+					'mutliconnect': False
+				}
+				self['outputs'].insert(1,("Результат", retTpDict))
+				if 'returnDesc' in memberData:
+					retTpDict['desc'] = memberData['returnDesc']
+
+	def _preregClassMember(self):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+
 		#Если пути нет - генерируем его
 		if 'path' not in memberData:
 			memberData['path'] = classmeta[self.memberClass].get('path','')
+		
 
-		if self.isField:
-			# подписываем приписку к полю (если есть)
-			if self.objectNameFull.endswith('.get'):
-				memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Получить)"
-			elif self.objectNameFull.endswith('.set'):
-				memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
 
-			# Устанавливаем цвет поля
-			if 'color' not in memberData:
-				self['color'] = hexToRGBA("212f3b")
-			if 'icon' not in memberData:
-				self['icon'] = ['data\\icons\\pill_16x',self.getVarlibColorByType(memberData['returnType'])]
+	def registerNode(self,memberRegion):
+		memberData = self.memberData
+		classmeta = self.classMetadata
 
 		#prep ports
 		if self.execTypes in ['all','in']:
@@ -488,19 +591,9 @@ class NodeObjectHandler:
 						"style": "triangle"
 			}))
 		
-		# Помещаем инстансер
-		if self.isMethod:
-			if self['memtype'] != 'event':
-				self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
-				instanceOption = ("Цель", {
-						"type":"list",
-						"disabledListInputs": ["Этот объект"],
-						"text": "Вызывающий",
-						"default": "Этот объект",
-						"values": [["Этот объект","this"], "Цель"],
-						"typingList": ["self",f"{self.memberClass}^"]
-					})
-				self['options'].insert(0,instanceOption)
+		self._preregClassMember()
+		if self.isField: self._preregField()
+		if self.isMethod: self._preregMethod()
 
 		dataInputs = dict(self['inputs'])
 		dataOutputs = dict(self['outputs'])
@@ -511,6 +604,7 @@ class NodeObjectHandler:
 		# Добавляем опции
 		for k,v in dataInputs.items():
 			if v.get('use_custom',False):
+				del v['use_custom']
 				opt = self.getVarlibOptionByType(v.get('type'),k)
 				if opt:
 					self['options'][k] = opt
@@ -524,7 +618,7 @@ class NodeObjectHandler:
 		#prep code and icon
 		#if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
 		if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
-		self.defCode = self.prepareCode(self.defCode)
+		#self.defCode = self.prepareCode(self.defCode)
 
 		#register inspector prop
 		if isInspectorProp:

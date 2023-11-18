@@ -72,8 +72,12 @@ class NodeFactory:
 
 		if re.findall('[\[\]\,]',type_name):
 			portType = f'array[{type_name}]'
-			typeinfo = re.findall('\w+',portType)
+			typeinfo = re.findall('\w+\^?',portType)
 			type_name = typeinfo[1]
+
+		#temporary fix
+		if type_name.endswith("^"):
+			type_name = "object"
 
 		for objInfo in varMgr.variableTempateData:
 			if objInfo.variableType == type_name:
@@ -108,6 +112,8 @@ class NodeFactory:
 						portType = f'array[{portType}]'
 						typeinfo = re.findall('\w+',portType)
 						portType = typeinfo[1]
+
+					if portType.endswith("^"): portType = "object" #temp fix object colors
 					
 					isDefaultColor = v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
 					if portType in typecolor and isDefaultColor:
@@ -121,6 +127,8 @@ class NodeFactory:
 					if re.findall('[\[\]\,]',portType):
 						typeinfo = re.findall('\w+',portType)
 						portType = typeinfo[1]
+
+					if portType.endswith("^"): portType = "object" #temp fix object colors
 
 					isDefaultColor = v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
 					if portType in typecolor and isDefaultColor:
