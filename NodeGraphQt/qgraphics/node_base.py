@@ -176,6 +176,27 @@ class NodeItem(AbstractNodeItem):
         painter.setBrush(QtCore.Qt.NoBrush)
         painter.setPen(pen)
         painter.drawPath(path)
+        
+        # -----------------------------------------------------------------------------------------
+        #! debug draw items
+        # pen = QtGui.QPen(QtGui.QColor(255, 255, 255, 80), 0.8)
+        # pen.setStyle(QtCore.Qt.DotLine)
+        # painter.setPen(pen)
+        # #draw widgets
+        # for wid in self._widgets.values():
+        #     painter.drawRect(QRectF(wid.x(), wid.y(), wid.rect().width(), wid.rect().height()))
+
+        # pen = QtGui.QPen(QtGui.QColor(255, 0, 0, 80), 0.8)
+        # pen.setStyle(QtCore.Qt.DotLine)
+        # painter.setPen(pen)
+        # for prt,text in self._input_items.items():
+        #     painter.drawRect(QRectF(text.pos().x(), text.pos().y(), text.boundingRect().width(), text.boundingRect().height()))
+        #     painter.drawRect(QRectF(prt.x(), prt.y(), prt.boundingRect().width(), prt.boundingRect().height()))
+
+        # for prt,text in self._output_items.items():
+        #     painter.drawRect(QRectF(text.pos().x(), text.pos().y(), text.boundingRect().width(), text.boundingRect().height()))
+        #     painter.drawRect(QRectF(prt.x(), prt.y(), prt.boundingRect().width(), prt.boundingRect().height()))
+        #!end debug
 
         painter.restore()
 
