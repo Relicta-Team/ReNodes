@@ -26,6 +26,7 @@ class RuntimeNode(BaseNode):
 			wid = self.widgets()[in_port.name()]
 			wid.get_custom_widget().setEnabled(False)
 			wid.get_custom_widget().setVisible(False)
+			wid.widget()._connectedPort = True
 			wid.widget().setTitleAlign('port')
 			#wid.widget().setWindowOpacity(0.2)		
 		super(RuntimeNode,self).on_input_connected(in_port, out_port)
@@ -37,6 +38,7 @@ class RuntimeNode(BaseNode):
 			wid.get_custom_widget().setEnabled(True)
 			wid.get_custom_widget().setVisible(True)
 			alignval = "left" if in_port.view.port_type == PortTypeEnum.IN.value else "right"
+			wid.widget()._connectedPort = False
 			wid.widget().setTitleAlign(alignval)
 			#wid.widget().setWindowOpacity(1)
 		super(RuntimeNode,self).on_input_connected(in_port, out_port)

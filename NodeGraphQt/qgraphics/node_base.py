@@ -448,8 +448,8 @@ class NodeItem(AbstractNodeItem):
         widget_width = 0.0
         widget_height = 0.0
         for widget in self._widgets.values():
-            if not widget.isVisible():
-                continue
+            #if not widget.isVisible(): #collect all widgets because proxy mode...
+            #    continue
             w_width = widget.boundingRect().width()
             w_height = widget.boundingRect().height()
             if w_width > widget_width:
@@ -831,7 +831,7 @@ class NodeItem(AbstractNodeItem):
         retData : list[tuple] = []
 
         #sorting all widgets by port names
-        widgetMap = {nm:w for nm,w in self._widgets.items() if w.isVisible()}
+        widgetMap = {nm:w for nm,w in self._widgets.items()} #fix removed isivisble condition for get all widgets in proxymode
         
         for port in allPorts:
             if port.name in widgetMap.keys():

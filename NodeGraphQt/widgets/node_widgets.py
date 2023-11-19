@@ -17,6 +17,8 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
         layout.setSpacing(1)
         self.setTitle(label)
 
+        self._connectedPort = False # включается когда порт с таким же именем подключен
+
     def setTitle(self, text):
         margin = (0, 2, 0, 0) if text else (0, 0, 0, 0)
         self.layout().setContentsMargins(*margin)
@@ -53,6 +55,9 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
             style_dict['QGroupBox']['padding-top'] = '14px'
         else:
             style_dict['QGroupBox']['padding-top'] = '2px'
+
+        if self._connectedPort:
+            align = 'port'
 
         if align == 'center':
             style_dict['QGroupBox::title']['subcontrol-position'] = 'top center'
