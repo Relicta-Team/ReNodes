@@ -427,7 +427,7 @@ class NodeObjectHandler:
 					"data\\icons\\icon_Blueprint_Event_16x",#event
 					"data\\icons\\FIB_VarGet",#getter
 					"data\\icons\\Icon_Sequencer_Key_Part_24x",#["data\\icons\\FIB_VarGet","#14CCA7"],#constant
-					"data\\icons\\icon_BluePrintEditor_Function_16px",#def
+					"data\\icons\\icon_Blueprint_OverrideFunction_16x",#def
 				]
 				self['icon'] = iconList[tableTypes.index(mtype)]
 
