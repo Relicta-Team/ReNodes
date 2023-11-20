@@ -95,7 +95,7 @@ class CodeGenerator:
                 lvData['category'] = vcat
                 lvData['portname'] = v['name']
                 lvData['varname'] = v['name']
-                #self.transliterate(v['name']) for get transliterate name
+                #transliterate(v['name']) for get transliterate name
                 if vcat=='local':
                     lvData['alias'] = f"_LVAR{i+1}"
                     lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
@@ -884,26 +884,3 @@ class CodeGenerator:
         oldName = orig.name()
         orig.set_name(oldName+name)
         #orig.set_property("name",oldName + name,False,doNotRename=True)
-
-    def transliterate(self,text):
-        translit_dict = {
-            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
-            'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i',
-            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
-            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
-            'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
-            'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '',
-            'э': 'e', 'ю': 'yu', 'я': 'ya',
-        }
-        
-        result = []
-        for char in text:
-            if char.lower() in translit_dict:
-                if char.isupper():
-                    result.append(translit_dict[char.lower()].capitalize())
-                else:
-                    result.append(translit_dict[char])
-            else:
-                result.append(char)
-        enStr = ''.join(result)
-        return re.sub("[^\w]","_",enStr)
