@@ -48,6 +48,7 @@ class WizardScriptMaker(QWizard):
 		bluepalette.setColor(QPalette.Background,Qt.black)
 		self.setPalette(bluepalette)
 
+		self.setupDict = {} #all settings for graph
 
 		self._lastPage = None
 		self._lastPath = []
@@ -131,10 +132,10 @@ class WizardScriptMaker(QWizard):
 			combo.setItemData(combo.count()-1,o[2],Qt.ToolTipRole)
 
 		self._addLineOption("Тип скрипта:",combo)
-		item = self._addLabel("")
+		item = self._addLabel("",isRichText=True)
 		combo.setCurrentIndex(0)
 		def setDesc():
-			item.setText("Описание: " + options[combo.currentIndex()][2])
+			item.setText("<span style=\"font-size:18pt\">Описание: " + options[combo.currentIndex()][2] + "</span>")
 			sysname = options[combo.currentIndex()][1]
 			for id  in self._dictPathes.get(sysname,[]):
 				pass
@@ -155,7 +156,7 @@ class WizardScriptMaker(QWizard):
 		def validate():
 			data = combo.currentData()
 			if data not in ['gamemode','role']:
-				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент скрипт типа \"{combo.currentText()}\" не может быть создан.</span>")
+				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент создание скрипта \"{combo.currentText()}\" не реализовано.</span>")
 				return False
 			postText.setText("")
 			return True
@@ -163,8 +164,16 @@ class WizardScriptMaker(QWizard):
 		page.validatePage = validate
 
 	def createBasicClassSetup(self,pageClass,params={}):
-		page = self._registerPage("Создание режима","",pageClass)
+		page = self._registerPage(params.get('header',"Неизвестная страница"),"",pageClass)
 		
+		self.setupDict = {}
+
+		def __init():
+			self.setupDict.clear()
+			self.setupDict['type'] = pageClass
+
+		page.initializePage = __init
+
 		gmname = QLineEdit()
 		gmname.setMaxLength(64)
 		name_opt_ = params.get('name','Название')
@@ -214,8 +223,8 @@ class WizardScriptMaker(QWizard):
 			if not classname:
 				errors.append(f"{class_opt_} не может быть пустым")
 			else:
-				if not re.match(r'^[a-zA-Z0-9_]+$',classname):
-					errors.append(f"{class_opt_} может содержать только английские буквы, цифры и нижнее подчеркивание")
+				if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]+$',classname):
+					errors.append(f"{class_opt_} может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
 				if len(classname) <= 4:
 					errors.append(f"{class_opt_} должно содержать более 4 символов")
 
@@ -227,6 +236,12 @@ class WizardScriptMaker(QWizard):
 			
 			postfixLabel.setText(f"{prefix}<br/>Примечание: созданный файл графа будет хранится в \"{path}\"<br/>"+
 			f"{class_opt_} генерируется автоматически, но вы можете переопределить его.")
+
+			settings = self.setupDict
+			settings['name'] = name
+			settings['classname'] = classname
+			settings['parent'] = gmparent.currentText()
+			settings['path'] = pathval
 
 			#self.button(QWizard.WizardButton.NextButton).setVisible(len(errors) == 0)
 			return len(errors) == 0
@@ -245,6 +260,20 @@ class WizardScriptMaker(QWizard):
 		gmclass.textChanged.connect(__on_classname_changed)
 		page.validatePage = _validateAll
 
+		page.nextId = lambda: self.pageIds()[-1]
+
+	def createFinalPage(self):
+		page = self._registerPage("Завершение")
+
+		txt = self._addLabel("",isRichText=False)
+		def __init():
+			optlist = []
+			for k,v in self.setupDict.items():
+				optlist.append(f'{k}: {v}')
+			
+			txt.setText("Опции: " + "\n".join(optlist))
+		page.initializePage = __init
+
 	def create_wizard(self):
 		self.createIntro()
 		self.createSelectScriptType()
@@ -252,6 +281,7 @@ class WizardScriptMaker(QWizard):
 		self.createBasicClassSetup(
 			"gamemode", 
 			params={
+				'header': "Создание режима",
 				"name": "Имя режима",
 				"classname": "Имя класса режима",
 				"pathData":{
@@ -267,6 +297,7 @@ class WizardScriptMaker(QWizard):
 		self.createBasicClassSetup(
 			"role", 
 			params={
+				'header': "Создание роли",
 				"name": "Имя роли",
 				"classname": "Имя класса роли",
 				"pathData":{
@@ -280,7 +311,7 @@ class WizardScriptMaker(QWizard):
 			}
 		)
 
-		self._registerPage("Finish!!!")
+		self.createFinalPage()
 
 
 		# self.setStartId(self.addPage(self.createIntroPage()))
