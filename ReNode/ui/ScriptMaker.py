@@ -13,9 +13,10 @@ class ScriptMakerManager(QWizard):
 	"""
 		Менеджер создания скриптов
 	"""
-	
+	refObject = None
 	def __init__(self,gsys):
 		super().__init__(gsys.mainWindow)
+		ScriptMakerManager.refObject = self
 		self.logger = RegisterLogger("ScriptMakerManager")
 		self.graphSystem = gsys 
 		pass
@@ -60,6 +61,16 @@ class WizardScriptMaker(QWizard):
 
 
 		self.show()
+
+	def getSetupDict(self):
+		"""
+		- type - тип графа (gamemode, role, etc...)
+		- name - имя графа
+		- class - имя класса графа
+		- parent - родительский класс 
+		- path - путь до файла с графом
+		"""
+		return self.setupDict
 
 	def disable_back(self, ind):
 		self.button(QWizard.BackButton).setVisible(ind > 0)
@@ -254,7 +265,9 @@ class WizardScriptMaker(QWizard):
 			_validateAll()
 		def __on_classname_changed():
 			text = gmclass.text()
-			gmpath.set_value(f"GM_FOLDER/{text}.graph")
+			basePath = opt_path_.get('base','.\\undefined_path\\')
+			fullpath = os.path.join(basePath,f"{text}.graph")
+			gmpath.set_value(fullpath)
 			_validateAll()
 		gmname.textChanged.connect(__on_name_changed)
 		gmclass.textChanged.connect(__on_classname_changed)
@@ -273,6 +286,22 @@ class WizardScriptMaker(QWizard):
 			
 			txt.setText("Опции: " + "\n".join(optlist))
 		page.initializePage = __init
+
+		self.button(QWizard.WizardButton.FinishButton).clicked.connect(self.onFinish)
+
+	def onFinish(self):
+		logger = ScriptMakerManager.refObject.logger
+		settings = self.getSetupDict()
+		if not settings.get('type'):
+			return
+		
+		filePath = settings.get('path')
+		settings.pop('path') #removing path
+		if not filePath:
+			logger.error(f'Ошибка пути: {filePath}')
+			return
+
+		self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,options=settings)
 
 	def create_wizard(self):
 		self.createIntro()

@@ -9,6 +9,10 @@ import os
 
 class TabData:
     def __init__(self,name='',file='') -> None:
+        """
+            - name - имя (класс) графа
+            - file - относительный путь до файла
+        """
         self.filePath = file
         self.name = name
         #self.serializedData = None
@@ -17,7 +21,7 @@ class TabData:
 
         # Here located all graph backend for this session
         self.graph = SessionManager.refObject.newInstanceGraph()
-        
+
         if self.filePath:
             self.graph.load_session(self.filePath)
         
@@ -140,6 +144,9 @@ class SessionManager(QTabWidget):
 
     def syncTabName(self,idx):
         tdata = self.getTabData(idx)
+        
+        if not tdata: return
+
         unsafe = ""
         if tdata.isUnsaved:
             unsafe = "*"
@@ -150,9 +157,26 @@ class SessionManager(QTabWidget):
         #print(f"moved to {index}")
         pass
 
-    def newTab(self,switchTo=False,loader=''):
+    def newTab(self,switchTo=False,loader='',options=None):
         idx = self.addTab(QWidget(),"tab")
-        tabCtx = TabData("Новый граф",loader)
+        graphName = "Новый граф"
+        if options:
+            graphName = options.get("classname") or graphName
+
+            
+            defaultGraph = {
+                "graph": {
+                    "variables": {},
+                    "info": options,
+                },
+                "nodes": {},
+                "connections": []
+            }
+            
+            os.makedirs(os.path.dirname(loader), exist_ok=True)
+            self.graphSystem.graph.save_session(loader,defaultGraph)
+        
+        tabCtx = TabData(graphName,loader)
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
         

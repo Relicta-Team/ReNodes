@@ -1957,7 +1957,7 @@ class NodeGraph(QtCore.QObject):
         self.clear_selection()
         self._undo_stack.clear()
 
-    def save_session(self, file_path):
+    def save_session(self, file_path,saveFromDict=None):
         """
         Saves the current node graph session layout to a `JSON` formatted file.
 
@@ -1969,7 +1969,10 @@ class NodeGraph(QtCore.QObject):
         Args:
             file_path (str): path to the saved node layout.
         """
-        serialized_data = self._serialize(self.all_nodes())
+        if saveFromDict:
+            serialized_data = saveFromDict
+        else:
+            serialized_data = self._serialize(self.all_nodes())
         file_path = file_path.strip()
 
         def default(obj):
