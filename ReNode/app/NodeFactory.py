@@ -18,12 +18,14 @@ class NodeFactory:
 
 		self.version = 0
 		self.nodes = {}
+		self.classes = {}
 		self.loadFactoryFromJson("lib.json")
 		pass
 
 	def loadFactoryFromJson(self,file_path):
 		logger.info(f"Loading factory from json file {file_path}")
 		self.nodes = {}
+		self.classes = {}
 
 		try:
 			with open(file_path,encoding='utf-8') as data_file:
@@ -61,10 +63,38 @@ class NodeFactory:
 		#load nodes
 		for nodecat,nodelist in data.get('nodes', {}).items():
 			logger.info(f"Loading category: {nodecat}")
-			for node,data in nodelist.items():
+			for node,dataNode in nodelist.items():
 				logger.info(f"	Loading node '{node}'")
-				self.registerNodeInLib(nodecat,node,data)
+				self.registerNodeInLib(nodecat,node,dataNode)
 
+		#load classes
+		classDict = data.get('classes',{})
+		i = 1
+		for classname,classmembers in classDict.items():
+			if (i%100 == 0):
+				logger.info(f"Loading class {i}/{len(classDict)}")
+			classmembers['__childList'] = []
+			self.classes[classname] = classmembers
+			i += 1
+
+		logger.info(f'Classes count: {len(self.classes)}')
+
+		#validate names
+		for classname,classmembers in classDict.items():
+			bList = classmembers['baseList']
+			for bName in bList:
+				if not self.getClassAllParents(bName):
+					raise Exception(f'Class {classname} has invalid base class {bName} ({"->".join(bList)})')
+
+
+		# collect class child list
+		for classname in classDict.keys():
+			bList = self.getClassAllParents(classname)
+			for b in bList:
+				bData = self.getClassData(b)
+				bData['__childList'].append(classname)
+			pass
+		
 
 	def getColorByType(self,type_name,retAsQColor=False):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -386,3 +416,17 @@ class NodeFactory:
 	def getNodeLibData(self,key):
 		if not self.nodes: return None
 		return self.nodes[key]
+
+	def getClassData(self,className):
+		if not self.classes: return None
+		return self.classes.get(className,None)
+	
+	def getClassAllParents(self,className):
+		cd = self.getClassData(className)
+		if not cd: return []
+		return cd.get("baseList",[])
+	
+	def getClassAllChilds(self,className):
+		cd = self.getClassData(className)
+		if not cd: return []
+		return cd.get("__childList",[])
