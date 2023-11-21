@@ -27,6 +27,8 @@ class NodeGraphComponent:
 
 	def __init__(self,mainWindow) -> None:
 		from ReNode.ui.AppWindow import MainWindow
+		from ReNode.ui.ScriptMaker import ScriptMakerManager
+
 		# global reference to object instance		
 		NodeGraphComponent.refObject = self
 
@@ -48,6 +50,8 @@ class NodeGraphComponent:
 
 		self.codegen = CodeGenerator()
 		self.codegen.graphsys = self
+
+		self.script_maker = ScriptMakerManager(self)
 
 		#notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
 		#notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks

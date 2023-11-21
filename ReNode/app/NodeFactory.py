@@ -80,6 +80,7 @@ class NodeFactory:
 		logger.info(f'Classes count: {len(self.classes)}')
 
 		#validate names
+		logger.info('Validating class names')
 		for classname,classmembers in classDict.items():
 			bList = classmembers['baseList']
 			for bName in bList:
@@ -88,6 +89,7 @@ class NodeFactory:
 
 
 		# collect class child list
+		logger.info('Collecting class child list')
 		for classname in classDict.keys():
 			bList = self.getClassAllParents(classname)
 			for b in bList:

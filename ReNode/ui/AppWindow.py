@@ -89,7 +89,8 @@ class MainWindow( QMainWindow ):
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")
-		self.nodeGraph.sessionManager.newTab(switchTo=True)
+		#self.nodeGraph.sessionManager.newTab(switchTo=True)
+		self.nodeGraph.script_maker.openMaker()
 	
 	def onOpenFile(self):
 		#logger.info("Открыть")

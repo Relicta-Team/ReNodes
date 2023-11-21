@@ -33,6 +33,7 @@ class Inspector(QDockWidget):
         
         self.propertyListWidget = QWidget()
         self.vlayout = QVBoxLayout() #main vertical layout
+        self.vlayout.setContentsMargins(2,2,2,0)
         self.propertyListWidget.setLayout(self.vlayout)
 
         self.scrollArea = QScrollArea()
@@ -68,5 +69,5 @@ class Inspector(QDockWidget):
         for item in self.propertyList:
             item.deleteLater()
         self.propertyList.clear()
-
+        
         pass
