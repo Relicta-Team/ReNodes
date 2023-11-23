@@ -432,3 +432,15 @@ class NodeFactory:
 		cd = self.getClassData(className)
 		if not cd: return []
 		return cd.get("__childList",[])
+	
+	def getClassAllChildsTree(self,className):
+		"""
+			Собирает все дочерние классы от указанного className
+		"""
+		# TODO finalize
+		lst = self.getClassAllChilds(className)
+		if not lst: return {}
+		ret = {}
+		for cls in lst:
+			pass
+		return ret
