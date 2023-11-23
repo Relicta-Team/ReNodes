@@ -197,6 +197,10 @@ class NodeGraph(QtCore.QObject):
         self._register_builtin_nodes()
         self._wire_signals()
 
+        # custom storages (variables, graph info/inspector)
+        self.variables = {}
+        self.infoData = {}
+
     def __repr__(self):
         return '<{}("root") object at {}>'.format(
             self.__class__.__name__, hex(id(self)))
@@ -1753,6 +1757,7 @@ class NodeGraph(QtCore.QObject):
         #serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
 
         serial_data['graph']['variables'] = nodeSystem.variable_manager.variables
+        serial_data['graph']['info'] = nodeSystem.inspector.infoData
 
         if serializeMouse:
             serial_data['graph']['mpos'] = self.viewer().scene_rect()
@@ -1835,9 +1840,12 @@ class NodeGraph(QtCore.QObject):
             #     self.model.accept_connection_types = attr_value
             # elif attr_name == 'reject_connection_types':
             #     self.model.reject_connection_types = attr_value
-
+            elif attr_name == "info":
+                #nodeSystem.inspector.infoData = attr_value
+                self.infoData = attr_value
             elif attr_name == "variables":
                 nodeSystem.variable_manager.loadVariables(attr_value)
+                self.variables = attr_value
             elif attr_name == "mpos" and loadMousePos:
                 sceneRect = attr_value
             elif attr_name == "mzoom" and loadMousePos:
@@ -2141,6 +2149,10 @@ class NodeGraph(QtCore.QObject):
                   '"{}"'.format(cb_text))
             return
 
+        if serial_data.get("graph",{}).get('info',{}).get('classname','') != self.infoData.get('classname',0):
+            p1 = serial_data.get("graph",{}).get('info',{}).get('classname','')
+            raise Exception(f'Incompatible clipboard data [{p1}:{self.infoData.get("classname")}]')
+
         self._undo_stack.beginMacro('pasted nodes')
         self.clear_selection()
         nodes = self._deserialize(serial_data, relative_pos=True)
@@ -2166,6 +2178,10 @@ class NodeGraph(QtCore.QObject):
             print('ERROR: Can\'t Decode Clipboard Data:\n'
                   '"{}"'.format(cb_text))
             return
+
+        if serial_data.get("graph",{}).get('info',{}).get('classname','') != self.infoData.get('classname',0):
+            p1 = serial_data.get("graph",{}).get('info',{}).get('classname','')
+            raise Exception(f'Incompatible clipboard data [{p1}:{self.infoData.get("classname")}]')
 
         self._undo_stack.beginMacro('load session from string')
         self.clear_selection()

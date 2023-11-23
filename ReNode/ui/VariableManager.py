@@ -12,6 +12,7 @@ from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
+from ReNode.ui.SearchMenuWidget import SeachMenuWidget
 import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
@@ -668,18 +669,19 @@ class VariableManager(QDockWidget):
             portColor = [*varInfo.color.getRgb()]
         nodeObj.update_icon_parts(kvdat,False)
 
-        code = ""
-        inval = "@in.2"
+
+        if nodeObj.has_property('code'):
+            self.logger.warning("TODO: remove obsolete option 'code' from variable accessors")
+        # code = ""
+        # inval = "@in.2"
+        # if lvdata['category']=='local':
+        #     code = f"{lvdata['systemname']}" if getorset == "get" else f"{lvdata['systemname']} = {inval}; @out.1"
+        # elif lvdata['category']=='class':
+        #     code = f"this getVariable \"{lvdata['systemname']}\"" if getorset == "get" else f"this setVariable [\"{lvdata['systemname']}\",{inval}]; @out.1"
+        # else:
+        #     raise Exception(f"Unknown category {lvdata['category']}")
         
-        self.logger.warning("TODO: remove obsolete option 'code' from variable accessors")
-        if lvdata['category']=='local':
-            code = f"{lvdata['systemname']}" if getorset == "get" else f"{lvdata['systemname']} = {inval}; @out.1"
-        elif lvdata['category']=='class':
-            code = f"this getVariable \"{lvdata['systemname']}\"" if getorset == "get" else f"this setVariable [\"{lvdata['systemname']}\",{inval}]; @out.1"
-        else:
-            raise Exception(f"Unknown category {lvdata['category']}")
-        
-        nodeObj.set_property('code',code,False)
+        # nodeObj.set_property('code',code,False)
 
         if "set" == getorset and varDt.dataType == 'value':
             props = varInfo.dictProp

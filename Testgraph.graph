@@ -1,0 +1,13 @@
+{
+  "graph":{
+    "variables":{},
+    "info":{
+      "type":"gamemode",
+      "name":"TestGraph",
+      "classname":"Testgraph",
+      "parent":""
+    }
+  },
+  "nodes":{},
+  "connections":[]
+}

@@ -107,6 +107,9 @@ class NodeGraphComponent:
 			#self.graph.load_session(".\\session.json")
 			with  open(".\\templates_tests.txt",encoding='utf-8') as f:
 				QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
+			self.variable_manager.loadVariables(self.graph.variables)
+			#todo load info
+			self.graph.infoData['classname'] = 'debug_session'
 			self.graph.paste_nodes()
 		else:
 			self.editorDock.setWidget(None)

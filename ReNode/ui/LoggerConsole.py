@@ -372,12 +372,15 @@ class SessionClipLoadCommand(ConsoleCommand):
     def onCall(self,args):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         from PyQt5.QtWidgets import QApplication
-
+        
+        raise NotImplementedError()
+    
         if NodeGraphComponent.refObject:
             graph = NodeGraphComponent.refObject.graph
             data = QApplication.clipboard().text()
             if data:
                 graph.loadGraphFromString(data,loadMousePos=True)
+                NodeGraphComponent.refObject.variable_manager.loadVariables(graph.variables)
                 self.logger.info("Данные загружены")
 
 class EvalCodeCommand(ConsoleCommand):

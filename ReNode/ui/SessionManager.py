@@ -22,10 +22,16 @@ class TabData:
         # Here located all graph backend for this session
         self.graph = SessionManager.refObject.newInstanceGraph()
 
+        self.variables = {}
+        self.infoData = {}
+
         if self.filePath:
             self.graph.load_session(self.filePath)
+            self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
+            self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
         
-        self.variables = {}
+        if self.infoData.get('classname'):
+            self.name = self.infoData.get('classname')
 
     def __repr__(self) -> str:
         from sys import getsizeof
@@ -56,7 +62,7 @@ class TabData:
         self.graph.deleteLater()
         QApplication.processEvents()
 
-        
+        graphComponent.variable_manager.clearVariables()
 
         graphComponent.graph = None
         graphComponent.tabSearch = None
@@ -83,6 +89,9 @@ class TabData:
         #load variables
         graphComponent.variable_manager.variables = self.variables
         graphComponent.variable_manager.syncVariableManagerWidget()
+
+        #load graph info
+        graphComponent.inspector.infoData = self.infoData
 
         #load history widget
         graphComponent.undoView_dock.setWidget(self.graph.undo_view)

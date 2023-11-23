@@ -29,6 +29,10 @@ class Inspector(QDockWidget):
         super().__init__("Инспектор")
         self.nodeGraphComponent = graphRef
         self.logger = RegisterLogger("Inspector")
+
+        # информация свойств (тип графа, имена классов и тд)
+        self.infoData = {}
+
         self.propertyList = [] 
         
         self.propertyListWidget = QWidget()
