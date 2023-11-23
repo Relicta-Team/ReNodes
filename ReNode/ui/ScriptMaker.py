@@ -121,6 +121,10 @@ class WizardScriptMaker(QWizard):
 			"Сейчас вам будет предложено создать новый скрипт.")
 		
 		self._addLabel(f"Для продолжения нажмите кнопку \"{self.button(QWizard.NextButton).text()}\".")
+
+		from ReNode.ui.SearchMenuWidget import SeachComboButton
+		test = SeachComboButton()
+		self._addLineOption("Test",test)
 	
 	def createSelectScriptType(self):
 		page = self._registerPage("Общие настройки")
@@ -199,9 +203,13 @@ class WizardScriptMaker(QWizard):
 
 		gmparent = QComboBox()
 		opt_parent_ = params.get('parentData',{"name":"Неизвестный name","class":""})
-		self._addLineOption(f"{opt_parent_.get('name','Неопр.')}:",gmparent)
+		self._addLineOption(f"{opt_parent_.get('name','Неопр.р.к.')}:",gmparent)
 		parentClassname = opt_parent_.get('class','')
 		parents = self.graphSystem.getFactory().getClassAllChilds(parentClassname)
+
+		if not parents:
+			raise Exception(f"Класс {parentClassname} не найден или отсутствуют дочерние классы")
+
 		iSet__ = -1
 
 		for idx, modename in enumerate(parents):
@@ -227,6 +235,7 @@ class WizardScriptMaker(QWizard):
 			name = gmname.text()
 			classname = gmclass.text()
 			pathval = gmpath.get_value()
+			parCls = gmparent.currentText()
 			errors = []
 
 			if not name:
@@ -238,6 +247,9 @@ class WizardScriptMaker(QWizard):
 					errors.append(f"{class_opt_} может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
 				if len(classname) <= 4:
 					errors.append(f"{class_opt_} должно содержать более 4 символов")
+
+			if not parCls:
+				errors.append(f"{opt_parent_.get('name','Неопр.р.к')} не имеет значения")
 
 			if os.path.exists(pathval):
 				errors.append(f"Файл \"{pathval}\" уже существует")
@@ -251,7 +263,7 @@ class WizardScriptMaker(QWizard):
 			settings = self.setupDict
 			settings['name'] = name
 			settings['classname'] = classname
-			settings['parent'] = gmparent.currentText()
+			settings['parent'] = parCls
 			settings['path'] = pathval
 
 			#self.button(QWizard.WizardButton.NextButton).setVisible(len(errors) == 0)
