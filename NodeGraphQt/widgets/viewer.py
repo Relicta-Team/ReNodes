@@ -1314,6 +1314,14 @@ class NodeViewer(QtWidgets.QGraphicsView):
         new_pos = QtCore.QPoint(int(pos.x() - rect.width() / 2),
                                 int(pos.y() - rect.height() / 2))
         new_pos = QtCore.QPoint(int(pos.x()),int(pos.y()))
+         # Ограничение виджета в пределах экрана
+        viewer_geometry = self.geometry()
+        tabsearch_geometry = self._tabSearch.geometry()
+        if not viewer_geometry.contains(tabsearch_geometry.translated(new_pos)):
+            # Если виджет выходит за пределы экрана, корректируем его позицию
+            new_pos.setX(max(viewer_geometry.left(), min(new_pos.x(), viewer_geometry.right() - tabsearch_geometry.width())))
+            new_pos.setY(max(viewer_geometry.top(), min(new_pos.y(), viewer_geometry.bottom() - tabsearch_geometry.height())))
+        
         self._tabSearch.move(new_pos)
         self._tabSearch.onChangeVisible(True,new_pos)
         self._tabSearch.setVisible(True)

@@ -112,7 +112,6 @@ class TabSearchMenu(QWidget):
         #self.build_tree(test)
         self.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
 
-    
     def onChangeVisible(self,newMode,centerpos=None):
         if newMode:
             self.tree.collapseAll() #fix collapse all on load
