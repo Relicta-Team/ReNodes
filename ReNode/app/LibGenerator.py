@@ -69,6 +69,8 @@ class NodeObjectHandler:
 		self.counterCopy = 0
 
 		self.execTypes = 'all' #all,in,out,none
+		if self.isSystem:
+			self.execTypes = "none" #by default system nodes has no exectypes
 
 		self.path = "" # путь до узла в дереве
 		#TODO remove var
@@ -297,7 +299,6 @@ class NodeObjectHandler:
 				self.lastPortRef['desc'] = unescape(tokens[3])
 			self.memberData['inputs'].append((tokens[2],self.lastPortRef))
 		elif tokenType == "out":
-			
 			self.lastPortRef = {
 				'type': tokens[1],
 				'mutliconnect':True
@@ -314,13 +315,23 @@ class NodeObjectHandler:
 				if tInside.startswith('allowtypes'):
 					self.lastPortRef['allowtypes'] = tInside.split('|')
 				if tInside.startswith("custom"):
-					self.lastPortRef['use_custom'] = tInside.split('=')[1] > 0
+					self.lastPortRef['use_custom'] = intTryParse(tInside.split('=')[1]) > 0
+				if tInside.startswith("pathes"):
+					parts_ = tInside.split('=')
+					listParts_ = parts_[1].split('|') if len(parts_) > 1 and not parts_[1].isspace() else []
+					self.lastPortRef['accepted_paths'] = listParts_
+				if tInside.startswith("typeget"):
+					self.lastPortRef['typeget'] = tInside.split('=')[1]
 		
 		# -------------------- common spec options -------------------- 
 		
 		# redef node name
 		elif tokenType == 'node':
+			if self.isSystem:
+				self.objectType = self.objectNameFull
 			self.objectNameFull = tokens[1]
+		elif tokenType == "icon":
+			self['icon'] = tokens[1]
 		# def visible node in treeview
 		elif tokenType == "libvisible":
 			if intTryParse(tokens[1]) == 0:
@@ -329,16 +340,23 @@ class NodeObjectHandler:
 		elif tokenType == "runtimeports":
 			if intTryParse(tokens[1]) > 0:
 				self.memberData['runtime_ports'] = True
+				if self.isSystem:
+					self['options'].append(("autoportdata", {
+						"type": "hidden",
+						"default": {}
+					}))
 		# add specific option to node
 		elif tokenType == "option":
 			_cont :str= tokens[1]
+			#removing \\: to :
+			_cont = _cont.replace("\\:",":")
 			if not _cont.strip(' \t\n\r').startswith("{"):
 				_cont = "{"+_cont+"}"
 			_ser = json.loads(_cont)
 			for k,v in _ser.items():
 				if k in self['options']:
 					self.exThrow(f"Duplicate option: {k}")
-				self['options'][k] = v
+				self['options'].append((k,v))
 
 		pass
 
@@ -571,7 +589,23 @@ class NodeObjectHandler:
 		if 'path' not in memberData:
 			memberData['path'] = classmeta[self.memberClass].get('path','')
 		
+	def _preregSystemNode(self):
+		memberData = self.memberData
+		if 'icon' in memberData:
+			memberData['icon'] = self.preparePath(memberData['icon'])
 
+		#TODO change out/in types from auto to ""
+		overrideRuntime = 'runtime_ports' in memberData
+		for k,v in self['inputs']:
+			if overrideRuntime and v['type'] == 'auto':
+				v['type'] = ''
+			if v['type'] == "Exec":
+				v["style"] = "triangle"
+		for k,v in self['outputs']:
+			if overrideRuntime and v['type'] == 'auto':
+				v['type'] = ''
+			if v['type'] == "Exec":
+				v["style"] = "triangle"
 
 	def registerNode(self,memberRegion):
 		memberData = self.memberData
@@ -591,9 +625,12 @@ class NodeObjectHandler:
 						"style": "triangle"
 			}))
 		
-		self._preregClassMember()
+		if not self.isSystem: self._preregClassMember()
 		if self.isField: self._preregField()
 		if self.isMethod: self._preregMethod()
+
+		if self.isSystem:
+			self._preregSystemNode()
 
 		dataInputs = dict(self['inputs'])
 		dataOutputs = dict(self['outputs'])
@@ -609,7 +646,7 @@ class NodeObjectHandler:
 				if opt:
 					self['options'][k] = opt
 
-		if 'code' not in memberData:
+		if 'code' not in memberData and self.isMethod:
 			self['code'] = self.generateMethodCodeCall()
 
 		isInspectorProp = memberData.get('classProp',0) > 0
@@ -689,9 +726,18 @@ def compileRegion(members,nodeLib,classmeta):
 	if curMember:
 		objectList.append(curMember)
 
+	nextPath = ""
 	while len(objectList) > 0:
 		obj = objectList[0]
+		
+		# проброс пути
+		if nextPath and obj.isSystem:
+			obj['path'] = nextPath
+		
 		obj.generateJson() #generate main
+		
+		if obj.isSystem:
+			nextPath = obj['path']
 
 # generate lib (using flag -genlib)
 def GenerateLibFromObj():
@@ -737,7 +783,7 @@ def GenerateLibFromObj():
 	functions = getRegionData(content,"functions")
 	if not functions: 
 		print(f'Empty functions data')
-	#compileRegion(functions,nodeLib,classmeta)
+	compileRegion(functions,nodeLib,classmeta)
 	
 	print("---------- Prep class members region ----------")
 	if not checkRegionName(content,"CLASSMEM"):

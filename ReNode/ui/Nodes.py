@@ -86,7 +86,7 @@ class RuntimeNode(BaseNode):
 		if not re.findall('[\[\]\,]',sourceType):
 			sourceType = f'array[{sourceType}]'
 
-		typeinfo = re.findall('\w+',sourceType)
+		typeinfo = re.findall('\w+\^?',sourceType)
 		
 		if getter == '@type':
 			return sourceType

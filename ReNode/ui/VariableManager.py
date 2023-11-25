@@ -146,7 +146,7 @@ class VariableLibrary:
         valueType = "value"
         compareType = typ
         if typ.startswith("array") or typ.startswith("set") or typ.startswith("dict"):
-            vdat = re.findall('\w+',compareType)
+            vdat = re.findall('\w+\^?',compareType)
             valueType = vdat[0]
             compareType = [vdat[1],vdat[2]]
         
@@ -632,7 +632,8 @@ class VariableManager(QDockWidget):
         if not lvdata:
             raise Exception("Unknown variable id "+id)
         #varInfo = self.getVariableTypedefByType(lvdata['typename'],True)
-        varInfo,varDt = self._getVarDataByRepr(lvdata['reprType'],lvdata['reprDataType'])
+        #varInfo,varDt = self._getVarDataByRepr(lvdata['reprType'],lvdata['reprDataType'])
+        varInfo,varDt = self.getVarDataByType(lvdata['type'])
         
         _class = nodeObj.nodeClass
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
