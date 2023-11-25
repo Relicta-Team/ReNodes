@@ -74,6 +74,8 @@ class NodeFactory:
 			if (i%100 == 0):
 				logger.info(f"Loading class {i}/{len(classDict)}")
 			classmembers['__childList'] = []
+			classmembers['__inhChild'] = [] #прямые дети
+			classmembers['__inhParent'] = "" #прямые родители
 			self.classes[classname] = classmembers
 			i += 1
 
@@ -84,19 +86,34 @@ class NodeFactory:
 		for classname,classmembers in classDict.items():
 			bList = classmembers['baseList']
 			for bName in bList:
-				if not self.getClassAllParents(bName):
+				if not self.getClassAllParents(bName,False):
 					raise Exception(f'Class {classname} has invalid base class {bName} ({"->".join(bList)})')
 
 
 		# collect class child list
 		logger.info('Collecting class child list')
 		for classname in classDict.keys():
-			bList = self.getClassAllParents(classname)
+			curData = self.getClassData(classname)
+			bList = self.getClassAllParents(classname,False) #родительская иерархия
 			for b in bList:
 				bData = self.getClassData(b)
 				bData['__childList'].append(classname)
-			pass
+
+			# прописываем прямых предков
+			if len(bList) > 1:
+				if curData['__inhParent']:
+					exp__ = curData['__inhParent']
+					raise Exception(f'Class {classname} already has parent ({exp__})')
+				curData['__inhParent'] = bList[1]
 		
+		# второй проход для проброса детей из родителей
+		logger.info("Passing children from parents")
+		for classname,curData in classDict.items():
+			if classname != "object":
+				parent = curData["__inhParent"]
+				parData = self.getClassData(parent)
+				parData['__inhChild'].append(classname)
+		pass
 
 	def getColorByType(self,type_name,retAsQColor=False):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -423,24 +440,57 @@ class NodeFactory:
 		if not self.classes: return None
 		return self.classes.get(className,None)
 	
-	def getClassAllParents(self,className):
+	def getClassAllParents(self,className,retCopy=True):
 		cd = self.getClassData(className)
 		if not cd: return []
-		return cd.get("baseList",[])
+		if retCopy:
+			return list(cd.get("baseList",[]))
+		else:
+			return cd.get("baseList",[])
 	
-	def getClassAllChilds(self,className):
+	def getClassAllChilds(self,className,retCopy=True):
 		cd = self.getClassData(className)
 		if not cd: return []
-		return cd.get("__childList",[])
+		if retCopy:
+			return list(cd.get("__childList",[]))
+		else:
+			return cd.get("__childList",[])
 	
+	# получение прямых предков
+	def getClassParent(self,className):
+		cd = self.getClassData(className)
+		if not cd: return None
+		return cd.get('__inhParent',None)
+
+	def getClassChilds(self,className,retCopy=True):
+		cd = self.getClassData(className)
+		if not cd: return []
+		if retCopy:
+			return list(cd.get("__inhChild",[]))
+		else:
+			return cd.get("__inhChild",[])
+
 	def getClassAllChildsTree(self,className):
 		"""
-			Собирает все дочерние классы от указанного className
+			Собирает все дочерние классы от указанного className в виде дерева
+
+			{
+				"name": "",
+				"childs": [] #name,childs tree
+			}
 		"""
-		# TODO finalize
-		lst = self.getClassAllChilds(className)
-		if not lst: return {}
-		ret = {}
-		for cls in lst:
-			pass
+		lst = self.getClassChilds(className)
+		if not lst: return {"name":className, "childs": []}
+		ret = {
+			"name": className,
+			"childs": []
+		}
+		for ch in lst:
+			tree = self.getClassAllChildsTree(ch)
+			#if tree['name']:
+			ret["childs"].append(tree)
 		return ret
+	
+	def isTypeOf(self,typecheck,baseClassName):
+		parents = self.getClassAllParents(typecheck,False)
+		return baseClassName in parents

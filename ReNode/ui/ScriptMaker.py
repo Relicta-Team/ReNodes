@@ -66,7 +66,7 @@ class WizardScriptMaker(QWizard):
 		"""
 		- type - тип графа (gamemode, role, etc...)
 		- name - имя графа
-		- class - имя класса графа
+		- classname - имя класса графа
 		- parent - родительский класс 
 		- path - путь до файла с графом
 		"""

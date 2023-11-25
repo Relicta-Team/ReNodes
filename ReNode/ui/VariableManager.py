@@ -12,6 +12,7 @@ from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
+from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
@@ -267,13 +268,19 @@ class VariableManager(QDockWidget):
         type_layout = QHBoxLayout()
         layout.addLayout(type_layout)
 
-        self.widVarType = ExtendedComboBox()
+        self.widVarType = SeachComboButton()
+        treeContent = createTreeDataContent()
+
         for vobj in self.variableTempateData:
             icon = QtGui.QIcon("data\\icons\\pill_16x.png")
             colored_icon = updateIconColor(icon, vobj.color)
-            
-            self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
-        self.widVarType.currentIndexChanged.connect(self._onVariableTypeChanged)
+            addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+            #self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
+        
+        objTree = self.nodeGraphComponent.getFactory().getClassAllChildsTree("GameObject")
+        addTreeContentItem(treeContent,objTree)
+        self.widVarType.loadContents(treeContent)
+        self.widVarType.changed_event.connect(self._onVariableTypeChanged)
         type_layout.addWidget(self.widVarType)
 
         self.widDataType = QComboBox()
@@ -335,17 +342,24 @@ class VariableManager(QDockWidget):
 
         central_widget.setLayout(layout)
     
-    def _onVariableTypeChanged(self, *args, **kwargs):
-        newIndex = args[0]
+    def _onVariableTypeChanged(self, data,text,icon):
+        if self.nodeGraphComponent.getFactory().isTypeOf(data,"object"):
+            data = "object" 
+        newIndex = next((i for i, v in enumerate(self.variableTempateData) if v.variableType == data))
         vart : VariableTypedef = self.variableTempateData[newIndex]
         tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
         self._updateVariableValueVisual(vart,tobj)
         pass
 
     def _onDataTypeChanged(self,*args,**kwargs):
-        newIndex = args[0]
-        vart = self.variableTempateData[self.widVarType.currentIndex()]
-        tobj : VariableDataType = self.variableDataType[newIndex]
+        newIndexDatatype = args[0]
+
+        curdata = self.widVarType.property('data')
+        if self.nodeGraphComponent.getFactory().isTypeOf(curdata,"object"):
+            curdata = "object" 
+        newIndex = next((i for i, v in enumerate(self.variableTempateData) if v.variableType == curdata))
+        vart = self.variableTempateData[newIndex]
+        tobj : VariableDataType = self.variableDataType[newIndexDatatype]
         self._updateVariableValueVisual(vart,tobj)
 
     def _updateVariableValueVisual(self,tp : VariableTypedef,dt : VariableDataType):
