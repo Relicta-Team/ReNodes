@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.utils import transliterate
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFileSavePath
+from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent
 import re
 import sys
 import os
@@ -122,9 +123,13 @@ class WizardScriptMaker(QWizard):
 		
 		self._addLabel(f"Для продолжения нажмите кнопку \"{self.button(QWizard.NextButton).text()}\".")
 
-		from ReNode.ui.SearchMenuWidget import SeachComboButton
-		test = SeachComboButton()
-		self._addLineOption("Test",test)
+		
+		# test = SeachComboButton()
+		# vals = self.graphSystem.getFactory().getClassAllChildsTree("GMBase")
+
+		# test.loadContents(createTreeDataContent(vals))
+		# addTreeContent(test.dictTree,"string","Строка",QIcon("data\\icons\\ArrayPin.png"))
+		# self._addLineOption("Test",test)
 	
 	def createSelectScriptType(self):
 		page = self._registerPage("Общие настройки")
@@ -201,7 +206,7 @@ class WizardScriptMaker(QWizard):
 		gmclass.setPlaceholderText(f"Введите {class_opt_.lower()}")
 		self._addLineOption(f"{class_opt_}:",gmclass)
 
-		gmparent = QComboBox()
+		gmparent = SeachComboButton()
 		opt_parent_ = params.get('parentData',{"name":"Неизвестный name","class":""})
 		self._addLineOption(f"{opt_parent_.get('name','Неопр.р.к.')}:",gmparent)
 		parentClassname = opt_parent_.get('class','')
@@ -210,14 +215,8 @@ class WizardScriptMaker(QWizard):
 		if not parents:
 			raise Exception(f"Класс {parentClassname} не найден или отсутствуют дочерние классы")
 
-		iSet__ = -1
-
-		for idx, modename in enumerate(parents):
-			
-			gmparent.addItem(f"{modename}")
-			if modename == parentClassname:
-				iSet__ = idx
-		if iSet__: gmparent.setCurrentIndex(iSet__)
+		vals = self.graphSystem.getFactory().getClassAllChildsTree("GMBase")
+		gmparent.loadContents(createTreeDataContent(vals))
 
 		gmpath = PropFileSavePath()
 		gmpath.set_file_ext("*.graph")
@@ -235,7 +234,7 @@ class WizardScriptMaker(QWizard):
 			name = gmname.text()
 			classname = gmclass.text()
 			pathval = gmpath.get_value()
-			parCls = gmparent.currentText()
+			parCls = gmparent.get_value()
 			errors = []
 
 			if not name:
