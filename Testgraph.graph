@@ -69,7 +69,7 @@
     }
   },
   "nodes":{
-    "0x1ff6c591ed0":{
+    "0x18ad2ef0410":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -100,8 +100,8 @@
       "width":176.0,
       "height":60,
       "pos":[
-        67.01764249549473,
-        405.5817312142458
+        69.82701598126097,
+        423.8426588717263
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -111,7 +111,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1ff6c590250":{
+    "0x18ad44c3650":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -142,8 +142,8 @@
       "width":191.0,
       "height":78.30000000000001,
       "pos":[
-        626.3478133248888,
-        303.2095589100423
+        629.1571868106549,
+        321.4704865675228
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -153,7 +153,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1ff6c590550":{
+    "0x18ad44c4110":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\\\icons\\\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -181,8 +181,8 @@
       "width":192.0,
       "height":86.75,
       "pos":[
-        237.7666583143594,
-        218.0622391170368
+        240.5760318001257,
+        236.3231667745173
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -192,7 +192,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1ff6e15de50":{
+    "0x18ad4abe650":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -223,8 +223,8 @@
       "width":160,
       "height":60,
       "pos":[
-        20.94769391053012,
-        526.1567823409612
+        23.757067396296357,
+        544.4177099984418
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -234,7 +234,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1ff6e15ce90":{
+    "0x18ad4abf710":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -265,8 +265,8 @@
       "width":169.0,
       "height":78.30000000000001,
       "pos":[
-        325.3053642576433,
-        309.28653950253215
+        328.11473774340953,
+        327.5474671600127
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -276,7 +276,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1ff6e15e910":{
+    "0x18ad2ee8050":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\\\icons\\\\icon_Blueprint_ForEach_16x",
@@ -307,8 +307,8 @@
       "width":160,
       "height":121.4,
       "pos":[
-        354.20661308531203,
-        463.7310263419545
+        357.01598657107826,
+        481.991953999435
       ],
       "layout_direction":0,
       "port_deletion_allowed":true,
@@ -407,7 +407,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x1ff6e1755d0":{
+    "0x18ad2eeaa10":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -438,8 +438,8 @@
       "width":199.0,
       "height":78.30000000000001,
       "pos":[
-        667.6328595325123,
-        434.6021930290176
+        670.4422330182784,
+        452.8631206864981
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -449,7 +449,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1ff6ded0b50":{
+    "0x18ad4abe410":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -472,20 +472,20 @@
         180
       ],
       "disabled":false,
-      "selected":false,
+      "selected":true,
       "visible":true,
       "width":265.0,
       "height":144.5,
       "pos":[
-        -97.6335947938656,
-        9.121941669609328
+        -90.61016107945,
+        33.00161629862228
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x1ff6e176b50":{
+    "0x18ad2eebb50":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -516,8 +516,8 @@
       "width":202.0,
       "height":78.30000000000001,
       "pos":[
-        343.5643876724049,
-        12.271106603637122
+        346.37376115817113,
+        30.532034261117627
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -527,7 +527,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1ff6c5917d0":{
+    "0x18ad2ee0590":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -555,8 +555,8 @@
       "width":383.0,
       "height":75.2,
       "pos":[
-        -272.50815269454654,
-        188.0898662619968
+        -269.6987792087803,
+        206.35079391947733
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -567,41 +567,41 @@
   "connections":[
     {
       "out":[
-        "0x1ff6e15de50",
+        "0x18ad4abe650",
         "Значение"
       ],
       "in":[
-        "0x1ff6e15e910",
+        "0x18ad2ee8050",
         "Массив"
       ]
     },
     {
       "out":[
-        "0x1ff6e15e910",
+        "0x18ad2ee8050",
         "Элемент"
       ],
       "in":[
-        "0x1ff6e1755d0",
+        "0x18ad2eeaa10",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x1ff6ded0b50",
+        "0x18ad4abe410",
         "Выход"
       ],
       "in":[
-        "0x1ff6e176b50",
+        "0x18ad2eebb50",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1ff6ded0b50",
+        "0x18ad4abe410",
         "Клиент"
       ],
       "in":[
-        "0x1ff6e176b50",
+        "0x18ad2eebb50",
         "CurrentUser"
       ]
     }

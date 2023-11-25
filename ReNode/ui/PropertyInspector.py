@@ -70,7 +70,22 @@ class Inspector(QDockWidget):
         name.setTextInteractionFlags(name.textInteractionFlags() | Qt.TextSelectableByMouse)
         hlayout.addWidget(name,0,0)
         if propObject:
-            hlayout.addWidget(propObject,1,0)
+            if isinstance(propObject,QCheckBox):
+                layProp = (0,1)
+                layReset = (0,2)
+            else:
+                layProp = (1,0)
+                layReset = (1,1)
+            hlayout.addWidget(propObject,*layProp)
+
+            removeButton = QPushButton("")
+            icn = QtGui.QIcon("data\\icons\\resetToDefault_32x.png")
+            #removeButton.setMaximumWidth(32)
+            removeButton.setFixedWidth(32)
+            removeButton.setIcon(icn)
+            removeButton.setToolTip("Сбросить значение")
+            hlayout.addWidget(removeButton,*layReset)
+
         self.scrollAreaLayout.addLayout(hlayout)
 
         self.propertyList.append(hlayout)
