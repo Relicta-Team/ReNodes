@@ -480,11 +480,18 @@ class NodeFactory:
 			}
 		"""
 		lst = self.getClassChilds(className)
-		if not lst: return {"name":className, "childs": []}
+		vname = self.getClassData(className).get('name')
+		if not lst: 
+			emptyDict = {"name":className, "childs": []}
+			if vname:
+				emptyDict["vname"] = vname
+			return emptyDict
 		ret = {
 			"name": className,
 			"childs": []
 		}
+		if vname:
+			ret["vname"] = vname
 		for ch in lst:
 			tree = self.getClassAllChildsTree(ch)
 			#if tree['name']:

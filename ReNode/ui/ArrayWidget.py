@@ -2,6 +2,8 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
+from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
+
 class ArrayWidget(QWidget):
     def __init__(self, instancer=None):
         super(ArrayWidget,self).__init__()
@@ -126,10 +128,10 @@ class ArrayWidget(QWidget):
 class DictWidget(QWidget):
     def __init__(self, instancer,widVarType):
         super(DictWidget, self).__init__()
-        from ReNode.ui.VariableManager import VariableManager, ExtendedComboBox
+        from ReNode.ui.VariableManager import VariableManager
         self.varmgr = VariableManager.refObject
         self.instancer = instancer
-        self.widVarTypeRef :ExtendedComboBox = widVarType
+        self.widVarTypeRef :SeachComboButton = widVarType
         self.initUI()
 
     def initUI(self):
@@ -142,17 +144,18 @@ class DictWidget(QWidget):
 
         self.selectType = self.widVarTypeRef.__class__()
         laydat.addWidget(self.selectType)
-        for idx in range(0,self.widVarTypeRef.count()):
-            txt = self.widVarTypeRef.itemText(idx)
-            icn = self.widVarTypeRef.itemIcon(idx)
-            self.selectType.addItem(icn,txt)
+        self.selectType.loadContents(self.widVarTypeRef.dictTree)
+        # for idx in range(0,self.widVarTypeRef.count()):
+        #     txt = self.widVarTypeRef.itemText(idx)
+        #     icn = self.widVarTypeRef.itemIcon(idx)
+        #     self.selectType.addItem(icn,txt)
 
-        def __curIdxChanged(newIndex,*args,**kwargs):
+        def __curIdxChanged(data,text,icon):
             if len(self.arrayElements) > 0:
                 for item in self.arrayElements.copy():
                     self.removeArrayElement(item)
                 return
-        self.selectType.currentIndexChanged.connect(__curIdxChanged)
+        self.selectType.changed_event.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента
         self.addButton = QPushButton("Добавить элемент")
@@ -185,9 +188,17 @@ class DictWidget(QWidget):
         self.countInfo.setText(f"Количество элементов: {len(self.arrayElements)}\nКлюч : значение")
 
     def get_value(self):
+        # print(f'len items: {len(self.arrayElements)}')
+        # for i, element in enumerate(self.arrayElements):
+        #     print(f"key {i}: {element.itemAt(0).widget().get_value()}")
+        #     print(f"val {i}: {element.itemAt(1).widget().get_value()}")
+        
         return {
             element.itemAt(0).widget().get_value() : element.itemAt(1).widget().get_value() for element in self.arrayElements
         }
+    
+    def get_values_count(self):
+        return len(self.arrayElements)
 
     def set_value(self, values):
         for elementLayout in self.arrayElements.copy():
@@ -195,8 +206,8 @@ class DictWidget(QWidget):
         
         self.arrayElements.clear()
         
-        for v in values:
-            self.addArrayElement(keyVal=v)
+        for v,ve in values.items():
+            self.addArrayElement(keyVal=v,valItem=ve)
 
         self.updateCountText()
         return
@@ -216,8 +227,9 @@ class DictWidget(QWidget):
             elementValueWidget = QLineEdit()
         elementLayout.addWidget(elementValueWidget)
 
-        idx__ = self.selectType.currentIndex()
-        instancerValue = VariableManager.refObject.variableTempateData[idx__].classInstance()
+        type = self.selectType.get_value()
+        typeObj = VariableManager.refObject.getVariableTypedefByType(type)
+        instancerValue = typeObj.classInstance()
         if valItem:
             instancerValue.set_value(valItem)
         elementLayout.addWidget(instancerValue)

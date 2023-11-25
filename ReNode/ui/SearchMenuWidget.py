@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from ReNode.app.utils import clamp
 
 def createTreeDataContent(baseChilds=None):
     if not baseChilds: 
@@ -104,12 +105,16 @@ class SeachComboButton(QPushButton):
         screenRect = availableGeometry.contains(QRect(QPoint(globPos.x(), globPos.y()), menuSize))
         if not screenRect:
             menu.adjustSize()
-            globPos.setY(globPos.y() - menu.height())
+            curX = globPos.x() + menu.width()
+            curY = globPos.y()
+            globPos.setX(clamp(curX, 0, availableGeometry.width() - menuSize.width()))
+            globPos.setY(clamp(curY, 0, availableGeometry.height() - menuSize.height()))
+            # globPos.setY(globPos.y() - menu.height())
         menu.exec_(globPos)
 
     def onSetItemData(self,data,text,optIcon):
-        self.setText(text or data)
-        self.setProperty("data",data)
+        self.set_text(text or data)
+        self.set_value(data)
         if optIcon:
             #icn = QIcon("data\\icons\\ArrayPin.png")
             siz = self.font().pixelSize()
@@ -120,9 +125,16 @@ class SeachComboButton(QPushButton):
 
         self.changed_event.emit(data,text,self.icon())
     
-    def get_value(self):
+    def get_text(self):
         return self.text()
-    def set_value(self,value):
+    
+    def get_value(self):
+        return self.property("data")
+
+    def set_value(self,data):
+        self.setProperty("data",data)
+
+    def set_text(self,value):
         self.setText(value)
 
 class CustomMenu(QMenu):

@@ -22,6 +22,27 @@ class PropLabel(QtWidgets.QLabel):
             self.value_changed.emit(self.toolTip(), value)
 
 
+class PropObject(QtWidgets.QLabel):
+    value_changed = QtCore.Signal(str, object)
+    def __init__(self, parent=None):
+        super(PropObject, self).__init__(parent)
+        self.setTextInteractionFlags(self.textInteractionFlags() | QtCore.Qt.TextSelectableByMouse)
+        self.set_value("nullPtr")
+
+    def __repr__(self):
+        return '<{}() object at {}>'.format(
+            self.__class__.__name__, hex(id(self)))
+
+    def get_value(self):
+        return self.text()
+    def set_value(self, value):
+        if value != self.get_value():
+            self.setText(value)
+            self.value_changed.emit(self.toolTip(), value)
+    
+    def get_value(self):
+        return self.text()
+
 class PropLineEdit(QtWidgets.QLineEdit):
     """
     Displays a node property as a "QLineEdit" widget in the PropertiesBin

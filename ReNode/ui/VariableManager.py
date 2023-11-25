@@ -37,6 +37,21 @@ class VariableTypedef:
     def __repr__(self):
         return f"{self.variableType} ({self.variableTextName})"
 
+    def copy(self,newtype=''):
+        vtype = newtype or self.variableType
+        vtextname = self.variableTextName
+        vMgr = VariableManager.refObject
+        if vMgr.isObjectType(vtype):
+            vtextname = vMgr.getObjectTypeName(vtype)
+        return VariableTypedef_Copy(vtype,vtextname,self.classInstance,self.dictProp,self.color)
+
+class VariableTypedef_Copy(VariableTypedef):
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None):
+        super().__init__(vart,vartText,classMaker,dictProp,color)
+
+    #def __del__(self):
+    #    print(f'!!!!!!!!!!!! temp variable deleted: {self}')
+
 class VariableCategory:
     def __init__(self,varcat='',varcatText = '',varcatTextTree=''):
         self.category = varcat
@@ -52,67 +67,6 @@ class VariableDataType:
     
     def __repr__(self):
         return f"{self.dataType} ({self.text})"
-
-class ExtendedComboBox(QComboBox):
-    def __init__(self, parent=None):
-        super(ExtendedComboBox, self).__init__(parent)
-
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.setEditable(True)
-
-        # add a filter model to filter matching items
-        self.pFilterModel = QSortFilterProxyModel(self)
-        self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.pFilterModel.setSourceModel(self.model())
-
-        # add a completer, which uses the filter model
-        self.completer = QCompleter(self.pFilterModel, self)
-        # always show all (filtered) completions
-        self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
-        self.setCompleter(self.completer)
-
-        # connect signals
-        self.lineEdit().textEdited.connect(self.pFilterModel.setFilterFixedString)
-        self.completer.activated.connect(self.on_completer_activated)
-        self.currentIndexChanged.connect(self._onCurIndChanged)
-
-        self.lastIndex = -1
-
-    def _onCurIndChanged(self,*args,**kwargs):
-        self.lastIndex = args[0]
-
-    def focusInEvent(self, e) -> None:
-        self.lastIndex = self.currentIndex()
-        return super().focusInEvent(e)
-
-    def focusOutEvent(self, e) -> None:
-        idx = self.findText(self.lineEdit().text())
-        if idx >= 0:
-            self.setCurrentIndex(idx)
-        else:
-            self.setCurrentIndex(self.lastIndex)
-        return super().focusOutEvent(e)
-
-    # on selection of an item from the completer, select the corresponding item from combobox 
-    def on_completer_activated(self, text):
-        if text:
-            index = self.findText(text)
-            self.setCurrentIndex(index)
-            self.activated[str].emit(self.itemText(index))
-
-
-    # on model change, update the models of the filter and completer as well 
-    def setModel(self, model):
-        super(ExtendedComboBox, self).setModel(model)
-        self.pFilterModel.setSourceModel(model)
-        self.completer.setModel(self.pFilterModel)
-
-
-    # on model column change, update the model column of the filter and completer as well
-    def setModelColumn(self, column):
-        self.completer.setCompletionColumn(column)
-        self.pFilterModel.setFilterKeyColumn(column)
-        super(ExtendedComboBox, self).setModelColumn(column)   
 
 class VariableLibrary:
     def __init__(self):
@@ -133,9 +87,9 @@ class VariableLibrary:
             VariableTypedef("string","Строка",PropLineEdit,{"input": {
                 "text": "Текст"
             }},color=QtGui.QColor("Magenta")),
-            VariableTypedef("string","Длинная строка",PropTextEdit,{"edit": {
-                "text": "Текст"
-            }},color=QtGui.QColor("Magenta")),
+            # VariableTypedef("string","Длинная строка",PropTextEdit,{"edit": {
+            #     "text": "Текст"
+            # }},color=QtGui.QColor("Magenta")),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
             }},color=QtGui.QColor("Maroon")),
@@ -161,7 +115,7 @@ class VariableLibrary:
             # }},color=QtGui.QColor("#D45B04")),
 
             #platform specific objects
-            VariableTypedef("object","Объект",PropLineEdit
+            VariableTypedef("object","Объект",PropObject
                 # ,{"input": {
                 #     "text": "Объект"
                 #     }
@@ -343,22 +297,17 @@ class VariableManager(QDockWidget):
         central_widget.setLayout(layout)
     
     def _onVariableTypeChanged(self, data,text,icon):
-        if self.nodeGraphComponent.getFactory().isTypeOf(data,"object"):
-            data = "object" 
-        newIndex = next((i for i, v in enumerate(self.variableTempateData) if v.variableType == data))
-        vart : VariableTypedef = self.variableTempateData[newIndex]
+        vart: VariableTypedef = self.getVariableTypedefByType(data)
         tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
+
         self._updateVariableValueVisual(vart,tobj)
         pass
 
     def _onDataTypeChanged(self,*args,**kwargs):
         newIndexDatatype = args[0]
 
-        curdata = self.widVarType.property('data')
-        if self.nodeGraphComponent.getFactory().isTypeOf(curdata,"object"):
-            curdata = "object" 
-        newIndex = next((i for i, v in enumerate(self.variableTempateData) if v.variableType == curdata))
-        vart = self.variableTempateData[newIndex]
+        curdata = self.widVarType.get_value()
+        vart = self.getVariableTypedefByType(curdata)
         tobj : VariableDataType = self.variableDataType[newIndexDatatype]
         self._updateVariableValueVisual(vart,tobj)
 
@@ -403,7 +352,7 @@ class VariableManager(QDockWidget):
 
     def createVariable(self):
         # Получите значения типа переменной, имени и дефолтного значения
-        variable_type = self.widVarType.currentText()
+        variable_type = self.widVarType.get_value()
         variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')
         default_value = self.widInitVal.get_value()
         variable_group = self.widVarGroup.text().rstrip(' ').lstrip(' ')
@@ -415,9 +364,16 @@ class VariableManager(QDockWidget):
             raise Exception("Неизвестная категория для создания переменной")
         
         cat_sys_name = next((obj.category for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
-        varInfo = next((obj for obj in self.variableTempateData if obj.variableTextName == variable_type),None)
+        varInfo = self.getVariableTypedefByType(variable_type)
+
+        if not varInfo:
+            raise Exception(f"Неизвестный тип переменной: {variable_type}")
+
+        isObject = self.isObjectType(variable_type)
 
         var_typename = varInfo.variableType
+        if isObject: #обновляем тип если это подтип объекта
+            var_typename = variable_type + "^" #добавляем символ наследования
 
         if not variable_name:
             self.showErrorMessageBox(f"Укажите имя переменной")
@@ -436,9 +392,27 @@ class VariableManager(QDockWidget):
 
         #update 
         if isinstance(self.widInitVal,DictWidget) and dt.dataType == "dict":
-            kv_valtypeTextname = self.widInitVal.selectType.currentText()
-            kv_itemInfo = next((obj for obj in self.variableTempateData if obj.variableTextName == kv_valtypeTextname),None)
-            var_typename += "," + kv_itemInfo.variableType
+
+            if variable_type != "string":
+                self.showErrorMessageBox(f"В текущей версии ключи словарей могут быть только строками")
+                return
+
+            countItems = self.widInitVal.get_values_count()
+            curLenItems = len(default_value)
+            if countItems != curLenItems:
+                self.showErrorMessageBox(f"Ключи словаря должны принимать разные значения;\nУникальных элементов: {curLenItems}, установлено {countItems}")
+                return
+
+            kv_valtypeTextname = self.widInitVal.selectType.get_value()
+            kv_itemInfo = self.getVariableTypedefByType(kv_valtypeTextname)
+            if not kv_itemInfo:
+                raise Exception(f"Неизвестный тип переменной: {kv_valtypeTextname}")
+            vtypename = kv_itemInfo.variableType
+            if self.isObjectType(kv_valtypeTextname):
+                #add postfix with real type
+                vtypename = kv_valtypeTextname + "^"
+                #vtypename += "^" 
+            var_typename += "," + vtypename
             reprType += "|" + str(kv_itemInfo)
             pass
 
@@ -740,13 +714,53 @@ class VariableManager(QDockWidget):
                 if k == id: return v
         return None
     
+    def isObjectType(self,type):
+        """
+            Проверяет является ли тип типом объекта (унаследованного от object)
+
+            Допускается использование типов с постфиксом наследования (^)
+        """
+        if type.endswith("^"): #remove postfix
+            type = type[:-1]
+        
+        if self.nodeGraphComponent.getFactory().isTypeOf(type,"object"):
+            return True
+        return False
+
+    def getObjectTypeName(self,type):
+        if type.endswith("^"): #remove postfix
+            type = type[:-1]
+        cType = self.nodeGraphComponent.getFactory().getClassData(type)
+        if not cType: return None
+        return cType.get("name",type)
+
     def getVariableTypedefByType(self,type,useTextTypename=False) -> None | VariableTypedef:
+        if self.isObjectType(type):
+            type = "object"
+        
         for vobj in self.variableTempateData:
            if useTextTypename and vobj.variableTextName == type: return vobj
            if vobj.variableType == type: return vobj 
         return None
     
+    def getVariableCategoryByType(self,type):
+        for vobj in self.variableCategoryList:
+            if vobj.category == type: return vobj
+        return None
+
+    def getVariableDataTypeByType(self,type):
+        """
+            Возвращает тип данных (значение, массив и т.д.)
+        """
+        for vobj in self.variableDataType:
+            if vobj.dataType == type: return vobj
+        return None
+
     def _getVarDataByRepr(self,vartRepr,vardtRepr):
+        """
+            !УСТАРЕВШИЙ МЕТОД, КОТОРЫЙ НЕ ДОЛЖЕН БЫТЬ ИСПОЛЬЗОВАН!\n
+            Используйте getVarDataByType
+        """
         reprVar = None
         if "|" in vartRepr:
             searcher = vartRepr.split("|")
@@ -759,6 +773,34 @@ class VariableManager(QDockWidget):
         reprDt = next((obj for obj in self.variableDataType if str(obj) == vardtRepr),None)
 
         return reprVar,reprDt
+
+    def getVarDataByType(self,fullTypename,canCreateCopy=False) -> tuple[VariableTypedef | list[VariableTypedef] | None,VariableDataType|None]:
+        """
+            Возвращает tuple (VariableTypedef | list[VariableTypedef],VariableDataType) по полному имени типа
+        """
+        datatype = "value"
+        values = [fullTypename]
+        if re.findall('[\[\]\,]',fullTypename):
+            typeinfo = re.findall('\w+\^?',fullTypename)
+            datatype = typeinfo[0]
+            values = typeinfo[1:]
+        
+        #fullType
+        dtObj = self.getVariableDataTypeByType(datatype)
+        valList = []
+        for val in values:
+            valObj = self.getVariableTypedefByType(val)
+            if not valObj:
+                raise Exception(f"Variable type not found: {val}; Fulltypename: {fullTypename}")
+            
+            if canCreateCopy:
+                vCopy = valObj.copy(val)
+                valList.append(vCopy)
+            else:
+                valList.append(valObj)
+            
+        vRet = valList if len(valList) > 1 else valList[0]
+        return vRet,dtObj
 
     def syncVariableManagerWidget(self):
         self.loadVariables(self.variables,False)
@@ -795,10 +837,10 @@ class VariableManager(QDockWidget):
 
         # Пересоздайте переменные в дереве на основе данных в self.variables
         for category, variables in self.variables.items():
-            category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.category == category),None)
-            if not category_tree_name:
-                raise Exception("Неизвестная категория для создания переменной")
-            category_item = QTreeWidgetItem([category_tree_name])
+            catObj = self.getVariableCategoryByType(category)
+            if not catObj:
+                raise Exception(f"Неизвестная категория для создания переменной: {category}")
+            category_item = QTreeWidgetItem([catObj.categoryTreeTextName])
             category_item.setFlags(category_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
             self.widVarTree.addTopLevelItem(category_item)
 
@@ -807,11 +849,13 @@ class VariableManager(QDockWidget):
             for variable_id, variable_data in variables.items():
                 name = variable_data['name']
                 variable_type = variable_data['typename']
+                fulltype = variable_data['type']
                 value = variable_data['value']
                 group = variable_data.get('group',"")
                 defvalstr = str(value) if not isinstance(value, str) else value
 
-                varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
+                #varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
+                varInfo, dt = self.getVarDataByType(fulltype,True)
                 if not varInfo or not dt:
                     raise Exception(f"Невозможно загрузить переменную {variable_id}; Информация и данные о типе: {varInfo}; {dt}")
 
@@ -820,10 +864,14 @@ class VariableManager(QDockWidget):
                         variable_type = f'{variable_type} ({", ".join([o__.variableTextName for o__ in varInfo])})'
                     else:
                         variable_type = f'{variable_type} ({varInfo.variableTextName})'
-
+                else:
+                    variable_type = varInfo.variableTextName
+                
                 item = QTreeWidgetItem([name, variable_type, defvalstr])
                 item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 item.setData(0, QtCore.Qt.UserRole, variable_id)
+                #set description to column 1
+                item.setToolTip(1,fulltype)
 
                 if isinstance(varInfo,list):
                     pathes = dt.icon
