@@ -92,6 +92,7 @@ class TabData:
 
         #load graph info
         graphComponent.inspector.infoData = self.infoData
+        graphComponent.inspector.updateProps()
 
         #load history widget
         graphComponent.undoView_dock.setWidget(self.graph.undo_view)
