@@ -12,7 +12,6 @@ from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
-from ReNode.ui.SearchMenuWidget import SeachMenuWidget
 import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
