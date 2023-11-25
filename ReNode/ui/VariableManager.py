@@ -230,9 +230,13 @@ class VariableManager(QDockWidget):
             colored_icon = updateIconColor(icon, vobj.color)
             addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
             #self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
-        
-        objTree = self.nodeGraphComponent.getFactory().getClassAllChildsTree("GameObject")
+        #gobj add
+        fact = self.nodeGraphComponent.getFactory()
+        objTree = fact.getClassAllChildsTree("GameObject")
         addTreeContentItem(treeContent,objTree)
+
+        addTreeContentItem(treeContent,fact.getClassAllChildsTree("ServerClient"))
+
         self.widVarType.loadContents(treeContent)
         self.widVarType.changed_event.connect(self._onVariableTypeChanged)
         type_layout.addWidget(self.widVarType)

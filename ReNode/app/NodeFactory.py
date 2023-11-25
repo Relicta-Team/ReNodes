@@ -480,11 +480,14 @@ class NodeFactory:
 			}
 		"""
 		lst = self.getClassChilds(className)
-		vname = self.getClassData(className).get('name')
+		dta = self.getClassData(className)
+		vname = dta.get('name')
 		if not lst: 
 			emptyDict = {"name":className, "childs": []}
 			if vname:
 				emptyDict["vname"] = vname
+			if dta.get('desc'):
+				emptyDict["desc"] = dta.get('desc')
 			return emptyDict
 		ret = {
 			"name": className,
@@ -492,6 +495,8 @@ class NodeFactory:
 		}
 		if vname:
 			ret["vname"] = vname
+		if dta.get('desc'):
+			ret["desc"] = dta.get('desc')
 		for ch in lst:
 			tree = self.getClassAllChildsTree(ch)
 			#if tree['name']:

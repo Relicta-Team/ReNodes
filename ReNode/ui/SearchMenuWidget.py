@@ -278,6 +278,8 @@ class SearchMenuTreeWidget(QTreeWidget):
                     item = QTreeWidgetItem()
                     item.setText(0, refitem.get('vname') or refitem.get('name'))
                     item.setData(0,Qt.UserRole, refitem["name"])
+                    if "desc" in refitem:
+                        item.setToolTip(0, refitem["desc"])
                     if 'icon' in refitem:
                         item.setIcon(0, refitem['icon'])
                     self.addTopLevelItem(item)
@@ -287,6 +289,8 @@ class SearchMenuTreeWidget(QTreeWidget):
                 item = QTreeWidgetItem()
                 item.setText(0, refitem.get('vname') or refitem.get('name'))
                 item.setData(0,Qt.UserRole, refitem["name"])
+                if "desc" in refitem:
+                    item.setToolTip(0, refitem["desc"])
                 if 'icon' in refitem:
                     item.setIcon(0, refitem['icon'])
                 parent.addChild(item)
