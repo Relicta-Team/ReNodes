@@ -391,7 +391,7 @@ class NodeObjectHandler:
 		if 'returnType' not in memberData:
 			
 			if self.isField:
-				memberData['returnType'] = classmeta[self.memberClass]['fields']['defined'].get(self.memberName,'NULLTYPE_ALLOC')
+				memberData['returnType'] = classmeta[self.memberClass]['fields']['defined'].get(self.memberName,{}).get('return','NULLTYPE_ALLOC')
 			else:
 				memberData['returnType'] = "null"
 
