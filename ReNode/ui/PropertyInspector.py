@@ -92,11 +92,16 @@ class Inspector(QDockWidget):
         return name
         
 
-    def updateProps(self):
+    def cleanupPropsVisual(self):
         for item in self.propertyList.copy():
             self.scrollAreaLayout.removeItem(item)
+            for i in range(item.count()):
+                item.itemAt(i).widget().deleteLater()
             item.deleteLater()
         self.propertyList.clear()
+
+    def updateProps(self):
+        self.cleanupPropsVisual()
         
         #collect fields
         fact : NodeFactory = self.nodeGraphComponent.getFactory()

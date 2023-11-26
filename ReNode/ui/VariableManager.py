@@ -355,6 +355,12 @@ class VariableManager(QDockWidget):
         msg_box.exec_()
 
     def createVariable(self):
+
+        if not self.nodeGraphComponent.sessionManager.getActiveTabData():
+            self.nodeGraphComponent.sessionManager.logger.warning("Нет активной вкладки для создания переменной")
+            return
+
+
         # Получите значения типа переменной, имени и дефолтного значения
         variable_type = self.widVarType.get_value()
         variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')

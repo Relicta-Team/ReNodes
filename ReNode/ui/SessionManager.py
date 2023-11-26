@@ -63,6 +63,7 @@ class TabData:
         QApplication.processEvents()
 
         graphComponent.variable_manager.clearVariables()
+        graphComponent.inspector.cleanupPropsVisual()
 
         graphComponent.graph = None
         graphComponent.tabSearch = None
@@ -146,7 +147,7 @@ class SessionManager(QTabWidget):
         return tdat
 
     def getAllTabs(self): return self.tabData
-
+    
     def getActiveTabData(self):
         if self.tabBar().count() == 0: return None
         return self.getTabData(self.currentIndex())
