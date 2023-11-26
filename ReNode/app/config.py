@@ -5,7 +5,7 @@ import logging
 
 configValues = {
     "main": {
-        "version": 1,
+        "version": 2,
         "workdir": ".",
         #"tempvalue": True
     },
@@ -42,7 +42,7 @@ class Config:
         
         if (ver != configValues["main"]["version"]):
             Config.logger.info(f"Version not actual; Old: {ver}; New: {configValues['main']['version']}")
-            Config.createConfig()
+            Config.updateConfig()
         
         Config.logger.info(f"Config initialized (version {ver})")
         Config.isLoaded = True
@@ -51,18 +51,39 @@ class Config:
     def readConfig():
         Config.logger.info("Reading config")
         Config.parser.read_file(Config.cfgPath)
-        #TODO update loaded config
-        # check existen values
-        # for cfgSection,cfgItems in configValues.items():
-        #     # delete nonexisten sections
-        #     if cfgSection not in Config.parser.sections():
-        #         Config.parser.remove_section(cfgSection)
-        #         Config.logger.info(f"Removed old section {cfgSection}")
-        #     # add nonexisten section items
-        #     for propKey,propVal in cfgItems.items():
-        #         if not Config.parser.has_property(propKey,cfgSection):
-        #             Config.parser.set(propKey,propVal,section=cfgSection)
-        #             Config.logger.info(f"Added new property {propKey} in section {cfgSection}")
+
+    @staticmethod
+    def updateConfig():
+
+        # проход по секциям конфигов в файле. несуществующие удаляем
+        allSections = configValues.keys()
+        for sectionName in Config.parser.sections():
+            if sectionName not in allSections:
+                Config.parser.remove_section(sectionName)
+                Config.logger.info(f"Removed old section {sectionName}")
+
+        # проход по секциям конфигов в конфиге. несуществующие добавляем
+        for sectionName,sectionItems in configValues.items():
+
+            if not Config.parser.has_section(sectionName):
+                Config.parser.set_section(sectionName)
+                Config.logger.info(f"Added new section {sectionName}")
+                #register values
+                # Register values in the existing section
+                for key, value in sectionItems.items():
+                    Config.parser.set(key, value, section=sectionName)
+                    Config.logger.info(f"Registered value {key} in section {sectionName}")
+            else:
+                Config.logger.info(f"Validating section {sectionName} values")
+                for key, value in sectionItems.items():
+                    existsProp = Config.parser.has_property(key, sectionName)
+                    equalVals = existsProp and value == Config.parser.get(key, sectionName)
+                    if not existsProp or not equalVals:
+                        Config.parser.set(key, value, section=sectionName)
+                        Config.logger.info(f"Property updated [{sectionName}]{key} -> (exists: {existsProp}, equals: {equalVals})")
+
+        Config.logger.info("Config updated")
+
 
     
     @staticmethod
