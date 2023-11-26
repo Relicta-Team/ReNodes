@@ -592,7 +592,7 @@ class NodeObjectHandler:
 	def _preregSystemNode(self):
 		memberData = self.memberData
 		if 'icon' in memberData:
-			memberData['icon'] = self.preparePath(memberData['icon'])
+			memberData['icon'] = memberData['icon'].replace('\\\\','\\') #self.preparePath(memberData['icon'])
 
 		#TODO change out/in types from auto to ""
 		overrideRuntime = 'runtime_ports' in memberData
