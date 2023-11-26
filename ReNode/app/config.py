@@ -14,7 +14,7 @@ configValues = {
         # geometry and state mainWindow
         "winstate": None,
         "winpos": None,
-        "opened_sessions": [],
+        "opened_sessions": "empty",
     },
     "visual": {
         #"testvalue": "test stringg"

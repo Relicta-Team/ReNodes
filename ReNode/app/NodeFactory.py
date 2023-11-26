@@ -89,6 +89,7 @@ class NodeFactory:
 
 		logger.info(f'Classes count: {len(self.classes)}')
 
+		# TODO remove in next update
 		if hasObsoleteProps:
 			# replacer from defined to section
 			for classname,classmembers in classDict.items():
