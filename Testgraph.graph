@@ -58,6 +58,18 @@
           "systemname":"0x1ff6dec7750_20231125234552203175",
           "reprType":"object (Объект)",
           "reprDataType":"value (Значение)"
+        },
+        "0x211231b6c70_20231126141935340534":{
+          "name":"testvar",
+          "type":"SteelMedicalBox^",
+          "datatype":"value",
+          "typename":"SteelMedicalBox",
+          "value":"nullPtr",
+          "category":"local",
+          "group":"",
+          "systemname":"0x211231b6c70_20231126141935340534",
+          "reprType":"object (Объект)",
+          "reprDataType":"value (Значение)"
         }
       }
     },
@@ -65,18 +77,26 @@
       "type":"gamemode",
       "name":"TestGraph",
       "classname":"Testgraph",
-      "parent":"GMBase"
+      "parent":"GMBase",
+      "props":{
+        "fields":{
+          "desc":"123123123 123123123 ",
+          "canAddAspect":true,
+          "name":"TestMode"
+        },
+        "methods":{}
+      }
     },
     "mpos":[
-      -237.17929882406145,
-      -59.7106198067099,
-      911.4566428124074,
-      857.8415461763836
+      -56.36212695165102,
+      -322.30344737454226,
+      1129.7896670994296,
+      1063.3314513876974
     ],
-    "mzoom":-0.54
+    "mzoom":-0.35
   },
   "nodes":{
-    "0x1472d9db1f0":{
+    "0x22e73c7e080":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -102,13 +122,13 @@
         180
       ],
       "disabled":false,
-      "selected":true,
+      "selected":false,
       "visible":true,
       "width":176.0,
       "height":60,
       "pos":[
-        69.82701598126097,
-        423.8426588717263
+        69.82701598126096,
+        404.48277778382
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -118,7 +138,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1472d9db850":{
+    "0x22e711b44f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -160,9 +180,9 @@
       },
       "class_":"variable.set"
     },
-    "0x1472d9da9e0":{
+    "0x22e71db3070":{
       "type_":"runtime_domain.RuntimeNode",
-      "icon":"data\\\\icons\\\\icon_Blueprint_Branch_16x",
+      "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
       "color":[
         13,
@@ -199,7 +219,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1472d9dac50":{
+    "0x22e71db34f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -225,7 +245,7 @@
         180
       ],
       "disabled":false,
-      "selected":true,
+      "selected":false,
       "visible":true,
       "width":160,
       "height":60,
@@ -241,7 +261,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1472d9da710":{
+    "0x22e71db3640":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -283,10 +303,10 @@
       },
       "class_":"variable.set"
     },
-    "0x1472d9da350":{
+    "0x22e71db39a0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
-        "data\\\\icons\\\\icon_Blueprint_ForEach_16x",
+        "data\\icons\\icon_Blueprint_ForEach_16x",
         "#1087c7"
       ],
       "name":"Цикл по списку",
@@ -309,7 +329,7 @@
         180
       ],
       "disabled":false,
-      "selected":true,
+      "selected":false,
       "visible":true,
       "width":160,
       "height":121.4,
@@ -414,7 +434,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x1472d9d9ba0":{
+    "0x22e71db3e20":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -456,7 +476,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1472da18b20":{
+    "0x22e710f0250":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -492,7 +512,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x1472da18f10":{
+    "0x22e710f0640":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -534,7 +554,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1472da19270":{
+    "0x22e710f09a0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -574,41 +594,41 @@
   "connections":[
     {
       "out":[
-        "0x1472d9dac50",
+        "0x22e71db34f0",
         "Значение"
       ],
       "in":[
-        "0x1472d9da350",
+        "0x22e71db39a0",
         "Массив"
       ]
     },
     {
       "out":[
-        "0x1472d9da350",
+        "0x22e71db39a0",
         "Элемент"
       ],
       "in":[
-        "0x1472d9d9ba0",
+        "0x22e71db3e20",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x1472da18b20",
+        "0x22e710f0250",
         "Выход"
       ],
       "in":[
-        "0x1472da18f10",
+        "0x22e710f0640",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1472da18b20",
+        "0x22e710f0250",
         "Клиент"
       ],
       "in":[
-        "0x1472da18f10",
+        "0x22e710f0640",
         "CurrentUser"
       ]
     }

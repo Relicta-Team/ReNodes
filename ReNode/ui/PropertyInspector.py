@@ -36,6 +36,7 @@ class Inspector(QDockWidget):
         self.infoData = {}
 
         self.propertyList = [] 
+        self.propWidgetRefs = {}
         
         self.propertyListWidget = QWidget()
         self.vlayout = QVBoxLayout() #main vertical layout
@@ -61,15 +62,85 @@ class Inspector(QDockWidget):
         
 
         #for i in range(1,4):
-        #    self.addProperty(f"inspector prop {i}",QLabel("TEST VALUE" + " e" * 100))
+        #    self.addProperty("syscat","propsysname",f"inspector prop {i}",QLabel("TEST VALUE" + " e" * 100))
 
-    def addProperty(self,propName,propObject=None):
+    def getPropNameView(self,cat,sysname): return self.propWidgetRefs[cat + "." + sysname][0]
+    def getPropView(self,cat,sysname): return self.propWidgetRefs[cat + "." + sysname][1]
+
+    def setPropValue(self,cat,sysname,val):
+        obj = self.getPropView(cat,sysname)
+        if obj:
+            props = self.infoData['props']
+            if cat not in props: props[cat] = {}
+            props[cat][sysname] = val
+            
+            self.syncPropValue(cat,sysname,False) #sync visual
+        pass
+
+    def syncPropValue(self,cat,sysname,setProp=False):
+        obj = self.getPropView(cat,sysname)
+        props = self.infoData
+        par = props['parent']
+        props = self.infoData.get('props')
+        
+        #first init props
+        if not props:
+            self.infoData['props'] = {}
+            props = self.infoData['props']
+        if obj:
+            hasValue = cat in props and sysname in props[cat]
+            objText = self.getPropNameView(cat,sysname)
+            if hasValue:
+                objText.setText(objText.property("default"))
+                if setProp:
+                    obj.set_value(props[cat][sysname])
+            else:
+                objText.setText(f"{objText.property('default')} (от {par})")
+                if setProp:
+                    obj.blockSignals(True)
+                    obj.set_value(obj.property("default"))
+                    obj.blockSignals(False)
+            pass
+
+    def resetPropToDefault(self,cat,sysname):
+        props = self.infoData.get('props')
+        if props and cat in props and sysname in props[cat]:
+            del props[cat][sysname]
+            self.syncPropValue(cat,sysname,True)
+        pass
+
+    def addProperty(self,category,propSysName,propName,propObject=None):
         hlayout = QGridLayout()
         hlayout.setSpacing(2)
         name = QLabel(propName)
+        name.setProperty("default",propName)
         name.setTextInteractionFlags(name.textInteractionFlags() | Qt.TextSelectableByMouse)
         hlayout.addWidget(name,0,0)
         if propObject:
+            #validate values
+            if not hasattr(propObject,"set_value"):
+                raise Exception(f"Property {propName} has no set_value method")
+            if not hasattr(propObject,"get_value"):
+                raise Exception(f"Property {propName} has no get_value method")
+
+            def onChangeValue(newval):
+                _val = propObject.get_value()
+                self.setPropValue(category,propSysName,_val)
+
+            #register reference to property view
+            self.propWidgetRefs[category + "." + propSysName] = (name,propObject)
+            propObject.setProperty("default",propObject.get_value())
+
+            #check if propObject has value_changed field
+            if hasattr(propObject,"value_changed"):
+                propObject.value_changed.connect(onChangeValue)
+                pass
+            elif hasattr(propObject,"valueChanged"):
+                propObject.valueChanged.connect(onChangeValue)
+                pass
+            else:
+                raise Exception(f"Property {propName} has no change value signal")
+            
             if isinstance(propObject,QCheckBox):
                 layProp = (0,1)
                 layReset = (0,2)
@@ -86,9 +157,14 @@ class Inspector(QDockWidget):
             removeButton.setToolTip("Сбросить значение")
             hlayout.addWidget(removeButton,*layReset)
 
+            removeButton.clicked.connect(lambda: self.resetPropToDefault(category,propSysName))
+
         self.scrollAreaLayout.addLayout(hlayout)
 
         self.propertyList.append(hlayout)
+
+        self.syncPropValue(category,propSysName,True)
+
         return name
         
 
@@ -99,6 +175,7 @@ class Inspector(QDockWidget):
                 item.itemAt(i).widget().deleteLater()
             item.deleteLater()
         self.propertyList.clear()
+        self.propWidgetRefs.clear()
 
     def updateProps(self):
         self.cleanupPropsVisual()
@@ -131,7 +208,7 @@ class Inspector(QDockWidget):
                 if vObj:
                     propObj = vObj.classInstance()
                 
-                nameObj = self.addProperty(fName,propObj)
+                nameObj = self.addProperty(cat,propName,fName,propObj)
                 nameObj.setToolTip(fDesc)
             
 

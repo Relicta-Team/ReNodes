@@ -92,10 +92,10 @@ class NodeFactory:
 		if hasObsoleteProps:
 			# replacer from defined to section
 			for classname,classmembers in classDict.items():
-				pFields = classmembers.get('fields',{}).get('defined',{})
-				pMethods = classmembers.get('methods',{}).get('defined',[])
-				classmembers['fields'] = pFields
-				classmembers['methods'] = pMethods
+				pFields = classmembers.get('fields',{})
+				pMethods = classmembers.get('methods',{})
+				del pFields['all']
+				del pMethods['all']
 			logger.warning("Obsolete properties found. Removing sections 'all' from 'fields' and 'methods'")
 
 		#validate names
