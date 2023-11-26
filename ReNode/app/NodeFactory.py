@@ -19,6 +19,7 @@ class NodeFactory:
 		self.version = 0
 		self.nodes = {}
 		self.classes = {}
+		self.classNames = set() #all classnames in lowercase
 		self.loadFactoryFromJson("lib.json")
 		pass
 
@@ -70,6 +71,7 @@ class NodeFactory:
 		#load classes
 		classDict = data.get('classes',{})
 		i = 1
+		hasObsoleteProps = False
 		for classname,classmembers in classDict.items():
 			if (i%100 == 0):
 				logger.info(f"Loading class {i}/{len(classDict)}")
@@ -79,7 +81,22 @@ class NodeFactory:
 			self.classes[classname] = classmembers
 			i += 1
 
+			if classmembers.get('fields',{}).get('all'):
+				hasObsoleteProps = True
+			if classmembers.get('methods',{}).get('all'):
+				hasObsoleteProps = True
+
+
 		logger.info(f'Classes count: {len(self.classes)}')
+
+		if hasObsoleteProps:
+			# replacer from defined to section
+			for classname,classmembers in classDict.items():
+				pFields = classmembers.get('fields',{}).get('defined',{})
+				pMethods = classmembers.get('methods',{}).get('defined',[])
+				classmembers['fields'] = pFields
+				classmembers['methods'] = pMethods
+			logger.warning("Obsolete properties found. Removing sections 'all' from 'fields' and 'methods'")
 
 		#validate names
 		logger.info('Validating class names')
@@ -113,6 +130,11 @@ class NodeFactory:
 				parent = curData["__inhParent"]
 				parData = self.getClassData(parent)
 				parData['__inhChild'].append(classname)
+		
+		# генерация имен в нижнем регистре
+		logger.info("Adding lowercase names")
+		self.classNames = set([x.lower() for x in classDict.keys()])
+		
 		pass
 
 	def getColorByType(self,type_name,retAsQColor=False):
@@ -506,3 +528,6 @@ class NodeFactory:
 	def isTypeOf(self,typecheck,baseClassName):
 		parents = self.getClassAllParents(typecheck,False)
 		return baseClassName in parents
+	
+	def classNameExists(self,className):
+		return className.lower() in self.classNames

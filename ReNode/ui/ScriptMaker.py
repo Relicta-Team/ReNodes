@@ -246,6 +246,8 @@ class WizardScriptMaker(QWizard):
 					errors.append(f"{class_opt_} может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
 				if len(classname) <= 4:
 					errors.append(f"{class_opt_} должно содержать более 4 символов")
+				if self.graphSystem.getFactory().classNameExists(classname):
+					errors.append(f"Класс \"{classname}\" уже существует")
 
 			if not parCls:
 				errors.append(f"{opt_parent_.get('name','Неопр.р.к')} не имеет значения")
