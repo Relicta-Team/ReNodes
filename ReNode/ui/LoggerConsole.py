@@ -41,7 +41,7 @@ class CmdInputLineEdit(QLineEdit):
                 self.stackCommands.pop(0)
             self.cmdIndex = len(self.stackCommands)
             return
-        if self._enableHistory and event.key() == Qt.Key_Up and not LoggerConsole.refObject.command_completer.popup().isVisible():
+        if self._enableHistory and a0.key() == Qt.Key_Up and not LoggerConsole.refObject.command_completer.popup().isVisible():
             self.cmdIndex -= 1
             if self.cmdIndex < 0:
                 self.cmdIndex = 0
@@ -412,6 +412,30 @@ class GetVisualInfoCommand(ConsoleCommand):
         qapp = Application.refObject.appInstance
         self.logger.info(f'Все - виджетов {len(qapp.allWidgets())}; окон {len(qapp.allWindows())};')
         self.logger.info(f'Верх - виджетов {len(qapp.topLevelWidgets())}; окон {len(qapp.topLevelWindows())}')
+
+class JumpToNodeCommand(ConsoleCommand):
+    name = "jump_to_node"
+    desc = "Перемещает сцену к указанному узлу. Вызов команды без аргументов отобразит количество узлов в сцене"
+    argsAsString = True
+    def onCall(self,args):
+        try:
+            from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+            if NodeGraphComponent.refObject:
+                graph = NodeGraphComponent.refObject.graph
+                nodeList = graph.all_nodes()
+                if not args:
+                    self.logger.info("Узлов: " + str(len(nodeList)))
+                    return
+                curIdx = int(args.replace(' ',''))
+                #clamping in range
+                curIdx = max(0,min(len(nodeList)-1,curIdx))
+                for idx,n in enumerate(nodeList):
+                    if idx == curIdx:
+                        graph.viewer().center_selection([n.view])
+                        break
+        except Exception as e:
+            self.logger.error(f"Ошибка перехода:{e}")
+
 
 #region Memory helpers -  https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc
 class StartTracemalloc(ConsoleCommand):
