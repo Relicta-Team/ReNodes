@@ -2,6 +2,7 @@ import iniparser2
 from os.path import *
 import ReNode.app.Logger
 import logging
+import re
 
 configValues = {
     "main": {
@@ -12,7 +13,8 @@ configValues = {
     "internal": {
         # geometry and state mainWindow
         "winstate": None,
-        "winpos": None
+        "winpos": None,
+        "opened_sessions": [],
     },
     "visual": {
         #"testvalue": "test stringg"
@@ -108,6 +110,8 @@ class Config:
         obj = NodeGraphComponent.refObject
         Config.set("winstate",obj.mainWindow.saveState(),"internal")
         Config.set("winpos",obj.mainWindow.saveGeometry(),"internal")
+
+        Config.set("opened_sessions",obj.sessionManager.getOpenedSessionPathes(),"internal")
 
         Config.parser.write(Config.cfgPath)
         Config.logger.info("Config saved")

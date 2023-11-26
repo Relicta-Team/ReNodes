@@ -1877,7 +1877,7 @@ class NodeGraph(QtCore.QObject):
                             node.view.widgets[prop].set_value(val)
                 
                 nodes[n_id] = node
-                self.add_node(node, n_data.get('pos'))
+                self.add_node(node, n_data.get('pos'),selected=node.model.selected) #Yobas: fix selecton on add node
 
                 if n_data.get('port_deletion_allowed', None):
                     node.set_ports({
@@ -1965,7 +1965,7 @@ class NodeGraph(QtCore.QObject):
         self.clear_selection()
         self._undo_stack.clear()
 
-    def save_session(self, file_path,saveFromDict=None):
+    def save_session(self, file_path,saveFromDict=None,saveMouse=False):
         """
         Saves the current node graph session layout to a `JSON` formatted file.
 
@@ -1980,7 +1980,7 @@ class NodeGraph(QtCore.QObject):
         if saveFromDict:
             serialized_data = saveFromDict
         else:
-            serialized_data = self._serialize(self.all_nodes())
+            serialized_data = self._serialize(self.all_nodes(),serializeMouse=saveMouse)
         file_path = file_path.strip()
 
         def default(obj):
@@ -1998,7 +1998,7 @@ class NodeGraph(QtCore.QObject):
                 ensure_ascii=False #Yodes: fix rus letter encoding
             )
 
-    def load_session(self, file_path):
+    def load_session(self, file_path,loadMouse=False):
         """
         Load node graph session layout file.
 
@@ -2015,9 +2015,9 @@ class NodeGraph(QtCore.QObject):
             raise IOError('file does not exist: {}'.format(file_path))
 
         self.clear_session()
-        self.import_session(file_path)
+        self.import_session(file_path,loadMouse)
 
-    def import_session(self, file_path):
+    def import_session(self, file_path,loadMouse=False):
         """
         Import node graph session layout file.
 
@@ -2038,7 +2038,7 @@ class NodeGraph(QtCore.QObject):
         if not layout_data:
             return
 
-        self._deserialize(layout_data)
+        self._deserialize(layout_data,loadMousePos=loadMouse)
         self._undo_stack.clear()
         self._model.session = file_path
 

@@ -352,6 +352,13 @@ class ClearConsoleCommand(ConsoleCommand):
     def onCall(self,args):
         self.getLoggerInstance().clearConsole()
 
+class SaveConfig(ConsoleCommand):
+    name = "save_config"
+    desc = "Сохраняет конфигурацию в файл"
+    def onCall(self,args):
+        from ReNode.app.config import Config
+        Config.saveConfig()
+
 class SessionClipSaveCommand(ConsoleCommand):
     name = "clip_save"
     desc = "Сохраняет сессию в буфер обмена"

@@ -26,7 +26,7 @@ class TabData:
         self.infoData = {}
 
         if self.filePath:
-            self.graph.load_session(self.filePath)
+            self.graph.load_session(self.filePath,loadMouse=True)
             self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
             self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
         
@@ -45,7 +45,7 @@ class TabData:
     def save(self):
         if not self.filePath:
             return
-        self.graph.save_session(self.filePath)
+        self.graph.save_session(self.filePath,saveMouse=True)
         self.isUnsaved = False
         SessionManager.refObject.syncTabName(self.getIndex())
 
@@ -144,6 +144,8 @@ class SessionManager(QTabWidget):
         for i in range(self.count()):
             tdat.append(self.tabBar().tabData(i))
         return tdat
+
+    def getAllTabs(self): return self.tabData
 
     def getActiveTabData(self):
         if self.tabBar().count() == 0: return None
@@ -342,3 +344,22 @@ class SessionManager(QTabWidget):
         graphComponent.graph = oldGraph
 
         return graph
+    
+    def getOpenedSessionPathes(self):
+        pathes = []
+        for tab in self.getAllTabs():
+            if tab.filePath:
+                pathes.append(tab.filePath)
+        ret = "|".join(pathes)
+        if not ret:
+            ret = "empty"
+        return ret
+    
+    def loadSessionPathes(self,pathes):
+        if pathes == "empty": return
+
+        for p in pathes.split("|"):
+            if os.path.exists(p):
+                self.newTab(True,p)
+            else:
+                self.logger.warning(f"Загрузка сессии \"{p}\" невозможна - файл не существует")

@@ -66,10 +66,17 @@
       "name":"TestGraph",
       "classname":"Testgraph",
       "parent":"GMBase"
-    }
+    },
+    "mpos":[
+      -237.17929882406145,
+      -59.7106198067099,
+      911.4566428124074,
+      857.8415461763836
+    ],
+    "mzoom":-0.54
   },
   "nodes":{
-    "0x18ad2ef0410":{
+    "0x1472d9db1f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -95,7 +102,7 @@
         180
       ],
       "disabled":false,
-      "selected":false,
+      "selected":true,
       "visible":true,
       "width":176.0,
       "height":60,
@@ -111,7 +118,7 @@
       },
       "class_":"variable.get"
     },
-    "0x18ad44c3650":{
+    "0x1472d9db850":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -153,7 +160,7 @@
       },
       "class_":"variable.set"
     },
-    "0x18ad44c4110":{
+    "0x1472d9da9e0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\\\icons\\\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -181,8 +188,8 @@
       "width":192.0,
       "height":86.75,
       "pos":[
-        240.5760318001257,
-        236.3231667745173
+        235.82880617143843,
+        235.22765316789713
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -192,7 +199,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x18ad4abe650":{
+    "0x1472d9dac50":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -218,7 +225,7 @@
         180
       ],
       "disabled":false,
-      "selected":false,
+      "selected":true,
       "visible":true,
       "width":160,
       "height":60,
@@ -234,7 +241,7 @@
       },
       "class_":"variable.get"
     },
-    "0x18ad4abf710":{
+    "0x1472d9da710":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -276,7 +283,7 @@
       },
       "class_":"variable.set"
     },
-    "0x18ad2ee8050":{
+    "0x1472d9da350":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\\\icons\\\\icon_Blueprint_ForEach_16x",
@@ -302,7 +309,7 @@
         180
       ],
       "disabled":false,
-      "selected":false,
+      "selected":true,
       "visible":true,
       "width":160,
       "height":121.4,
@@ -407,7 +414,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x18ad2eeaa10":{
+    "0x1472d9d9ba0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -449,7 +456,7 @@
       },
       "class_":"variable.set"
     },
-    "0x18ad4abe410":{
+    "0x1472da18b20":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -472,7 +479,7 @@
         180
       ],
       "disabled":false,
-      "selected":true,
+      "selected":false,
       "visible":true,
       "width":265.0,
       "height":144.5,
@@ -485,7 +492,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x18ad2eebb50":{
+    "0x1472da18f10":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -527,7 +534,7 @@
       },
       "class_":"variable.set"
     },
-    "0x18ad2ee0590":{
+    "0x1472da19270":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -567,41 +574,41 @@
   "connections":[
     {
       "out":[
-        "0x18ad4abe650",
+        "0x1472d9dac50",
         "Значение"
       ],
       "in":[
-        "0x18ad2ee8050",
+        "0x1472d9da350",
         "Массив"
       ]
     },
     {
       "out":[
-        "0x18ad2ee8050",
+        "0x1472d9da350",
         "Элемент"
       ],
       "in":[
-        "0x18ad2eeaa10",
+        "0x1472d9d9ba0",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x18ad4abe410",
+        "0x1472da18b20",
         "Выход"
       ],
       "in":[
-        "0x18ad2eebb50",
+        "0x1472da18f10",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x18ad4abe410",
+        "0x1472da18b20",
         "Клиент"
       ],
       "in":[
-        "0x18ad2eebb50",
+        "0x1472da18f10",
         "CurrentUser"
       ]
     }

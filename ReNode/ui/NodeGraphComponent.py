@@ -114,7 +114,7 @@ class NodeGraphComponent:
 		else:
 			self.editorDock.setWidget(None)
 
-	def _loadWinStateFromConfig(self):
+	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application
 		
 		stateStr:str = Config.get("winstate","internal")
@@ -128,6 +128,11 @@ class NodeGraphComponent:
 				Application.refObject.logger.error("Failed to restore window state")
 			if not self.mainWindow.restoreGeometry(winposBytes):
 				Application.refObject.logger.error("Failed to restore window position")
+		
+		# load opened sessions
+		sessions = Config.get_str("opened_sessions","internal")
+		if sessions:
+			self.sessionManager.loadSessionPathes(sessions)
 
 	#region Subcomponents getter
 	def getGraphSystem(self) -> NodeGraph:
