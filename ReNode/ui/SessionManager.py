@@ -100,6 +100,15 @@ class TabData:
 
         pass
     
+    def registerEvents(self):
+        self.graph.undo_stack().indexChanged.connect(self._historyChangeEvent)
+        self.graph.node_selection_changed.connect(self._nodeSelectionChanged)
+
+    def _nodeSelectionChanged(self):
+        if self and not self.isUnsaved:
+            self.isUnsaved = True
+            SessionManager.refObject.syncTabName(self.getIndex())
+
     def _historyChangeEvent(self):
         if self and not self.isUnsaved:
             self.isUnsaved = True
@@ -164,7 +173,14 @@ class SessionManager(QTabWidget):
         if tdata.isUnsaved:
             unsafe = "*"
         self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
-        self.tabBar().setTabToolTip(idx,f"Расположение: {tdata.filePath}")
+        ttp = f"Расположение: {tdata.filePath}\n"
+        ttp += f"Имя: {tdata.name}\n"
+        if tdata.infoData.get('type','') in ["gamemode","role"]:
+            ttp += f"Тип графа: {tdata.infoData.get('type')}\n\n"
+            ttp += f'Класс: {tdata.infoData.get("classname")}\n'
+            ttp += f"Родитель: {tdata.infoData.get('parent')}"
+            
+        self.tabBar().setTabToolTip(idx,ttp)
 
     def handleMoved(self,index):
         #print(f"moved to {index}")
@@ -193,7 +209,7 @@ class SessionManager(QTabWidget):
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
         
-        tabCtx.graph.undo_stack().indexChanged.connect(tabCtx._historyChangeEvent)
+        tabCtx.registerEvents()
         if switchTo:
             self.setActiveTab(idx)
         

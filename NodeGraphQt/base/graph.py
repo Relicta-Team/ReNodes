@@ -1858,7 +1858,7 @@ class NodeGraph(QtCore.QObject):
             #classType = identifier['class']
             nodeType = n_data.pop('class_')
             #node = self._node_factory.create_node_instance(identifier,True)
-            node = self._factoryRef.instance(nodeType,graphref=self._viewer._tabSearch.nodeGraphComponent.graph,isInstanceCreate=True,forwardDeserializeData=n_data)
+            node = self._factoryRef.instance(nodeType,graphref=self,isInstanceCreate=True,forwardDeserializeData=n_data)
             if node:
                 node.NODE_NAME = n_data.get('name', node.NODE_NAME)
                 
