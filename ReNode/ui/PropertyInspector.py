@@ -80,7 +80,6 @@ class Inspector(QDockWidget):
     def syncPropValue(self,cat,sysname,setProp=False):
         obj = self.getPropView(cat,sysname)
         props = self.infoData
-        par = props['parent']
         props = self.infoData.get('props')
         
         #first init props
@@ -90,6 +89,7 @@ class Inspector(QDockWidget):
         if obj:
             hasValue = cat in props and sysname in props[cat]
             objText = self.getPropNameView(cat,sysname)
+            par = objText.property("defClass")
             if hasValue:
                 objText.setText(objText.property("default"))
                 if setProp:
@@ -109,11 +109,12 @@ class Inspector(QDockWidget):
             self.syncPropValue(cat,sysname,True)
         pass
 
-    def addProperty(self,category,propSysName,propName,propObject=None):
+    def addProperty(self,definedFromClass,category,propSysName,propName,propObject=None):
         hlayout = QGridLayout()
         hlayout.setSpacing(2)
         name = QLabel(propName)
         name.setProperty("default",propName)
+        name.setProperty("defClass",definedFromClass)
         name.setTextInteractionFlags(name.textInteractionFlags() | Qt.TextSelectableByMouse)
         hlayout.addWidget(name,0,0)
         if propObject:
@@ -188,28 +189,40 @@ class Inspector(QDockWidget):
         if not cd:
             self.logger.error("Cannot load class data for {}".format(classname))
             return
+        baseList = cd.get('baseList',[])
+        # all members check
+        existsOptions = {
+            "fields": {}, "methods": {}
+        }
 
-        nodeCats = cd.get('inspectorProps',{})
-        
-        for cat,nodes in nodeCats.items():
-            #if cat != "fields": continue
+        for baseName in baseList:
+            objData = fact.getClassData(baseName)
+            if not objData: raise Exception(f"Cannot load class data for {baseName} -> {classname}: {baseList}")
+            
+            nodeCats = objData.get('inspectorProps',{})
+            
+            for cat,nodes in nodeCats.items():
+                #if cat != "fields": continue
 
-            for propName,propContents in nodes.items():
-                #if propName != "name": continue
+                for propName,propContents in nodes.items():
+                    #if propName != "name": continue
 
-                nodeName = propContents.get('node',propName)
-                nodeData = fact.getNodeLibData(cat + "." + nodeName)
-                fName = nodeData['name']
-                fDesc = nodeData.get('desc',"")
-                fRet = nodeData['returnType']
+                    if propName in existsOptions[cat]: continue
+                    existsOptions[cat][propName] = True
 
-                vObj = vmgr.getVariableTypedefByType(fRet)
-                propObj = None
-                if vObj:
-                    propObj = vObj.classInstance()
-                
-                nameObj = self.addProperty(cat,propName,fName,propObj)
-                nameObj.setToolTip(fDesc)
+                    nodeName = propContents.get('node',propName)
+                    nodeData = fact.getNodeLibData(cat + "." + nodeName)
+                    fName = nodeData['name']
+                    fDesc = nodeData.get('desc',"")
+                    fRet = nodeData['returnType']
+
+                    vObj = vmgr.getVariableTypedefByType(fRet)
+                    propObj = None
+                    if vObj:
+                        propObj = vObj.classInstance()
+                    
+                    nameObj = self.addProperty(baseName,cat,propName,fName,propObj)
+                    nameObj.setToolTip(fDesc)
             
 
             
