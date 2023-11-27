@@ -86,7 +86,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
     node_selected = QtCore.Signal(str)
     node_selection_changed = QtCore.Signal(list, list)
     node_double_clicked = QtCore.Signal(str)
-    data_dropped = QtCore.Signal(QtCore.QMimeData, QtCore.QPoint)
+    data_dropped = QtCore.Signal(QtCore.QMimeData, QtCore.QPointF)
     data_dropped_from_tree = QtCore.Signal(str, float,float)
     context_menu_prompt = QtCore.Signal(str, object)
 
@@ -754,7 +754,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
 
         self.data_dropped.emit(
-            event.mimeData(), QtCore.QPoint(pos.x(), pos.y()))
+            event.mimeData(), QtCore.QPointF(pos.x(), pos.y()))
 
     def dragEnterEvent(self, event):
         if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):

@@ -383,6 +383,9 @@ class NodeGraph(QtCore.QObject):
             data (QtCore.QMimeData): mime data.
             pos (QtCore.QPoint): scene position relative to the drop.
         """
+        print("DATA DROPPED NOT SUPPORTED IN CURRENT VERSION")
+        
+        return
         uri_regex = re.compile(r'{}(?:/*)([\w/]+)(\.\w+)'.format(URI_SCHEME))
         urn_regex = re.compile(r'{}([\w\.:;]+)'.format(URN_SCHEME))
         if data.hasFormat('text/uri-list'):

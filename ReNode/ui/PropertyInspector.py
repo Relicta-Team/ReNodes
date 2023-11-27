@@ -1,3 +1,4 @@
+import typing
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -5,6 +6,7 @@ from PyQt5.QtGui import *
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.NodeFactory import NodeFactory
 from ReNode.ui.VariableManager import VariableManager, VariableTypedef
+from ReNode.app.utils import generateIconParts
 
 class WidgetListElements(QWidget):
     def __init__(self):
@@ -23,6 +25,39 @@ class WidgetListElements(QWidget):
 
         self.vlayout.addWidget(self.scrollArea)
         self.setLayout(self.vlayout)
+
+class QLabelWithIcon(QWidget):
+    def __init__(self,_text=None):
+        super().__init__()
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(2, 0, 0, 0)
+        self.setLayout(layout)
+
+        self.textWid = QLabel(text=_text)
+        self.icon = QLabel()
+        #self.icon.setFixedWidth(16)
+        layout.addWidget(self.icon)
+        layout.addSpacing(-4)
+        layout.addWidget(self.textWid)
+
+        layout.addStretch()
+    
+    def setPixmap(self,pixmap):                         self.icon.setPixmap(pixmap)
+    def pixmap(self):                                   return self.icon.pixmap()
+    def setProperty(self, name: str, value) -> bool:    return self.textWid.setProperty(name, value)
+    def property(self, name: str):                      return self.textWid.property(name)
+    
+    def setText(self,text):                             self.textWid.setText(text)
+    def text(self):                                     return self.textWid.text()
+
+    def setTextInteractionFlags(self,flags):            self.textWid.setTextInteractionFlags(flags)
+    def textInteractionFlags(self):                     return self.textWid.textInteractionFlags()
+
+    def setToolTip(self,tip):                           self.textWid.setToolTip(tip)
+    def toolTip(self):                                  return self.textWid.toolTip()
+
+    
 
 class Inspector(QDockWidget):
     refObject = None
@@ -64,7 +99,7 @@ class Inspector(QDockWidget):
         #for i in range(1,4):
         #    self.addProperty("syscat","propsysname",f"inspector prop {i}",QLabel("TEST VALUE" + " e" * 100))
 
-    def getPropNameView(self,cat,sysname): return self.propWidgetRefs[cat + "." + sysname][0]
+    def getPropNameView(self,cat,sysname) -> QLabelWithIcon | QLabel: return self.propWidgetRefs[cat + "." + sysname][0]
     def getPropView(self,cat,sysname): return self.propWidgetRefs[cat + "." + sysname][1]
 
     def setPropValue(self,cat,sysname,val):
@@ -95,7 +130,7 @@ class Inspector(QDockWidget):
                 if setProp:
                     obj.set_value(props[cat][sysname])
             else:
-                objText.setText(f"{objText.property('default')} (от {par})")
+                objText.setText(f"{objText.property('default')} (знач. от {par})")
                 if setProp:
                     obj.blockSignals(True)
                     obj.set_value(obj.property("default"))
@@ -112,11 +147,13 @@ class Inspector(QDockWidget):
     def addProperty(self,definedFromClass,category,propSysName,propName,propObject=None):
         hlayout = QGridLayout()
         hlayout.setSpacing(2)
-        name = QLabel(propName)
+        name = QLabelWithIcon(propName)
         name.setProperty("default",propName)
         name.setProperty("defClass",definedFromClass)
         name.setTextInteractionFlags(name.textInteractionFlags() | Qt.TextSelectableByMouse)
+
         hlayout.addWidget(name,0,0)
+       
         if propObject:
             #validate values
             if not hasattr(propObject,"set_value"):
@@ -173,7 +210,8 @@ class Inspector(QDockWidget):
         for item in self.propertyList.copy():
             self.scrollAreaLayout.removeItem(item)
             for i in range(item.count()):
-                item.itemAt(i).widget().deleteLater()
+                intItm = item.itemAt(i)
+                intItm.widget().deleteLater()
             item.deleteLater()
         self.propertyList.clear()
         self.propWidgetRefs.clear()
@@ -181,6 +219,27 @@ class Inspector(QDockWidget):
     def updateProps(self):
         self.cleanupPropsVisual()
         
+        # !!! ------- TEST FILE SYSTEM TREE ----------
+        # dir = "."
+        # self.model = QFileSystemModel()
+        
+        # self.model.setRootPath(dir)
+        # self.model.setNameFilters(["*.png","*.graph","*.txt"])
+        # self.model.setNameFilterDisables(True)
+        # self.model.setFilter(QDir.Dirs | QDir.Filter.Files)
+        
+        # self.tree =  QTreeView()
+        
+        # self.tree.setModel(self.model)
+        # self.tree.setRootIndex(self.model.index(dir))
+        # self.tree.setColumnWidth(0, 250)
+        # self.tree.setAlternatingRowColors(True)
+        # self.tree.setDragEnabled(True)
+        # self.tree.setDragDropMode(QAbstractItemView.DragDrop)
+        # self.tree.setDefaultDropAction(Qt.MoveAction)
+        # self.scrollAreaLayout.addWidget(self.tree)
+
+
         #collect fields
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         vmgr : VariableManager = self.nodeGraphComponent.variable_manager
@@ -194,6 +253,7 @@ class Inspector(QDockWidget):
         existsOptions = {
             "fields": {}, "methods": {}
         }
+        optionTextNames = {"fields":"Поле","methods":"Константный метод"}
 
         for baseName in baseList:
             objData = fact.getClassData(baseName)
@@ -214,15 +274,47 @@ class Inspector(QDockWidget):
                     nodeData = fact.getNodeLibData(cat + "." + nodeName)
                     fName = nodeData['name']
                     fDesc = nodeData.get('desc',"")
-                    fRet = nodeData['returnType']
+                    fRet = propContents['return'] #nodeData['returnType']
 
-                    vObj = vmgr.getVariableTypedefByType(fRet)
+                    vObj,vType = vmgr.getVarDataByType(fRet)
                     propObj = None
                     if vObj:
-                        propObj = vObj.classInstance()
+                        if vType.instance: #not value
+                            if vType.dataType == "dict":
+                                propObj = vType.instance(vObj[0].classInstance,vObj[1].classInstance)
+                                #propObj = vType.instance(*[itm.classInstance for itm in vObj])
+                            else:
+                                propObj = vType.instance(vObj.classInstance)
+                        else:
+                            propObj = vObj.classInstance()
                     
                     nameObj = self.addProperty(baseName,cat,propName,fName,propObj)
-                    nameObj.setToolTip(fDesc)
-            
+                    if vType:
+                        icns = vType.icon
+                        clrs = vObj
+                        if not isinstance(icns,list):
+                            icns = [icns]
+                        if not isinstance(clrs,list):
+                            clrs = [clrs.color]
+                        else:
+                            clrs = [itm.color for itm in clrs]
+                        #icons to pixmap list
+                        pixlist = [QPixmap(icn) for icn in icns]
+                        newIcon = generateIconParts(pixlist,clrs)
+                        pixW = 16
+                        pixH = 16
+                        nameObj.setPixmap(newIcon.scaled(pixW,pixH,Qt.KeepAspectRatio))
+                    
+                    dataTypeText = vmgr.getTextTypename(fRet)
+                    nameObj.setToolTip(f"{fDesc}\n\nУнаследовано от {baseName}\nСистемное имя: {propName}\nТип данных: {dataTypeText} ({fRet})\nТип члена: {optionTextNames[cat]}")
+
+
+                    # line = QFrame()
+                    # #line.setGeometry(QRect(320, 150, 118, 3))
+                    # line.setFrameShape(QFrame.HLine)
+                    # line.setFrameShadow(QFrame.Sunken)
+                    # self.scrollAreaLayout.addWidget(line)
+                    # self.propertyList.append(line)
+                        
 
             

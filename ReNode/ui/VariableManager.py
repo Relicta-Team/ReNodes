@@ -813,6 +813,25 @@ class VariableManager(QDockWidget):
         vRet = valList if len(valList) > 1 else valList[0]
         return vRet,dtObj
 
+    def getTextTypename(self,fulltypename):
+        vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
+        if dtObj.dataType == 'value':
+            return vRet.variableTextName
+        else:
+            dtName = dtObj.text
+            listVals = []
+            if isinstance(vRet,list):
+                checkedList = vRet
+            else:
+                checkedList = [vRet]
+            
+            listVals = []
+            for obj in checkedList:
+                listVals.append(obj.variableTextName)
+                del obj
+        
+            return f"{dtName}({', '.join(listVals)})"
+
     def syncVariableManagerWidget(self):
         self.loadVariables(self.variables,False)
 

@@ -88,15 +88,15 @@
       }
     },
     "mpos":[
-      -56.36212695165102,
-      -322.30344737454226,
-      1129.7896670994296,
-      1063.3314513876974
+      109.81732820052966,
+      -318.3441731241163,
+      1015.6967759784735,
+      955.9499068032684
     ],
-    "mzoom":-0.35
+    "mzoom":-0.28
   },
   "nodes":{
-    "0x22e73c7e080":{
+    "0x20b9e48b8b0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -138,7 +138,7 @@
       },
       "class_":"variable.get"
     },
-    "0x22e711b44f0":{
+    "0x20b9e48bac0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -180,7 +180,7 @@
       },
       "class_":"variable.set"
     },
-    "0x22e71db3070":{
+    "0x20b9e48be20":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -219,7 +219,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x22e71db34f0":{
+    "0x20b9d7442e0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -261,7 +261,7 @@
       },
       "class_":"variable.get"
     },
-    "0x22e71db3640":{
+    "0x20b9d744430":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -303,7 +303,7 @@
       },
       "class_":"variable.set"
     },
-    "0x22e71db39a0":{
+    "0x20b9d744790":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_ForEach_16x",
@@ -434,7 +434,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x22e71db3e20":{
+    "0x20b9d744c10":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -476,7 +476,7 @@
       },
       "class_":"variable.set"
     },
-    "0x22e710f0250":{
+    "0x20b9d745000":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -512,7 +512,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x22e710f0640":{
+    "0x20b9d7453f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -554,7 +554,7 @@
       },
       "class_":"variable.set"
     },
-    "0x22e710f09a0":{
+    "0x20b9d745750":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -594,41 +594,41 @@
   "connections":[
     {
       "out":[
-        "0x22e71db34f0",
+        "0x20b9d7442e0",
         "Значение"
       ],
       "in":[
-        "0x22e71db39a0",
+        "0x20b9d744790",
         "Массив"
       ]
     },
     {
       "out":[
-        "0x22e71db39a0",
+        "0x20b9d744790",
         "Элемент"
       ],
       "in":[
-        "0x22e71db3e20",
+        "0x20b9d744c10",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x22e710f0250",
+        "0x20b9d745000",
         "Выход"
       ],
       "in":[
-        "0x22e710f0640",
+        "0x20b9d7453f0",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x22e710f0250",
+        "0x20b9d745000",
         "Клиент"
       ],
       "in":[
-        "0x22e710f0640",
+        "0x20b9d7453f0",
         "CurrentUser"
       ]
     }

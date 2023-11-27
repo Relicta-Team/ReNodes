@@ -1,10 +1,14 @@
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from Qt import QtCore
 
 from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 
 class ArrayWidget(QWidget):
+
+    value_changed = QtCore.Signal(object)
+
     def __init__(self, instancer=None):
         super(ArrayWidget,self).__init__()
         self.instancer = instancer
@@ -43,8 +47,11 @@ class ArrayWidget(QWidget):
     def updateCountText(self):
         self.countInfo.setText(f"Количество элементов: {len(self.arrayElements)}")
 
+        for i, elay in enumerate(self.arrayElements):
+            elay.itemAt(0).widget().setText(f'{i}: ')
+
     def get_value(self):
-        return [element.itemAt(0).widget().get_value() for element in self.arrayElements]
+        return [element.itemAt(1).widget().get_value() for element in self.arrayElements]
 
     def set_value(self, values):
         for elementLayout in self.arrayElements.copy():
@@ -56,11 +63,18 @@ class ArrayWidget(QWidget):
             self.addArrayElement(val=v)
 
         self.updateCountText()
+
+        self.callChangeValEvent()
         return
+
+    def callChangeValEvent(self):
+        self.value_changed.emit(self.get_value())
 
     def addArrayElement(self,val=None):
         # Создайте горизонтальный контейнер для нового элемента
         elementLayout = QHBoxLayout()
+
+        elementLayout.addWidget(QLabel(''))
 
         # Создайте виджет для значения элемента (может быть QLineEdit, QSpinBox или другой)
         elementValueWidget = None
@@ -68,8 +82,10 @@ class ArrayWidget(QWidget):
             elementValueWidget = self.instancer()
             if val:
                 elementValueWidget.set_value(val)
+
+            elementValueWidget.value_changed.connect(lambda: self.callChangeValEvent())
         else:
-            elementValueWidget = QLineEdit()
+            elementValueWidget = QLabel("ERROR INSTANCE NOT SET")
         elementLayout.addWidget(elementValueWidget)
 
         # Создайте кнопки для перемещения элемента вверх и вниз
@@ -87,6 +103,8 @@ class ArrayWidget(QWidget):
                 self.arrayElements.insert(index - 1, element)
                 self.scrollAreaLayout.takeAt(index)
                 self.scrollAreaLayout.insertLayout(index - 1, elementLayout)
+                self.updateCountText()
+                self.callChangeValEvent()
 
         def moveDown():
             index = self.arrayElements.index(elementLayout)
@@ -95,6 +113,8 @@ class ArrayWidget(QWidget):
                 self.arrayElements.insert(index + 1, element)
                 self.scrollAreaLayout.takeAt(index)
                 self.scrollAreaLayout.insertLayout(index + 1, elementLayout)
+                self.updateCountText()
+                self.callChangeValEvent()
 
         moveUpButton.clicked.connect(moveUp)
         moveDownButton.clicked.connect(moveDown)
@@ -113,6 +133,8 @@ class ArrayWidget(QWidget):
         self.scrollAreaLayout.insertLayout(len(self.arrayElements) - 1, elementLayout)
 
         self.updateCountText()
+                
+        self.callChangeValEvent()
 
     def removeArrayElement(self, elementLayout):
         if elementLayout in self.arrayElements:
@@ -123,39 +145,55 @@ class ArrayWidget(QWidget):
                     widget.deleteLater()
             elementLayout.deleteLater()
         self.updateCountText()
+                
+        self.callChangeValEvent()
 
 
 class DictWidget(QWidget):
+
+    value_changed = QtCore.Signal(object)
+
     def __init__(self, instancer,widVarType):
         super(DictWidget, self).__init__()
         from ReNode.ui.VariableManager import VariableManager
         self.varmgr = VariableManager.refObject
         self.instancer = instancer
-        self.widVarTypeRef :SeachComboButton = widVarType
+        if not widVarType: #autodef
+            widVarType = self.varmgr.widVarType
+        self.activeSeachBox = isinstance(widVarType,SeachComboButton)
+        if self.activeSeachBox:
+            self.widVarTypeRef :SeachComboButton = widVarType
+        else:
+            self.valWidgetInstancer = widVarType
         self.initUI()
+
+    def isConstDictValue(self): return not self.activeSeachBox
+
 
     def initUI(self):
         self.layout = QVBoxLayout()
         
-        laydat = QHBoxLayout()
-       
-        self.layout.addLayout(laydat)
-        laydat.addWidget(QLabel("Тип значений:"))
+        if not self.isConstDictValue():
+            laydat = QHBoxLayout()
+        
+            self.layout.addLayout(laydat)
+            laydat.addWidget(QLabel("Тип значений:"))
 
-        self.selectType = self.widVarTypeRef.__class__()
-        laydat.addWidget(self.selectType)
-        self.selectType.loadContents(self.widVarTypeRef.dictTree)
-        # for idx in range(0,self.widVarTypeRef.count()):
-        #     txt = self.widVarTypeRef.itemText(idx)
-        #     icn = self.widVarTypeRef.itemIcon(idx)
-        #     self.selectType.addItem(icn,txt)
+        
+            self.selectType = self.widVarTypeRef.__class__()
+            laydat.addWidget(self.selectType)
+            self.selectType.loadContents(self.widVarTypeRef.dictTree)
+            # for idx in range(0,self.widVarTypeRef.count()):
+            #     txt = self.widVarTypeRef.itemText(idx)
+            #     icn = self.widVarTypeRef.itemIcon(idx)
+            #     self.selectType.addItem(icn,txt)
 
-        def __curIdxChanged(data,text,icon):
-            if len(self.arrayElements) > 0:
-                for item in self.arrayElements.copy():
-                    self.removeArrayElement(item)
-                return
-        self.selectType.changed_event.connect(__curIdxChanged)
+            def __curIdxChanged(data,text,icon):
+                if len(self.arrayElements) > 0:
+                    for item in self.arrayElements.copy():
+                        self.removeArrayElement(item)
+                    return
+            self.selectType.changed_event.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента
         self.addButton = QPushButton("Добавить элемент")
@@ -210,7 +248,12 @@ class DictWidget(QWidget):
             self.addArrayElement(keyVal=v,valItem=ve)
 
         self.updateCountText()
+
+        self.callChangeValEvent()
         return
+
+    def callChangeValEvent(self):
+        self.value_changed.emit(self.get_value())
 
     def addArrayElement(self,keyVal=None,valItem=None):
         from ReNode.ui.VariableManager import VariableManager
@@ -223,15 +266,23 @@ class DictWidget(QWidget):
             elementValueWidget = self.instancer()
             if keyVal:
                 elementValueWidget.set_value(keyVal)
+            
+            elementValueWidget.value_changed.connect(lambda: self.callChangeValEvent())
         else:
             elementValueWidget = QLineEdit()
         elementLayout.addWidget(elementValueWidget)
 
-        type = self.selectType.get_value()
-        typeObj = VariableManager.refObject.getVariableTypedefByType(type)
-        instancerValue = typeObj.classInstance()
+        if self.isConstDictValue():
+            instancerValue = self.valWidgetInstancer()
+        else:
+            type = self.selectType.get_value()
+            typeObj = VariableManager.refObject.getVariableTypedefByType(type)
+            instancerValue = typeObj.classInstance()
         if valItem:
             instancerValue.set_value(valItem)
+        
+        instancerValue.value_changed.connect(lambda: self.callChangeValEvent())
+
         elementLayout.addWidget(instancerValue)
 
 
@@ -250,6 +301,7 @@ class DictWidget(QWidget):
                 self.arrayElements.insert(index - 1, element)
                 self.scrollAreaLayout.takeAt(index)
                 self.scrollAreaLayout.insertLayout(index - 1, elementLayout)
+                self.callChangeValEvent()
 
         def moveDown():
             index = self.arrayElements.index(elementLayout)
@@ -258,6 +310,7 @@ class DictWidget(QWidget):
                 self.arrayElements.insert(index + 1, element)
                 self.scrollAreaLayout.takeAt(index)
                 self.scrollAreaLayout.insertLayout(index + 1, elementLayout)
+                self.callChangeValEvent()
 
         moveUpButton.clicked.connect(moveUp)
         moveDownButton.clicked.connect(moveDown)
@@ -276,6 +329,8 @@ class DictWidget(QWidget):
         self.scrollAreaLayout.insertLayout(len(self.arrayElements) - 1, elementLayout)
 
         self.updateCountText()
+                
+        self.callChangeValEvent()
 
     def removeArrayElement(self, elementLayout):
         if elementLayout in self.arrayElements:
@@ -286,3 +341,5 @@ class DictWidget(QWidget):
                     widget.deleteLater()
             elementLayout.deleteLater()
         self.updateCountText()
+                
+        self.callChangeValEvent()
