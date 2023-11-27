@@ -71,7 +71,6 @@ class NodeFactory:
 		#load classes
 		classDict = data.get('classes',{})
 		i = 1
-		hasObsoleteProps = False
 		for classname,classmembers in classDict.items():
 			if (i%100 == 0):
 				logger.info(f"Loading class {i}/{len(classDict)}")
@@ -81,23 +80,8 @@ class NodeFactory:
 			self.classes[classname] = classmembers
 			i += 1
 
-			if classmembers.get('fields',{}).get('all'):
-				hasObsoleteProps = True
-			if classmembers.get('methods',{}).get('all'):
-				hasObsoleteProps = True
-
 
 		logger.info(f'Classes count: {len(self.classes)}')
-
-		# TODO remove in next update
-		if hasObsoleteProps:
-			# replacer from defined to section
-			for classname,classmembers in classDict.items():
-				pFields = classmembers.get('fields',{})
-				pMethods = classmembers.get('methods',{})
-				del pFields['all']
-				del pMethods['all']
-			logger.warning("Obsolete properties found. Removing sections 'all' from 'fields' and 'methods'")
 
 		#validate names
 		logger.info('Validating class names')
