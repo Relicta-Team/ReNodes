@@ -6,6 +6,7 @@ from ReNode.app.Logger import RegisterLogger
 from ReNode.app.utils import transliterate
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFileSavePath
 from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent
+from ReNode.ui.GraphTypes import GraphTypeFactory as gtf, GraphTypeBase
 import re
 import sys
 import os
@@ -136,34 +137,28 @@ class WizardScriptMaker(QWizard):
 
 		combo = QComboBox()
 
-		options = [
-			["Игровой режим","gamemode","Игровой режим предназначен для реализации состояния игры."],
-			["Роль","role","Роль для игрового режима. В роли определяется снаряжение, стартовая позиция и навыки персонажа."],
-			["Игровой объект","gobject","Игровой объект с пользовательской логикой является переопределенным (унаследованным) от другого объекта. Например, мы можем создать игровой объект, унаследованный от двери и переопределить событие её открытия."],
-			["Скриптовый объект","scriptedobject","Скриптовый игровой объект с поддержкой компонентов. Это более гибкий инструмент создания игровых объектов, использующий общий класс и реализующий широкий спектр компонентов. С помощью него мы, например, можем создать контейнер, который можно съесть и из которого можно стрелять."],
-			["Компонент","component","Пользовательский компонент, добавляемый в скриптовый объект."],
-			["Сетевой виджет","netdisplay","Клиентский виджет для взаимодействия с игровыми и скриптовыми объектами. Например, можно сделать виджет с кнопкой, при нажатии на которую будет происходить какое-то действие."],
-			["Объект","object","Объект общего назначения."],
-		]
+		options : list[GraphTypeBase] = gtf.getAllInstances()
+		
 
 		for o in options:
-			combo.addItem(o[0])
-			combo.setItemData(combo.count()-1,o[1])
-			combo.setItemData(combo.count()-1,o[2],Qt.ToolTipRole)
+			combo.addItem(o.name)
+			curIdx = combo.count()-1
+			combo.setItemData(curIdx,o.systemName)
+			combo.setItemData(curIdx,o.description,Qt.ToolTipRole)
 
 		self._addLineOption("Тип скрипта:",combo)
 		item = self._addLabel("",isRichText=True)
 		combo.setCurrentIndex(0)
 		def setDesc():
-			item.setText("<span style=\"font-size:18pt\">Описание: " + options[combo.currentIndex()][2] + "</span>")
-			sysname = options[combo.currentIndex()][1]
+			item.setText("<span style=\"font-size:18pt\">Описание: " + options[combo.currentIndex()].getDescription() + "</span>")
+			sysname = options[combo.currentIndex()].systemName
 			for id  in self._dictPathes.get(sysname,[]):
 				pass
 		setDesc()
 		combo.currentIndexChanged.connect(lambda: setDesc())
 
 		def defineNextId():
-			lst = self._dictPathes.get(options[combo.currentIndex()][1],[])
+			lst = self._dictPathes.get(options[combo.currentIndex()].systemName,[])
 			if lst:
 				return lst[0]
 			else:
@@ -175,8 +170,9 @@ class WizardScriptMaker(QWizard):
 
 		def validate():
 			data = combo.currentData()
-			if data not in ['gamemode','role']:
-				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент создание скрипта \"{combo.currentText()}\" не реализовано.</span>")
+			gobj = gtf.getInstanceByType(data)
+			if not gobj.canCreateFromWizard:
+				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент создание скрипта \"{gobj.name}\" не реализовано.</span>")
 				return False
 			postText.setText("")
 			return True
@@ -184,7 +180,10 @@ class WizardScriptMaker(QWizard):
 		page.validatePage = validate
 
 	def createBasicClassSetup(self,pageClass,params={}):
-		page = self._registerPage(params.get('header',"Неизвестная страница"),"",pageClass)
+		
+		gobj = gtf.getInstanceByType(pageClass)
+		
+		page = self._registerPage(gobj.create_headerText,"",pageClass)
 		
 		self.setupDict = {}
 
@@ -196,33 +195,33 @@ class WizardScriptMaker(QWizard):
 
 		gmname = QLineEdit()
 		gmname.setMaxLength(64)
-		name_opt_ = params.get('name','Название')
+		name_opt_ = gobj.create_nameText
 		gmname.setPlaceholderText(f"Введите {name_opt_.lower()}")
 		self._addLineOption(f"{name_opt_}:",gmname)
 
 		gmclass = QLineEdit()
 		gmname.setMaxLength(64)
-		class_opt_ = params.get('classname',"Класс")
+		class_opt_ = gobj.create_classnameText
 		gmclass.setPlaceholderText(f"Введите {class_opt_.lower()}")
 		self._addLineOption(f"{class_opt_}:",gmclass)
 
 		gmparent = SeachComboButton()
-		opt_parent_ = params.get('parentData',{"name":"Неизвестный name","class":""})
-		self._addLineOption(f"{opt_parent_.get('name','Неопр.р.к.')}:",gmparent)
-		parentClassname = opt_parent_.get('class','')
+		opt_parentName_ = gobj.parent_nameText
+		self._addLineOption(f"{opt_parentName_}:",gmparent)
+		parentClassname = gobj.parent_classnameText
 		parents = self.graphSystem.getFactory().getClassAllChilds(parentClassname)
 
 		if not parents:
-			raise Exception(f"Класс {parentClassname} не найден или отсутствуют дочерние классы")
+			raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
 
-		vals = self.graphSystem.getFactory().getClassAllChildsTree("GMBase")
+		vals = self.graphSystem.getFactory().getClassAllChildsTree(parentClassname)
 		gmparent.loadContents(createTreeDataContent(vals))
 
 		gmpath = PropFileSavePath()
 		gmpath.set_file_ext("*.graph")
-		opt_path_ = params.get('pathData',{"name":"Неизвестный путь","base":"Базовый путь"})
+		opt_pathName_ = gobj.path_nameText
 		#gmpath.setPlaceholderText("Введите путь к режиму")
-		self._addLineOption(f"{opt_path_.get('name','Неопр.')}:",gmpath)
+		self._addLineOption(f"{opt_pathName_}:",gmpath)
 
 		self._addSpacer()
 
@@ -250,7 +249,7 @@ class WizardScriptMaker(QWizard):
 					errors.append(f"Класс \"{classname}\" уже существует")
 
 			if not parCls:
-				errors.append(f"{opt_parent_.get('name','Неопр.р.к')} не имеет значения")
+				errors.append(f"{opt_parentName_} не имеет значения")
 
 			if os.path.exists(pathval):
 				errors.append(f"Файл \"{pathval}\" уже существует")
@@ -278,7 +277,7 @@ class WizardScriptMaker(QWizard):
 			_validateAll()
 		def __on_classname_changed():
 			text = gmclass.text()
-			basePath = opt_path_.get('base','.\\undefined_path\\')
+			basePath = gobj.savePath
 			fullpath = os.path.join(basePath,f"{text}.graph")
 			gmpath.set_value(fullpath)
 			_validateAll()
@@ -305,16 +304,23 @@ class WizardScriptMaker(QWizard):
 	def onFinish(self):
 		logger = ScriptMakerManager.refObject.logger
 		settings = self.getSetupDict()
-		if not settings.get('type'):
+		gobjType = settings.get('type')
+		if not gobjType:
 			return
 		
+		gobj = gtf.getInstanceByType(gobjType)
 		filePath = settings.get('path')
 		settings.pop('path') #removing path
+		
 		if not filePath:
 			logger.error(f'Ошибка пути: {filePath}')
 			return
-
-		self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,options=settings)
+		
+		sets,msg = gobj.createInfoDataProps(settings)
+		if sets:
+			self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,options=sets)
+		else:
+			logger.error(msg)
 
 	def create_wizard(self):
 		self.createIntro()
