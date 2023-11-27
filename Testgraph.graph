@@ -70,6 +70,42 @@
           "systemname":"0x211231b6c70_20231126141935340534",
           "reprType":"object (Объект)",
           "reprDataType":"value (Значение)"
+        },
+        "0x1f73554b490":{
+          "name":"Enumva",
+          "type":"int",
+          "datatype":"value",
+          "typename":"Целое число",
+          "value":0,
+          "category":"local",
+          "systemname":"0x1f73554b490",
+          "reprType":"int (Целое число)",
+          "reprDataType":"value (Значение)"
+        },
+        "0x21dce7e4c10":{
+          "name":"arr",
+          "type":"array[int]",
+          "datatype":"array",
+          "typename":"Массив",
+          "value":[
+            0
+          ],
+          "category":"local",
+          "systemname":"0x21dce7e4c10",
+          "reprType":"int (Целое число)",
+          "reprDataType":"array (Массив)"
+        },
+        "0x24ec33da910_20231119145650805955":{
+          "name":"3123",
+          "type":"string",
+          "datatype":"value",
+          "typename":"Длинная строка",
+          "value":"",
+          "category":"local",
+          "group":"",
+          "systemname":"0x24ec33da910_20231119145650805955",
+          "reprType":"string (Длинная строка)",
+          "reprDataType":"value (Значение)"
         }
       }
     },
@@ -88,15 +124,15 @@
       }
     },
     "mpos":[
-      109.81732820052966,
-      -318.3441731241163,
-      1015.6967759784735,
-      955.9499068032684
+      284.7023426958967,
+      -200.0131764033576,
+      709.7833202980146,
+      668.0313602804837
     ],
-    "mzoom":-0.28
+    "mzoom":0.04
   },
   "nodes":{
-    "0x20b9e48b8b0":{
+    "0x292a459b790":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -138,7 +174,7 @@
       },
       "class_":"variable.get"
     },
-    "0x20b9e48bac0":{
+    "0x292a459b9a0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -180,7 +216,7 @@
       },
       "class_":"variable.set"
     },
-    "0x20b9e48be20":{
+    "0x292a459bd00":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -219,7 +255,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x20b9d7442e0":{
+    "0x292a53181c0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -261,7 +297,7 @@
       },
       "class_":"variable.get"
     },
-    "0x20b9d744430":{
+    "0x292a5318310":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -303,7 +339,7 @@
       },
       "class_":"variable.set"
     },
-    "0x20b9d744790":{
+    "0x292a5318670":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_ForEach_16x",
@@ -434,7 +470,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x20b9d744c10":{
+    "0x292a5318af0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -476,7 +512,7 @@
       },
       "class_":"variable.set"
     },
-    "0x20b9d745000":{
+    "0x292a5318ee0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -512,7 +548,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x20b9d7453f0":{
+    "0x292a53192d0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -554,7 +590,7 @@
       },
       "class_":"variable.set"
     },
-    "0x20b9d745750":{
+    "0x292a5319630":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -589,46 +625,89 @@
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "class_":"methods.GMBase.setFinishResult_0.def"
+    },
+    "0x292a4598820":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pill_16x.png",
+        "#ff00ff"
+      ],
+      "name":"Установить <b>3123</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":285.0,
+      "height":98.25,
+      "pos":[
+        600.9768409127277,
+        104.35370608822933
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "nameid":"0x24ec33da910_20231119145650805955",
+        "3123":"eeee\nabc\neeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "class_":"variable.set"
     }
   },
   "connections":[
     {
       "out":[
-        "0x20b9d7442e0",
+        "0x292a53181c0",
         "Значение"
       ],
       "in":[
-        "0x20b9d744790",
+        "0x292a5318670",
         "Массив"
       ]
     },
     {
       "out":[
-        "0x20b9d744790",
+        "0x292a5318670",
         "Элемент"
       ],
       "in":[
-        "0x20b9d744c10",
+        "0x292a5318af0",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x20b9d745000",
+        "0x292a5318ee0",
         "Выход"
       ],
       "in":[
-        "0x20b9d7453f0",
+        "0x292a53192d0",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x20b9d745000",
+        "0x292a5318ee0",
         "Клиент"
       ],
       "in":[
-        "0x20b9d7453f0",
+        "0x292a53192d0",
         "CurrentUser"
       ]
     }

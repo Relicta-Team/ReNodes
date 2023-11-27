@@ -84,12 +84,12 @@ class VariableLibrary:
                     "decimals": 5
                 }
             }},color=QtGui.QColor("Yellow green")),
-            VariableTypedef("string","Строка",PropLineEdit,{"input": {
-                "text": "Текст"
-            }},color=QtGui.QColor("Magenta")),
-            # VariableTypedef("string","Длинная строка",PropTextEdit,{"edit": {
+            # VariableTypedef("string","Строка",PropLineEdit,{"input": {
             #     "text": "Текст"
             # }},color=QtGui.QColor("Magenta")),
+            VariableTypedef("string","Строка",PropTextEdit,{"edit": {
+                "text": "Текст"
+            }},color=QtGui.QColor("Magenta")),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
             }},color=QtGui.QColor("Maroon")),
