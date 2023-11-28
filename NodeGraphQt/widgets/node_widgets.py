@@ -7,7 +7,6 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import P
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
-from ReNode.app.utils import clamp
 
 
 class _NodeGroupBox(QtWidgets.QGroupBox):
@@ -516,100 +515,11 @@ class NodeTextEdit(NodeBaseWidget):
         ledit.setPlainText(text)
         ledit.setPlaceholderText("...")
         ledit.setStyleSheet(stylesheet)
-        #ledit.textChanged.connect(self.on_value_changed)
+        ledit.textChanged.connect(self.on_value_changed)
         ledit.clearFocus()
         self.set_custom_widget(ledit)
         #self.widget().setMaximumSize(140,120)
-        #self.widget().setFixedSize(200,120)
-        #ledit.setMinimumWidth(180)
-        ledit.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
-
-        self.setMinimumHeight(20)
-        
-        ledit.textChanged.connect(self.adjustSize)
-        #self.value_changed.connect(self.adjustSize)
-        
-        ledit.setFocusPolicy(QtCore.Qt.FocusPolicy.ClickFocus)
-        ledit.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.adjustSize() #first init size
-
-    def focusOutEvent(self, e):
-        super().focusOutEvent(e)
-        self.on_value_changed()
-
-    def adjustSize(self):
-        
-        ledit :QtWidgets.QPlainTextEdit = self.get_custom_widget()
-        # Вычислите новый размер и установите его
-        #new_height = int(ledit.document().size().height()*100) + 10  # Добавьте немного дополнительного пространства
-        #self.widget().setFixedHeight(new_height)
-        
-        if True:
-            self._adjSz()
-        
-            return
-        
-        #font = ledit.document().defaultFont()
-        font = ledit.font()
-        fontMetrics = QtGui.QFontMetrics(font)
-        txt = ledit.toPlainText()
-        #if txt.endswith('\n'): txt += " "
-        textSize = fontMetrics.size(0, txt)# QtCore.Qt.TextWordWrap
-        basicOneLineSize = fontMetrics.height()
-        
-        w = textSize.width()
-        h = textSize.height()
-
-        #rect = fontMetrics.boundingRect(txt)
-        #w = rect.width()
-        #h = rect.height()
-        
-        w = clamp(w, 180, 500)
-        h = max(basicOneLineSize, h)
-
-        #self.widget().setFixedSize(w, h + 20 + 8 + 1)
-        self.get_custom_widget().setFixedSize(w,h)
-
-        self.update()
-        self.node.update()
-        self.node.draw_node()
-
-    def _adjSz(self):
-        self.widget().setMaximumWidth(500)
-        self.widget().setMinimumWidth(180)
-
-
-        textEdit : QtWidgets.QPlainTextEdit = self.get_custom_widget()
-        textEdit.setMinimumWidth(180)
-        textEdit.setMaximumWidth(500)
-        textEdit.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.WidgetWidth)
-        textEdit.setWordWrapMode(QtGui.QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
-        text = textEdit.toPlainText()
-
-        font = textEdit.document().defaultFont()    # or another font if you change it
-        fontMetrics = QtGui.QFontMetrics(font)      # a QFontMetrics based on our font
-        textSize = fontMetrics.size(0, text) #QtCore.Qt.TextWordWrap
-        
-        self.widget().setMinimumHeight(fontMetrics.height())
-
-        textWidth = textSize.width() + 30       # constant may need to be tweaked
-        textHeight = textSize.height() + 30     # constant may need to be tweaked
-        #textHeight += textEdit.pos().y()
-        #textEdit.setMinimumSize(textWidth, textHeight)  # good if you want to insert this into a layout
-        #self.widget().resize(textWidth, textHeight)
-        
-        prevgeo = self.widget().geometry()
-        self.widget().setGeometry(prevgeo.x(), prevgeo.y(), textWidth, textHeight)
-        
-        
-        self.update()
-        self.node.update()
-        self.node.draw_node()
+        self.widget().setFixedSize(200,120)
 
     @property
     def type_(self):
@@ -633,7 +543,6 @@ class NodeTextEdit(NodeBaseWidget):
         """
         if text != self.get_value():
             self.get_custom_widget().setPlainText(text)
-            self.adjustSize()
             self.on_value_changed()
 
 class NodeSpinBox(NodeBaseWidget):
