@@ -6,6 +6,9 @@ import asyncio
 from ReNode.app.CodeGenExceptions import *
 from ReNode.app.Logger import *
 from ReNode.ui.LoggerConsole import LoggerConsole
+from ReNode.ui.GraphTypes import *
+from ReNode.ui.VariableManager import VariableManager
+from ReNode.app.NodeFactory import NodeFactory
 import traceback
 
 class GeneratedVariable:
@@ -27,11 +30,11 @@ class GeneratedVariable:
 
 class CodeGenerator:
     def __init__(self):
-
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         self.logger = RegisterLogger("CodeGen")
 
         self.generated_code = ""
-        self.graphsys = None
+        self.graphsys = NodeGraphComponent.refObject
 
         self.serialized_graph = None
 
@@ -46,22 +49,31 @@ class CodeGenerator:
         # те переменные, которые хоть раз используют установку или получение должны быть сгенерены
         self.localVariablesUsed = set()
 
+        self.gObjType : GraphTypeBase = None
+        self.gObjMeta :dict[str:object]= None
+
+    def getGraphTypeObject(self):
+        """Получает объект типа графа"""
+        gtype = self.graphsys.graph.infoData['type']
+        return GraphTypeFactory.getInstanceByType(gtype)
+
     def getNodeLibData(self,cls):
-        return self.graphsys.nodeFactory.getNodeLibData(cls)
+        return self.getFactory().getNodeLibData(cls)
+
+    def getVariableManager(self) -> VariableManager:
+        return self.graphsys.variable_manager
 
     def getVariableDict(self) -> dict:
-        return self.graphsys.variable_manager.variables
+        return self.getVariableManager().variables
+    
+    def getFactory(self) -> NodeFactory:
+        return self.graphsys.nodeFactory
 
     def generateProcess(self,addComments=True):
+        
+        self._exceptions : list[CGBaseException] = [] #список исключений
+        
         self._addComments = addComments
-
-        """ file_path = "./session.json"
-        try:
-            with open(file_path) as data_file:
-                layout_data = json.load(data_file)
-        except Exception as e:
-            layout_data = None
-            print('Cannot read data from file.\n{}'.format(e))"""
         
         layout_data = self.graphsys.graph._serialize(self.graphsys.graph.all_nodes())
 
@@ -73,22 +85,29 @@ class CodeGenerator:
         if not layout_data.get('connections'):
             self.warning("Добавьте связи в граф")
             return
+        
+        self.serialized_graph = layout_data
+
+        entrys = self.getAllEntryPoints()
+        if not entrys:
+            self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
+            return
+        
+        self._resetNodesError()
 
         self.log("Старт генерации...")
-
-        self.serialized_graph = layout_data
-        entrys = self.findNodesByClass("events.onStart")
+        
         code = "// Code generated:\n"
-
         # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
         self.localVariableData = {}
+        self.gObjType = self.getGraphTypeObject()
+        self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,self.graphsys.graph.infoData)
 
-        self._finalizedCode = {} #k,v: nodeid, code (only finalized) !(work in _optimizeCodeSize)
-
+        # generated lvdata for graph user vars (local,class, methods)
         for vcat,vval in self.getVariableDict().items():
             for i, (k,v) in enumerate(vval.items()):
                 lvData = {}
-                self.localVariableData[v['systemname']] = lvData
+                self.localVariableData[k] = lvData
                 lvData['type'] = v['type']
                 lvData['usedin'] = None
                 
@@ -104,22 +123,12 @@ class CodeGenerator:
                 else:
                     continue
 
+
         # generate classvars
-        for vid,vdat in self.getVariableDict().get('class',{}).items():
-            varvalue = self.updateValueDataForType(vdat["value"],vdat['type'])
-            
-            if self._addComments:
-                code += f"\n//cv_init:{vdat['name']}"
-            code += "\n" + f'var({self.localVariableData[vdat["systemname"]]["alias"]},{varvalue});'
-            
-        self._renamed = set()
-        self._indexer = 0
-        self._exceptions : list[CGBaseException] = [] #список исключений
+        code += self.gObjType.cgHandleVariables(self.gObjMeta)
 
-        #debug reset node disables
-        self._resetNodesDisable()
-
-        self._resetNodesError()
+        # generate inspector props
+        code += self.gObjType.cgHandleInspectorProps(self.gObjMeta)
 
         self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
         self.__generateNames(entrys)
@@ -775,10 +784,6 @@ class CodeGenerator:
     def findConnection(self,contype : ConnectionType,nodeid):
         return self.findConnections(contype,nodeid,True)
 
-    def _resetNodesDisable(self):
-        for node_id in self.serialized_graph["nodes"].keys():
-            self.graphsys.graph.get_node_by_id(node_id).set_disabled(False)
-
     def _resetNodesError(self):
         for node_id in self.serialized_graph['nodes'].keys():
             self.graphsys.graph.get_node_by_id(node_id).resetError()
@@ -790,15 +795,42 @@ class CodeGenerator:
                 node_ids.append(node_id)
         return node_ids
 
-    def updateValueDataForType(self,value,type):
-        if not type: return value
-        if type == "string": 
+    def getAllEntryPoints(self):
+        node_ids = []
+        for node_id, node_data in self.serialized_graph["nodes"].items():
+            libData = self.getNodeLibData(node_data['class_'])
+            isClassMember = "classInfo" in libData
+            if isClassMember:
+                isMethod = libData["classInfo"]["type"] == "method"
+                if isMethod:
+                    # сбор методов: только те у которых memtype -> def, event
+                    memType = libData.get("memtype")
+                    if not memType:
+                        raise Exception(f"Corrupted memtype for method '{node_data['class_']}'; Info: {libData}")
+                    if memType in ["def","event"]:
+                        node_ids.append(node_id)
+        return node_ids
+
+    def updateValueDataForType(self,value,tname):
+        if not tname: return value
+        if tname == "string": 
             return "\"" + value.replace("\"","\"\"") + "\""
-        if type == "bool":
+        elif tname == "bool":
             return str(value).lower()
-        
+        elif tname in ['float','int']:
+            return value
+        elif self.getVariableManager().isObjectType(tname):
+            return value
+        else:
+            if not self.isDebugMode(): 
+                raise Exception(f"Unknown type {tname} (value: {value})")
+
         return value
     
+    def isDebugMode(self):
+        from ReNode.app.application import Application
+        return Application.isDebugMode()
+
     def log(self,text):
         self.logger.info(text)
 
@@ -884,3 +916,28 @@ class CodeGenerator:
         oldName = orig.name()
         orig.set_name(oldName+name)
         #orig.set_property("name",oldName + name,False,doNotRename=True)
+
+    def prepareMemberCode(self,dictLib,code):
+        """
+        Метод для подготовки кода. Формирует список параметров, заменяет имя члена и класса с помощью специальных метатегов
+        """
+        isClassMember = "classInfo" in dictLib
+        if isClassMember:
+            className = dictLib['classInfo']['class']
+            memName = dictLib['classInfo']['name']
+            memType = dictLib['classInfo']['type']
+
+            code = code.replace('@thisClass',className)
+            
+            code = code.replace('@thisName',memName)
+            if "@thisParams" in code:
+                
+                paramList = ['\'this\'']
+                for indexVar, (outKey,outValues) in enumerate(dictLib['outputs'].items()):
+                    if outValues['type'] != "Exec" and outValues['type'] != "":
+                        paramList.append('\"@genvar.out.{}\"'.format(indexVar+1))
+                
+                paramCtx = f'params [{", ".join(paramList)}]'
+                code = code.replace('@thisParams',paramCtx)
+        
+        return code

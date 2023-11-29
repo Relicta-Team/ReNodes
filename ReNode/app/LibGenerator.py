@@ -216,6 +216,7 @@ class NodeObjectHandler:
 		return path.replace('\\\\','\\').replace('\\','\\\\')
 
 	def prepareCode(self,code):
+		raise DeprecationWarning("This function is deprecated. Use this from CodeGen.prepareMemberCode")
 		if self.isMethod:
 			code = code.replace('@thisName',self.memberName)
 			if "@thisParams" in code:

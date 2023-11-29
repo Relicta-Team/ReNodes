@@ -85,8 +85,18 @@ class GraphTypeBase:
         return self.description
     
     #region Code handlers
+        
 
-    def cgHandleWrapper(self):
+    def createGenMetaInfoObject(self,cg,idat) -> dict[str,object]:
+        """
+            Создает контекст базовых данных для генератора. В исходной версии возвращаемый словарь хранит ссылку на инстанс генератора и словарь infoData из графа
+        """
+        return {
+            "codegen":cg,
+            "infoData":idat
+        }
+
+    def cgHandleWrapper(self,metaObj):
         """
             Получает обертку графа для кодогенератора.
             
@@ -95,14 +105,14 @@ class GraphTypeBase:
         raise NotImplementedError("cgHandleWrapper is not implemented")
         return ""
     
-    def cgHandleVariables(self):
+    def cgHandleVariables(self,metaObj):
         """
             Обработчик переменных для кодогенератора.
         """
         raise NotImplementedError("cgHandleVariables is not implemented")
         return ""
     
-    def cgHandleInspectorProps(self):
+    def cgHandleInspectorProps(self,metaObj):
         """
             Обработчик свойств инспектора.
         """
@@ -123,7 +133,7 @@ class GraphTypeBase:
         pass
 
 class ClassGraphType(GraphTypeBase):
-    
+
     def createInfoDataProps(self, options: dict):
         opts = {}
 
@@ -152,6 +162,59 @@ class ClassGraphType(GraphTypeBase):
         return opts,""
 
 
+    def createGenMetaInfoObject(self, cg, idat):
+        data = super().createGenMetaInfoObject(cg, idat)
+
+        data['classname'] = idat['classname']
+        data['parent'] = idat['parent']
+
+        return data
+    
+    def cgHandleVariables(self, metaObj):
+        from ReNode.app.CodeGen import CodeGenerator
+        code = ""
+        cgObj : CodeGenerator = metaObj.get('codegen')
+
+        for vid,vdat in cgObj.getVariableDict().get('class',{}).items():
+            varvalue = cgObj.updateValueDataForType(vdat["value"],vdat['type'])
+            
+            if cgObj._addComments:
+                code += f"\n//cv_init:{vdat['name']}"
+            code += "\n" + f'var({cgObj.localVariableData[vid]["alias"]},{varvalue});'
+        
+        return code
+    
+    def cgHandleInspectorProps(self, metaObj):
+        from ReNode.app.CodeGen import CodeGenerator
+        code = ""
+        cgObj : CodeGenerator = metaObj.get('codegen')
+        baseClass = metaObj.get('parent')
+        infoDataProps = metaObj['infoData']['props']
+        classInfo = cgObj.getFactory().getClassData(baseClass)
+        inspectorProps = classInfo['inspectorProps']
+
+        for fieldSystemName,fieldValue in infoDataProps['fields'].items():
+            if cgObj._addComments:
+                code += f"\n//p_var: {fieldSystemName}"
+            varvalue = cgObj.updateValueDataForType(fieldValue, inspectorProps['fields'][fieldSystemName]['return'])
+            #TODO custom variable defcode
+            code += "\n" + f"[\"{fieldSystemName}\",{varvalue}] call pc_oop_regvar;"
+        
+        for constSystemname, constval in infoDataProps['methods'].items():
+            if cgObj._addComments:
+                code += f"\n//p_const: {constSystemname}"
+            constProp = inspectorProps['methods'][constSystemname]
+            sigName = 'methods.' + constProp['node']
+            varvalue = cgObj.updateValueDataForType(constval, constProp['return'])
+            constLibInfo = cgObj.getFactory().getNodeLibData(sigName)
+            defCode = constLibInfo.get('defcode',"func(@thisName) { @propvalue };")
+            defCode = cgObj.prepareMemberCode(constLibInfo,defCode)
+
+            defCode = defCode.replace("@propvalue",varvalue)
+
+            code += "\n" + defCode
+
+        return code
 
 class GamemodeGraph(ClassGraphType):
     name = "Режим"

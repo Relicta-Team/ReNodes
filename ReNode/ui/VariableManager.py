@@ -458,6 +458,7 @@ class VariableManager(QDockWidget):
             "value": default_value,
             "category": cat_sys_name,
             "group": variable_group,
+            #TODO сделать чтобы системные имена генерировались от обычных
             "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
 
             "reprType": reprType,

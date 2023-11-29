@@ -215,6 +215,9 @@ class NodeFactory:
 		clsInfo = data.get('classInfo')
 		if clsInfo:
 			struct['classInfo'] = clsInfo
+		memType = data.get('memtype')
+		if memType: 
+			struct['memtype'] = memType
 
 		struct['runtime_ports'] = data.get('runtime_ports',False)
 
