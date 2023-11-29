@@ -94,19 +94,34 @@ class CGVariablePathAccessException(CGBaseException):
     text = "Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
     desc = "Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
 
-class CGVariableUnhandledPathAccessException(CGVariablePathAccessException):
-    id = 302
-    text = "<span style='color:darkred;'>[Необработанная ошибка]</span> Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
-    desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
     checkedNodes = {
         "operators.foreach_loop": ["При завершении"],
         "operators.for_loop": ["При завершении"]
     }
 
+    @staticmethod
+    def checkNode(node):
+        return True
+    
+    @staticmethod
+    def canCheckNode(node):
+        return True
+
+class CGVariableUnhandledPathAccessException(CGVariablePathAccessException):
+    id = 302
+    text = "<span style='color:darkred;'>[Необработанная ошибка]</span> Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
+    desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
+    
+
 class CGLogicalOptionListEvalException(CGBaseException):
     id = 303
     text = "Узел {src} вызвал необработанную ошибку опции листа"
     desc = "Для элемента \"{ctx}\" листа \"{portname}\" не найдено значения для замены. Обратитесь к разработчику для решения этой проблемы"
+
+class CGDuplicateEntryException(CGBaseException):
+    id = 304
+    text = "Множественное использование точки входа {entry}"
+    desc = "Точка входа типа {entry} уже существует в этом графе. Удалите {src}"
 
 # ----------------------------------------
 #   601-700 - variables exceptions
@@ -116,3 +131,8 @@ class CGLocalVariableDuplicateUseException(CGBaseException):
     id = 601
     text = "Локальная переменная {src} ({ctx}) уже используется в событии {targ}"
     desc = "Локальные переменные можно использовать только внутри одного события. Создайте новую переменную для использования в {entry}"
+
+class CGLocalVariableMetaKeywordNotFound(CGBaseException):
+    id = 602
+    text = "Точка входа {entry} не имеет определения мета-оператора для локальных переменных."
+    desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> В точке входа не найден мета-оператор <b>initvars</b>. Вероятнее всего проблема вызывана ошибкой генерации кода."

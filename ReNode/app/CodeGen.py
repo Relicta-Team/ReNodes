@@ -4,12 +4,15 @@ import re
 import enum
 import asyncio
 from ReNode.app.CodeGenExceptions import *
+from ReNode.app.CodeGenWarnings import *
 from ReNode.app.Logger import *
 from ReNode.ui.LoggerConsole import LoggerConsole
 from ReNode.ui.GraphTypes import *
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.NodeFactory import NodeFactory
 import traceback
+import time
+import datetime
 
 class GeneratedVariable:
     def __init__(self,locname,definedNodeId,acceptedPaths = None):
@@ -26,7 +29,7 @@ class GeneratedVariable:
         self.lockedPath = [] #ноды, запрещенные в пути
     
     def __repr__(self):
-        return f"{self.definedNodeName}({self.localName})"
+        return f"{self.definedNodeName}:{self.fromName}({self.localName})"
 
 class CodeGenerator:
     def __init__(self):
@@ -72,6 +75,7 @@ class CodeGenerator:
     def generateProcess(self,addComments=True):
         
         self._exceptions : list[CGBaseException] = [] #список исключений
+        self._warnings : list[CGBaseWarning] = [] #список предупреждений
         
         self._addComments = addComments
         
@@ -96,12 +100,15 @@ class CodeGenerator:
         self._resetNodesError()
 
         self.log("Старт генерации...")
+        timestamp = int(time.time()*1000.0)
         
         code = "// Code generated:\n"
         # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
         self.localVariableData = {}
         self.gObjType = self.getGraphTypeObject()
         self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,self.graphsys.graph.infoData)
+
+        self.log("Генерация переменных")
 
         # generated lvdata for graph user vars (local,class, methods)
         for vcat,vval in self.getVariableDict().items():
@@ -127,44 +134,64 @@ class CodeGenerator:
         # generate classvars
         code += self.gObjType.cgHandleVariables(self.gObjMeta)
 
+        self.log("Генерация свойств инспектора")
+
         # generate inspector props
         code += self.gObjType.cgHandleInspectorProps(self.gObjMeta)
 
         self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
         self.__generateNames(entrys)
 
-        if self.graphsys.graph.question_dialog("Generate order?","Generator"):
-            generated_code = self.generateOrderedCode(entrys)
-            code += "\n" + generated_code
-        #for nodeid in entrys:
-            #self.localVariablesUsed = set()
-            #data,startPoints = self.generateDfs(nodeid)
-            #print(data)
-            #code += "\n" + self.buildCodeFromData(data,startPoints)
-            #code += "\n" + self.formatCode(self.generateCode(nodeid))
-        #print(code)
-        from PyQt5.QtWidgets import QApplication
-        QApplication.clipboard().setText(code)
+        self.log("Генерация кода узлов")
+        self._validateEntrys(entrys)
+
+        generated_code = self.generateOrderedCode(entrys)
+        code += "\n" + generated_code
+        
+        code = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
+        
+        code = f'//gdate: {datetime.datetime.now()}\n' + code
+
+        if self.isDebugMode():
+            from PyQt5.QtWidgets import QApplication
+            QApplication.clipboard().setText(code)
 
         
 
+        self.log(f"\t- Предупреждений: {len(self._warnings)}; Ошибок: {len(self._exceptions)}")
         if self._exceptions:
-            self.log(f"\t- Ошибок: {len(self._exceptions)}")
             self.log("- <span style=\"color:red;\">Генерация завершена с ошибками</span>")
         else:
             self.log("- <span style=\"color:green;\">Генерация завершена</span>")
         
         self.log("================================")
+        timeDiff = int(time.time()*1000.0) - timestamp
         
-            
+        self.log(f"Процедура завершена за {timeDiff} мс")
+        
+        #cleanup data
+        self._exceptions.clear()
+        self._warnings.clear()
 
     def __generateNames(self,entry : list):
         import copy
         unicalNameDict = dict()
         self._originalReferenceNames = dict()
         uniIdx = 0
+
+        nameCounter = {}
+
         for k,v in copy.copy(self.serialized_graph['nodes']).items():
-            newname = f'[{uniIdx}]{v["class_"]}'
+            
+            curName = v['name']
+            if curName in nameCounter:
+                nameCounter[curName] += 1
+                curName = f'{curName} ({nameCounter[curName]})'
+            else:
+                nameCounter[curName] = 1
+            
+            #newname = f'[{uniIdx}]{v["class_"]}'
+            newname = curName
             unicalNameDict[k] = newname
             self.serialized_graph['nodes'][newname] = v
             self._originalReferenceNames[newname] = k
@@ -172,7 +199,11 @@ class CodeGenerator:
             uniIdx += 1
 
             if self._debug_rename:
-                self.graphsys.graph.get_node_by_id(k).set_name(newname)
+                #self.graphsys.graph.get_node_by_id(k).set_name(newname)
+                node = self.graphsys.graph.get_node_by_id(k)
+                
+                node.view.text_item.setHtml(newname)
+                node.view.draw_node()
         
         #entry update
         for its in copy.copy(entry):
@@ -186,18 +217,43 @@ class CodeGenerator:
             conn['in'][0] = unicalNameDict[inOld]
             conn['out'][0] = unicalNameDict[outOld]
 
+    def _validateEntrys(self,entrys):
+        #find duplicates entry classes
+        entDict = {}
+        entNodeData = {_id: CodeGenerator.NodeData(_id,self) for _id in entrys}
+        for ent in entrys:
+            entData = self.serialized_graph['nodes'][ent]
+            if entData['class_'] in entDict:
+                src = entNodeData[ent]
+                entObj = entNodeData[entDict[entData['class_']]]
+                self.exception(CGDuplicateEntryException,source=src,entry=entObj)
+            entDict[entData['class_']] = ent
+        del entDict
+
     def generateOrderedCode(self, entrys):
         try:
+            self.log("    Создание зависимостей")
             # Создание графа зависимостей
             graph = self.createDependencyGraph()
 
             code = ""
 
-            for ent in entrys:
+            for i,ent in enumerate(entrys):
+                self.log(f"    - Генерация точки входа {i+1}/{len(entrys)}")
+
                 self.localVariablesUsed = set()
+                
                 # Топологическая сортировка узлов
+                self.log("    -- Сортировка")
                 topological_order = self.topologicalSort(ent, graph)
+                
+                self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
+                entryObj = self.serialized_graph['nodes'][ent]
+                if self._addComments:
+                    code += f"\n//p_entry: {entryObj['class_']}\n"
                 code += self.generateFromTopology(topological_order,ent)
+
+            self.log("Форматирование")
 
             return self.formatCode(code)
         except Exception as e:
@@ -280,11 +336,11 @@ class CodeGenerator:
 
             self.code = self.classLibData['code']
 
-        def getConnectionInputs(self) -> dict[str,str]:
-            return self.refCodegen.getInputs(self.nodeId)
+        def getConnectionInputs(self,retPortnames=False) -> dict[str,str]:
+            return self.refCodegen.getInputs(self.nodeId,retPortnames)
         
-        def getConnectionOutputs(self):
-            return self.refCodegen.getExecPins(self.nodeId)
+        def getConnectionOutputs(self,retPortnames=False):
+            return self.refCodegen.getExecPins(self.nodeId,retPortnames)
 
         def getConnectionType(self,inout,portname):
             return self.refCodegen.getNodeConnectionType(self.nodeId,inout,portname)
@@ -300,6 +356,10 @@ class CodeGenerator:
                 return True
             return False
 
+    def getNodeObjectById(self,nodeid):
+            cg = self
+            nodeid = cg._sanitizeNodeName(nodeid)
+            return cg.graphsys.graph.get_node_by_id(nodeid)
 
     def generateFromTopology(self, topological_order, entryId):
 
@@ -308,6 +368,8 @@ class CodeGenerator:
         readyCount = 0
         hasAnyChanges = True # true for enter
         iteration = 0
+
+        self.gObjType.handlePreStartEntry(codeInfo[entryId],self.gObjMeta)
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
@@ -398,8 +460,8 @@ class CodeGenerator:
                         obj.generatedVars.append(gvObj)
                         createdStackedVars = True
 
-                inputDict = obj.getConnectionInputs()
-                execDict = obj.getConnectionOutputs()
+                inputDict = obj.getConnectionInputs(True)
+                execDict = obj.getConnectionOutputs(True)
 
                 # Переберите все входы и замените их значения в коде
                 for index, (input_name, input_props) in enumerate(inputs_fromLib):
@@ -441,8 +503,10 @@ class CodeGenerator:
                     if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
                         continue
 
+                    inpId, portNameConn = inpId #unpack list
+
                     inpObj = codeInfo[inpId]
-                    if len(inpObj.generatedVars) > 0:
+                    if len(inpObj.generatedVars) > 0 and f"@genvar.out.{index+1}" not in inpObj.code:
                         for v in inpObj.generatedVars:
                                 owningGeneratedVar = v in obj.generatedVars
                                 pathCondition = node_id in v.path and node_id not in v.lockedPath
@@ -450,13 +514,26 @@ class CodeGenerator:
                                 pathLock = node_id not in v.lockedPath
                                 isNearParent = inpId == v.definedNodeId
 
+                                # фикс ближашей проверки. переменная не может быть проброшена так как подключена через другой узел
+                                if not isNearParent:
+                                    continue
+
                                 if self._debug_rename:
                                     uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
                                     self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
                                 
-                                if not pathLock and isNearParent: pathLock = not pathLock
+                                #!if not pathLock and isNearParent: pathLock = not pathLock
                                 usableVariable = owningGeneratedVar and pathUse and pathLock
+
+                                #проверка по порту
+                                if isNearParent and v.fromName != portNameConn:
+                                    continue
+                                usableVariable = True #test override
                                 
+                                #проверка если была сгенерирована переменная
+                                if f"@genvar.out.{index+1}" in inpObj.code:
+                                    self.exception(CGUnhandledObjectException,source=obj,context='Подключаемый узел не сгенерировал переменные')
+
                                 if usableVariable:
                                         v.isUsed = True
                                         obj.usedGeneratedVars.append(v)
@@ -496,6 +573,8 @@ class CodeGenerator:
                         node_code = re.sub(f'@out\.{index+1}(?=\D|$)',"",node_code) 
                         continue
 
+                    outId, portNameConn = outId #unpack list
+
                     outputObj = codeInfo[outId]
 
                     # Пробрасываем переменные созданные на стеке если они в допустимом пути
@@ -528,43 +607,61 @@ class CodeGenerator:
 
                     if outputObj.isReady:
                         
-                        def btext(val):
-                            return "TRUE" if val else "FALSE"
+                        hasFindPathAccessError = False
+                        for v in outputObj.usedGeneratedVars:
+                            node_className_check = codeInfo[v.definedNodeId].nodeClass
+                            #basic check other pathes
+                            if output_name not in CGVariablePathAccessException.checkedNodes.get(node_className_check,[]):
+
+                                if v.localName in outputObj.code and node_id not in v.path:
+                                    exId = next((idvar.definedNodeId for idvar in obj.generatedVars if node_id == idvar.definedNodeId),v.definedNodeId)
+                                    self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[exId])
+                                    hasFindPathAccessError = True
+                        #def btext(val):
+                        #    return "TRUE" if val else "FALSE"
                         
-                        for v in outputObj.generatedVars:
+                        for v in outputObj.generatedVars: #?Вероятнее всего это лишнее
+                            if hasFindPathAccessError:
+                                break
+                            #basic check
+                            if output_name in CGVariablePathAccessException.checkedNodes.get(node_className,[]):
+                                    varNames = [varObj.localName for varObj in obj.generatedVars if node_id == varObj.definedNodeId]
+                                    if len(varNames) > 0:
+                                        for varName_ in varNames:
+                                            if varName_ in outputObj.code:
+                                                exId = next((idvar.definedNodeId for idvar in obj.generatedVars if node_id == idvar.definedNodeId),v.definedNodeId)
+                                                self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[exId])
+                                                #raise Exception("Unsupported operation -> checking outobj genvars")
+
+                            #? DEPRECATED CODE 
                             #!!!! ============== переписать ==============
-                            intersections = self.intersection(v.path,v.lockedPath)
+                            # intersections = self.intersection(v.path,v.lockedPath)
                             
-                            existsPathThis = obj.nodeId in v.path
-                            existsFromGenerated = v in obj.generatedVars
-                            outputNotInPath = outputObj.nodeId not in v.path
+                            # existsPathThis = obj.nodeId in v.path
+                            # existsFromGenerated = v in obj.generatedVars
+                            # outputNotInPath = outputObj.nodeId not in v.path
 
-                            definedInOut = v.definedNodeId == outputObj.nodeId
+                            # definedInOut = v.definedNodeId == outputObj.nodeId
 
-                            outInLocked = outputObj.nodeId in v.lockedPath
+                            # outInLocked = outputObj.nodeId in v.lockedPath
                             
-                            secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
+                            # secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
                             
-                            if not secCond:
-                                if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
-                                    secCond = True
-                            secCond = secCond and len(outputObj.usedGeneratedVars) > 0
+                            # if not secCond:
+                            #     if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
+                            #         secCond = True
+                            # secCond = secCond and len(outputObj.usedGeneratedVars) > 0
 
-                            if self._debug_rename:
-                                prefx = "ERRORED" if secCond else ""
-                                clr = "red" if secCond else "#1aff00"
-                                nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
-                                sg_ = "    &nbsp;"
-                                alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
-                                self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
+                            # if self._debug_rename:
+                            #     prefx = "ERRORED" if secCond else ""
+                            #     clr = "red" if secCond else "#1aff00"
+                            #     nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
+                            #     sg_ = "    &nbsp;"
+                            #     alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
+                            #     self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
                             
-                            if secCond:
-                                # oname = "НЕИЗВЕСТНО"
-                                # for kin,vin in outputObj.getConnectionInputs().items():
-                                #     if vin == node_id:
-                                #         oname = kin
-                                #         break
-                                self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
+                            # if secCond:
+                            #     self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
                             else:
                                 # дополнительная проверка с отловом локальных переменных за пределами цикла
                                 if output_name in CGVariableUnhandledPathAccessException.checkedNodes.get(node_className,[]):
@@ -581,16 +678,13 @@ class CodeGenerator:
                 if "@in." not in node_code and "@out." not in node_code:
                     obj.isReady = True
 
-                if obj.isReady and "@initvars" in node_code:
-                    initVarsCode = ""
-                    for nameid in self.localVariablesUsed:
-                        initVarsCode += f'private {self.localVariableData[nameid]["alias"]} = {self.localVariableData[nameid]["initvalue"]};\n'
-                    node_code = node_code.replace("@initvars",initVarsCode)
-
                 #update code
                 if not hasAnyChanges:
                     hasAnyChanges = obj.code != node_code
                 obj.code = node_code
+
+                if obj.isReady:
+                    self.gObjType.handleReadyNode(obj,codeInfo[entryId],self.gObjMeta)
 
             # --- post check stack
             readyCount = 0
@@ -598,6 +692,8 @@ class CodeGenerator:
                 if i.isReady:
                     readyCount += 1
         
+        self.gObjType.handlePostReadyEntry(codeInfo[entryId],self.gObjMeta)
+
         errList = []
         topoNodes = list(codeInfo.values())
         if len(topoNodes) > 0:
@@ -744,24 +840,27 @@ class CodeGenerator:
         return code,varPortName,isGet,varCat
 
     # returns map: key
-    def getExecPins(self,id):
-        return self.getConnectionsMap(self.ConnectionType.Output,id)
+    def getExecPins(self,id,retPortname=False):
+        return self.getConnectionsMap(self.ConnectionType.Output,id,retPortname)
     
-    def getInputs(self,id):
-        return self.getConnectionsMap(self.ConnectionType.Input,id)
+    def getInputs(self,id,retPortname=False):
+        return self.getConnectionsMap(self.ConnectionType.Input,id,retPortname)
 
     class ConnectionType(enum.Enum):
         Input = 0,
         Output = 1
 
-    def getConnectionsMap(self,ct : ConnectionType, nodeid):
+    def getConnectionsMap(self,ct : ConnectionType, nodeid,retPortName = False):
         connections = self.serialized_graph['connections']
         searchedKey = "out" if ct == self.ConnectionType.Output else "in"
         invertKey = "in" if ct == self.ConnectionType.Output else "out"
         dictret = {}
         for itm in connections:
             if (itm[searchedKey][0] == nodeid):
-                dictret[itm[searchedKey][1]] = itm[invertKey][0]
+                if retPortName:
+                    dictret[itm[searchedKey][1]] = itm[invertKey]
+                else:
+                    dictret[itm[searchedKey][1]] = itm[invertKey][0]
         
         return dictret
 
@@ -872,8 +971,12 @@ class CodeGenerator:
             "entry": linkEntryId
         }
         ex : CGBaseException = exType(**params)
-
-        self.error(ex.getExceptionText(addDesc=True))
+        exText = ex.getExceptionText(addDesc=True)
+        if exText in [regEx.getExceptionText(addDesc=True) for regEx in self._exceptions]:
+            #skip exception duplicate
+            self.warning(f"<span style='font-size:8px;'>Подавление дубликата исключения ({ex.__class__.__name__})</span>")
+            return
+        self.error(exText)
         #self.error(f)
 
         if sourceId:
@@ -894,6 +997,47 @@ class CodeGenerator:
 
 
         self._exceptions.append(ex)
+
+    def nodeWarn(self,
+                    exType,source:NodeData | None=None,
+                    portname:str|None=None,
+                    target:NodeData | None=None, 
+                    entry:NodeData | None=None,
+                    context=None):
+        """
+        Предупреждающее сообщение для узлов
+        """
+
+        sourceId = None
+        targetId = None
+        entryId = None
+
+        linkSourceId = None
+        linkTargetId = None
+        linkEntryId = None
+
+        if source: 
+            sourceId = source.nodeId
+            linkSourceId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(sourceId),sourceId)
+        if target: 
+            targetId = target.nodeId
+            linkTargetId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(targetId),targetId)
+        if entry: 
+            entryId = entry.nodeId
+            linkEntryId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryId),entryId)
+
+        params = {
+            "src": linkSourceId,
+            "portname": portname,
+            "targ": linkTargetId,
+            "ctx": context,
+            "entry": linkEntryId
+        }
+        wrnObj : CGBaseWarning = exType(**params)
+        self.warning(wrnObj.getWarningText(addDesc=True))
+
+        self._warnings.append(wrnObj)
+    
     def _sanitizeNodeName(self,node_id):
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]
@@ -913,8 +1057,13 @@ class CodeGenerator:
         node_id = self._sanitizeNodeName(node_id)
         
         orig = self.graphsys.graph.get_node_by_id(node_id)
-        oldName = orig.name()
-        orig.set_name(oldName+name)
+        
+        orig.view.text_item.setHtml(orig.view.text_item.toHtml() + name)
+        orig.view.draw_node()
+        
+        
+        #oldName = orig.name()
+        #orig.set_name(oldName+name)
         #orig.set_property("name",oldName + name,False,doNotRename=True)
 
     def prepareMemberCode(self,dictLib,code):
@@ -931,13 +1080,33 @@ class CodeGenerator:
             
             code = code.replace('@thisName',memName)
             if "@thisParams" in code:
-                
+
+                items = dictLib['outputs'].items()
+                startIndex = 0
+                lastIndex = len(items) - 1
+                metaKeyword = "@thisParams"
+
+                mRange = re.findall("\@thisParams\.(\d+)\-(\d+)",code)
+                if mRange:
+                    mItems = mRange[0]
+                    metaKeyword += ".{}-{}".format(mItems[0],mItems[1])
+                    startIndex = int(mItems[0])-1
+                    lastIndex = int(mItems[1])-1
+
+                if metaKeyword not in code: raise Exception(f"Meta keyword error: {metaKeyword} -> {code}")
+
                 paramList = ['\'this\'']
-                for indexVar, (outKey,outValues) in enumerate(dictLib['outputs'].items()):
+                for indexVar, (outKey,outValues) in enumerate(items):
+                    #((numberToCheck) >= bottom && (numberToCheck) <= top)
+                    inRange = indexVar >= startIndex and indexVar <= lastIndex
+                    if not inRange: continue
+
                     if outValues['type'] != "Exec" and outValues['type'] != "":
                         paramList.append('\"@genvar.out.{}\"'.format(indexVar+1))
                 
                 paramCtx = f'params [{", ".join(paramList)}]'
-                code = code.replace('@thisParams',paramCtx)
+                #adding initvars keyword
+                paramCtx += "; @initvars"
+                code = code.replace(metaKeyword,paramCtx)
         
         return code

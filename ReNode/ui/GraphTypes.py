@@ -1,3 +1,4 @@
+from ReNode.app.CodeGenWarnings import *
 
 class GraphTypeFactory:
     """
@@ -96,7 +97,7 @@ class GraphTypeBase:
             "infoData":idat
         }
 
-    def cgHandleWrapper(self,metaObj):
+    def cgHandleWrapper(self,sourceCode,metaObj):
         """
             Получает обертку графа для кодогенератора.
             
@@ -119,17 +120,62 @@ class GraphTypeBase:
         raise NotImplementedError("cgHandleInspectorProps is not implemented")
         return ""
     
+    def handlePostReadyEntry(self,nodeObject,metaObj):
+        """Постобработчик готовой точки входа"""
+        from ReNode.app.CodeGen import CodeGenerator
+        nodeObject :CodeGenerator.NodeData = nodeObject
+        code = ""
+        cgObj : CodeGenerator = metaObj.get('codegen')
+        node_code = nodeObject.code
+        classLibData = nodeObject.classLibData
+        
+        if not nodeObject.isReady: return ""
+        
+        if "@initvars" in node_code:
+                initVarsCode = ""
+                for nameid in cgObj.localVariablesUsed:
+                    initVarsCode += f'private {cgObj.localVariableData[nameid]["alias"]} = {cgObj.localVariableData[nameid]["initvalue"]};\n'
+                node_code = node_code.replace("@initvars",initVarsCode)
+        else:
+            hasConnections = nodeObject.getConnectionOutputs()
+            if hasConnections:
+                from ReNode.app.CodeGenExceptions import CGLocalVariableMetaKeywordNotFound
+                cgObj.exception(CGLocalVariableMetaKeywordNotFound,entry=nodeObject,source=nodeObject)
 
+        nodeObject.code = node_code
+
+    def handlePreStartEntry(self,nodeObjec,metaObj):
+        """Предварительная обработка точки входа"""
+        pass
     #endregion
 
 
-    def handleReadyNode(self,nodeObject,rule):
+    def handleReadyNode(self,nodeObject,entryObj,metaObj):
+        from ReNode.app.CodeGen import CodeGenerator
+        
         """
-            Обработчик готового узла при кодогенерации и правило, которое следует проверять.
-
-            Этот метод вызывается сразу когда узел помечается как готовый на подстановку
+            Обработчик готового узла при кодогенерации.
+            Этот метод вызывается сразу когда узел помечается как готовый на подстановку.
+            При вызове этого метода внутри объекта узла уже содержится актуальный код
         """
-        raise NotImplementedError("handleReadyNode is not implemented")
+        cgObj : CodeGenerator = metaObj.get('codegen')
+        libOuts = nodeObject.classLibData['inputs']
+        if libOuts:
+            connInp = nodeObject.getConnectionInputs()
+            usedExec = False
+            lastExec = ""
+            for k,v in libOuts.items():
+                if v.get('type')=="Exec":
+                    if not lastExec: lastExec = k   
+                    conId = connInp.get(k)
+                    if conId:
+                        usedExec = True
+                        break
+            if not usedExec:
+                if nodeObject == entryObj:
+                    cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
+                else:
+                    cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
         pass
 
 class ClassGraphType(GraphTypeBase):
@@ -215,6 +261,28 @@ class ClassGraphType(GraphTypeBase):
             code += "\n" + defCode
 
         return code
+    
+    def handlePreStartEntry(self, nodeObject, metaObj):
+        from ReNode.app.CodeGen import CodeGenerator
+        nodeObject :CodeGenerator.NodeData = nodeObject
+        code = ""
+        cgObj : CodeGenerator = metaObj.get('codegen')
+        node_code = nodeObject.code
+        classLibData = nodeObject.classLibData
+
+        node_code = cgObj.prepareMemberCode(classLibData,node_code)
+
+        nodeObject.code = node_code
+
+    def cgHandleWrapper(self, sourceCode, metaObj):
+        from ReNode.app.CodeGen import CodeGenerator
+        cgObj : CodeGenerator = metaObj.get('codegen')
+        className = metaObj['classname']
+        parentName = metaObj['parent']
+
+        wrapperCode = f'class({className}) extends({parentName})\n' + sourceCode + "\nendclass"
+        
+        return wrapperCode
 
 class GamemodeGraph(ClassGraphType):
     name = "Режим"
