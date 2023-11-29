@@ -225,17 +225,20 @@ class VariableManager(QDockWidget):
         self.widVarType = SeachComboButton()
         treeContent = createTreeDataContent()
 
+        objectTree = treeContent
         for vobj in self.variableTempateData:
             icon = QtGui.QIcon("data\\icons\\pill_16x.png")
             colored_icon = updateIconColor(icon, vobj.color)
-            addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+            _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+            if vobj.variableType == "object":
+                objectTree = _tempTree
             #self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
         objTree = fact.getClassAllChildsTree("GameObject")
-        addTreeContentItem(treeContent,objTree)
+        addTreeContentItem(objectTree,objTree)
 
-        addTreeContentItem(treeContent,fact.getClassAllChildsTree("ServerClient"))
+        addTreeContentItem(objectTree,fact.getClassAllChildsTree("ServerClient"))
 
         self.widVarType.loadContents(treeContent)
         self.widVarType.changed_event.connect(self._onVariableTypeChanged)
