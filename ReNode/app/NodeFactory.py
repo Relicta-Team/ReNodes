@@ -217,7 +217,7 @@ class NodeFactory:
 
 		struct['visible'] = data.get('isVisibleInLib',True)
 
-		struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
+		#struct['states'] = data.get('states',[]) #list: event(as entrypoint), onlydebug etc... (for codegen)
 
 		if self.nodes.get(typename):
 			raise Exception(f"node {typename} already exists")
