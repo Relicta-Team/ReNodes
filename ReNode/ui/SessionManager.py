@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from Qt import QtWidgets, QtCore
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.FileManager import FileManagerHelper
+from ReNode.ui.GraphTypes import GraphTypeFactory
 import os
 
 class TabData:
@@ -176,7 +177,11 @@ class SessionManager(QTabWidget):
         ttp = f"Расположение: {tdata.filePath}\n"
         ttp += f"Имя: {tdata.name}\n"
         if tdata.infoData.get('type','') in ["gamemode","role"]:
-            ttp += f"Тип графа: {tdata.infoData.get('type')}\n\n"
+            gTypeName = tdata.infoData.get('type')
+            typeName = "НЕИЗВЕСТНО"
+            gObj = GraphTypeFactory.getInstanceByType(gTypeName)
+            if gObj: typeName = gObj.getName()
+            ttp += f"Тип графа: {typeName}\n\n"
             ttp += f'Класс: {tdata.infoData.get("classname")}\n'
             ttp += f"Родитель: {tdata.infoData.get('parent')}"
             
