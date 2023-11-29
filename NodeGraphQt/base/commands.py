@@ -574,3 +574,57 @@ class DeleteGroupForVariables(QtWidgets.QUndoCommand):
         
         self._varmgr.syncVariableManagerWidget()
 
+
+# для view модели
+class __PropertyCommand(QtWidgets.QUndoCommand):
+    def getPropertyTextName(self):
+        pObj = self.propertyInspectorRef.getPropNameView(self.cat,self.sysname)
+        if pObj:
+            return pObj.property("default")
+        else:
+            return self.sysname
+
+class ChangeInspectorPropertyCommand(__PropertyCommand):
+    def __init__(self,refPropInsp,props,cat,sysname,value):
+        super(ChangeInspectorPropertyCommand, self).__init__()
+        self.propertyInspectorRef = refPropInsp
+        self.propsRef = props
+        self.cat = cat
+        self.sysname = sysname
+        self.value = value
+        self.oldvalue = props[cat].get(sysname,None)
+        self.setText('Изменение свойства "{}"'.format(self.getPropertyTextName()))
+        
+    
+    def undo(self):
+        oldVal = self.oldvalue
+        if oldVal:
+            self.propsRef[self.cat][self.sysname] = oldVal
+        else:
+            del self.propsRef[self.cat][self.sysname]
+        self.propertyInspectorRef.syncPropValue(self.cat,self.sysname,True)
+
+    def redo(self):
+        self.propsRef[self.cat][self.sysname] = self.value
+        self.propertyInspectorRef.syncPropValue(self.cat,self.sysname,True)
+
+class ResetToDefaultInspectorPropertyCommand(__PropertyCommand):
+    def __init__(self,refPropInsp,props,cat,sysname):
+        super(ResetToDefaultInspectorPropertyCommand, self).__init__()
+        self.propertyInspectorRef = refPropInsp
+        self.propsRef = props
+        self.cat = cat
+        self.sysname = sysname
+        self.oldvalue = props[cat].get(sysname,None)
+        self.setText('Сброс свойства "{}"'.format(self.getPropertyTextName()))
+        
+    
+    def undo(self):
+        oldVal = self.oldvalue
+        
+        self.propsRef[self.cat][self.sysname] = oldVal
+        self.propertyInspectorRef.syncPropValue(self.cat,self.sysname,True)
+
+    def redo(self):
+        del self.propsRef[self.cat][self.sysname]
+        self.propertyInspectorRef.syncPropValue(self.cat,self.sysname,True)

@@ -7,6 +7,7 @@ from ReNode.app.Logger import RegisterLogger
 from ReNode.app.NodeFactory import NodeFactory
 from ReNode.ui.VariableManager import VariableManager, VariableTypedef
 from ReNode.app.utils import generateIconParts
+from NodeGraphQt.base.commands import ChangeInspectorPropertyCommand,ResetToDefaultInspectorPropertyCommand
 
 class WidgetListElements(QWidget):
     def __init__(self):
@@ -99,17 +100,25 @@ class Inspector(QDockWidget):
         #for i in range(1,4):
         #    self.addProperty("syscat","propsysname",f"inspector prop {i}",QLabel("TEST VALUE" + " e" * 100))
 
+    def getUndoStack(self) -> QUndoStack:
+        return self.nodeGraphComponent.graph._undo_stack
+
     def getPropNameView(self,cat,sysname) -> QLabelWithIcon | QLabel: return self.propWidgetRefs[cat + "." + sysname][0]
     def getPropView(self,cat,sysname): return self.propWidgetRefs[cat + "." + sysname][1]
 
-    def setPropValue(self,cat,sysname,val):
+    def setPropValue(self,cat,sysname,val,toDefault=False):
         obj = self.getPropView(cat,sysname)
         if obj:
             props = self.infoData['props']
             if cat not in props: props[cat] = {}
-            props[cat][sysname] = val
+            if toDefault:
+                self.getUndoStack().push(ResetToDefaultInspectorPropertyCommand(self,props,cat,sysname))
+            else:
+                self.getUndoStack().push(ChangeInspectorPropertyCommand(self,props,cat,sysname,val))
+            #replaced in command
+            #self.syncPropValue(cat,sysname,False) #sync visual
+
             
-            self.syncPropValue(cat,sysname,False) #sync visual
         pass
 
     def syncPropValue(self,cat,sysname,setProp=False):
@@ -128,7 +137,9 @@ class Inspector(QDockWidget):
             if hasValue:
                 objText.setText(objText.property("default"))
                 if setProp:
+                    obj.blockSignals(True)
                     obj.set_value(props[cat][sysname])
+                    obj.blockSignals(False)
             else:
                 objText.setText(f"{objText.property('default')} (знач. от {par})")
                 if setProp:
@@ -140,8 +151,9 @@ class Inspector(QDockWidget):
     def resetPropToDefault(self,cat,sysname):
         props = self.infoData.get('props')
         if props and cat in props and sysname in props[cat]:
-            del props[cat][sysname]
-            self.syncPropValue(cat,sysname,True)
+            #del props[cat][sysname]
+            #self.syncPropValue(cat,sysname,True)
+            self.setPropValue(cat,sysname,None,True)
         pass
 
     def addProperty(self,definedFromClass,category,propSysName,propName,propObject=None):
@@ -161,23 +173,9 @@ class Inspector(QDockWidget):
             if not hasattr(propObject,"get_value"):
                 raise Exception(f"Property {propName} has no get_value method")
 
-            def onChangeValue(newval):
-                _val = propObject.get_value()
-                self.setPropValue(category,propSysName,_val)
-
             #register reference to property view
             self.propWidgetRefs[category + "." + propSysName] = (name,propObject)
             propObject.setProperty("default",propObject.get_value())
-
-            #check if propObject has value_changed field
-            if hasattr(propObject,"value_changed"):
-                propObject.value_changed.connect(onChangeValue)
-                pass
-            elif hasattr(propObject,"valueChanged"):
-                propObject.valueChanged.connect(onChangeValue)
-                pass
-            else:
-                raise Exception(f"Property {propName} has no change value signal")
             
             if isinstance(propObject,QCheckBox):
                 layProp = (0,1)
@@ -202,6 +200,21 @@ class Inspector(QDockWidget):
         self.propertyList.append(hlayout)
 
         self.syncPropValue(category,propSysName,True)
+
+        # подключаем сигнал изменения значения только после первой синхронизации
+        def onChangeValue(newval):
+            _val = propObject.get_value()
+            self.setPropValue(category,propSysName,_val)
+
+        #check if propObject has value_changed field
+        if hasattr(propObject,"value_changed"):
+            propObject.value_changed.connect(onChangeValue)
+            pass
+        elif hasattr(propObject,"valueChanged"):
+            propObject.valueChanged.connect(onChangeValue)
+            pass
+        else:
+            raise Exception(f"Property {propName} has no change value signal")
 
         return name
         
@@ -274,7 +287,12 @@ class Inspector(QDockWidget):
                     nodeData = fact.getNodeLibData(cat + "." + nodeName)
                     fName = nodeData['name']
                     fDesc = nodeData.get('desc',"")
-                    fRet = nodeData['returnType'] #propContents['return'] #для отладки типов можно брать из инспектора
+                    fRet = propContents['return'] #для отладки типов можно брать из инспектора
+                    # отладочная проверка
+                    if nodeData['returnType'] != propContents['return']:
+                        from ReNode.app.application import Application
+                        if not Application.isDebugMode():
+                            raise Exception(f"return type mismatch: {nodeData['returnType']} != {propContents['return']}")
 
                     vObj,vType = vmgr.getVarDataByType(fRet)
                     propObj = None
