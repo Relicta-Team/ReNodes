@@ -212,6 +212,9 @@ class NodeFactory:
 		struct['returnType'] = data.get('returnType')
 		struct['returnDesc'] = data.get('returnDesc')
 
+		clsInfo = data.get('classInfo')
+		if clsInfo:
+			struct['classInfo'] = clsInfo
 
 		struct['runtime_ports'] = data.get('runtime_ports',False)
 

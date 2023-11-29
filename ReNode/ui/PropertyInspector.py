@@ -274,7 +274,7 @@ class Inspector(QDockWidget):
                     nodeData = fact.getNodeLibData(cat + "." + nodeName)
                     fName = nodeData['name']
                     fDesc = nodeData.get('desc',"")
-                    fRet = propContents['return'] #nodeData['returnType']
+                    fRet = nodeData['returnType'] #propContents['return'] #для отладки типов можно брать из инспектора
 
                     vObj,vType = vmgr.getVarDataByType(fRet)
                     propObj = None

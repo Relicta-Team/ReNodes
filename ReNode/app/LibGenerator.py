@@ -65,6 +65,8 @@ class NodeObjectHandler:
 		self.isMethod = self.objectType == 'm'
 		self.isSystem = self.objectType == 'node'
 
+		self.isClassMember = self.isField or self.isMethod
+
 		self.refAllObjects : list = None #Ссылка на все объекты
 		self.counterCopy = 0
 
@@ -172,6 +174,8 @@ class NodeObjectHandler:
 		dst = NodeObjectHandler(self.objectNameFull,self.objectType,self.nodeLib,self.classMetadata,self.lineList.copy())
 		dst.counterCopy = src.counterCopy
 		dst.memberData = copy.deepcopy(src.memberData)
+
+		dst.defCode = src.defCode
 		
 		dst.memberClass = src.memberClass
 		dst.memberName = src.memberName
@@ -227,15 +231,15 @@ class NodeObjectHandler:
 		return code
 
 	def generateMethodCodeCall(self):
-		code = '[@in.2'
+		code = '['
 		addingParams = []
 		for i, (k,v) in enumerate(self['inputs'].items()):
 			if v['type'] != "Exec" and v['type'] != "":
 				addingParams.append(f'@in.{i+1}')
 		
 		paramString = ", ".join(addingParams)
-		if paramString: paramString = ", " + paramString
-		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"{self.memberName}\")"
+		#if paramString: paramString = ", " + paramString
+		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
 		
 		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
 		#if self.memberData.get('returnType') not in ['void','null','']:
@@ -270,8 +274,8 @@ class NodeObjectHandler:
 			pass
 		elif tokenType == 'code':
 			self.memberData['code'] = tokens[1]
-		#elif tokenType == 'defcode':
-		#	self.defCode = tokens[1]
+		elif tokenType == 'defcode':
+			self.defCode = tokens[1]
 		# видимость ноды в инспекторе
 		elif tokenType == 'classprop':
 			clsprop = intTryParse(tokens[1])
@@ -423,7 +427,7 @@ class NodeObjectHandler:
 					"",# call method(generated runtime at generateMethodCodeCall)
 					"func(@thisName) {@thisParams; @out.1}",# event define (события не вызываются пользователем)
 					"", #method getter runtme at generateMethodCodeCall
-					"func(@thisName) { @propvalue }", #const (!USED AS DEFINE)
+					"",#"func(@thisName) { @propvalue }", #const (!USED AS DEFINE)
 					"func(@thisName) {@thisParams; @out.1}", #define method
 				]
 				curCode_ = codeList_[tableTypes.index(mtype)]
@@ -559,7 +563,7 @@ class NodeObjectHandler:
 		classmeta = self.classMetadata
 
 		# Помещаем инстансер
-		if self['memtype'] not in  ['event',"def"]:
+		if self['memtype'] not in ['event',"def"]:
 			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
 			instanceOption = ("Цель", {
 					"type":"list",
@@ -588,6 +592,28 @@ class NodeObjectHandler:
 		#Если пути нет - генерируем его
 		if 'path' not in memberData:
 			memberData['path'] = classmeta[self.memberClass].get('path','')
+		
+		if self.isClassMember:
+			
+			#add node inside class zone
+			if self.isField:
+				flds = classmeta[self.memberClass]['fields']
+				
+				if 'nodes' not in flds: flds['nodes'] = []
+				flds['nodes'].append(self.objectNameFull)
+
+			if self.isMethod:
+				mtds = classmeta[self.memberClass]['methods']
+				
+				if 'nodes' not in mtds: mtds['nodes'] = []
+				mtds['nodes'].append(self.objectNameFull)
+
+		# set node class info
+		memberData['classInfo'] = {
+			"class": self.memberClass,
+			"name": self.memberName,
+			"type": "field" if self.isField else "method"
+		}
 		
 	def _preregSystemNode(self):
 		memberData = self.memberData
@@ -625,7 +651,7 @@ class NodeObjectHandler:
 						"style": "triangle"
 			}))
 		
-		if not self.isSystem: self._preregClassMember()
+		if self.isClassMember: self._preregClassMember()
 		if self.isField: self._preregField()
 		if self.isMethod: self._preregMethod()
 
@@ -654,7 +680,8 @@ class NodeObjectHandler:
 
 		#prep code and icon
 		#if 'icon' in memberData: self['icon'] = self.preparePath(self['icon'])
-		if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
+		#! код генерируется в рантайме при сборке
+		#if 'code' in memberData: self['code'] = self.prepareCode(self['code'])
 		#self.defCode = self.prepareCode(self.defCode)
 
 		#register inspector prop
@@ -667,8 +694,7 @@ class NodeObjectHandler:
 			}
 			propData = {
 				'node': self.objectNameFull,
-				'return': self['returnType'],
-				'defCode': self.defCode,
+				'return': self['returnType']
 			}
 			if self.isField:
 				prps__['inspectorProps']['fields'][self.memberName] = propData
@@ -678,18 +704,8 @@ class NodeObjectHandler:
 		# add to main lib
 		self.nodeLib[memberRegion][self.objectNameFull] = memberData
 
-		#add node inside class zone
-		if self.isField:
-			flds = classmeta[self.memberClass]['fields']
-			
-			if 'nodes' not in flds: flds['nodes'] = []
-			flds['nodes'].append(self.objectNameFull)
-
-		if self.isMethod:
-			mtds = classmeta[self.memberClass]['methods']
-			
-			if 'nodes' not in mtds: mtds['nodes'] = []
-			mtds['nodes'].append(self.objectNameFull)
+		if self.defCode:
+			memberData['defCode'] = self.defCode
 
 def compileRegion(members,nodeLib,classmeta):
 	curMember = None
