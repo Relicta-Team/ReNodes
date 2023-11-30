@@ -305,11 +305,6 @@ class NodeFactory:
 	}
 	def _kindPortStyle(self,kind):
 		return NodeFactory._kindPortStyleTypes.get(kind,0)
-	
-	def __getDrawPortFunction(self,number):
-		if number == 1:return draw_triangle_port
-		if number == 2:return draw_square_port
-		return None
 
 	#endregion
 
