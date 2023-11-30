@@ -2,7 +2,7 @@ import json
 from NodeGraphQt.nodes.base_node import BaseNode
 from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
-from ReNode.ui.NodePainter import draw_plus_port, draw_square_port,draw_triangle_port
+from ReNode.ui.NodePainter import getDrawPortFunction
 import logging
 import re
 logger : logging.Logger = None
@@ -371,23 +371,25 @@ class NodeFactory:
 		return node
 	
 	def addInput(self,node,inputkey,inputvals):
+		ptrFnc = getDrawPortFunction(inputvals['style'])
 		port = node.add_input(
 			name=inputkey,
 			color=inputvals['color'],
 			display_name=inputvals['display_name'],
 			multi_input=inputvals['mutliconnect'],
-			painter_func=self.__getDrawPortFunction(inputvals['style']),
+			painter_func=ptrFnc,
 			portType=inputvals.get('type')
 		)
 		#self._prepAccessPortTypes(node,port,inputvals,'out')
 
 	def addOutput(self,node,outputkey,outputvals):
+		ptrFnc = getDrawPortFunction(outputvals['style'])
 		port = node.add_output(
 			name=outputkey,
 			color=outputvals['color'],
 			display_name=outputvals['display_name'],
 			multi_output=outputvals['mutliconnect'],
-			painter_func=self.__getDrawPortFunction(outputvals['style']),
+			painter_func=ptrFnc,
 			portType=outputvals.get('type')
 		)
 		#self._prepAccessPortTypes(node,port,outputvals,'in')

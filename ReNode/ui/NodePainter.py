@@ -1,9 +1,8 @@
 #!/usr/bin/python
 from Qt import QtCore, QtGui
 
-from NodeGraphQt import BaseNode
+#!this throws error-> from NodeGraphQt import BaseNode 
 from NodeGraphQt.constants import PortEnum
-
 
 def draw_triangle_port(painter, rect, info):
     """
@@ -156,6 +155,18 @@ def draw_plus_port(painter, rect, info):
     painter.drawRect(h_line_rect)
 
     painter.restore()
+
+def getDrawPortFunction(number):
+    if number == 1:return draw_triangle_port
+    if number == 2:return draw_square_port
+    return None
+
+def getDrawPortStyleId(funcRef):
+    if funcRef == draw_triangle_port:return 1
+    if funcRef == draw_square_port:return 2
+    return None
+
+
 
 # TODO; pins for all types, float,int,bool etc
 

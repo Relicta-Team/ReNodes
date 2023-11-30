@@ -387,6 +387,8 @@ class NodeModel(object):
                     "color": port.color,
                     "type": port.view.port_typeName,
                 })
+                if port.view._port_painterStyle:
+                    input_ports[-1]['style'] = port.view._port_painterStyle
             connected_ports = model.to_dict['connected_ports']
             if connected_ports:
                 inputs[name] = connected_ports
@@ -400,6 +402,8 @@ class NodeModel(object):
                     "color": port.color,
                     "type": port.view.port_typeName,
                 })
+                if port.view._port_painterStyle:
+                    output_ports[-1]['style'] = port.view._port_painterStyle
             connected_ports = model.to_dict['connected_ports']
             if connected_ports:
                 outputs[name] = connected_ports

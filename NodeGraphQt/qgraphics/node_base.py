@@ -22,6 +22,7 @@ from PyQt5.QtCore import QPropertyAnimation, QRectF
 from PyQt5.QtWidgets import QGraphicsItem, QWidget
 
 from ReNode.app.utils import updatePixmapColor, mergePixmaps
+from ReNode.ui.NodePainter import getDrawPortStyleId
 
 #! use this for animated node
 # class AnimatedItem(QGraphicsItem):
@@ -1133,6 +1134,7 @@ class NodeItem(AbstractNodeItem):
         else:
             if painter_func:
                 port = CustomPortItem(self, painter_func)
+                port._port_painterStyle = getDrawPortStyleId(painter_func)
             else:
                 port = PortItem(self)
         port.name = name
@@ -1162,6 +1164,7 @@ class NodeItem(AbstractNodeItem):
         """
         if painter_func:
             port = CustomPortItem(self, painter_func)
+            port._port_painterStyle = getDrawPortStyleId(painter_func)
         else:
             port = PortItem(self)
         port.name = name

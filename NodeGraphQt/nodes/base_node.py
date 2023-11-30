@@ -12,7 +12,7 @@ from NodeGraphQt.errors import (
 )
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.node_widgets import *
-
+from ReNode.ui.NodePainter import getDrawPortFunction
 
 class BaseNode(NodeObject):
     """
@@ -425,7 +425,7 @@ class BaseNode(NodeObject):
             display_name (bool): display the port name on the node.
             color (tuple): initial port color (r, g, b) ``0-255``.
             locked (bool): locked state see :meth:`Port.set_locked`
-            painter_func (function or None): custom function to override the drawing
+            painter_func (function, int or None): custom function to override the drawing
                 of the port shape see example: :ref:`Creating Custom Shapes`
 
         Returns:
@@ -436,6 +436,8 @@ class BaseNode(NodeObject):
                 'port name "{}" already registered.'.format(name))
 
         port_args = [name, multi_input, display_name, locked, portType]
+        if painter_func and isinstance(painter_func, int):
+            painter_func = getDrawPortFunction(painter_func)
         if painter_func and callable(painter_func):
             port_args.append(painter_func)
         view = self.view.add_input(*port_args)
@@ -669,6 +671,7 @@ class BaseNode(NodeObject):
                         display_name=port['display_name'],
                         color=port['color'],
                         locked=port.get('locked') or False,
+                        painter_func=port.get('style') or None,
                         portType=port['type'])
          for port in port_data['input_ports']]
         [self.add_output(name=port['name'],
@@ -676,6 +679,7 @@ class BaseNode(NodeObject):
                          display_name=port['display_name'],
                          color=port['color'],
                          locked=port.get('locked') or False,
+                         painter_func=port.get('style') or None,
                          portType=port['type'])
          for port in port_data['output_ports']]
         self._view.draw_node()

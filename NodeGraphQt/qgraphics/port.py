@@ -35,6 +35,8 @@ class PortItem(QtWidgets.QGraphicsItem):
         self.port_typeName = 'object'
         self.refPort = None
 
+        self._port_painterStyle = 0 # default style
+
     def __str__(self):
         return '{}.PortItem("{}")'.format(self.__module__, self.name)
 
