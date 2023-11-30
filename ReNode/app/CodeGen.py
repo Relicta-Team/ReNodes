@@ -172,6 +172,7 @@ class CodeGenerator:
         #cleanup data
         self._exceptions.clear()
         self._warnings.clear()
+        self.gObjMeta.clear()
 
     def __generateNames(self,entry : list):
         import copy
@@ -327,6 +328,9 @@ class CodeGenerator:
             self.hasError = False
 
             self._initNodeClassData()
+
+            self.returns = [] #возвращаемые значения (используется для событий и функций)
+            self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
 
         def _initNodeClassData(self):
             node_data = self.refCodegen.serialized_graph['nodes'][self.nodeId]
@@ -607,6 +611,8 @@ class CodeGenerator:
 
                     if outputObj.isReady:
                         
+                        self.gObjType.handleReturnNode(codeInfo[entryId],obj,outputObj,self.gObjMeta)
+
                         hasFindPathAccessError = False
                         for v in outputObj.usedGeneratedVars:
                             node_className_check = codeInfo[v.definedNodeId].nodeClass

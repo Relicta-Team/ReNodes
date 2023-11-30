@@ -818,6 +818,9 @@ class VariableManager(QDockWidget):
         return vRet,dtObj
 
     def getTextTypename(self,fulltypename):
+        if fulltypename == "Exec": return "Выполнение"
+        if fulltypename == "null": return "Ничего"
+        
         vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
         if dtObj.dataType == 'value':
             return vRet.variableTextName

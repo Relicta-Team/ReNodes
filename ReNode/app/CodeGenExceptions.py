@@ -123,6 +123,26 @@ class CGDuplicateEntryException(CGBaseException):
     text = "Множественное использование точки входа {entry}"
     desc = "Точка входа типа {entry} уже существует в этом графе. Удалите {src}"
 
+class CGReturnTypeUnexpectedException(CGBaseException):
+    id = 305
+    text = "Не требуемое возвращаемое значение для {src}"
+    desc = "Точка входа {entry} не возвращает никаких значений. Уберите все возвраты значений из этой точки входа."
+
+class CGReturnTypeMismatchException(CGBaseException):
+    id = 306
+    text = "Несоответствие возвращаемых значений для {entry}"
+    desc = "Тип допустимого возвращаемого значения для {entry} ({ctx}) не совпадает с типом возвращаемого значения в {src} ({portname}). Точка входа может принимать возвращаемый тип: {ctx}"
+
+class CGReturnTypeNotFoundException(CGBaseException):
+    id = 307
+    text = "Отсутствие возвращаемого значения {src}"
+    desc = "Точка входа {entry} должна возвращать значение типа ({ctx})."
+
+class CGReturnNotAllBranchesException(CGBaseException):
+    id = 308
+    text = "Ожидается возврат значения в {src}"
+    desc = "Все ветви точки входа {entry} должны возвращать значение типа ({ctx}). Подключите к {src} узел возврата значения."
+
 # ----------------------------------------
 #   601-700 - variables exceptions
 # ----------------------------------------

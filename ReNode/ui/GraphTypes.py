@@ -130,17 +130,65 @@ class GraphTypeBase:
         classLibData = nodeObject.classLibData
         
         if not nodeObject.isReady: return ""
+
+        hasConnections = nodeObject.getConnectionOutputs()
         
         if "@initvars" in node_code:
                 initVarsCode = ""
                 for nameid in cgObj.localVariablesUsed:
                     initVarsCode += f'private {cgObj.localVariableData[nameid]["alias"]} = {cgObj.localVariableData[nameid]["initvalue"]};\n'
+                
+                #register scopename for function
+                from ReNode.app.CodeGenExceptions import CGReturnTypeUnexpectedException,CGReturnTypeMismatchException,CGReturnTypeNotFoundException,CGReturnNotAllBranchesException
+                hasReturns = False
+                retTypeExpect = nodeObject.classLibData.get("returnType","")
+                if nodeObject.returns:
+                    hasReturns = True
+                    if retTypeExpect in ['null','']:
+                        cgObj.exception(CGReturnTypeUnexpectedException,source=nodeObject,entry=nodeObject)
+                    else:
+                        #validate returns
+                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
+                        for retNode in nodeObject.returns:
+                            retType = retNode.objectData['input_ports'][1]['type']
+                            if retType and retType != retTypeExpect:
+                                retTypename = cgObj.getVariableManager().getTextTypename(retType)
+                                cgObj.exception(CGReturnTypeMismatchException,source=retNode,entry=nodeObject,context=retTypenameExpect,portname=retTypename)
+                            pass
+                else:
+                    if retTypeExpect not in ['null','']:
+                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
+                        cgObj.exception(CGReturnTypeNotFoundException,source=nodeObject,entry=nodeObject,context=retTypenameExpect)
+
+                if retTypeExpect not in ['null','']:
+                    lastEx = cgObj._exceptions
+                    canCheckAllEnds = True
+                    if lastEx:
+                        lastEx = lastEx[-1]
+                        # дополнительная проверка. если нет ни одного возвращаемого значения то не будем выполнять проверки конца веток
+                        if not isinstance(lastEx,CGReturnTypeNotFoundException):         
+                            canCheckAllEnds = False
+
+                    if canCheckAllEnds:
+                        noRetList = nodeObject.endsWithNoReturns
+                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
+                        #TODO в теле циклов возвращение значения не ожидаем...
+                        for noRetobj in noRetList:
+                            cgObj.exception(CGReturnNotAllBranchesException,source=noRetobj,entry=nodeObject,context=retTypenameExpect)
+
+                if hasReturns:
+                    initVarsCode += "\nSCOPENAME \"exec\";"
+
                 node_code = node_code.replace("@initvars",initVarsCode)
         else:
-            hasConnections = nodeObject.getConnectionOutputs()
+            
             if hasConnections:
                 from ReNode.app.CodeGenExceptions import CGLocalVariableMetaKeywordNotFound
                 cgObj.exception(CGLocalVariableMetaKeywordNotFound,entry=nodeObject,source=nodeObject)
+
+        # check if node not overriden code
+        if not hasConnections:
+            cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
 
         nodeObject.code = node_code
 
@@ -149,6 +197,14 @@ class GraphTypeBase:
         pass
     #endregion
 
+
+    returnNodeType = "control.return"
+    def handleReturnNode(self,entryObject,nodeObject,returnObject,metaObj):
+        if returnObject.nodeClass == self.returnNodeType:
+            entryObject.returns.append(returnObject)
+        elif not returnObject.getConnectionOutputs():
+            #прописываем узлы без возвращаемого значения
+            entryObject.endsWithNoReturns.append(returnObject)
 
     def handleReadyNode(self,nodeObject,entryObj,metaObj):
         from ReNode.app.CodeGen import CodeGenerator
@@ -174,9 +230,9 @@ class GraphTypeBase:
             if not usedExec:
                 if nodeObject == entryObj:
                     cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
+                    raise Exception("Unsupported rule: Entry node not overriden")
                 else:
                     cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
-        pass
 
 class ClassGraphType(GraphTypeBase):
 

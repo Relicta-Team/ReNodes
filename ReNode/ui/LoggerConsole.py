@@ -352,6 +352,11 @@ class ClearConsoleCommand(ConsoleCommand):
     def onCall(self,args):
         self.getLoggerInstance().clearConsole()
 
+class GetConsoleMessageCount(ConsoleCommand):
+    desc = "Возвращает количество сообщений в консоли"
+    def onCall(self,args):
+        self.logger.info(f'Количество сообщений в консоли: {len(self.getLoggerInstance().messages)}')
+
 class SaveConfig(ConsoleCommand):
     name = "save_config"
     desc = "Сохраняет конфигурацию в файл"

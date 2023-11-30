@@ -74,8 +74,8 @@ class CGNodeNotUsedWarning(CGBaseWarning):
 
 class CGEntryNodeNotOverridenWarning(CGBaseWarning):
     id = 302
-    text = "Отсутствие логики узла {src}"
-    desc = "Реализуйте логику узла {src}, либо удалите его."
+    text = "Отсутствие логики точки входа {src}"
+    desc = "Реализуйте логику точки входа {src}, либо удалите её."
 
 # ----------------------------------------
 #   601-700 - variables warnings

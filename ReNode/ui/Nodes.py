@@ -84,7 +84,10 @@ class RuntimeNode(BaseNode):
 		dataType,getter = getterData.split(';')
 
 		if not re.findall('[\[\]\,]',sourceType):
-			sourceType = f'array[{sourceType}]'
+			preSource = sourceType
+			sourceType = f'{dataType}[{sourceType}]'
+			if dataType == "value":
+				sourceType = preSource
 
 		typeinfo = re.findall('\w+\^?',sourceType)
 		
