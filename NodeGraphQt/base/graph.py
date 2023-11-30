@@ -152,6 +152,10 @@ class NodeGraph(QtCore.QObject):
             kwargs.get('undo_stack') or QtWidgets.QUndoStack(self)
         )
 
+        #adding reference to graph
+        self.incrementId = -1 #преинкрементное
+        """Первый узел всегда принимает значение 0"""
+
         #todo: reset errors for all nodes on change history
         self.hasScriptErrors = False
         self._undo_stack.indexChanged
@@ -1824,6 +1828,8 @@ class NodeGraph(QtCore.QObject):
         nodeSystem = self._viewer._tabSearch.nodeGraphComponent
         sceneRect = None
         zoom = None
+
+        nodeSystem.node_sync.validateGraph(self,data)
 
         # update node graph properties.
         for attr_name, attr_value in data.get('graph', {}).items():

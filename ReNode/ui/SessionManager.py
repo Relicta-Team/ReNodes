@@ -336,7 +336,7 @@ class SessionManager(QTabWidget):
         #graphComponent.editorDock.setWidget(None)
         
         args = {
-            #'factory': factory,
+            #'factory': factory, #dont use it, factory get id's from model
         }
         graph = NodeGraph(**args)
         

@@ -311,6 +311,7 @@ class NodeFactory:
 	#region factory instances
 
 	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False,forwardDeserializeData=None):
+		graphref.incrementId += 1
 		if not self.nodes.get(nodename): return None
 		if not graphref: return None
 		if not pos:
@@ -330,6 +331,8 @@ class NodeFactory:
 		node._graph = graphref #fix get graph from set_locked
 		node.nodeClass = nodename
 		node._view.nodeClass = nodename
+
+		node.uid = graphref.incrementId
 		#node.create_property("class_",nodename)
 
 		if "internal." in nodename:

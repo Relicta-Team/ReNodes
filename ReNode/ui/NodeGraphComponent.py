@@ -14,6 +14,7 @@ from ReNode.ui.NodeContextMenuUtility import *
 from ReNode.app.utils import *
 from ReNode.app.NodeFactory import NodeFactory
 from ReNode.app.CodeGen import CodeGenerator
+from ReNode.app.NodeSync import NodeSyncronizer
 
 from NodeGraphQt.nodes.base_node import *
 from ReNode.ui.TabSearchMenu import TabSearchMenu
@@ -52,6 +53,8 @@ class NodeGraphComponent:
 		self.codegen.graphsys = self
 
 		self.script_maker = ScriptMakerManager(self)
+
+		self.node_sync = NodeSyncronizer(self)
 
 		#notNested = self.mainWindow.dockOptions() & ~QMainWindow.DockOption.AllowNestedDocks
 		#notNested = notNested & ~QMainWindow.DockOption.AllowTabbedDocks

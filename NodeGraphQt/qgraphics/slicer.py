@@ -157,6 +157,14 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         text = f"Ошибка [{className}] "
         if libInfo:
             text = f'<span style="font-size: 24pt">{self._lastItem.name} ({className})</span>'
+
+            from ReNode.app.application import Application
+            if Application.isDebugMode():
+                idSearch = self._lastItem.id
+                findedNode = Application.refObject.mainWindow.nodeGraph.graph.get_node_by_id(idSearch)
+                if findedNode:
+                    text += f'<br/><b>Уникальный номер: {findedNode.uid}</b><br/>'
+
             # if hasattr(self._lastItem,"_error_item"):
             #     if self._lastItem._error_item.isVisible():
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text

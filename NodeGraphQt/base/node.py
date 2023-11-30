@@ -78,6 +78,10 @@ class NodeObject(object):
         
         # Yodes: sysref to custom class
         self.nodeClass = None
+        
+        #new unical id
+        self.uid = None
+        """Unical incremental identifier"""
 
         """
         Args:

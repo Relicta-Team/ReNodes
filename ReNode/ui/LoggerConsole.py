@@ -8,7 +8,7 @@ from ReNode.app.Logger import RegisterLogger
 from PyQt5.sip import *
 
 class ClickableTextBrowser(QTextBrowser):
-    clicked = pyqtSignal(str)
+    clicked = pyqtSignal(str,object)
 
     def __init__(self, parent=None):
         super(ClickableTextBrowser, self).__init__(parent)
@@ -18,9 +18,13 @@ class ClickableTextBrowser(QTextBrowser):
 
     def mousePressEvent(self, event):
         anchor = self.anchorAt(event.pos())
-        if anchor and anchor.startswith("ref::"):
-            text = anchor.replace("ref::", "")
-            self.clicked.emit(text)
+        if anchor:
+            if anchor.startswith("ref::"):
+                text = anchor.replace("ref::", "")
+                self.clicked.emit("ref",text)
+            elif anchor.startswith("gref::"):
+                patterns = anchor.replace("gref::", "").split(":")
+                self.clicked.emit("gref",patterns)
         else:
             super().mousePressEvent(event)
 
@@ -77,15 +81,37 @@ class LoggerConsole(QDockWidget):
         self.messages = []
         self.maxMessages = 1024*2
 
-        def on_link_clicked(link):
+        def on_link_clicked(clickType,args):
             from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-            print("Node Link clicked:", link)
-            graphObj = NodeGraphComponent.refObject.graph
-            node = graphObj.get_node_by_id(link)
-            if node:
-                graphObj.clear_selection()
-                node.set_selected(True)
-                graphObj.viewer().center_selection([node.view])
+            print(f"Node Link clicked ({clickType}): {args}")
+            if clickType == "ref":
+                graphObj = NodeGraphComponent.refObject.graph
+                node = graphObj.get_node_by_id(args)
+                if node:
+                    graphObj.clear_selection()
+                    node.set_selected(True)
+                    graphObj.viewer().center_selection([node.view])
+            elif clickType == "gref":
+                try:
+                    graphId = args[0]
+                    nodeUid = int(args[1])
+                    tabMgr = NodeGraphComponent.refObject.sessionManager
+                    curTabDat = None
+                    for t in tabMgr.getAllTabs():
+                        if hex(id(t.graph)) == graphId:
+                            curTabDat = t
+                    if not curTabDat: return
+                    tabMgr.setActiveTab(curTabDat.getIndex())
+                    for node in curTabDat.graph.all_nodes():
+                        if node.uid == nodeUid:
+                            graphObj = curTabDat.graph
+                            graphObj.clear_selection()
+                            node.set_selected(True)
+                            graphObj.viewer().center_selection([node.view])
+                except Exception as e:
+                    self.logger.error(f"Ошибка перехода к {graphId}->{nodeUid}: {e}")
+                    return
+
 
 
         text_browser = self.log_text
@@ -165,9 +191,15 @@ class LoggerConsole(QDockWidget):
         if isdeleted(self.log_text): return
         self.log_text.setHtml(self.styleText + "")
 
+    @staticmethod
     def wrapNodeLink(nodeid,text=None,color='#17E62C'):
         if not text: text = nodeid
         return f'<a href="ref::{nodeid}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
+
+    @staticmethod
+    def createNodeLink(graphRef,nodeid,text=None,color='#17E62C'):
+        if not text: text = nodeid
+        return f'<a href="gref::{hex(id(graphRef))}:{nodeid}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
 
     def init_ui(self):
         widget = QWidget()
