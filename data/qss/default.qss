@@ -99,14 +99,14 @@ QScrollBar::handle:horizontal {
 QScrollBar::handle:vertical {
 	border-width: 2px 1px 2px 1px;
 }
-
 QScrollBar::handle:horizontal {
-	min-width: 20px;
+	min-width: 10px;
 }
 
 QScrollBar::handle:vertical {
-	min-height: 80px;
+	min-height: 10px;
 }
+
 
 /*
 QScrollBar::add-line, QScrollBar::sub-line {
