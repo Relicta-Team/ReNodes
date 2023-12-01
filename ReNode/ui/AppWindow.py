@@ -86,6 +86,11 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(self.switchInspectorAction)
 		self.windows.addAction(QAction("Сбросить позиции окон",self,triggered=self.resetWindows))
 		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
+		
+		
+		for act in menubar.actions() + self.fileMenu.actions() + self.editMenu.actions() + self.windows.actions():
+			act.setAutoRepeat(False)
+		
 	
 	def onNewFile(self):
 		#logger.info("Новый скрипт")

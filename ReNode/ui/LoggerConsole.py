@@ -6,6 +6,7 @@ import logging
 import re
 from ReNode.app.Logger import RegisterLogger
 from PyQt5.sip import *
+from PyQt5.QtCore import QTimer
 
 class ClickableTextBrowser(QTextBrowser):
     clicked = pyqtSignal(str,object)
@@ -80,6 +81,10 @@ class LoggerConsole(QDockWidget):
 
         self.messages = []
         self.maxMessages = 1024*2
+
+        # debug messages
+        #for i in range(self.maxMessages):
+        #    self.messages.append(f'Тест сообщение {i}')
 
         def on_link_clicked(clickType,args):
             from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -174,15 +179,14 @@ class LoggerConsole(QDockWidget):
         self.messages.append(text)
         if len(self.messages) > self.maxMessages:
             self.messages.pop(0)
-        fulltext = "<br/>".join(self.messages)
-        fulltext = self.styleText + fulltext
-        #fulltext = f'<pre>{fulltext}</pre>'
         
+        # call in next frame
+        QTimer.singleShot(0, lambda: self.update())
+
+    def update(self):
         if not self.log_text: return
         if isdeleted(self.log_text): return
-        
-        self.log_text.setHtml(fulltext)
-
+        self.log_text.setHtml(self.styleText + "<br/>".join(self.messages))
         self.log_text.verticalScrollBar().setValue(self.log_text.verticalScrollBar().maximum())
 
     def clearConsole(self):
