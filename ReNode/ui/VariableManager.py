@@ -656,6 +656,8 @@ class VariableManager(QDockWidget):
             doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 
+        nodeObj.set_port_deletion_allowed(True)
+
         portColor = None
 
         #setup partial icon with color support

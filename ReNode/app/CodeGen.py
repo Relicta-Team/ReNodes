@@ -44,7 +44,7 @@ class CodeGenerator:
         self._addComments = False # Добавляет мета-информацию внутрь кодовой структуры
 
         self._debug_info = True # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
-        self._debug_rename = False #отладочная переименовка узлов
+        self._debug_rename = not False #отладочная переименовка узлов
 
         #TODO: need write
         self._optimizeCodeSize = False # включает оптимизацию кода. Меньше разрмер 
@@ -142,9 +142,16 @@ class CodeGenerator:
         self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
         self.__generateNames(entrys)
 
-        self.log("Генерация кода узлов")
+        
         self._validateEntrys(entrys)
 
+        self.log("Генерация связей")
+        self.dpdGraphExt = self.createDpdGraphExt()
+
+        #res = self.getBackwardDependenciesTo("Установить <b>Enumva</b>","Цикл в диапазоне")
+        #self.log(res)
+
+        self.log("Генерация кода узлов")
         generated_code = self.generateOrderedCode(entrys)
         code += "\n" + generated_code
         
@@ -164,15 +171,15 @@ class CodeGenerator:
         else:
             self.log("- <span style=\"color:green;\">Генерация завершена</span>")
         
-        self.log("================================")
         timeDiff = int(time.time()*1000.0) - timestamp
-        
         self.log(f"Процедура завершена за {timeDiff} мс")
+        self.log("================================")
         
         #cleanup data
         self._exceptions.clear()
         self._warnings.clear()
         self.gObjMeta.clear()
+        self.dpdGraphExt.clear()
 
     def __generateNames(self,entry : list):
         import copy
@@ -235,20 +242,20 @@ class CodeGenerator:
         try:
             self.log("    Создание зависимостей")
             # Создание графа зависимостей
-            graph = self.createDependencyGraph()
+            graph = self.createDependencyGraph(collectOnlyExecutePins=True)
 
             code = ""
 
             for i,ent in enumerate(entrys):
-                self.log(f"    - Генерация точки входа {i+1}/{len(entrys)}")
+                self.log(f"    -------- Генерация точки входа {i+1}/{len(entrys)}")
 
                 self.localVariablesUsed = set()
                 
                 # Топологическая сортировка узлов
-                self.log("    -- Сортировка")
+                #self.log("    -- Сортировка")
                 topological_order = self.topologicalSort(ent, graph)
-                
-                self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
+
+                #self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
                 entryObj = self.serialized_graph['nodes'][ent]
                 if self._addComments:
                     code += f"\n//p_entry: {entryObj['class_']}\n"
@@ -283,11 +290,27 @@ class CodeGenerator:
             self.exception(CGUnhandledException,context=strFullException)
             return f"//unhandled exception\n"
 
-    def createDependencyGraph(self):
+    def createDependencyGraph(self,collectOnlyExecutePins=False):
+        def getPortInputType(node,port): 
+            ndata = self.serialized_graph['nodes'][node]
+            if ndata.get("port_deletion_allowed"):
+                return next((pinfo['type'] for pinfo in ndata['input_ports'] if pinfo['name'] == port),None)
+            else:
+                return self.getNodeLibData(ndata['class_']) ['inputs'][port].get("type")
+        def getPortOutputType(node,port): 
+            ndata = self.serialized_graph['nodes'][node]
+            if ndata.get("port_deletion_allowed"):
+                return next((pinfo['type'] for pinfo in ndata['output_ports'] if pinfo['name'] == port),None)
+            else:
+                return self.getNodeLibData(ndata['class_']) ['outputs'][port].get("type")
+
         graph = defaultdict(list)
         for connection in self.serialized_graph['connections']:
-            input_node, _ = connection["in"]
-            output_node, _ = connection["out"]
+            input_node, portInName = connection["in"]
+            output_node, portOutName = connection["out"]
+            if collectOnlyExecutePins:
+                typeIn = getPortInputType(input_node, portInName)
+                typeOut = getPortOutputType(output_node, portOutName)
             graph[input_node].append(output_node)
             graph[output_node].append(input_node)
         return graph
@@ -309,6 +332,60 @@ class CodeGenerator:
         stack.reverse()
         
         return stack
+
+    #region Dependency graph extension with relations
+
+    def __initDPDConnectionTypes(self,nodename,ref):
+        inNodeInfo = self.getNodeLibData(self.serialized_graph['nodes'][nodename]['class_'])
+        for k,v in inNodeInfo['inputs'].items():
+            ref['typein'][k] = v['type']
+        outNodeInfo = self.getNodeLibData(self.serialized_graph['nodes'][nodename]['class_'])
+        for k,v in outNodeInfo['outputs'].items():
+            ref['typeout'][k] = v['type']
+
+    def createDpdGraphExt(self):
+        graph = {}
+        for connection in self.serialized_graph['connections']:
+            input_node, portIn = connection["in"]
+            output_node, portOut = connection["out"]
+            
+            # create 
+            if input_node not in graph:
+                graph[input_node] = {
+                    "in": defaultdict(list), # key:portname, value:{node:}
+                    "out": defaultdict(list),
+                    "typein": {}, # key:portname,value: porttype
+                    "typeout": {}, # key:portname,value: porttype
+                }
+                self.__initDPDConnectionTypes(input_node,graph[input_node])
+            if output_node not in graph:
+                graph[output_node] = {
+                    "in": defaultdict(list),
+                    "out": defaultdict(list),
+                    "typein": {},
+                    "typeout": {},
+                }
+                self.__initDPDConnectionTypes(output_node,graph[output_node])
+
+            graph[input_node]['in'][portIn].append({output_node:portOut})
+            graph[output_node]['out'][portOut].append({input_node:portIn})
+
+
+        return graph
+
+    def getBackwardDependenciesTo(self, node,toNode):
+        """Обратный поиск до узла toNode по exec портам из узла node"""
+        portType = "Exec"
+        srchPortName = next((k for k,v in self.dpdGraphExt[node]['typein'].items() if v == portType),None)
+        if srchPortName is None: return None
+
+        connections = self.dpdGraphExt[node]['in'].get(srchPortName,[])
+        for conn_node,conn_port in connections.items():
+            if conn_node == toNode:
+                return (conn_node, conn_port)
+        #self.getNodeLibData(self.serialized_graph[])
+
+    #endregion
 
     class NodeData:
         def __init__(self, nodeid, refGraph):

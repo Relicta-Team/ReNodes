@@ -447,6 +447,7 @@ class NodeFactory:
 	#TODO pass param as node, key = node.class_
 	def getNodeLibData(self,key):
 		if not self.nodes: return None
+		if key not in self.nodes: return None
 		return self.nodes[key]
 
 	def getClassData(self,className):
