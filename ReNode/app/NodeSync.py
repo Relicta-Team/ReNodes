@@ -84,6 +84,16 @@ class NodeSyncronizer:
                 clr = QColor(255,255,255,255)
             portcolor = [*clr.getRgb()]
             realType = lvdata['type']
+
+            # if lvdata['name'] in dictValues['custom']:
+            #     #self.log("warn obsolete option from custom: {} with value {}".format(lvdata['name'],dictValues['custom'][lvdata['name']]))
+            #     #del dictValues['custom'][lvdata['name']]
+            #     pass
+            # else:
+            #     self.log("warn option not found: {} in class {}".format(lvdata['name'],className))
+
+                
+
             if ".set" in className:
                 oldPorts = deepcopy(classInfo['inputs'])
                 oldPortsArr = []
@@ -91,6 +101,8 @@ class NodeSyncronizer:
                 for k,v in oldPorts.items():
                     v['name'] = k
                     v['multi_connection'] = v['mutliconnect']
+                    if v['type'] == 'Exec': 
+                        v['style'] = 1
                     del v['mutliconnect']
                     oldPortsArr.append(v)
                 vardict = {
@@ -112,9 +124,11 @@ class NodeSyncronizer:
             for k,v in oldPorts.items():
                 v['name'] = k
                 v['multi_connection'] = v['mutliconnect']
+                if v['type'] == 'Exec': 
+                    v['style'] = 1
                 del v['mutliconnect']
                 oldPortsArr.append(v)
-            raise Exception("TODO: exec style triangle required")
+            
             vardict = {
                 "name": lvdata['name'] if ".get" in className else "Значение",
                 "type": realType,

@@ -640,6 +640,20 @@ class VariableManager(QDockWidget):
 
             hstack.endMacro()
 
+    def _updateNodeSync(self,nodeObj:RuntimeNode,id,getorset):
+        from ReNode.app.NodeFactory import NodeFactory
+        lvdata = self.getVariableDataById(id)
+        if not lvdata:
+            raise Exception("Unknown variable id "+id)
+        fact : NodeFactory = self.nodeGraphComponent.getFactory()
+        varInfo,varDt = self.getVarDataByType(lvdata['type'])
+        if "set" == getorset and varDt.dataType == 'value':
+            props = varInfo.dictProp
+            for k,v in props.items():
+                fact.addProperty(nodeObj,k,lvdata['name'],v)
+        pass
+        
+
     def _updateNode(self,nodeObj:RuntimeNode,id,getorset):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
