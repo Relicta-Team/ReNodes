@@ -124,15 +124,15 @@
       }
     },
     "mpos":[
-      316.91979639002466,
-      -382.0924377850443,
-      810.2132918805887,
-      762.5536864758473
+      889.8942188695771,
+      -676.8815187009037,
+      1176.7887520600405,
+      1107.5658842918015
     ],
-    "mzoom":-0.53
+    "mzoom":-0.38
   },
   "nodes":{
-    "0x1b13c016090":{
+    "0x2e531119000":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -189,7 +189,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1b13c017350":{
+    "0x2e531118a90":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -285,7 +285,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c020750":{
+    "0x2e531119d50":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -324,7 +324,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1b13c021ad0":{
+    "0x2e5339c9240":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -381,7 +381,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1b13c022650":{
+    "0x2e531119960":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -477,7 +477,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c0238d0":{
+    "0x2e533a349a0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_ForEach_16x",
@@ -608,7 +608,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x1b13c0250d0":{
+    "0x2e533a35060":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -704,7 +704,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c026290":{
+    "0x2e533a35600":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -740,7 +740,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x1b13c025790":{
+    "0x2e533a35c30":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -836,7 +836,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c02c050":{
+    "0x2e533a35e70":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -872,7 +872,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.setFinishResult_0.def"
     },
-    "0x1b13c027250":{
+    "0x2e533a362f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -969,7 +969,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c0259d0":{
+    "0x2e533a37790":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1066,7 +1066,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c02c310":{
+    "0x2e533a37cd0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Loop_16x",
       "name":"Цикл в диапазоне",
@@ -1106,7 +1106,7 @@
       },
       "class_":"operators.for_loop"
     },
-    "0x1b13c02d690":{
+    "0x2e533a4c520":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -1145,7 +1145,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1b13c02f310":{
+    "0x2e533a4c970":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -1184,7 +1184,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1b13c02ff50":{
+    "0x2e533a4cd90":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1281,7 +1281,7 @@
       },
       "class_":"variable.set"
     },
-    "0x1b13c038d90":{
+    "0x2e533a4d090":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_Node_16x",
@@ -1363,7 +1363,7 @@
       },
       "class_":"control.return"
     },
-    "0x1b13c0398d0":{
+    "0x2e533a4d4e0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1420,7 +1420,7 @@
       },
       "class_":"variable.get"
     },
-    "0x1b13c03ac10":{
+    "0x2e533a37b50":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1451,8 +1451,105 @@
       "width":235.0,
       "height":93.25,
       "pos":[
-        1331.1701731304659,
-        -164.49679624280336
+        1360.7885948995972,
+        -169.72357655500298
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[
+        {
+          "name":"Вход",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"Enumva",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            46,
+            139,
+            87,
+            255
+          ],
+          "type":"int"
+        }
+      ],
+      "output_ports":[
+        {
+          "name":"Выход",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"Значение",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            46,
+            139,
+            87,
+            255
+          ],
+          "type":"int"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1f73554b490",
+        "Enumva":0
+      },
+      "class_":"variable.set"
+    },
+    "0x2e533a4fee0":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pill_16x.png",
+        "#2e8b57"
+      ],
+      "name":"Установить <b>Enumva</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":235.0,
+      "height":93.25,
+      "pos":[
+        1020.9785739204187,
+        -71.53240228336014
       ],
       "layout_direction":0,
       "port_deletion_allowed":true,
@@ -1521,121 +1618,141 @@
   "connections":[
     {
       "out":[
-        "0x1b13c0238d0",
+        "0x2e533a349a0",
         "Элемент"
       ],
       "in":[
-        "0x1b13c0250d0",
+        "0x2e533a35060",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x1b13c026290",
+        "0x2e533a35600",
         "Выход"
       ],
       "in":[
-        "0x1b13c02d690",
+        "0x2e533a4c520",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1b13c026290",
+        "0x2e533a35600",
         "Клиент"
       ],
       "in":[
-        "0x1b13c025790",
+        "0x2e533a35c30",
         "CurrentUser"
       ]
     },
     {
-      "out":[
-        "0x1b13c025790",
-        "Выход"
-      ],
       "in":[
-        "0x1b13c02f310",
-        "Вход"
-      ]
-    },
-    {
-      "in":[
-        "0x1b13c0259d0",
+        "0x2e533a35c30",
         "Вход"
       ],
       "out":[
-        "0x1b13c02f310",
+        "0x2e533a4c520",
         "Ложь"
       ]
     },
     {
       "out":[
-        "0x1b13c0259d0",
+        "0x2e533a35c30",
         "Выход"
       ],
       "in":[
-        "0x1b13c038d90",
+        "0x2e533a4c970",
         "Вход"
       ]
     },
     {
       "in":[
-        "0x1b13c02c310",
+        "0x2e533a37790",
         "Вход"
       ],
       "out":[
-        "0x1b13c02d690",
+        "0x2e533a4c970",
+        "Ложь"
+      ]
+    },
+    {
+      "out":[
+        "0x2e533a37790",
+        "Выход"
+      ],
+      "in":[
+        "0x2e533a4d090",
+        "Вход"
+      ]
+    },
+    {
+      "in":[
+        "0x2e533a37cd0",
+        "Вход"
+      ],
+      "out":[
+        "0x2e533a4c520",
         "Истина"
       ]
     },
     {
       "out":[
-        "0x1b13c02c310",
+        "0x2e533a37cd0",
         "Тело цикла"
       ],
       "in":[
-        "0x1b13c02ff50",
+        "0x2e533a4cd90",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1b13c02c310",
+        "0x2e533a37cd0",
         "Индекс"
       ],
       "in":[
-        "0x1b13c02ff50",
+        "0x2e533a4cd90",
         "Enumva"
       ]
     },
     {
       "out":[
-        "0x1b13c02c310",
-        "Индекс"
+        "0x2e533a37cd0",
+        "При завершении"
       ],
       "in":[
-        "0x1b13c03ac10",
-        "Enumva"
+        "0x2e533a4fee0",
+        "Вход"
       ]
     },
     {
       "out":[
-        "0x1b13c02ff50",
+        "0x2e533a4cd90",
         "Выход"
       ],
       "in":[
-        "0x1b13c03ac10",
+        "0x2e533a37b50",
         "Вход"
       ]
     },
     {
       "in":[
-        "0x1b13c038d90",
+        "0x2e533a4d090",
+        "Вход"
+      ],
+      "out":[
+        "0x2e533a4fee0",
+        "Выход"
+      ]
+    },
+    {
+      "in":[
+        "0x2e533a4d090",
         "Возвращаемое значение"
       ],
       "out":[
-        "0x1b13c0398d0",
+        "0x2e533a4d4e0",
         "3123"
       ]
     }

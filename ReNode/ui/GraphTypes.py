@@ -142,14 +142,15 @@ class GraphTypeBase:
                 from ReNode.app.CodeGenExceptions import CGReturnTypeUnexpectedException,CGReturnTypeMismatchException,CGReturnTypeNotFoundException,CGReturnNotAllBranchesException
                 hasReturns = False
                 retTypeExpect = nodeObject.classLibData.get("returnType","")
-                if nodeObject.returns:
+                executedReturns = [ret for ret in nodeObject.returns if ret.visitedExecFlow]
+                if executedReturns:
                     hasReturns = True
                     if retTypeExpect in ['null','']:
                         cgObj.exception(CGReturnTypeUnexpectedException,source=nodeObject,entry=nodeObject)
                     else:
                         #validate returns
                         retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
-                        for retNode in nodeObject.returns:
+                        for retNode in executedReturns:
                             retType = retNode.objectData['input_ports'][1]['type']
                             if retType and retType != retTypeExpect:
                                 retTypename = cgObj.getVariableManager().getTextTypename(retType)
@@ -177,6 +178,11 @@ class GraphTypeBase:
                         for noRetobj in noRetList:
                             scope = noRetobj.getScopeObj()
                             if scope and scope.nodeType.name == "SCOPED_LOOP":
+                                # если цикловых скоупов больше 1 значит возврат требуется из другого места
+                                #if len(noRetList) > 1:
+                                continue
+                            if not noRetobj.visitedExecFlow:
+                                cgObj.nodeWarn(CGNodeNeverCalledWarning,source=noRetobj)
                                 continue
                             cgObj.exception(CGReturnNotAllBranchesException,source=noRetobj,entry=nodeObject,context=retTypenameExpect)
 
@@ -236,9 +242,8 @@ class GraphTypeBase:
                     cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
                     raise Exception("Unsupported rule: Entry node not overriden")
                 else:
+                    #if nodeObject.visitedExecFlow:
                     cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
-                    #TODO: done this
-                    raise Exception("TODO: если правое выполнение возвращает результат то надо сделать сброс возврата")
 
 class ClassGraphType(GraphTypeBase):
 

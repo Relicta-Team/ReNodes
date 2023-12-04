@@ -391,16 +391,17 @@ class CodeGenerator:
         scopesExec = defaultdict(list)
 
         if entryId not in self.dpdGraphExt: return #no connections -> no scopes
-
+        loopScopes = NodeDataType.getScopedLoopNodes()
         def get_exec_outs(id_,scope=None):
             idat = self.dpdGraphExt[id_]
             codeObj : CodeGenerator.NodeData = codeInfo[id_]
             if isinstance(scope,list):
                 codeObj.scopes.extend(scope)
             iclass = codeObj.nodeClass
+            codeObj.visitedExecFlow = True
             for k,v in idat['typeout'].items():
                 if v == "Exec":
-                    isScopeStart = iclass == "operators.for_loop" and k == "Тело цикла"
+                    isScopeStart = iclass in loopScopes and k == "Тело цикла"
                     if isScopeStart:
                         if scope and len(scope) > 0:
                             scope.append(codeObj)
@@ -444,6 +445,8 @@ class CodeGenerator:
             self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
 
             self.scopes = [] #области видимости
+
+            self.visitedExecFlow = False
 
         def __repr__(self) -> str:
             return f'ND:{self.nodeId} ({self.nodeClass})'
@@ -490,6 +493,9 @@ class CodeGenerator:
             return cg.graphsys.graph.get_node_by_id(nodeid)
 
     def generateFromTopology(self, topological_order, entryId):
+
+        curExceptions = len(self._exceptions)
+        curWarnings = len(self._warnings)
 
         codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
 
@@ -642,14 +648,26 @@ class CodeGenerator:
                                     source=obj,
                                     portname=portNameConn,
                                     target=inpObj)
-                            pass
+                            # Вторая проверка на лоченные пути
+                            connectedToSkipped = self.dpdGraphExt[inpObj.nodeId]['out']['При завершении']
+                            if connectedToSkipped:
+                                connTpsList = connectedToSkipped[0] #к завершающему условию всегда только один пайп
+                                # конвертируем в айди узла и какому порту он подключен
+                                connToId, connToPort = list(connTpsList.items())[0]
+                                if codeInfo[connToId] == obj:
+                                    if inpObj in obj.scopes:
+                                        self.exception(CGScopeLoopPortException,
+                                            source=obj,
+                                            portname=portNameConn,
+                                            target=inpObj)    
+                                #else:
+                                #    self.exception(CGUnhandledObjectException,source=obj,context="Несоответствие узла {src} при сравнении подключений и валидации логики области видимости")
+
                         lvarObj = inpObj.generatedVars.get(portNameConn)
                         lvarObj.isUsed = True
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
                     if inpObj.isReady:
-                        #default validation scopes
-                        inpScope = inpObj.getScopeObj()
 
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
@@ -678,6 +696,14 @@ class CodeGenerator:
                         
                         objScope = outputObj.getScopeObj()
                         #todo objScope is nearTo outputObj -> exception , other case noexception
+                        
+                        # !TODO-> REMOVE: 
+                        # if obj.nodeType.name == "SCOPED_LOOP" and output_name == "При завершении" and objScope:
+                        #     self.exception(CGScopeLoopPortException,
+                        #         source=outputObj,
+                        #         target=obj,
+                        #         portname=output_name
+                        #         )
                         isNotChildLoop = obj != objScope
                         if objScope and objScope not in obj.scopes and isNotChildLoop:
                             loopId = objScope.nodeId
@@ -733,12 +759,14 @@ class CodeGenerator:
             self.exception(CGStackError,entry=entryObj,source=firstNonGenerated)
 
         if hasNodeError:
-            strInfo = "\n\t".join([LoggerConsole.wrapNodeLink(self._sanitizeNodeName(s.nodeId),s.nodeId) for s in errList])
-            if not strInfo: 
-                strInfo = "-отсутствуют-" 
-            else: 
-                strInfo = "\n\t" + strInfo
-            self.error(f'Узлы, требующие проверки/исправления из события {LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryObj.nodeId),entryObj.nodeId)} (всего {len(errList)}):{strInfo}')
+            # strInfo = "\n\t".join([LoggerConsole.wrapNodeLink(self._sanitizeNodeName(s.nodeId),s.nodeId) for s in errList])
+            # if not strInfo: 
+            #     strInfo = "-отсутствуют-" 
+            # else: 
+            #     strInfo = "\n\t" + strInfo
+            errLen = len(self._exceptions) - curExceptions
+            warnLen = len(self._warnings) - curWarnings
+            self.error(f'Точка входа {LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryObj.nodeId),entryObj.nodeId)} не обработана: <b><span style="color:red">{errLen} ошибок,</span> <span style="color:yellow">{warnLen} предупреждений</span></b><br/>')
 
 
         entryObj = codeInfo[entryId]

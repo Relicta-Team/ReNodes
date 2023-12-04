@@ -89,30 +89,6 @@ class CGPortRequiredConnectionException(CGBaseException):
 #   301-600 - nodes exceptions
 # ----------------------------------------
 
-class CGVariablePathAccessException(CGBaseException):
-    id = 301
-    text = "Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
-    desc = "Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
-
-    checkedNodes = {
-        "operators.foreach_loop": ["При завершении"],
-        "operators.for_loop": ["При завершении"]
-    }
-
-    @staticmethod
-    def checkNode(node):
-        return True
-    
-    @staticmethod
-    def canCheckNode(node):
-        return True
-
-class CGVariableUnhandledPathAccessException(CGVariablePathAccessException):
-    id = 302
-    text = "<span style='color:darkred;'>[Необработанная ошибка]</span> Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
-    desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
-
-
 class CGScopeLoopException(CGBaseException):
     id = 301
     text = "Узел {src} не может быть использован из-за ограничений области видимости, наложенных {targ}"
@@ -152,6 +128,11 @@ class CGReturnNotAllBranchesException(CGBaseException):
     id = 308
     text = "Ожидается возврат значения после {src}"
     desc = "Все ветви точки входа {entry} должны возвращать значение типа ({ctx}). Подключите к {src} узел возврата значения."
+
+class CGReturnNotExecutedException(CGBaseException):
+    id = 309
+    text = "Возвращаемое значение в {src} никогда не будет выполнено"
+    desc = "К входным портам выполнения узла {src} не подключены узлы, либо один из подключенных узлов не имеет подключения входных портов."
 
 # ----------------------------------------
 #   601-700 - variables exceptions
