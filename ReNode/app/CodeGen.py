@@ -14,22 +14,38 @@ import traceback
 import time
 import datetime
 
+#const enum for nodedata types
+
+class NodeDataType(enum.Enum):
+    """Тип узла в графе"""
+    NODE = 0
+    OPERATOR = 1
+    SCOPED_LOOP = 2
+    
+    @staticmethod
+    def getScopedLoopNodes(): return ["operators.for_loop","operators.foreach_loop"]
+
+    @staticmethod
+    def getNodeType(classname:str):
+        if classname in NodeDataType.getScopedLoopNodes():
+            return NodeDataType.SCOPED_LOOP
+        elif classname.startswith("operators."):
+            return NodeDataType.OPERATOR
+        
+        return NodeDataType.NODE
+
 class GeneratedVariable:
-    def __init__(self,locname,definedNodeId,acceptedPaths = None):
+    def __init__(self,locname,definedNodeId):
         self.localName = locname 
         self.definedNodeId = definedNodeId
-        self.acceptedPaths = acceptedPaths
         self.isUsed = False
         
         self.active = True
-        self.fromName = None
+        self.fromPort = None
         self.definedNodeName = None
-        
-        self.path = [] #ноды доступные в пути
-        self.lockedPath = [] #ноды, запрещенные в пути
     
     def __repr__(self):
-        return f"{self.definedNodeName}:{self.fromName}({self.localName})"
+        return f"{self.definedNodeName}:{self.fromPort}({self.localName})"
 
 class CodeGenerator:
     def __init__(self):
@@ -404,18 +420,6 @@ class CodeGenerator:
         #{n:o.scopes for n,o in codeInfo.items()}
         return scopesExec
 
-    def getBackwardDependenciesTo(self, node,toNode):
-        """Обратный поиск до узла toNode по exec портам из узла node"""
-        portType = "Exec"
-        srchPortName = next((k for k,v in self.dpdGraphExt[node]['typein'].items() if v == portType),None)
-        if srchPortName is None: return None
-
-        connections = self.dpdGraphExt[node]['in'].get(srchPortName,[])
-        for conn_node,conn_port in connections.items():
-            if conn_node == toNode:
-                return (conn_node, conn_port)
-        #self.getNodeLibData(self.serialized_graph[])
-
     #endregion
 
     class NodeData:
@@ -429,13 +433,12 @@ class CodeGenerator:
 
             self.code = ""
 
-            self.generatedVars = []
-
-            self.usedGeneratedVars = []
+            self.generatedVars = {} #key: out portname, value:variable
 
             self.hasError = False
 
             self._initNodeClassData()
+            self._defineNodeType()
 
             self.returns = [] #возвращаемые значения (используется для событий и функций)
             self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
@@ -456,6 +459,10 @@ class CodeGenerator:
             self.classLibData = self.refCodegen.getNodeLibData(self.nodeClass)
 
             self.code = self.classLibData['code']
+
+        def _defineNodeType(self):
+            self.nodeType = NodeDataType.getNodeType(self.nodeClass)
+            pass
 
         def getConnectionInputs(self,retPortnames=False) -> dict[str,str]:
             return self.refCodegen.getInputs(self.nodeId,retPortnames)
@@ -519,13 +526,12 @@ class CodeGenerator:
                 inputs_fromLib = node_inputs.items()
                 outputs_fromLib = node_outputs.items()
 
-                createdStackedVars = False
-
                 if isLocalVar:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
                     generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid)
                     isSet = not isGet
+                    outName = "Значение"
                     # update generated code only first time
                     if node_code == "RUNTIME":
                         if varCat == "local":
@@ -541,11 +547,11 @@ class CodeGenerator:
                         if isSet:
                             #generate variable out
                             gvObj = GeneratedVariable(lvar_alias,node_id)
-                            gvObj.acceptedPaths = ["@any"] #constant
-                            gvObj.fromName = portName
+                            gvObj.fromPort = outName
                             gvObj.definedNodeName = node_id
-                            obj.generatedVars.append(gvObj)
-                            createdStackedVars = True
+                            if outName in obj.generatedVars:
+                                raise Exception(f'Unhandled case: {outName} in {obj.generatedVars}')
+                            obj.generatedVars[outName] = gvObj
 
                     
                     #find key if not "nameid" and "code"
@@ -554,10 +560,9 @@ class CodeGenerator:
                         inputs_fromLib = list(inputs_fromLib)
                         inputs_fromLib.append((portName,{'type':self.localVariableData[nameid]['type']}))
                         outputs_fromLib = list(outputs_fromLib)
-                        outputs_fromLib.append((portName,{'type':self.localVariableData[nameid]['type']}))
+                        outputs_fromLib.append((outName,{'type':self.localVariableData[nameid]['type']}))
                     if isGet:
                         outputs_fromLib = list(outputs_fromLib)
-                        outName = "Значение"
                         outputs_fromLib.append((outName,{'type':self.localVariableData[nameid]['type']}))
         
                 if "@genvar." in node_code:
@@ -577,11 +582,11 @@ class CodeGenerator:
                         node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
 
                         gvObj = GeneratedVariable(lvar,node_id)
-                        gvObj.acceptedPaths = dictValues[indexOf]['accepted_paths']
-                        gvObj.fromName = dictKeys[indexOf]
+                        gvObj.fromPort = dictKeys[indexOf]
                         gvObj.definedNodeName = node_id
-                        obj.generatedVars.append(gvObj)
-                        createdStackedVars = True
+                        if gvObj.fromPort in obj.generatedVars:
+                            raise Exception(f'Unhandled case: {gvObj.fromPort} in {obj.generatedVars}')
+                        obj.generatedVars[gvObj.fromPort] = gvObj
 
                 inputDict = obj.getConnectionInputs(True)
                 execDict = obj.getConnectionOutputs(True)
@@ -629,60 +634,22 @@ class CodeGenerator:
                     inpId, portNameConn = inpId #unpack list
 
                     inpObj = codeInfo[inpId]
-                    if len(inpObj.generatedVars) > 0 and f"@genvar.out.{index+1}" not in inpObj.code:
-                        for v in inpObj.generatedVars:
-                                owningGeneratedVar = v in obj.generatedVars
-                                pathCondition = node_id in v.path and node_id not in v.lockedPath
-                                pathUse = node_id in v.path 
-                                pathLock = node_id not in v.lockedPath
-                                isNearParent = inpId == v.definedNodeId
-
-                                # фикс ближашей проверки. переменная не может быть проброшена так как подключена через другой узел
-                                if not isNearParent:
-                                    continue
-
-                                # if self._debug_rename:
-                                #     uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
-                                #     self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
-                                
-                                #!if not pathLock and isNearParent: pathLock = not pathLock
-                                usableVariable = owningGeneratedVar and pathUse and pathLock
-
-                                #проверка по порту
-                                if isNearParent and v.fromName != portNameConn:
-                                    continue
-                                usableVariable = True #test override
-                                
-                                #проверка если была сгенерирована переменная
-                                if f"@genvar.out.{index+1}" in inpObj.code:
-                                    self.exception(CGUnhandledObjectException,source=obj,context='Подключаемый узел не сгенерировал переменные')
-
-                                if usableVariable:
-                                        v.isUsed = True
-                                        obj.usedGeneratedVars.append(v)
-                                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code)
+                    if inpObj.generatedVars.get(portNameConn):
+                        # если сгенерированная переменная скоуповая и obj не в скоупах inpObj то исключ.
+                        if inpObj.nodeType.name == "SCOPED_LOOP":
+                            if inpObj not in obj.scopes:
+                                self.exception(CGScopeLoopPortException,
+                                    source=obj,
+                                    portname=portNameConn,
+                                    target=inpObj)
+                            pass
+                        lvarObj = inpObj.generatedVars.get(portNameConn)
+                        lvarObj.isUsed = True
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
                     if inpObj.isReady:
                         #default validation scopes
-                        inpScope = self.getScopeObj()
-
-                        for v in inpObj.generatedVars:
-                            intersections = self.intersection(v.path,v.lockedPath)
-                            
-                            existsPathThis = obj.nodeId in v.path
-                            existsFromGenerated = v in obj.generatedVars
-                            outputNotInPath = inpObj.nodeId not in v.path
-                            definedInOut = v.definedNodeId == inpObj.nodeId
-                            
-                            secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
-                            
-                            # if self._debug_rename:
-                            #     prefx = ""#"ERRORED" if secCond else ""
-                            #     nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
-                            #     self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
-
-                            if secCond:
-                                self.exception(CGUnhandledObjectException,source=obj,context=f"Ошибка входного порта \'{input_name}\'")
+                        inpScope = inpObj.getScopeObj()
 
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
@@ -703,105 +670,24 @@ class CodeGenerator:
 
                     outputObj = codeInfo[outId]
 
-                    # Пробрасываем переменные созданные на стеке если они в допустимом пути
-                    if createdStackedVars:
-                        for v in obj.generatedVars:
-                            if output_name in v.acceptedPaths or "@any" in v.acceptedPaths or v.fromName == output_name:
-                                if v not in outputObj.generatedVars:
-                                    outputObj.generatedVars.append(v)
-                                    v.path.append(obj.nodeId)
-                                    if outputObj.nodeId not in v.path:
-                                        v.path.append(outputObj.nodeId)
-                            else:
-                                if outputObj.nodeId not in v.lockedPath:
-                                    v.lockedPath.append(outputObj.nodeId)
-                    else:
-                        for v in obj.generatedVars:
-                            if v.definedNodeId != node_id:
-                                if v not in outputObj.generatedVars:
-                                    outputObj.generatedVars.append(v)
-                                
-                                if len(v.lockedPath) > 0 and outputObj.nodeId not in v.lockedPath:
-                                    v.lockedPath.append(outputObj.nodeId)
-
-                                if outputObj.nodeId not in v.path:
-                                    v.path.append(outputObj.nodeId)
-
                     # нечего заменять
                     if not re.findall(f'@out\.{index+1}(?=\D|$)',node_code):
                         continue
 
                     if outputObj.isReady:
                         
+                        objScope = outputObj.getScopeObj()
+                        #todo objScope is nearTo outputObj -> exception , other case noexception
+                        isNotChildLoop = obj != objScope
+                        if objScope and objScope not in obj.scopes and isNotChildLoop:
+                            loopId = objScope.nodeId
+                            self.exception(CGScopeLoopException,
+                                source=obj,
+                                target=outputObj,
+                                context=LoggerConsole.wrapNodeLink(self._sanitizeNodeName(loopId),loopId)
+                                )
+
                         self.gObjType.handleReturnNode(codeInfo[entryId],obj,outputObj,self.gObjMeta)
-
-
-
-                        # ниже всё устаревшее
-                        hasFindPathAccessError = False
-                        for v in outputObj.usedGeneratedVars:
-                            node_className_check = codeInfo[v.definedNodeId].nodeClass
-                            #basic check other pathes
-                            if output_name not in CGVariablePathAccessException.checkedNodes.get(node_className_check,[]):
-
-                                if v.localName in outputObj.code and node_id not in v.path:
-                                    exId = next((idvar.definedNodeId for idvar in obj.generatedVars if node_id == idvar.definedNodeId),v.definedNodeId)
-                                    self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[exId])
-                                    hasFindPathAccessError = True
-                        #def btext(val):
-                        #    return "TRUE" if val else "FALSE"
-                        
-                        for v in outputObj.generatedVars: #?Вероятнее всего это лишнее
-                            if hasFindPathAccessError:
-                                break
-                            #basic check
-                            if output_name in CGVariablePathAccessException.checkedNodes.get(node_className,[]):
-                                    varNames = [varObj.localName for varObj in obj.generatedVars if node_id == varObj.definedNodeId]
-                                    if len(varNames) > 0:
-                                        for varName_ in varNames:
-                                            if varName_ in outputObj.code:
-                                                exId = next((idvar.definedNodeId for idvar in obj.generatedVars if node_id == idvar.definedNodeId),v.definedNodeId)
-                                                self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[exId])
-                                                #raise Exception("Unsupported operation -> checking outobj genvars")
-
-                            #? DEPRECATED CODE 
-                            #!!!! ============== переписать ==============
-                            # intersections = self.intersection(v.path,v.lockedPath)
-                            
-                            # existsPathThis = obj.nodeId in v.path
-                            # existsFromGenerated = v in obj.generatedVars
-                            # outputNotInPath = outputObj.nodeId not in v.path
-
-                            # definedInOut = v.definedNodeId == outputObj.nodeId
-
-                            # outInLocked = outputObj.nodeId in v.lockedPath
-                            
-                            # secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
-                            
-                            # if not secCond:
-                            #     if len(outputObj.usedGeneratedVars) > 0 and outInLocked and v.definedNodeId == obj.nodeId:
-                            #         secCond = True
-                            # secCond = secCond and len(outputObj.usedGeneratedVars) > 0
-
-                            # if self._debug_rename:
-                            #     prefx = "ERRORED" if secCond else ""
-                            #     clr = "red" if secCond else "#1aff00"
-                            #     nmn = re.sub(r'[a-zA-Z\.\_]+','',obj.nodeId)
-                            #     sg_ = "    &nbsp;"
-                            #     alldata__ = f'({btext(existsPathThis)},{btext(existsFromGenerated)},{btext(outputNotInPath)},{btext(definedInOut)},{btext(outInLocked)} i:{len(intersections)}+lp:{len(v.lockedPath)}+o.ugv:{outputObj.usedGeneratedVars})'
-                            #     self._debug_setName(outId,f' <br/><span style ="color:{clr}; padding-bottom:10px;">{nmn}>{prefx}{alldata__}')
-                            
-                            # if secCond:
-                            #     self.exception(CGVariablePathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
-                            else:
-                                # дополнительная проверка с отловом локальных переменных за пределами цикла
-                                if output_name in CGVariableUnhandledPathAccessException.checkedNodes.get(node_className,[]):
-                                    varNames = [varObj.localName for varObj in obj.generatedVars if node_id == varObj.definedNodeId]
-                                    if len(varNames) > 0:
-                                        for varName_ in varNames:
-                                            if varName_ in outputObj.code:
-                                                self.exception(CGVariableUnhandledPathAccessException,source=outputObj,portname=output_name,target=codeInfo[v.definedNodeId])
-                                                break   
                                          
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
 

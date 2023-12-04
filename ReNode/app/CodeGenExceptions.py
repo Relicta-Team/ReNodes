@@ -111,7 +111,17 @@ class CGVariableUnhandledPathAccessException(CGVariablePathAccessException):
     id = 302
     text = "<span style='color:darkred;'>[Необработанная ошибка]</span> Узел {src} не может быть использован из-за ограничений пути, наложенных {targ}"
     desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> Проверьте пути до узла {src}. Вероятно, до него идёт два или более конфликтующих порта, например из цилка"
-    
+
+
+class CGScopeLoopException(CGBaseException):
+    id = 301
+    text = "Узел {src} не может быть использован из-за ограничений области видимости, наложенных {targ}"
+    desc = "Узел {targ} используетя в области видимости {ctx}, который накладывает ограничения для внешней области узла {src}. Уберите связь."
+
+class CGScopeLoopPortException(CGBaseException):
+    id = 302
+    text = "Узел {src} не может использовать порт \"{portname}\" узла {targ} из-за ограничений области видимости."
+    desc = "Переменные, создаваемые внутри цикла не могут существовать вне тела цикла."
 
 class CGLogicalOptionListEvalException(CGBaseException):
     id = 303
@@ -140,7 +150,7 @@ class CGReturnTypeNotFoundException(CGBaseException):
 
 class CGReturnNotAllBranchesException(CGBaseException):
     id = 308
-    text = "Ожидается возврат значения в {src}"
+    text = "Ожидается возврат значения после {src}"
     desc = "Все ветви точки входа {entry} должны возвращать значение типа ({ctx}). Подключите к {src} узел возврата значения."
 
 # ----------------------------------------

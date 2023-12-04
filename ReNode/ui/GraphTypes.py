@@ -172,8 +172,12 @@ class GraphTypeBase:
                     if canCheckAllEnds:
                         noRetList = nodeObject.endsWithNoReturns
                         retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
-                        #TODO в теле циклов возвращение значения не ожидаем...
+                        #в теле циклов возвращение значения не ожидаем...
+                        # если есть хотябы один возврат
                         for noRetobj in noRetList:
+                            scope = noRetobj.getScopeObj()
+                            if scope and scope.nodeType.name == "SCOPED_LOOP":
+                                continue
                             cgObj.exception(CGReturnNotAllBranchesException,source=noRetobj,entry=nodeObject,context=retTypenameExpect)
 
                 if hasReturns:
@@ -233,6 +237,8 @@ class GraphTypeBase:
                     raise Exception("Unsupported rule: Entry node not overriden")
                 else:
                     cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
+                    #TODO: done this
+                    raise Exception("TODO: если правое выполнение возвращает результат то надо сделать сброс возврата")
 
 class ClassGraphType(GraphTypeBase):
 
