@@ -148,9 +148,6 @@ class CodeGenerator:
         self.log("Генерация связей")
         self.dpdGraphExt = self.createDpdGraphExt()
 
-        #res = self.getBackwardDependenciesTo("Установить <b>Enumva</b>","Цикл в диапазоне")
-        #self.log(res)
-
         self.log("Генерация кода узлов")
         generated_code = self.generateOrderedCode(entrys)
         code += "\n" + generated_code
@@ -373,6 +370,40 @@ class CodeGenerator:
 
         return graph
 
+    def scopePrepass(self,topological_order,codeInfo,entryId):
+        """Создание скоупов для узлов и их связей"""
+        scopesExec = defaultdict(list)
+
+        if entryId not in self.dpdGraphExt: return #no connections -> no scopes
+
+        def get_exec_outs(id_,scope=None):
+            idat = self.dpdGraphExt[id_]
+            codeObj : CodeGenerator.NodeData = codeInfo[id_]
+            if isinstance(scope,list):
+                codeObj.scopes.extend(scope)
+            iclass = codeObj.nodeClass
+            for k,v in idat['typeout'].items():
+                if v == "Exec":
+                    isScopeStart = iclass == "operators.for_loop" and k == "Тело цикла"
+                    if isScopeStart:
+                        if scope and len(scope) > 0:
+                            scope.append(codeObj)
+                        else:
+                            scope = [codeObj]
+
+                    if len(idat['out'][k]) > 0:
+                        src = list(idat['out'][k][0])[0]
+                        get_exec_outs(src,scope)
+                    
+                    if isScopeStart:
+                        scope.pop()
+                        if len(scope) == 0:
+                            scope = None
+
+        get_exec_outs(entryId)
+        #{n:o.scopes for n,o in codeInfo.items()}
+        return scopesExec
+
     def getBackwardDependenciesTo(self, node,toNode):
         """Обратный поиск до узла toNode по exec портам из узла node"""
         portType = "Exec"
@@ -408,6 +439,15 @@ class CodeGenerator:
 
             self.returns = [] #возвращаемые значения (используется для событий и функций)
             self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
+
+            self.scopes = [] #области видимости
+
+        def __repr__(self) -> str:
+            return f'ND:{self.nodeId} ({self.nodeClass})'
+
+        def getScopeObj(self):
+            if len(self.scopes) == 0: return None
+            return self.scopes[-1]
 
         def _initNodeClassData(self):
             node_data = self.refCodegen.serialized_graph['nodes'][self.nodeId]
@@ -445,6 +485,8 @@ class CodeGenerator:
     def generateFromTopology(self, topological_order, entryId):
 
         codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
+
+        self.scopePrepass(topological_order,codeInfo,entryId)
 
         readyCount = 0
         hasAnyChanges = True # true for enter
@@ -599,9 +641,9 @@ class CodeGenerator:
                                 if not isNearParent:
                                     continue
 
-                                if self._debug_rename:
-                                    uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
-                                    self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
+                                # if self._debug_rename:
+                                #     uvc = f"{inpId}:{input_name}=" + str([owningGeneratedVar,pathUse,pathLock,isNearParent])
+                                #     self._debug_setName(node_id,f' <br/><span style ="color:yellow; padding-bottom:10px">uvc:{uvc}</span>')
                                 
                                 #!if not pathLock and isNearParent: pathLock = not pathLock
                                 usableVariable = owningGeneratedVar and pathUse and pathLock
@@ -621,6 +663,9 @@ class CodeGenerator:
                                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{v.localName}", node_code)
 
                     if inpObj.isReady:
+                        #default validation scopes
+                        inpScope = self.getScopeObj()
+
                         for v in inpObj.generatedVars:
                             intersections = self.intersection(v.path,v.lockedPath)
                             
@@ -631,10 +676,10 @@ class CodeGenerator:
                             
                             secCond = not (existsPathThis or existsFromGenerated or outputNotInPath) and not definedInOut
                             
-                            if self._debug_rename:
-                                prefx = ""#"ERRORED" if secCond else ""
-                                nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
-                                self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
+                            # if self._debug_rename:
+                            #     prefx = ""#"ERRORED" if secCond else ""
+                            #     nmn = re.sub(r'[a-zA-Z\.\_]+','',inpObj.nodeId)
+                            #     self._debug_setName(obj.nodeId,f'!!!FUCKED {nmn}<<<{prefx}({existsPathThis},{existsFromGenerated},{outputNotInPath},{definedInOut})')
 
                             if secCond:
                                 self.exception(CGUnhandledObjectException,source=obj,context=f"Ошибка входного порта \'{input_name}\'")
@@ -690,6 +735,9 @@ class CodeGenerator:
                         
                         self.gObjType.handleReturnNode(codeInfo[entryId],obj,outputObj,self.gObjMeta)
 
+
+
+                        # ниже всё устаревшее
                         hasFindPathAccessError = False
                         for v in outputObj.usedGeneratedVars:
                             node_className_check = codeInfo[v.definedNodeId].nodeClass
