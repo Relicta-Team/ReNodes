@@ -136,6 +136,9 @@ class GraphTypeBase:
         if "@initvars" in node_code:
                 initVarsCode = ""
                 for nameid in cgObj.localVariablesUsed:
+                    
+                    if cgObj._addComments:
+                        initVarsCode += f"//init_lv:{cgObj.localVariableData[nameid]['varname']}\n"
                     initVarsCode += f'private {cgObj.localVariableData[nameid]["alias"]} = {cgObj.localVariableData[nameid]["initvalue"]};\n'
                 
                 #register scopename for function

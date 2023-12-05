@@ -71,6 +71,8 @@ class CodeGenerator:
         self.gObjType : GraphTypeBase = None
         self.gObjMeta :dict[str:object]= None
 
+        self.isGenerating = False
+
     def getGraphTypeObject(self):
         """Получает объект типа графа"""
         gtype = self.graphsys.graph.infoData['type']
@@ -113,6 +115,8 @@ class CodeGenerator:
             self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
             return
         
+        self.isGenerating = True
+
         self._resetNodesError()
 
         self.log("Старт генерации...")
@@ -188,6 +192,8 @@ class CodeGenerator:
         self.log(f"Процедура завершена за {timeDiff} мс")
         self.log("================================")
         
+        self.isGenerating = False
+
         #cleanup data
         self._exceptions.clear()
         self._warnings.clear()
@@ -956,18 +962,66 @@ class CodeGenerator:
         return node_ids
 
     def updateValueDataForType(self,value,tname):
+        if value is None: return "null"
+        if value == "NULL": return value
         if not tname: return value
+
+        vObj,dtObj = self.getVariableManager().getVarDataByType(tname)
+        dtName = dtObj.dataType
+
+        if dtName != "value":
+            if dtName == "array":
+                evaluated = ["[ "]
+                for v in value:
+                    if len(evaluated) > 1: evaluated.append(", ")
+                    evaluated.append(self.updateValueDataForType(v,vObj.variableType))
+                evaluated.append(" ]")
+                return "".join(evaluated)
+            elif dtName == "dict":
+                evaluated = ["(createHASHMAPfromArray[ "]
+                objStack = []
+                if not isinstance(vObj,list): raise Exception(f"Wrong dict type: {vObj}")
+                for key,val in value.items():
+                    if objStack: objStack.append(", ")
+
+                    objStack.append("[")
+                    objStack.append(self.updateValueDataForType(key,vObj[0].variableType))
+                    objStack.append(", ")
+                    objStack.append(self.updateValueDataForType(val,vObj[1].variableType))
+                    objStack.append("]")
+                
+                evaluated.extend(objStack)
+                evaluated.append(" ])")
+                return "".join(evaluated)
+            elif dtName == "set":
+                evaluated = ["([ "]
+                for v in value:
+                    if len(evaluated) > 1: evaluated.append(", ")
+                    evaluated.append(self.updateValueDataForType(v,vObj.variableType))
+                evaluated.append(" ]createHASHMAPfromArray [])")
+                return "".join(evaluated)
+            else:
+                raise Exception(f"Unsupported data type: {dtName}")
+        
         if tname == "string": 
             return "\"" + value.replace("\"","\"\"") + "\""
         elif tname == "bool":
             return str(value).lower()
         elif tname in ['float','int']:
-            return value
+            return str(value)
         elif self.getVariableManager().isObjectType(tname):
             return value
+        elif re.match('vector\d+',tname):
+            return self.updateValueDataForType(value,"array[float]")
+        elif tname == "color":
+            return self.updateValueDataForType(value,"array[float]")
+        elif tname in ['handle','model']:
+            return str(value)
         else:
             if not self.isDebugMode(): 
-                raise Exception(f"Unknown type {tname} (value: {value})")
+                raise Exception(f"Unknown type {tname} (value: {value} ({type(value)}))")
+            else:
+                self.warning("Cant repr type value: {} = {} ({})".format(tname,value,type(value)))
 
         return value
     

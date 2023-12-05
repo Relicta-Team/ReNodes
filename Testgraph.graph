@@ -106,6 +106,42 @@
           "systemname":"0x24ec33da910_20231119145650805955",
           "reprType":"string (Длинная строка)",
           "reprDataType":"value (Значение)"
+        },
+        "0x1c63201d680_202312514758603734":{
+          "name":"vec2",
+          "type":"dict[string,vector2]",
+          "datatype":"dict",
+          "typename":"Словарь",
+          "value":{
+            "abc":[
+              0.0,
+              0.0
+            ],
+            "cde":[
+              0.0,
+              0.0
+            ]
+          },
+          "category":"local",
+          "group":"",
+          "systemname":"0x1c63201d680_202312514758603734",
+          "reprType":"string (Строка)|vector2 (2D Вектор)",
+          "reprDataType":"dict (Словарь)"
+        },
+        "0x1c632003f30_202312514816897333":{
+          "name":"tvdata",
+          "type":"set[string]",
+          "datatype":"set",
+          "typename":"Сет",
+          "value":[
+            "123",
+            "321"
+          ],
+          "category":"local",
+          "group":"",
+          "systemname":"0x1c632003f30_202312514816897333",
+          "reprType":"string (Строка)",
+          "reprDataType":"set (Сет)"
         }
       }
     },
@@ -124,15 +160,15 @@
       }
     },
     "mpos":[
-      889.8942188695771,
-      -676.8815187009037,
-      1176.7887520600405,
-      1107.5658842918015
+      1045.5154611683436,
+      -530.4144671255942,
+      865.5462674625073,
+      814.6317811411825
     ],
-    "mzoom":-0.38
+    "mzoom":-0.15
   },
   "nodes":{
-    "0x2e531119000":{
+    "0x200887a0dc0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -160,7 +196,7 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":160,
+      "width":176.0,
       "height":60,
       "pos":[
         69.82701598126096,
@@ -189,7 +225,7 @@
       },
       "class_":"variable.get"
     },
-    "0x2e531118a90":{
+    "0x200887a0a30":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -217,8 +253,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":160,
-      "height":73.30000000000001,
+      "width":191.0,
+      "height":78.30000000000001,
       "pos":[
         629.1571868106549,
         321.4704865675228
@@ -285,7 +321,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e531119d50":{
+    "0x200887a1ba0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -311,7 +347,7 @@
       "selected":false,
       "visible":true,
       "width":192.0,
-      "height":82.75,
+      "height":86.75,
       "pos":[
         391.21852985440944,
         246.7380030703394
@@ -324,7 +360,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x2e5339c9240":{
+    "0x200887a11b0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -381,7 +417,7 @@
       },
       "class_":"variable.get"
     },
-    "0x2e531119960":{
+    "0x2008906cfd0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\ArrayPin.png",
@@ -409,8 +445,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":160,
-      "height":73.30000000000001,
+      "width":169.0,
+      "height":78.30000000000001,
       "pos":[
         328.11473774340953,
         327.5474671600127
@@ -477,7 +513,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a349a0":{
+    "0x200890d47f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_ForEach_16x",
@@ -506,7 +542,7 @@
       "selected":false,
       "visible":true,
       "width":160,
-      "height":117.4,
+      "height":121.4,
       "pos":[
         357.01598657107826,
         481.991953999435
@@ -608,7 +644,7 @@
       },
       "class_":"operators.foreach_loop"
     },
-    "0x2e533a35060":{
+    "0x200890d4eb0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -636,8 +672,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":160.0,
-      "height":73.30000000000001,
+      "width":199.0,
+      "height":78.30000000000001,
       "pos":[
         670.4422330182784,
         452.8631206864981
@@ -704,7 +740,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a35600":{
+    "0x200890d5450":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Event_16x",
       "name":"Получить тип полного антагониста",
@@ -729,8 +765,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":211.0,
-      "height":140.5,
+      "width":265.0,
+      "height":144.5,
       "pos":[
         -90.61016107945,
         33.00161629862228
@@ -740,7 +776,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.getAntagRoleFull_0"
     },
-    "0x2e533a35c30":{
+    "0x200890d5a80":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -768,8 +804,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":162.0,
-      "height":73.30000000000001,
+      "width":202.0,
+      "height":78.30000000000001,
       "pos":[
         488.3872392323809,
         -16.250752132854984
@@ -836,7 +872,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a35e70":{
+    "0x200890d5cc0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"Установить результат конца раунда\"",
@@ -861,8 +897,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":299.0,
-      "height":71.2,
+      "width":383.0,
+      "height":75.2,
       "pos":[
         -269.6987792087803,
         206.35079391947733
@@ -872,7 +908,7 @@
       "subgraph_session":{},
       "class_":"methods.GMBase.setFinishResult_0.def"
     },
-    "0x2e533a362f0":{
+    "0x200890d6140":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -900,8 +936,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":334.0,
-      "height":180.4,
+      "width":345.0,
+      "height":185.4,
       "pos":[
         659.5167290460387,
         245.0548407244331
@@ -969,7 +1005,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a37790":{
+    "0x200890d75e0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -997,8 +1033,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":218.0,
-      "height":93.25,
+      "width":250.0,
+      "height":98.25,
       "pos":[
         1331.0324139415536,
         22.69458401336999
@@ -1066,7 +1102,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a37cd0":{
+    "0x200890d7b20":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Loop_16x",
       "name":"Цикл в диапазоне",
@@ -1091,8 +1127,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":234.0,
-      "height":133.15,
+      "width":264.0,
+      "height":137.15,
       "pos":[
         459.0149384415154,
         -193.74440208365638
@@ -1106,7 +1142,7 @@
       },
       "class_":"operators.for_loop"
     },
-    "0x2e533a4c520":{
+    "0x200890f0370":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -1132,7 +1168,7 @@
       "selected":false,
       "visible":true,
       "width":192.0,
-      "height":82.75,
+      "height":86.75,
       "pos":[
         195.452600155614,
         -95.88240762350878
@@ -1145,7 +1181,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x2e533a4c970":{
+    "0x200890f07c0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -1171,7 +1207,7 @@
       "selected":false,
       "visible":true,
       "width":192.0,
-      "height":82.75,
+      "height":86.75,
       "pos":[
         877.9837941041983,
         36.85613008069008
@@ -1184,7 +1220,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x2e533a4cd90":{
+    "0x200890f0be0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1212,8 +1248,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":235.0,
-      "height":93.25,
+      "width":250.0,
+      "height":98.25,
       "pos":[
         1019.5526541057231,
         -237.4768279111339
@@ -1281,7 +1317,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a4d090":{
+    "0x200890d5b40":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_Node_16x",
@@ -1310,7 +1346,7 @@
       "selected":false,
       "visible":true,
       "width":160,
-      "height":73.30000000000001,
+      "height":77.30000000000001,
       "pos":[
         1658.9665622651485,
         223.35459505829988
@@ -1363,7 +1399,7 @@
       },
       "class_":"control.return"
     },
-    "0x2e533a4d4e0":{
+    "0x200890f10f0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1420,7 +1456,7 @@
       },
       "class_":"variable.get"
     },
-    "0x2e533a37b50":{
+    "0x200890f12a0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1448,8 +1484,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":235.0,
-      "height":93.25,
+      "width":250.0,
+      "height":98.25,
       "pos":[
         1360.7885948995972,
         -169.72357655500298
@@ -1517,7 +1553,7 @@
       },
       "class_":"variable.set"
     },
-    "0x2e533a4fee0":{
+    "0x200890f1660":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1545,8 +1581,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":235.0,
-      "height":93.25,
+      "width":250.0,
+      "height":98.25,
       "pos":[
         1020.9785739204187,
         -71.53240228336014
@@ -1613,147 +1649,497 @@
         "Enumva":0
       },
       "class_":"variable.set"
+    },
+    "0x200890f1ba0":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillset_40x.png",
+        "#ff00ff"
+      ],
+      "name":"Установить <b>tvdata</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":78.30000000000001,
+      "pos":[
+        1701.9044479221957,
+        -133.0224166192061
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[
+        {
+          "name":"Вход",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"tvdata",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"set[string]"
+        }
+      ],
+      "output_ports":[
+        {
+          "name":"Выход",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"tvdata",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"set[string]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1c632003f30_202312514816897333"
+      },
+      "class_":"variable.set"
+    },
+    "0x200890f1ff0":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillmapkey_16x.png",
+        "#ff00ff",
+        "data\\icons\\pillmapvalue_16x.png",
+        "#d4a004"
+      ],
+      "name":"Установить <b>vec2</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":78.30000000000001,
+      "pos":[
+        1915.7836275844486,
+        -117.37272054635834
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[
+        {
+          "name":"Вход",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"vec2",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,vector2]"
+        }
+      ],
+      "output_ports":[
+        {
+          "name":"Выход",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"vec2",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,vector2]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1c63201d680_202312514758603734"
+      },
+      "class_":"variable.set"
+    },
+    "0x200890f3d00":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillmapkey_16x.png",
+        "#ff00ff",
+        "data\\icons\\pillmapvalue_16x.png",
+        "#d4a004"
+      ],
+      "name":"Получить <b>vec2</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":60,
+      "pos":[
+        1803.4911686536007,
+        41.202474479684085
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[],
+      "output_ports":[
+        {
+          "name":"Значение",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,vector2]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1c63201d680_202312514758603734"
+      },
+      "class_":"variable.get"
+    },
+    "0x200890f3eb0":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillset_40x.png",
+        "#ff00ff"
+      ],
+      "name":"Получить <b>tvdata</b>",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":60,
+      "pos":[
+        1538.61811842706,
+        -32.961979583747265
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[],
+      "output_ports":[
+        {
+          "name":"Значение",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"set[string]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1c632003f30_202312514816897333"
+      },
+      "class_":"variable.get"
     }
   },
   "connections":[
     {
       "out":[
-        "0x2e533a349a0",
+        "0x200890d47f0",
         "Элемент"
       ],
       "in":[
-        "0x2e533a35060",
+        "0x200890d4eb0",
         "CurrentMob"
       ]
     },
     {
       "out":[
-        "0x2e533a35600",
+        "0x200890d5450",
         "Выход"
       ],
       "in":[
-        "0x2e533a4c520",
+        "0x200890f0370",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x2e533a35600",
+        "0x200890d5450",
         "Клиент"
       ],
       "in":[
-        "0x2e533a35c30",
+        "0x200890d5a80",
         "CurrentUser"
       ]
     },
     {
       "in":[
-        "0x2e533a35c30",
+        "0x200890d5a80",
         "Вход"
       ],
       "out":[
-        "0x2e533a4c520",
+        "0x200890f0370",
         "Ложь"
       ]
     },
     {
       "out":[
-        "0x2e533a35c30",
+        "0x200890d5a80",
         "Выход"
       ],
       "in":[
-        "0x2e533a4c970",
+        "0x200890f07c0",
         "Вход"
       ]
     },
     {
       "in":[
-        "0x2e533a37790",
+        "0x200890d75e0",
         "Вход"
       ],
       "out":[
-        "0x2e533a4c970",
+        "0x200890f07c0",
         "Ложь"
       ]
     },
     {
       "out":[
-        "0x2e533a37790",
+        "0x200890d75e0",
         "Выход"
       ],
       "in":[
-        "0x2e533a4d090",
+        "0x200890d5b40",
         "Вход"
       ]
     },
     {
       "in":[
-        "0x2e533a37cd0",
+        "0x200890d7b20",
         "Вход"
       ],
       "out":[
-        "0x2e533a4c520",
+        "0x200890f0370",
         "Истина"
       ]
     },
     {
       "out":[
-        "0x2e533a37cd0",
+        "0x200890d7b20",
         "Тело цикла"
       ],
       "in":[
-        "0x2e533a4cd90",
+        "0x200890f0be0",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x2e533a37cd0",
+        "0x200890d7b20",
         "Индекс"
       ],
       "in":[
-        "0x2e533a4cd90",
+        "0x200890f0be0",
         "Enumva"
       ]
     },
     {
       "out":[
-        "0x2e533a37cd0",
+        "0x200890d7b20",
         "При завершении"
       ],
       "in":[
-        "0x2e533a4fee0",
+        "0x200890f1660",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x2e533a4cd90",
+        "0x200890f0be0",
         "Выход"
       ],
       "in":[
-        "0x2e533a37b50",
+        "0x200890f12a0",
         "Вход"
       ]
     },
     {
       "in":[
-        "0x2e533a4d090",
+        "0x200890d5b40",
         "Вход"
       ],
       "out":[
-        "0x2e533a4fee0",
+        "0x200890f1660",
         "Выход"
       ]
     },
     {
       "in":[
-        "0x2e533a4d090",
+        "0x200890d5b40",
         "Возвращаемое значение"
       ],
       "out":[
-        "0x2e533a4d4e0",
+        "0x200890f10f0",
         "3123"
+      ]
+    },
+    {
+      "out":[
+        "0x200890f12a0",
+        "Выход"
+      ],
+      "in":[
+        "0x200890f1ba0",
+        "Вход"
+      ]
+    },
+    {
+      "in":[
+        "0x200890f1ba0",
+        "tvdata"
+      ],
+      "out":[
+        "0x200890f3eb0",
+        "Значение"
+      ]
+    },
+    {
+      "out":[
+        "0x200890f1ba0",
+        "Выход"
+      ],
+      "in":[
+        "0x200890f1ff0",
+        "Вход"
+      ]
+    },
+    {
+      "in":[
+        "0x200890f1ff0",
+        "vec2"
+      ],
+      "out":[
+        "0x200890f3d00",
+        "Значение"
       ]
     }
   ]

@@ -136,6 +136,22 @@ def:node:array
 	out:auto:Элемент
 		opt:typeget=array;@value.1
 
+def:node:array
+   node:set
+   name:Установить элемент
+   namelib:Установка элемента массива
+   desc:Получает элемент массива
+	icon:data\\icons\\ArrayPin.png
+	runtimeports:1
+	code:(@in.1) set [@in.2,@in.3]
+   exec:all
+   in:auto:Массив
+		opt:typeget=array;@type
+   in:int:Индекс:Индекс элемента массива. Отсчет начинается с 0. Для получения первого элемента массива используется индекс 0, а для последнего - количество элементов минус 1.
+   in:auto:Элемент
+      opt:typeget=array;@value.1
+
+
 $ENDREGION:FUNCTIONS
 $REGION:CLASSMEM
 def:c:GMBase
