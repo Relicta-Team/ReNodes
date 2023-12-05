@@ -291,7 +291,7 @@ class ClassGraphType(GraphTypeBase):
         code = ""
         cgObj : CodeGenerator = metaObj.get('codegen')
 
-        for vid,vdat in cgObj.getVariableDict().get('class',{}).items():
+        for vid,vdat in cgObj.getVariableDict().get('classvar',{}).items():
             varvalue = cgObj.updateValueDataForType(vdat["value"],vdat['type'])
             
             if cgObj._addComments:

@@ -142,10 +142,10 @@ class CodeGenerator:
                 lvData['portname'] = v['name']
                 lvData['varname'] = v['name']
                 #transliterate(v['name']) for get transliterate name
-                if vcat=='local':
+                if vcat=='localvar':
                     lvData['alias'] = f"_LVAR{i+1}"
                     lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
-                elif vcat=='class':
+                elif vcat=='classvar':
                     lvData['alias'] = f"classMember_{i+1}"
                 else:
                     continue
@@ -546,7 +546,7 @@ class CodeGenerator:
                     outName = "Значение"
                     # update generated code only first time
                     if node_code == "RUNTIME":
-                        if varCat == "local":
+                        if varCat == "localvar":
                             usedIn = self.localVariableData[nameid]['usedin']
                             entryObj = codeInfo[entryId]
                             if not usedIn or usedIn == entryObj:
@@ -881,9 +881,9 @@ class CodeGenerator:
         else:
             raise Exception(f"Unknown variable accessor classname: {className}")
         code = ""
-        if varCat == "local":
+        if varCat == "localvar":
             code = f"{nameid}" if isGet else f"{nameid} = @in.2; @out.1"
-        elif varCat == "class":
+        elif varCat == "classvar":
             code = f"this getVariable \"{nameid}\"" if isGet else f"this setVariable [\"{nameid}\", @in.2]; @out.1"
         else:
             raise Exception(f'Unknown variable getter type {varCat}')

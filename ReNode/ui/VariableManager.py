@@ -16,6 +16,14 @@ from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTre
 import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
+import enum
+
+class MemberType(enum.Enum):
+    """Тип члена отражает какие данные можно вводить в менеджере переменных"""
+    Variable = 0,
+    """Переменная хранится в классе, имеет тип данных и значение"""
+    Function = 1
+    """Функция хранится в классе, имеет параметры и возвращаемое значение"""
 
 class VariableInfo:
     def __init__(self):
@@ -53,10 +61,12 @@ class VariableTypedef_Copy(VariableTypedef):
     #    print(f'!!!!!!!!!!!! temp variable deleted: {self}')
 
 class VariableCategory:
-    def __init__(self,varcat='',varcatText = '',varcatTextTree=''):
+    def __init__(self,memtype:MemberType,varcat='',varcatText = '',varcatTextTree='',vardesc=''):
         self.category = varcat
         self.categoryTextName = varcatText
         self.categoryTreeTextName = varcatTextTree
+        self.categoryDescription = vardesc
+        self.memtype = memtype
 
 class VariableDataType:
     def __init__(self,vartext='',vartype='',varicon='',instancer=None):
@@ -188,9 +198,15 @@ class VariableManager(QDockWidget):
         self.variableTempateData = self._typeData.typeList
 
         self.variableCategoryList = [
-            VariableCategory('local',"Локальная переменная","Локальные переменные"),
-            VariableCategory('class','Переменная графа',"Переменные графа")
-            #TODO constants
+            #class specific vars
+            VariableCategory(MemberType.Variable,'localvar',"Локальная переменная","Локальные переменные","Локальная переменная - это переменная, создаваемая и существующая в пределах одного события или функции. Используются для записи и хранения временных данных."),
+            VariableCategory(MemberType.Variable,'classvar','Переменная класса',"Переменные класса","Переменная класса - это переменная, принадлежащая созданному объекту. (прим. Человек имеет переменную 'Имя', 'Возраст')"),
+            VariableCategory(MemberType.Function,'classfunc',"Функция класса","Функции класса","Функции класса - это функция, принадлежащая созданному объекту. (прим. Человек имеет функцию класса 'Проснуться', 'Поднять бровь')"),
+
+            #constant
+            VariableCategory(MemberType.Variable,"const","Константа","Константы","Константа - это переменная, которая не может быть изменена. (прим. 'Дней в неделе')"),
+            VariableCategory(MemberType.Variable,'enum',"Перечисление","Перечисления","Перечисление это идентификаторов, каждому из которых присвоено значение (прим. Перечисление 'Цвет' имеет идентификаторы 'Красный','Желтый','Зелёный')"),
+            VariableCategory(MemberType.Variable,"struct","Структура","Структуры","Набор данных, связанных определённым образом. (прим. Структура 'Координаты' имеет поля 'Широта','Долгота')"),
         ]
 
         self.variableDataType = self._typeData.valueTypeList
@@ -207,16 +223,33 @@ class VariableManager(QDockWidget):
         layout = QVBoxLayout()
         self.widLayout = layout
 
-        __lbl = QLabel("Категория переменной:")
-        __lbl.setToolTip("Категория переменной:\nЛокальная переменная - это переменная, создаваемая и существующая в пределах одного события\nПеременная графа - это переменная, существующая и доступная внутри этого графа")
+        __lbl = QLabel("Категория:")
+        __ttpCat = "Категории:"
         layout.addWidget(__lbl)
         self.widCat = QComboBox()
-        for vcat in self.variableCategoryList:
+        for __i, vcat in enumerate(self.variableCategoryList):
             self.widCat.addItem(vcat.categoryTextName)
+            self.widCat.setItemData(__i, vcat.categoryDescription,Qt.ToolTipRole)
+            __ttpCat += "\n" + vcat.categoryDescription
         self.widCat.currentIndexChanged.connect(self._onVariableCategoryChanged)
         layout.addWidget(self.widCat)
+        __lbl.setToolTip(__ttpCat)
 
+        __lbl = QLabel("Имя:")
+        __lbl.setToolTip("Уникальный идентификатор члена")
+        layout.addWidget(__lbl)
+        self.widVarName = QLineEdit()
+        self.widVarName.setMaxLength(128)
+        layout.addWidget(self.widVarName)
 
+        __lbl = QLabel("Группа:")
+        __lbl.setToolTip("Имя группы для члена (опционально)")
+        layout.addWidget(__lbl)
+        self.widVarGroup = QLineEdit()
+        self.widVarGroup.setMaxLength(128)
+        layout.addWidget(self.widVarGroup)
+
+        # TODO ---------------------- custom loader -----------------------
         layout.addWidget(QLabel("Тип данных:"))
 
         type_layout = QHBoxLayout()
@@ -232,7 +265,6 @@ class VariableManager(QDockWidget):
             _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
             if vobj.variableType == "object":
                 objectTree = _tempTree
-            #self.widVarType.addItem(colored_icon,vobj.variableTextName,vobj)
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
         objTree = fact.getClassAllChildsTree("GameObject")
@@ -259,20 +291,6 @@ class VariableManager(QDockWidget):
             self.widDataType.addItem(icn,vobj.text)
         self.widDataType.currentIndexChanged.connect(self._onDataTypeChanged)
         type_layout.addWidget(self.widDataType)
-
-        __lbl = QLabel("Имя:")
-        __lbl.setToolTip("Имя переменной")
-        layout.addWidget(__lbl)
-        self.widVarName = QLineEdit()
-        self.widVarName.setMaxLength(128)
-        layout.addWidget(self.widVarName)
-
-        __lbl = QLabel("Группа:")
-        __lbl.setToolTip("Имя группы для переменной (опционально)")
-        layout.addWidget(__lbl)
-        self.widVarGroup = QLineEdit()
-        self.widVarGroup.setMaxLength(128)
-        layout.addWidget(self.widVarGroup)
 
         __lbl = QLabel("Начальное значение:")
         __lbl.setToolTip("Значение, которое будет присвоено переменной при создании")
@@ -686,20 +704,6 @@ class VariableManager(QDockWidget):
             kvdat = [varDt.icon,varInfo.color]
             portColor = [*varInfo.color.getRgb()]
         nodeObj.update_icon_parts(kvdat,False)
-
-
-        if nodeObj.has_property('code'):
-            self.logger.warning("TODO: remove obsolete option 'code' from variable accessors")
-        # code = ""
-        # inval = "@in.2"
-        # if lvdata['category']=='local':
-        #     code = f"{lvdata['systemname']}" if getorset == "get" else f"{lvdata['systemname']} = {inval}; @out.1"
-        # elif lvdata['category']=='class':
-        #     code = f"this getVariable \"{lvdata['systemname']}\"" if getorset == "get" else f"this setVariable [\"{lvdata['systemname']}\",{inval}]; @out.1"
-        # else:
-        #     raise Exception(f"Unknown category {lvdata['category']}")
-        
-        # nodeObj.set_property('code',code,False)
 
         if "set" == getorset and varDt.dataType == 'value':
             props = varInfo.dictProp
