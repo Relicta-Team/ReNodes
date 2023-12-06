@@ -69,13 +69,15 @@ class RuntimeNode(BaseNode):
 		if evalType != toPort.port_typeName:
 			return False
 
-		if "dict" in evalType:
+		equalDataTypes = self._calculate_autoport_type(toPort.port_typeName,data[portDataName].get(fromPort.name),True)
+
+		if not equalDataTypes:
 			return False
 
 		return True
 
 	#
-	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict):
+	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict,chechDatatype=False):
 		if not libCalculator: return sourceType
 
 		#libCalculator['typeget'] -> @type(for all), @typeref(for typeref (array,dict etc)), @value.1, @value.2
@@ -91,6 +93,9 @@ class RuntimeNode(BaseNode):
 
 		typeinfo = re.findall('\w+\^?',sourceType)
 		
+		if chechDatatype:
+			return dataType == typeinfo[0]
+
 		if getter == '@type':
 			return sourceType
 		elif getter == '@typeref':
