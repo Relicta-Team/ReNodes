@@ -122,7 +122,7 @@ class Config:
     
     @staticmethod
     def set(key,value,section="main"):
-        if value == "":
+        if isinstance(value,str) and value=="":
             #raise ValueError(f"[{section}]{key}: Value can't be empty string")
             Config.logger.error(f"[{section}]{key}: Value can't be empty string")
         Config.parser.set(key,value,section)

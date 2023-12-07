@@ -108,12 +108,13 @@ class NodeGraphComponent:
 		from ReNode.app.application import Application
 		if Application.isDebugMode():
 			#self.graph.load_session(".\\session.json")
-			with  open(".\\templates_tests.txt",encoding='utf-8') as f:
-				QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
-			self.variable_manager.loadVariables(self.graph.variables)
-			#todo load info
-			self.graph.infoData['classname'] = 'debug_session'
-			self.graph.paste_nodes()
+			# with  open(".\\templates_tests.txt",encoding='utf-8') as f:
+			# 	QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
+			# self.variable_manager.loadVariables(self.graph.variables)
+			# #todo load info
+			# self.graph.infoData['classname'] = 'debug_session'
+			# self.graph.paste_nodes()
+			self.editorDock.setWidget(None)
 		else:
 			self.editorDock.setWidget(None)
 
@@ -127,10 +128,11 @@ class NodeGraphComponent:
 			stateBytes = QByteArray(eval(stateStr))
 			winposBytes = QByteArray(eval(winposStr))
 
-			if not self.mainWindow.restoreState(stateBytes):
-				Application.refObject.logger.error("Failed to restore window state")
 			if not self.mainWindow.restoreGeometry(winposBytes):
 				Application.refObject.logger.error("Failed to restore window position")
+			if not self.mainWindow.restoreState(stateBytes):
+				Application.refObject.logger.error("Failed to restore window state")
+			
 		
 		# load opened sessions
 		sessions = Config.get_str("opened_sessions","internal")

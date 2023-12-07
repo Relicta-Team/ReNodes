@@ -122,6 +122,7 @@ class SessionManager(QTabWidget):
 
     def __init__(self,graph) -> None:
         super().__init__()
+        self.setObjectName("SessionManagerWindow")
         SessionManager.refObject = self
         self.logger = RegisterLogger("Session")
 
