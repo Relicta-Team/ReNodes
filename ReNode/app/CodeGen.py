@@ -1004,7 +1004,29 @@ class CodeGenerator:
                 raise Exception(f"Unsupported data type: {dtName}")
         
         if tname == "string": 
-            return "\"" + value.replace("\"","\"\"") + "\""
+            strData = "\"" + value.replace("\"","\"\"") + "\""
+            if "\n" in strData:
+                isBigString = False
+                allAmount = 0
+                # кастомный алгоритм определения метода аллокации строчки
+                for idx,line in enumerate(strData.split("\n")):
+                    if len(line) > 32:
+                        isBigString = True
+                        break
+                    allAmount += len(line)
+                    if allAmount > 255:
+                        isBigString = True
+                        break
+                    if idx > 32:
+                        isBigString = True
+                        break
+                
+                if isBigString:
+                    return "(["+strData.replace("\n","\",\"")+"]joinString ENDL)"
+                else:
+                    return "("+strData.replace("\n","\"+\"")+")"
+            else: 
+                return strData
         elif tname == "bool":
             return str(value).lower()
         elif tname in ['float','int']:
