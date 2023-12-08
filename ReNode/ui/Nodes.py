@@ -65,6 +65,9 @@ class RuntimeNode(BaseNode):
 		data = self.getFactoryData()
 		portDataName = "inputs" if fromPort.port_type == PortTypeEnum.IN.value else "outputs"
 		evalType = self._calculate_autoport_type(toPort.port_typeName,data[portDataName].get(fromPort.name))
+		
+		if evalType.startswith("ANY"):
+			evalType = toPort.port_typeName
 
 		if evalType != toPort.port_typeName:
 			return False
@@ -84,8 +87,8 @@ class RuntimeNode(BaseNode):
 
 		getterData = libCalculator['typeget']
 		dataType,getter = getterData.split(';')
-
-		if not re.findall('[\[\]\,]',sourceType):
+		isMultitype = re.findall('[\[\]\,]',sourceType)
+		if not isMultitype:
 			preSource = sourceType
 			sourceType = f'{dataType}[{sourceType}]'
 			if dataType == "value":
@@ -94,6 +97,9 @@ class RuntimeNode(BaseNode):
 		typeinfo = re.findall('\w+\^?',sourceType)
 		
 		if chechDatatype:
+			if dataType == "ANY": return True
+			if not isMultitype and dataType == 'value': return True
+
 			return dataType == typeinfo[0]
 
 		if getter == '@type':

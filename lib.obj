@@ -119,7 +119,7 @@ def:node:control
    code:(@in.2) BREAKOUT "exec"
    exec:in
    in:auto:Возвращаемое значение:Значение, которое вернет функция.
-      opt:typeget=value;@type
+      opt:typeget=ANY;@type
 
 def:node:array
 
