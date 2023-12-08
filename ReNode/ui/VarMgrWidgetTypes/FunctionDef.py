@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from Qt import QtCore
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
-from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
+from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 
 class FunctionDefWidget(QWidget):
 
@@ -103,7 +103,7 @@ class FunctionDefWidget(QWidget):
         paramTypeDesc = QLabel('Тип параметра:')
         paramTypeDesc.setToolTip("Тип данных параметра")
         contents = VariableManager.refObject.getAllTypesTreeContent()
-        comboButton = SeachComboButton()
+        comboButton = SearchComboButton()
         comboButton.loadContents(contents)
         grid.addWidget(paramTypeDesc,1,0,alignment=Qt.AlignmentFlag.AlignLeft)
         grid.addWidget(comboButton,1,1)
@@ -113,7 +113,7 @@ class FunctionDefWidget(QWidget):
         grid.addWidget(paramDataTypeDesc,2,0,alignment=Qt.AlignmentFlag.AlignLeft)
         paramDataType = QComboBox()
         grid.addWidget(paramDataType,2,1)
-        paramDataTypeSelect = SeachComboButton()
+        paramDataTypeSelect = SearchComboButton()
         paramDataTypeSelect.loadContents(contents)
         grid.addWidget(paramDataTypeSelect,2,2)
         

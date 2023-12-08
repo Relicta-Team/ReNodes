@@ -56,7 +56,7 @@ def findVec3TreeItemByProperty(tree,name,pname='name'):
         if it: return it
     return None
 
-class SeachComboButton(QPushButton):
+class SearchComboButton(QPushButton):
 
     changed_event = pyqtSignal(str,str,QIcon)
 

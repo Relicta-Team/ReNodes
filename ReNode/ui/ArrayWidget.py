@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from Qt import QtCore
 
-from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
+from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 
 class ArrayWidget(QWidget):
 
@@ -161,9 +161,9 @@ class DictWidget(QWidget):
         if not widVarType: #autodef
             raise Exception("TODO FIX dict widget")
             widVarType = self.varmgr.widVarType
-        self.activeSeachBox = isinstance(widVarType,SeachComboButton)
+        self.activeSeachBox = isinstance(widVarType,SearchComboButton)
         if self.activeSeachBox:
-            self.widVarTypeRef :SeachComboButton = widVarType
+            self.widVarTypeRef :SearchComboButton = widVarType
         else:
             self.valWidgetInstancer = widVarType
         self.initUI()

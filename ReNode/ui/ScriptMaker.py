@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.utils import transliterate
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFileSavePath
-from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent
+from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent
 from ReNode.ui.GraphTypes import GraphTypeFactory as gtf, GraphTypeBase
 import re
 import sys
@@ -125,7 +125,7 @@ class WizardScriptMaker(QWizard):
 		self._addLabel(f"Для продолжения нажмите кнопку \"{self.button(QWizard.NextButton).text()}\".")
 
 		
-		# test = SeachComboButton()
+		# test = SearchComboButton()
 		# vals = self.graphSystem.getFactory().getClassAllChildsTree("GMBase")
 
 		# test.loadContents(createTreeDataContent(vals))
@@ -205,7 +205,7 @@ class WizardScriptMaker(QWizard):
 		gmclass.setPlaceholderText(f"Введите {class_opt_.lower()}")
 		self._addLineOption(f"{class_opt_}:",gmclass)
 
-		gmparent = SeachComboButton()
+		gmparent = SearchComboButton()
 		opt_parentName_ = gobj.parent_nameText
 		self._addLineOption(f"{opt_parentName_}:",gmparent)
 		parentClassname = gobj.parent_classnameText

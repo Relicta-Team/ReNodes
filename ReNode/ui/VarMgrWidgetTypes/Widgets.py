@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem,createTreeContentItem
+from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem,createTreeContentItem
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 import datetime
 
@@ -100,7 +100,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         type_layout = QHBoxLayout()
         layout.addLayout(type_layout)
 
-        self.widVarType = SeachComboButton()
+        self.widVarType = SearchComboButton()
         treeContent = createTreeDataContent()
 
         objectTree = treeContent
@@ -324,7 +324,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         retvalText__ = QLabel("Возвращаемое значение:")
         retvalText__.setToolTip("Возвращаемое значение - это то, что будет возвращать функция после своего выполнения")
         layRet.addWidget(retvalText__,alignment=Qt.AlignLeft)
-        self.comboButton = SeachComboButton()
+        self.comboButton = SearchComboButton()
         cont = self.getVarMgr().getAllTypesTreeContent()
         if cont:
             newitem = createTreeContentItem("null","Не возвращает значения",QIcon())
