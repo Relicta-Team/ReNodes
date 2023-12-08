@@ -159,6 +159,7 @@ class DictWidget(QWidget):
         self.varmgr = VariableManager.refObject
         self.instancer = instancer
         if not widVarType: #autodef
+            raise Exception("TODO FIX dict widget")
             widVarType = self.varmgr.widVarType
         self.activeSeachBox = isinstance(widVarType,SeachComboButton)
         if self.activeSeachBox:

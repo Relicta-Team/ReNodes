@@ -13,6 +13,7 @@ from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
 from ReNode.ui.SearchMenuWidget import SeachComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
+from ReNode.ui.VarMgrWidgetTypes.Widgets import *
 import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
@@ -20,6 +21,8 @@ import enum
 
 class MemberType(enum.Enum):
     """Тип члена отражает какие данные можно вводить в менеджере переменных"""
+    Unknown = -1
+    """Неизвестный тип члена"""
     Variable = 0,
     """Переменная хранится в классе, имеет тип данных и значение"""
     Function = 1
@@ -67,6 +70,18 @@ class VariableCategory:
         self.categoryTreeTextName = varcatTextTree
         self.categoryDescription = vardesc
         self.memtype = memtype
+        
+        inst = None
+        if self.memtype == MemberType.Unknown:
+            inst = VarMgrBaseWidgetType
+        elif self.memtype == MemberType.Variable:
+            inst = VarMgrVariableWidget
+        elif self.memtype == MemberType.Function:
+            inst = VarMgrFunctionWidget
+        else:
+            raise Exception(f"Unknown member type: {self.memtype.name}")
+        
+        self.instancer = inst
 
 class VariableDataType:
     def __init__(self,vartext='',vartype='',varicon='',instancer=None):
@@ -204,32 +219,51 @@ class VariableManager(QDockWidget):
             VariableCategory(MemberType.Function,'classfunc',"Функция класса","Функции класса","Функции класса - это функция, принадлежащая созданному объекту. (прим. Человек имеет функцию класса 'Проснуться', 'Поднять бровь')"),
 
             #constant
-            VariableCategory(MemberType.Variable,"const","Константа","Константы","Константа - это переменная, которая не может быть изменена. (прим. 'Дней в неделе')"),
-            VariableCategory(MemberType.Variable,'enum',"Перечисление","Перечисления","Перечисление это идентификаторов, каждому из которых присвоено значение (прим. Перечисление 'Цвет' имеет идентификаторы 'Красный','Желтый','Зелёный')"),
-            VariableCategory(MemberType.Variable,"struct","Структура","Структуры","Набор данных, связанных определённым образом. (прим. Структура 'Координаты' имеет поля 'Широта','Долгота')"),
+            VariableCategory(MemberType.Unknown,"const","Константа","Константы","Константа - это переменная, которая не может быть изменена. (прим. 'Дней в неделе')"),
+            VariableCategory(MemberType.Unknown,'enum',"Перечисление","Перечисления","Перечисление это идентификаторов, каждому из которых присвоено значение (прим. Перечисление 'Цвет' имеет идентификаторы 'Красный','Желтый','Зелёный')"),
+            VariableCategory(MemberType.Unknown,"struct","Структура","Структуры","Набор данных, связанных определённым образом. (прим. Структура 'Координаты' имеет поля 'Широта','Долгота')"),
         ]
 
         self.variableDataType = self._typeData.valueTypeList
 
         self.initUI()
-        self.setupContextMenu()
+        #self.setupContextMenu()
 
     def initUI(self):
         # Создайте центральный виджет для док-зоны
-        central_widget = QWidget(self)
-        self.setWidget(central_widget)
-
+        central_widget = QWidget()
         # Создайте вертикальный макет для центрального виджета
         layout = QVBoxLayout()
-        self.widLayout = layout
+        layout.setContentsMargins(2, 2, 2, 0)
+        central_widget.setLayout(layout)
+        self.mainLayout = layout
+        #self.widLayout = layout #TODO fixme
+
+        #делаем скролл зону
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaLayout = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.scrollAreaLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        #self.scrollAreaLayout.addStretch(1) #факапит отображение
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+
+        layout.addWidget(self.scrollArea)
+        self.setWidget(central_widget)
+        layout = self.scrollAreaLayout
 
         __lbl = QLabel("Категория:")
         __ttpCat = "Категории:"
         layout.addWidget(__lbl)
+
         self.widCat = QComboBox()
         for __i, vcat in enumerate(self.variableCategoryList):
             self.widCat.addItem(vcat.categoryTextName)
             self.widCat.setItemData(__i, vcat.categoryDescription,Qt.ToolTipRole)
+            self.widCat.setItemData(__i,vcat.category,Qt.UserRole)
             __ttpCat += "\n" + vcat.categoryDescription
         self.widCat.currentIndexChanged.connect(self._onVariableCategoryChanged)
         layout.addWidget(self.widCat)
@@ -249,56 +283,12 @@ class VariableManager(QDockWidget):
         self.widVarGroup.setMaxLength(128)
         layout.addWidget(self.widVarGroup)
 
-        # TODO ---------------------- custom loader -----------------------
-        layout.addWidget(QLabel("Тип данных:"))
+        # ---------------------- custom loader vartype -----------------------
+        self.layoutCatWidgets = QVBoxLayout()
+        layout.addLayout(self.layoutCatWidgets)
 
-        type_layout = QHBoxLayout()
-        layout.addLayout(type_layout)
-
-        self.widVarType = SeachComboButton()
-        treeContent = createTreeDataContent()
-
-        objectTree = treeContent
-        for vobj in self.variableTempateData:
-            icon = QtGui.QIcon("data\\icons\\pill_16x.png")
-            colored_icon = updateIconColor(icon, vobj.color)
-            _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
-            if vobj.variableType == "object":
-                objectTree = _tempTree
-        #gobj add
-        fact = self.nodeGraphComponent.getFactory()
-        objTree = fact.getClassAllChildsTree("GameObject")
-        addTreeContentItem(objectTree,objTree)
-
-        addTreeContentItem(objectTree,fact.getClassAllChildsTree("ServerClient"))
-
-        self.widVarType.loadContents(treeContent)
-        self.widVarType.changed_event.connect(self._onVariableTypeChanged)
-        type_layout.addWidget(self.widVarType)
-
-        self.widDataType = QComboBox()
-        for vobj in self.variableDataType:
-            icn = None
-            if isinstance(vobj.icon,list):
-                for pat in vobj.icon:
-                    icntemp = QtGui.QPixmap(pat)
-                    if icn:
-                        icntemp = mergePixmaps(icn,icntemp)
-                    icn = icntemp
-                icn = QtGui.QIcon(icn)
-            else:
-                icn = QtGui.QIcon(vobj.icon)
-            self.widDataType.addItem(icn,vobj.text)
-        self.widDataType.currentIndexChanged.connect(self._onDataTypeChanged)
-        type_layout.addWidget(self.widDataType)
-
-        __lbl = QLabel("Начальное значение:")
-        __lbl.setToolTip("Значение, которое будет присвоено переменной при создании")
-        layout.addWidget(__lbl)
-        self.widInitVal = QLineEdit()
-        layout.addWidget(self.widInitVal)
-        self._initialValue = None
-        self._updateVariableValueVisual(self.variableTempateData[0],self.variableDataType[0])
+        self._curCategory : VarMgrBaseWidgetType = None #string name
+        self._updateCategory(self.variableCategoryList[2].category)
 
         # Кнопка создания переменной
         self.widCreateVar = QPushButton("Создать")
@@ -309,6 +299,7 @@ class VariableManager(QDockWidget):
 
         # Дерево для отображения списка переменных
         self.widVarTree = QTreeWidget()
+        self.widVarTree.setMinimumHeight(200)
         self.widVarTree.setHeaderLabels(["Имя", "Тип", "Значение"])
         self.widVarTree.setColumnWidth(0,self.widVarTree.columnWidth(0)*2)
         layout.addWidget(self.widVarTree)
@@ -317,49 +308,40 @@ class VariableManager(QDockWidget):
         self.widVarTree.setObjectName("VariableManager.tree")
         self.widVarTree.setSortingEnabled(True)  # Включите сортировку
         self.widVarTree.sortItems(0, Qt.AscendingOrder)  # Сортировка по первому столбцу (индекс 0) в порядке возрастания
-        
 
-        central_widget.setLayout(layout)
-    
-    def _onVariableTypeChanged(self, data,text,icon):
-        vart: VariableTypedef = self.getVariableTypedefByType(data)
-        tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
-
-        self._updateVariableValueVisual(vart,tobj)
-        pass
-
-    def _onDataTypeChanged(self,*args,**kwargs):
-        newIndexDatatype = args[0]
-
-        curdata = self.widVarType.get_value()
-        vart = self.getVariableTypedefByType(curdata)
-        tobj : VariableDataType = self.variableDataType[newIndexDatatype]
-        self._updateVariableValueVisual(vart,tobj)
-
-    def _updateVariableValueVisual(self,tp : VariableTypedef,dt : VariableDataType):
-        isValue = dt.dataType == 'value' or not dt.instance
-        #delete prev
-        idx = self.widLayout.indexOf(self.widInitVal)
-        self.widInitVal.deleteLater()
-
-        objInstance = None
-        if isValue:
-            objInstance = tp.classInstance()
-        else:
-            if dt.dataType == 'dict':
-                objInstance = dt.instance(tp.classInstance,self.widVarType)
-            else:
-                objInstance = dt.instance(tp.classInstance)
-        
-        self.widInitVal = objInstance
-        self.widLayout.insertWidget(idx,self.widInitVal)
-
-        self._initialValue = self.widInitVal.get_value()
-        pass
+    def _updateCategory(self,catName):
+        oldCat = self._curCategory
+        if oldCat:
+            oldCat.deleteWidgets()
+            del oldCat
+        newcat = self.getVariableCategoryByType(catName)
+        if newcat:
+            obj = newcat.instancer()
+            obj.categoryObject = newcat
+            obj.variableManagerRef = self
+            obj.layout = self.layoutCatWidgets
+            obj.initObject()
 
     def _onVariableCategoryChanged(self, *args, **kwargs):
         newIndex = args[0]
+        self._updateCategory(self.variableCategoryList[newIndex].category)
         pass
+
+    def getAllTypesTreeContent(self):
+        treeContent = createTreeDataContent()
+
+        objectTree = treeContent
+        for vobj in self.variableTempateData:
+            icon = QIcon("data\\icons\\pill_16x.png")
+            colored_icon = updateIconColor(icon, vobj.color)
+            _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+            if vobj.variableType == "object":
+                objectTree = _tempTree
+        #gobj add
+        fact = self.nodeGraphComponent.getFactory()
+        objTree = fact.getClassAllChildsTree("object")
+        addTreeContentItem(objectTree,objTree)
+        return treeContent
 
     def variableExists(self, category, name):
         # Проверка наличия переменной с заданным именем в выбранной категории
@@ -381,113 +363,36 @@ class VariableManager(QDockWidget):
             self.nodeGraphComponent.sessionManager.logger.warning("Нет активной вкладки для создания переменной")
             return
 
-
         # Получите значения типа переменной, имени и дефолтного значения
-        variable_type = self.widVarType.get_value()
         variable_name = self.widVarName.text().rstrip(' ').lstrip(' ')
-        default_value = self.widInitVal.get_value()
         variable_group = self.widVarGroup.text().rstrip(' ').lstrip(' ')
-        
+
         current_category = self.widCat.currentText() # Определите, к какой категории переменных относится новая переменная (локальная или классовая)
-
-        category_tree_name = next((obj.categoryTreeTextName for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
-        if not category_tree_name:
-            raise Exception("Неизвестная категория для создания переменной")
+        if not current_category:
+            self.showErrorMessageBox(f"Неизвестная категория")
+            return
         
-        cat_sys_name = next((obj.category for obj in self.variableCategoryList if obj.categoryTextName == current_category),None)
-        varInfo = self.getVariableTypedefByType(variable_type)
+        curCat:VarMgrBaseWidgetType = self._curCategory
+        curCatObj = curCat.categoryObject
 
-        if not varInfo:
-            raise Exception(f"Неизвестный тип переменной: {variable_type}")
-
-        isObject = self.isObjectType(variable_type)
-
-        var_typename = varInfo.variableType
-        if isObject: #обновляем тип если это подтип объекта
-            var_typename = variable_type + "^" #добавляем символ наследования
-
+        if not curCatObj:
+            self.showErrorMessageBox(f"Категория не определена")
+            return
+        if not curCat:
+            self.showErrorMessageBox(f"Виджет категории не определен")
+            return
         if not variable_name:
-            self.showErrorMessageBox(f"Укажите имя переменной")
-            return
-
-        variable_exists = self.variableExists(cat_sys_name, variable_name)
-        
-        if variable_exists:
+            self.showErrorMessageBox(f"Укажите имя идентификатора")
+            return        
+        if self.variableExists(curCatObj.category, variable_name):
             # Выведите сообщение об ошибке
-            self.showErrorMessageBox(f"Переменная с именем '{variable_name}' уже существует в категории '{category_tree_name}'!")
-            return
-
-        dt : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
-
-        reprType = str(varInfo)
-
-        #update 
-        if isinstance(self.widInitVal,DictWidget) and dt.dataType == "dict":
-
-            if variable_type != "string":
-                self.showErrorMessageBox(f"В текущей версии ключи словарей могут быть только строками")
-                return
-
-            countItems = self.widInitVal.get_values_count()
-            curLenItems = len(default_value)
-            if countItems != curLenItems:
-                self.showErrorMessageBox(f"Ключи словаря должны принимать разные значения;\nУникальных элементов: {curLenItems}, установлено {countItems}")
-                return
-
-            kv_valtypeTextname = self.widInitVal.selectType.get_value()
-            kv_itemInfo = self.getVariableTypedefByType(kv_valtypeTextname)
-            if not kv_itemInfo:
-                raise Exception(f"Неизвестный тип переменной: {kv_valtypeTextname}")
-            vtypename = kv_itemInfo.variableType
-            if self.isObjectType(kv_valtypeTextname):
-                #add postfix with real type
-                vtypename = kv_valtypeTextname + "^"
-                #vtypename += "^" 
-            var_typename += "," + vtypename
-            reprType += "|" + str(kv_itemInfo)
-            pass
-
-        if dt.dataType != "value":
-            var_typename = f"{dt.dataType}[{var_typename}]"
-            variable_type = dt.text
-        
-        itm = datetime.datetime.now()
-        #variableSystemName = hex(id(itm))
-        variableSystemName = f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
-
-
-        if not self.variables.get(cat_sys_name):
-            self.variables[cat_sys_name] = {}
-        
-        if variableSystemName in self.variables[cat_sys_name]:
-            self.showErrorMessageBox(f"Коллизия системных имен переменных. Айди '{variableSystemName}' уже существует!")
+            self.showErrorMessageBox(f"Идентификатор '{variable_name}' уже существует в категории '{curCatObj.categoryTreeTextName}'!")
             return
         
-        for cat,stor in self.variables.items():
-            if variableSystemName in stor:
-                self.showErrorMessageBox(f"Коллизия системных имен переменных. Айди '{variableSystemName}' уже существует в другой категории - {cat}")
-                return
-
-        vardict = {
-            "name": variable_name,
-            "type": var_typename,
-            "datatype": dt.dataType,
-            "typename": variable_type,
-            "value": default_value,
-            "category": cat_sys_name,
-            "group": variable_group,
-            #TODO сделать чтобы системные имена генерировались от обычных
-            "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
-
-            "reprType": reprType,
-            "reprDataType": str(dt),
-        }
-        self.getUndoStack().push(VariableCreatedCommand(self,cat_sys_name,vardict))
-
-
-        # Очистите поля ввода
-        self.widVarName.clear()
-        self.widInitVal.set_value(self._initialValue)
+        res = curCat.createVariable(variable_name, variable_group)
+        if res != 404:
+            self.widVarName.clear()
+            self.widVarGroup.clear()
 
     def getUndoStack(self) -> QUndoStack:
         return self.nodeGraphComponent.graph._undo_stack
@@ -889,7 +794,7 @@ class VariableManager(QDockWidget):
         self.widVarTree.clear()
 
     def populateVariableTree(self):
-
+        
         dictGroup = {} # key: group name, value: groupwidget
 
         # Пересоздайте переменные в дереве на основе данных в self.variables
@@ -904,40 +809,18 @@ class VariableManager(QDockWidget):
            
 
             for variable_id, variable_data in variables.items():
-                name = variable_data['name']
-                variable_type = variable_data['typename']
-                fulltype = variable_data['type']
-                value = variable_data['value']
-                group = variable_data.get('group',"")
-                defvalstr = str(value) if not isinstance(value, str) else value
-
-                #varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
-                varInfo, dt = self.getVarDataByType(fulltype,True)
-                if not varInfo or not dt:
-                    raise Exception(f"Невозможно загрузить переменную {variable_id}; Информация и данные о типе: {varInfo}; {dt}")
-
-                if dt.dataType != "value":
-                    if isinstance(varInfo,list):
-                        variable_type = f'{variable_type} ({", ".join([o__.variableTextName for o__ in varInfo])})'
-                    else:
-                        variable_type = f'{variable_type} ({varInfo.variableTextName})'
-                else:
-                    variable_type = varInfo.variableTextName
+                treeItemListTexts = catObj.instancer.getVariableMakerVisualInfo(variable_id,variable_data)
+                if not treeItemListTexts:
+                    self.logger.error(f"Неовзможно загрузить переменную {variable_id}")
+                    continue
                 
-                item = QTreeWidgetItem([name, variable_type, defvalstr])
+                group = variable_data.get('group',"")
+
+                item = QTreeWidgetItem(treeItemListTexts)
                 item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsDragEnabled)
                 item.setData(0, QtCore.Qt.UserRole, variable_id)
-                #set description to column 1
-                item.setToolTip(1,fulltype)
-
-                if isinstance(varInfo,list):
-                    pathes = dt.icon
-                    colors = [o__.color for o__ in varInfo]
-                    item.setIcon(1,QtGui.QIcon(generateIconParts(pathes,colors)))
-                else:
-                    icn = QtGui.QIcon(dt.icon)
-                    icn = updateIconColor(icn,varInfo.color)
-                    item.setIcon(1, icn)
+                
+                catObj.instancer.onItemCreated(item,variable_id,variable_data)
 
                 if group == "":
                     category_item.addChild(item)

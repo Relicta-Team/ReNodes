@@ -29,6 +29,15 @@ def addTreeContent(srcDict,data,name,icon):
     childs.append(addedSpan)
     return addedSpan
 
+def createTreeContentItem(data,name,icon):
+    if not data: return None
+    return {
+        'name': data,
+        'vname': name,
+        'icon': icon,
+        'childs': []
+    }
+
 def addTreeContentItem(srcDict,rootItem):
     if not rootItem: return None
     childs = srcDict['childs']
