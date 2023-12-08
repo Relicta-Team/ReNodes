@@ -8,6 +8,7 @@ from PyQt5.QtCore import *
 from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import *
 from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
+from ReNode.ui.ArrayWidget import ArrayWidget,DictWidget
 
 class DataTypeSelectorGroup(QWidget):
     def __init__(self,srcLayout=None,ofsX=0,ofsY=0):
@@ -22,6 +23,7 @@ class DataTypeSelectorGroup(QWidget):
         lay.addWidget(QLabel("Тип параметра:"),ofsX+0,ofsY+0)
         lay.addWidget(comboButton,ofsX+0,ofsY+1)
         self.widParamType = comboButton
+        comboButton.changed_event.connect(lambda: self.onParamTypeChanged())
 
         self.widDataType = QComboBox()
         for vobj in VariableManager.refObject.variableDataType:
@@ -37,7 +39,7 @@ class DataTypeSelectorGroup(QWidget):
                 icn = QIcon(vobj.icon)
             self.widDataType.addItem(icn,vobj.text)
             self.widDataType.setItemData(self.widDataType.count()-1,vobj.dataType,Qt.UserRole)
-        self.widDataType.currentIndexChanged.connect(lambda: self.onDataTypeChanged(self.widDataType.currentIndex()))
+        self.widDataType.currentIndexChanged.connect(lambda: self.onDataTypeChanged())
         lay.addWidget(QLabel("Тип данных:"),ofsX+1,ofsY+0)
         lay.addWidget(self.widDataType,ofsX+1,ofsY+1)
 
@@ -46,14 +48,22 @@ class DataTypeSelectorGroup(QWidget):
         self.optText = None
         self.optData = None
 
-        optText = QLabel("Тип значений:")
-        lay.addWidget(optText,ofsX+2,ofsY+0)
-        optData = SearchComboButton()
-        optData.loadContents(contents)
-        lay.addWidget(optData,ofsX+2,ofsY+1)
+        self._initialValue = 0
+
+        # optText = QLabel("Тип значений:")
+        # lay.addWidget(optText,ofsX+2,ofsY+0)
+        # optData = SearchComboButton()
+        # optData.loadContents(contents)
+        # lay.addWidget(optData,ofsX+2,ofsY+1)
         
-        self.optData = optData
-        self.optText = optText
+        # self.optData = optData
+        # self.optText = optText
+
+        self.defValText = QLabel("Начальное значение:")
+        lay.addWidget(self.defValText,ofsX+2,ofsY+0)
+        #instancer = VariableManager.refObject.getVariableTypedefByType(comboButton.get_value()).classInstance
+        self.defValWid = QLineEdit() #DictWidget(instancer,optData)
+        lay.addWidget(self.defValWid,ofsX+2,ofsY+1)
 
         if not srcLayout:
             self.setLayout(lay)
@@ -61,19 +71,47 @@ class DataTypeSelectorGroup(QWidget):
         else:
             self.srcLayout = srcLayout
         
-        self.onDataTypeChanged(0)
+        self.onDataTypeChanged()
 
-    def updateVisual(self,tobj):
-        hasVisible = tobj.dataType == "dict"
-        self.optData.setVisible(hasVisible)
-        self.optText.setVisible(hasVisible)
+    def updateVisual(self,vartype,datatype):
+        from ReNode.ui.VariableManager import VariableTypedef,VariableDataType
+        vartype: VariableTypedef
+        datatype: VariableDataType
+
+        isValue = datatype.dataType == 'value' or not datatype.instance
+        #delete prev
+        #idx = self.layout.indexOf(self.widInitVal)
+        self.defValWid.deleteLater()
+
+        objInstance = None
+        if isValue:
+            objInstance = vartype.classInstance()
+        else:
+            if datatype.dataType == 'dict':
+                objInstance = datatype.instance(vartype.classInstance,self.widParamType)
+            else:
+                objInstance = datatype.instance(vartype.classInstance)
+        
+        self.defValWid = objInstance
+        self.srcLayout.addWidget(self.defValWid,self.ofsX+2,self.ofsY+1)
+        #self.layout.insertWidget(idx,self.widInitVal)
+
+        self._initialValue = self.defValWid.get_value()
+        pass
 
 
-    def onDataTypeChanged(self,newIndexDatatype):
+    def onDataTypeChanged(self):
         from ReNode.ui.VariableManager import VariableTypedef,VariableDataType,VariableManager
         #newIndexDatatype = args[0]
+        newIndexDatatype = self.widDataType.currentIndex()
+        curdata = self.widParamType.get_value()
+        vart: VariableTypedef = VariableManager.refObject.getVariableTypedefByType(curdata)
         tobj : VariableDataType = VariableManager.refObject.variableDataType[newIndexDatatype]
-        self.updateVisual(tobj)
+        self.updateVisual(vart,tobj)
+
+    def onParamTypeChanged(self):
+        from ReNode.ui.VariableManager import VariableTypedef,VariableDataType,VariableManager
+        self.onDataTypeChanged()
 
 class FunctionDefWidget(QWidget):
 
@@ -154,17 +192,22 @@ class FunctionDefWidget(QWidget):
             self.paramDesc = None
             self.paramType = None
             self.paramDataType = None
-            self.paramValueTypes = None #for dict
+            self.defVarWid = None
+
+            self._group = None
+
+        def get_defVarWid(self):
+            return self._group.defValWid
 
     def getParamInfo(self):
         """Получает массив метаданных для создания функции
         
             {
-                "name": paramName,
-                "desc": paramDesc,
-                "dataType": paramDataType,
-                "type": paramType,
-                "optValType": optValType
+                "name",
+                "desc",
+                "dataType",
+                "type",
+                "value"
             }
         
         """
@@ -176,15 +219,15 @@ class FunctionDefWidget(QWidget):
             paramDesc = grid.paramDesc.text().rstrip(' ').lstrip(' ')
             paramDataType = grid.paramDataType.currentData() #value,dict,array,etc...
             paramType = grid.paramType.get_value()
-            optValType = grid.paramValueTypes.get_value() #for dict (value type)
+            defaultValue = grid.get_defVarWid().get_value()
 
-            print(f"{paramDataType}[{paramType},{optValType}] {paramName} - {paramDesc}")
+            print(f"{paramDataType}[{paramType}] {paramName} - {paramDesc} = {defaultValue}")
             paramData.append({
                 "name": paramName,
                 "desc": paramDesc,
                 "dataType": paramDataType,
                 "type": paramType,
-                "optValType": optValType
+                "value": defaultValue
             })
 
         return paramData
@@ -227,7 +270,8 @@ class FunctionDefWidget(QWidget):
         grid.paramDesc = paramDesc
         grid.paramType = groupType.widParamType
         grid.paramDataType = groupType.widDataType
-        grid.paramValueTypes = groupType.optData
+        grid._group = groupType
+        #grid.defVarWid = groupType.defValWid
 
         #grid.addWidget(groupType,1,0)
 

@@ -199,7 +199,7 @@ class VariableManager(QDockWidget):
     refObject = None
     def __init__(self,actionVarViewer = None,nodeSystem=None):
         VariableManager.refObject = self
-        super().__init__("Переменные")
+        super().__init__("Менеджер пользовательских свойств")
         
         self.logger = RegisterLogger("VariableManager")
         self.nodeGraphComponent = nodeSystem
