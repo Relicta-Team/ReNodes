@@ -259,10 +259,10 @@ class DictWidget(QWidget):
     def addArrayElement(self,keyVal=None,valItem=None):
         from ReNode.ui.VariableManager import VariableManager
 
-        if not isinstance(keyVal,str):
+        if self.widVarTypeRef.get_value() != "string":
             from ReNode.app.application import Application
             #! потому что например для ключей типа vec3 выпадет исключение при формировании словаря
-            Application.refObject.logger.error("В текущей версии программы словари могут иметь ключи только типа строк.")
+            Application.refObject.logger.error(f"В текущей версии программы ключами словаря могут быть только строки - \"{self.widVarTypeRef.get_text()}\" не допускается")
             return
 
         # Создайте горизонтальный контейнер для нового элемента

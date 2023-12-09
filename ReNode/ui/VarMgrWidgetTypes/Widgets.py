@@ -195,7 +195,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         categoryObj = self.categoryObject
         variable_name = varname
         variable_group = vargroup
-        variable_type = self.widVarType.get_value()
+        variable_type = self.widVarType.get_value() #имя типа (string,int,object...)
         default_value = self.widInitVal.get_value()
         varMgr = self.variableManagerRef
 
@@ -218,7 +218,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         #update 
         if isinstance(self.widInitVal,DictWidget) and dt.dataType == "dict":
 
-            if variable_type != "string":
+            if var_typename != "string":
                 varMgr.showErrorMessageBox(f"В текущей версии ключи словарей могут быть только строками")
                 return
 
@@ -243,7 +243,6 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
         if dt.dataType != "value":
             var_typename = f"{dt.dataType}[{var_typename}]"
-            variable_type = dt.text
         
         itm = datetime.datetime.now()
         #variableSystemName = hex(id(itm))
@@ -253,7 +252,6 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
             "name": variable_name,
             "type": var_typename,
             "datatype": dt.dataType,
-            "typename": variable_type,
             "value": default_value,
             "category": cat_sys_name,
             "group": variable_group,
@@ -272,8 +270,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
     def getVariableMakerVisualInfo(variable_id,variable_data):
         varmgr = VarMgrBaseWidgetType.getVarMgr()
         name = variable_data['name']
-        variable_type = variable_data['typename']
         fulltype = variable_data['type']
+        variable_type = fulltype #имя типа utf-8
         value = variable_data['value']
         defvalstr = str(value) if not isinstance(value, str) else value
 
@@ -284,9 +282,9 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
         if dt.dataType != "value":
             if isinstance(varInfo,list):
-                variable_type = f'{variable_type} ({", ".join([o__.variableTextName for o__ in varInfo])})'
+                variable_type = f'{dt.text} ({", ".join([o__.variableTextName for o__ in varInfo])})'
             else:
-                variable_type = f'{variable_type} ({varInfo.variableTextName})'
+                variable_type = f'{dt.text} ({varInfo.variableTextName})'
         else:
             variable_type = varInfo.variableTextName
 

@@ -582,7 +582,6 @@ class VariableManager(QDockWidget):
         lvdata = self.getVariableDataById(id)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
-        #varInfo = self.getVariableTypedefByType(lvdata['typename'],True)
         #varInfo,varDt = self._getVarDataByRepr(lvdata['reprType'],lvdata['reprDataType'])
         varInfo,varDt = self.getVarDataByType(lvdata['type'])
         
