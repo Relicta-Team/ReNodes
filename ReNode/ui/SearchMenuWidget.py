@@ -122,6 +122,11 @@ class SearchComboButton(QPushButton):
         menu.exec_(globPos)
 
     def onSetItemData(self,data,text,optIcon):
+        self.setItemData(data,text,optIcon)
+
+        self.changed_event.emit(data,text,self.icon())
+
+    def setItemData(self,data,text,optIcon=None):
         self.set_text(text or data)
         self.set_value(data)
         if optIcon:
@@ -131,8 +136,6 @@ class SearchComboButton(QPushButton):
             self.setIcon(optIcon)
         else:
             self.setIcon(QIcon())
-
-        self.changed_event.emit(data,text,self.icon())
     
     def get_text(self):
         return self.text()

@@ -11,11 +11,17 @@ from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.ArrayWidget import ArrayWidget,DictWidget
 
 class DataTypeSelectorGroup(QWidget):
+
+    class ComboBoxNoWheel(QComboBox):
+        def wheelEvent(self, event):
+            # Disable scroll event
+            event.ignore()
+
     def __init__(self,srcLayout=None,ofsX=0,ofsY=0):
         super(DataTypeSelectorGroup,self).__init__()
         from ReNode.ui.VariableManager import VariableManager
         lay = srcLayout or QGridLayout()
-
+        
         contents = VariableManager.refObject.getAllTypesTreeContent()
         comboButton = SearchComboButton()
         comboButton.loadContents(contents)
@@ -25,7 +31,7 @@ class DataTypeSelectorGroup(QWidget):
         self.widParamType = comboButton
         comboButton.changed_event.connect(lambda: self.onParamTypeChanged())
 
-        self.widDataType = QComboBox()
+        self.widDataType = DataTypeSelectorGroup.ComboBoxNoWheel()
         for vobj in VariableManager.refObject.variableDataType:
             icn = None
             if isinstance(vobj.icon,list):
@@ -40,8 +46,11 @@ class DataTypeSelectorGroup(QWidget):
             self.widDataType.addItem(icn,vobj.text)
             self.widDataType.setItemData(self.widDataType.count()-1,vobj.dataType,Qt.UserRole)
         self.widDataType.currentIndexChanged.connect(lambda: self.onDataTypeChanged())
-        lay.addWidget(QLabel("Тип данных:"),ofsX+1,ofsY+0)
-        lay.addWidget(self.widDataType,ofsX+1,ofsY+1)
+        dtTex = QLabel("Тип данных:")
+        sizedtTex = dtTex.fontMetrics().width("Тип данных:")
+        dtTex.setMaximumWidth(sizedtTex)
+        lay.addWidget(dtTex,ofsX+0,ofsY+2)
+        lay.addWidget(self.widDataType,ofsX+0,ofsY+3)
 
         self.ofsX = ofsX
         self.ofsY = ofsY
@@ -58,12 +67,12 @@ class DataTypeSelectorGroup(QWidget):
         
         # self.optData = optData
         # self.optText = optText
-
+        self._ivalXPos = ofsX+1
         self.defValText = QLabel("Начальное значение:")
-        lay.addWidget(self.defValText,ofsX+2,ofsY+0)
+        lay.addWidget(self.defValText,self._ivalXPos,ofsY+0)
         #instancer = VariableManager.refObject.getVariableTypedefByType(comboButton.get_value()).classInstance
         self.defValWid = QLineEdit() #DictWidget(instancer,optData)
-        lay.addWidget(self.defValWid,ofsX+2,ofsY+1)
+        lay.addWidget(self.defValWid,self._ivalXPos,ofsY+1,1,3)
 
         if not srcLayout:
             self.setLayout(lay)
@@ -93,7 +102,7 @@ class DataTypeSelectorGroup(QWidget):
                 objInstance = datatype.instance(vartype.classInstance)
         
         self.defValWid = objInstance
-        self.srcLayout.addWidget(self.defValWid,self.ofsX+2,self.ofsY+1)
+        self.srcLayout.addWidget(self.defValWid,self._ivalXPos,self.ofsY+1,1,3)
         #self.layout.insertWidget(idx,self.widInitVal)
 
         self._initialValue = self.defValWid.get_value()
@@ -235,9 +244,11 @@ class FunctionDefWidget(QWidget):
 
     def addArrayElement(self,val=None):
         from ReNode.ui.VariableManager import VariableManager
+        from ReNode.app.application import Application
 
         if len(self.arrayElements) >= 15:
-            VariableManager.refObject.nodeGraphComponent.mainWindow.logger.error("Слишком много параметров. Используйте объекты или контейнеры для передачи.")
+            #VariableManager.refObject.nodeGraphComponent.mainWindow.logger.error("Слишком много параметров. Используйте объекты или контейнеры для передачи.")
+            Application.refObject.logger.error("Слишком много параметров. Используйте объекты или контейнеры для передачи.")
             return
 
         # Создайте горизонтальный контейнер для нового элемента
@@ -261,7 +272,7 @@ class FunctionDefWidget(QWidget):
         paramDesc = QLineEdit()
         paramDesc.setPlaceholderText("Описание параметра (опционально)")
         grid.addWidget(paramName,0,0)
-        grid.addWidget(paramDesc,0,1)
+        grid.addWidget(paramDesc,0,1,1,3)
         
         groupType = DataTypeSelectorGroup(srcLayout=grid,ofsX=2,ofsY=0)
         
@@ -274,23 +285,6 @@ class FunctionDefWidget(QWidget):
         #grid.defVarWid = groupType.defValWid
 
         #grid.addWidget(groupType,1,0)
-
-        # paramTypeDesc = QLabel('Тип параметра:')
-        # paramTypeDesc.setToolTip("Тип данных параметра")
-        # contents = VariableManager.refObject.getAllTypesTreeContent()
-        # comboButton = SearchComboButton()
-        # comboButton.loadContents(contents)
-        # grid.addWidget(paramTypeDesc,1,0,alignment=Qt.AlignmentFlag.AlignLeft)
-        # grid.addWidget(comboButton,1,1)
-
-        # paramDataTypeDesc = QLabel("Тип данных:")
-        # paramDataTypeDesc.setToolTip("Тип данных параметра")
-        # grid.addWidget(paramDataTypeDesc,2,0,alignment=Qt.AlignmentFlag.AlignLeft)
-        # paramDataType = QComboBox()
-        # grid.addWidget(paramDataType,2,1)
-        # paramDataTypeSelect = SearchComboButton()
-        # paramDataTypeSelect.loadContents(contents)
-        # grid.addWidget(paramDataTypeSelect,2,2)
         
 
         #elementLayout.addWidget(elementValueWidget)

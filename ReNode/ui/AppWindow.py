@@ -12,13 +12,11 @@ from ReNode.app.Logger import *
 logger : logging.Logger = None
 
 class MainWindow( QMainWindow ):
-
 	def __init__( self, factory):
 		super().__init__()
 		global logger
 		logger = RegisterLogger("main")
 		self.nodeFactory = factory
-		self.logger = logger
 		self.initUI()
 
 	def initUI(self):

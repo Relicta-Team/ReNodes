@@ -317,6 +317,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         layout = self.getMainLayout()
         from ReNode.ui.VarMgrWidgetTypes.FunctionDef import FunctionDefWidget
 
+        #Описание функции
+        layRet = QHBoxLayout()
+        layout.addLayout(layRet)
+        descTextInfo = QLabel("Описание функции:")
+        descTextInfo.setToolTip("Выводимое описание функции (опционально)")
+        layRet.addWidget(descTextInfo,alignment=Qt.AlignLeft)
+        self.funcitonDescText = QTextEdit()
+        self.funcitonDescText.setPlaceholderText("Описание...")
+        layRet.addWidget(self.funcitonDescText)
 
         # Возаращаемое значение
         layRet = QHBoxLayout()
@@ -333,7 +342,6 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         self.comboButton.loadContents(cont)
         layRet.addWidget(self.comboButton)
         
-        #todo datatype (value, list etc)
 
         self.retDesc = QLineEdit()
         self.retDesc.setPlaceholderText("Описание...")
