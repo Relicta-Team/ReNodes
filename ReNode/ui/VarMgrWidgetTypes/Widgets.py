@@ -55,9 +55,9 @@ class VarMgrBaseWidgetType:
             elif item.layout():
                 self.deleteLayoutWidgets(item.layout())
 
-    def createVariable(self,varname,vargroup):
+    def createVariable(self,varname,vargroup) -> None|bool:
+        """Если эта функция возврщает True то создание переменной было успешно"""
         self.variableManagerRef.showErrorMessageBox(f"Создание для \'{self.categoryObject.categoryTextName}\' не реализовано в текущей версии редактора")
-        return 404
 
     def registerVariable(self,vardict):
         from NodeGraphQt.base.commands import VariableCreatedCommand
@@ -90,6 +90,10 @@ class VarMgrBaseWidgetType:
     def onItemCreated(item:QTreeWidgetItem,variable_id,variable_data):
         """Пост-обработчик создания элемента в дереве. Например, можно установить описание или иконку"""
         return None
+
+    def generateSystemName(self):
+        itm = datetime.datetime.now()
+        return f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
 
 class VarMgrVariableWidget(VarMgrBaseWidgetType):
     def createWidgets(self):
@@ -251,20 +255,22 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         vardict = {
             "name": variable_name,
             "type": var_typename,
-            "datatype": dt.dataType,
+            "datatype": dt.dataType, #TODO remove
             "value": default_value,
             "category": cat_sys_name,
             "group": variable_group,
             #TODO сделать чтобы системные имена генерировались от обычных
             "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
-
-            "reprType": reprType,
-            "reprDataType": str(dt),
+            
+            "reprType": reprType,#todo remove
+            "reprDataType": str(dt),#todo remove
         }
 
         self.registerVariable(vardict)
         # reset value to default
         self.widInitVal.set_value(self._initialValue)
+
+        return True
 
     @staticmethod
     def getVariableMakerVisualInfo(variable_id,variable_data):
@@ -298,16 +304,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         #set description to column 1
         item.setToolTip(1,fulltype)
         
-        varInfo, dt = varmgr.getVarDataByType(fulltype,False)
-
-        if isinstance(varInfo,list):
-            pathes = dt.icon
-            colors = [o__.color for o__ in varInfo]
-            item.setIcon(1,QIcon(generateIconParts(pathes,colors)))
-        else:
-            icn = QIcon(dt.icon)
-            icn = updateIconColor(icn,varInfo.color)
-            item.setIcon(1, icn)
+        item.setIcon(1,varmgr.getIconFromTypename(fulltype))
     
 class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     
@@ -331,26 +328,119 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         retvalText__ = QLabel("Возвращаемое значение:")
         retvalText__.setToolTip("Возвращаемое значение - это то, что будет возвращать функция после своего выполнения")
         layRet.addWidget(retvalText__,alignment=Qt.AlignLeft)
-        self.comboButton = SearchComboButton()
+        self.returnType = SearchComboButton()
         cont = self.getVarMgr().getAllTypesTreeContent()
         if cont:
             newitem = createTreeContentItem("null","Не возвращает значения",QIcon())
             newitem['desc'] = "Функция не будет возвращать никакого значения"
             cont['childs'].insert(0,newitem)
-        self.comboButton.loadContents(cont)
-        layRet.addWidget(self.comboButton)
+        self.returnType.loadContents(cont)
+        __retTypeZone = QWidget()
+        __retTypeLayout = QGridLayout()
+        __retTypeZone.setLayout(__retTypeLayout)
+        layRet.addWidget(__retTypeZone,10)
+        __retTypeLayout.addWidget(self.returnType,0,0)
+
+        #datatype return
+        self.widReturnDataType = QComboBox()
+        for vobj in self.variableManagerRef.variableDataType:
+            icn = None
+            if isinstance(vobj.icon,list):
+                for pat in vobj.icon:
+                    icntemp = QPixmap(pat)
+                    if icn:
+                        icntemp = mergePixmaps(icn,icntemp)
+                    icn = icntemp
+                icn = QIcon(icn)
+            else:
+                icn = QIcon(vobj.icon)
+            self.widReturnDataType.addItem(icn,vobj.text)
+            self.widReturnDataType.setItemData(self.widReturnDataType.count()-1,vobj.dataType,Qt.UserRole)
         
+        __retTypeLayout.addWidget(self.widReturnDataType,0,1)
+
+        self.widValTypes = SearchComboButton()
+        cont = self.getVarMgr().getAllTypesTreeContent()
+        #load content for valuetypes (dict values)
+        if cont:
+            self.widValTypes.loadContents(cont)
+        self.widValTypesLabel = QLabel("Тип значений:")
+        __retTypeLayout.addWidget(self.widValTypesLabel,1,0)
+        __retTypeLayout.addWidget(self.widValTypes,1,1)
+        def onDataTypeChanged():
+            valType = self.returnType.get_value()
+            dataType = self.widReturnDataType.currentData()
+            
+            self.widReturnDataType.setVisible(valType != "null")
+
+            canShowLine2 = dataType == "dict" and valType != "null"
+            self.widValTypes.setVisible(canShowLine2)
+            self.widValTypesLabel.setVisible(canShowLine2)
+        self.widReturnDataType.currentIndexChanged.connect(lambda: onDataTypeChanged())
+        self.returnType.changed_event.connect(lambda: onDataTypeChanged())
+        onDataTypeChanged()
 
         self.retDesc = QLineEdit()
         self.retDesc.setPlaceholderText("Описание...")
         self.retDesc.setToolTip("Описание возвращаемого значения (опционально)")
         layout.addWidget(self.retDesc)
 
-        layout.addWidget(FunctionDefWidget())
+        self.widFunctionParams = FunctionDefWidget()
+        layout.addWidget(self.widFunctionParams)
     
+    def getReturnTypeInfo(self):
+        """Возвращает tuple с полным типом возвращаемого значения и описанием (если указано)"""
+        retType = self.returnType.get_value()
+        retDesc = self.retDesc.text()
+        #no return
+        if retType == "null":
+            return retType,retDesc
+        
+        datatype = self.widReturnDataType.currentData()
+        if datatype != "value":
+            containerType = retType
+            if datatype=='dict':
+                containerType += f",{self.widValTypes.get_value()}"
+            retType = f'{datatype}[{containerType}]'
+
+        return retType,retDesc
+
+    def createVariable(self,varname,vargroup):
+        funcName = varname
+        funcGrp = vargroup
+        funcDesc = self.funcitonDescText.toPlainText()
+        retTypename, retDesc = self.getReturnTypeInfo()
+        funcParamsDict = self.widFunctionParams.getParamInfo()
+        #retType = self.comboButton.get_value()
+
+        sysname = self.generateSystemName()
+
+        funcInfo = {
+            "name":funcName,
+            "group":funcGrp,
+            "desc":funcDesc,
+            "params":funcParamsDict,
+            "returnType":retTypename,
+            "returnDesc":retDesc,
+
+            "systemname": sysname
+        }
+
+        self.registerVariable(funcInfo)
+        return True
+
+    @staticmethod
     def getVariableMakerVisualInfo(variable_id,variable_data):
-        return
+        vmgr = VarMgrBaseWidgetType.getVarMgr()
+        typeNameText = vmgr.getTextTypename(variable_data["returnType"])
+        retT = f'Возвращает: {typeNameText}'
+        paramList = ', '.join([vmgr.getTextTypename(dictInfo['type']) for dictInfo in variable_data["params"]])
+        return [variable_data['name'],retT,"Параметры: " + paramList]
 
     @staticmethod
     def onItemCreated(item:QTreeWidgetItem,variable_id,variable_data):
+        vmgr = VarMgrBaseWidgetType.getVarMgr()
+        item.setIcon(0,QIcon("data\\icons\\icon_BluePrintEditor_Function_16px"))
+
+        item.setIcon(1,vmgr.getIconFromTypename(variable_data["returnType"]))
         pass

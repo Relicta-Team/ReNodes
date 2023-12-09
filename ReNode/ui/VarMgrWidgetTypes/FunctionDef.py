@@ -208,13 +208,24 @@ class FunctionDefWidget(QWidget):
         def get_defVarWid(self):
             return self._group.defValWid
 
-    def getParamInfo(self):
+    def packTypeInfoFromWidgets(self,tp,dtp,optTp2OrValue):
+        retType = tp.get_value()
+        datatype = dtp.currentData()
+        if datatype != "value":
+            containerType = retType
+            if datatype=='dict':
+                assert(isinstance(optTp2OrValue,DictWidget))
+                containerType += f",{optTp2OrValue.selectType.get_value()}"
+            retType = f'{datatype}[{containerType}]'
+
+        return retType
+
+    def getParamInfo(self) -> list[dict]:
         """Получает массив метаданных для создания функции
         
             {
                 "name",
                 "desc",
-                "dataType",
                 "type",
                 "value"
             }
@@ -230,12 +241,13 @@ class FunctionDefWidget(QWidget):
             paramType = grid.paramType.get_value()
             defaultValue = grid.get_defVarWid().get_value()
 
+            typenameFull = self.packTypeInfoFromWidgets(grid.paramType,grid.paramDataType,grid.get_defVarWid())
+
             print(f"{paramDataType}[{paramType}] {paramName} - {paramDesc} = {defaultValue}")
             paramData.append({
                 "name": paramName,
                 "desc": paramDesc,
-                "dataType": paramDataType,
-                "type": paramType,
+                "type": typenameFull,
                 "value": defaultValue
             })
 

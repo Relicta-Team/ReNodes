@@ -339,8 +339,8 @@ class VariableManager(QDockWidget):
                 objectTree = _tempTree
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
-        objTree = fact.getClassAllChildsTree("object")
-        addTreeContentItem(objectTree,objTree)
+        for objTree in fact.getClassAllChildsTree("object")['childs']:
+            addTreeContentItem(objectTree,objTree)
         return treeContent
 
     def variableExists(self, category, name):
@@ -390,7 +390,7 @@ class VariableManager(QDockWidget):
             return
         
         res = curCat.createVariable(variable_name, variable_group)
-        if res != 404:
+        if res == True:
             self.widVarName.clear()
             self.widVarGroup.clear()
 
@@ -400,8 +400,7 @@ class VariableManager(QDockWidget):
     def setupContextMenu(self):
         # Создайте контекстное меню
         self.context_menu = QMenu(self)
-        #TODO rename action, duplicate
-        #self.rename_action = self.context_menu.addAction("Переименовать")
+        #TODO change variable action (вводит все пользовательские данные по формам и кнопка создать заменяется на изменить)
         
         self.change_group_action = self.context_menu.addAction("Изменить группу")
         self.delete_action = self.context_menu.addAction("Удалить переменную")
@@ -742,6 +741,7 @@ class VariableManager(QDockWidget):
         return vRet,dtObj
 
     def getTextTypename(self,fulltypename):
+        """Возвращает репрезентацию типа в русском названии"""
         if fulltypename == "Exec": return "Выполнение"
         if fulltypename == "null": return "Ничего"
         
@@ -762,6 +762,22 @@ class VariableManager(QDockWidget):
                 del obj
         
             return f"{dtName}({', '.join(listVals)})"
+
+    def getIconFromTypename(self,fulltypename):
+        if fulltypename == "Exec": return QIcon()
+        if fulltypename == "null": return QIcon()
+
+        """Возвращает инстанс иконки для типа с нужными цветами"""
+        varInfo, dt = self.getVarDataByType(fulltypename,False)
+
+        if isinstance(varInfo,list):
+            pathes = dt.icon
+            colors = [o__.color for o__ in varInfo]
+            return QIcon(generateIconParts(pathes,colors))
+        else:
+            icn = QIcon(dt.icon)
+            icn = updateIconColor(icn,varInfo.color)
+            return icn
 
     def syncVariableManagerWidget(self):
         self.loadVariables(self.variables,False)
