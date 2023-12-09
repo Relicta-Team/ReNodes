@@ -227,7 +227,7 @@ class VariableManager(QDockWidget):
         self.variableDataType = self._typeData.valueTypeList
 
         self.initUI()
-        #self.setupContextMenu()
+        self.setupContextMenu()
 
     def initUI(self):
         # Создайте центральный виджет для док-зоны
