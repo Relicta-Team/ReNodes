@@ -563,13 +563,18 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         #retType = self.comboButton.get_value()
 
         #check params
+        uniParams = []
         for i, param in enumerate(funcParamsDict):
             if param['name'] == '':
-                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} не имеет имени. Укажите его.")
+                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} должен иметь имя. Укажите его.")
                 return
-            if param['name'] == "nameid":
-                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} не может иметь зарезервированное имя nameid. Укажите другое имя.")
+            if param['name'] in ["nameid","Вход","Выход"]:
+                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} не может иметь зарезервированное имя \"{param['name']}\". Укажите другое имя.")
                 return
+            if param['name'] in uniParams:
+                self.getVarMgr().showErrorMessageBox(f"Имя параметра \"{param['name']}\" уже использовано в параметре {uniParams.index(param['name'])+1}. Укажите другое имя.")
+                return
+            uniParams.append(param['name'])
 
         sysname = self.generateSystemName()
 
