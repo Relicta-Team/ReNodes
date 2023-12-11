@@ -159,6 +159,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             text = f'<span style="font-size: 24pt">{self._lastItem.name} ({className})</span>'
 
             from ReNode.app.application import Application
+            from ReNode.ui.VariableManager import VariableManager
             if Application.isDebugMode():
                 idSearch = self._lastItem.id
                 findedNode = Application.refObject.mainWindow.nodeGraph.graph.get_node_by_id(idSearch)
@@ -172,11 +173,14 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
             text += f'<br/>Описание: {libInfo.get("desc") or "отсутствует"}<br/>'
 
+            #VariableManager.refObject.getVariableDataById()
+
             iTxt = []
             for o in self._lastItem.inputs:
                 desc = libInfo['inputs'].get(o.name)
                 if desc:
                     desc = desc.get("desc",'')
+                # проверка на рантайм описание
                 if desc:
                     desc = ": " + desc
                 else:

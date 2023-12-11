@@ -13,6 +13,7 @@ class VarMgrBaseWidgetType:
         - статчиеский метод onItemCreated
 
         - статическое поле instancerKind для отношения типа действия к классу переменной (getvar->variable.get)
+        - классовый метод onCreateVarFromTree - вызывается при создании переменной в графе
     """
     def __init__(self):
         from ReNode.ui.VariableManager import VariableManager,VariableCategory
@@ -118,9 +119,9 @@ class VarMgrBaseWidgetType:
         """
         raise NotImplementedError()
     
-    @staticmethod
-    def canVisibleCreateVar(ctx):
-        raise NotImplementedError()
+    @classmethod
+    def resolveCreatedNodeName(cls,oldName):
+        return "<b>"+oldName+"</b>"
 
 class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
@@ -399,6 +400,58 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         "deffunc": "function.def",
         "callfunc": "function.call",
     }
+
+    @classmethod
+    def onCreateVarFromTree(cls, fact,lvdata, nodeObj, instancerType):
+        icn = None
+        if instancerType == "deffunc":
+            icn = "data\\icons\\icon_Blueprint_OverrideFunction_16x"
+        else:
+            icn = "data\\icons\\icon_BluePrintEditor_Function_16px"
+
+        nodeObj.set_icon(icn,True)
+
+        varMgr = cls.getVarMgr()
+        isDefineFunc = instancerType == "deffunc"
+        canMulCon = True if isDefineFunc else False
+        for paramDict in lvdata['params']:
+            portClr = varMgr.getColorByType(paramDict['type'])
+            portParams = {
+                "mutliconnect":canMulCon,
+                "display_name":True,
+                "color":portClr,
+                "type":paramDict['type'],
+                "allowtypes":[paramDict['type']],
+                "style":None,
+            }
+            if isDefineFunc:
+                fact.addOutput(nodeObj,paramDict['name'],portParams)
+            else:
+                fact.addInput(nodeObj,paramDict['name'],portParams)
+
+                props = varMgr.getCustomPropsByType(paramDict['type'])
+                for k,v in props.items():
+                    fact.addProperty(nodeObj,k,paramDict['name'],v)
+        
+        if not isDefineFunc and lvdata['returnType'] != "null":
+            
+            #add return value
+            portClr = varMgr.getColorByType(lvdata['returnType'])
+            portParams = {
+                "mutliconnect":False,
+                "display_name":True,
+                "color":portClr,
+                "type":lvdata['returnType'],
+                "allowtypes":[paramDict['type']],
+                "style":None,
+            }
+            fact.addOutput(nodeObj,"Результат",portParams)
+
+        return True
+
+    @classmethod
+    def resolveCreatedNodeName(cls,oldName):
+        return oldName
 
     def createWidgets(self):
         layout = self.getMainLayout()

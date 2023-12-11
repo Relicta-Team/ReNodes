@@ -562,21 +562,33 @@ class VariableManager(QDockWidget):
 
             hstack.endMacro()
 
-    def _updateNodeSync(self,nodeObj:RuntimeNode,id,getorset):
+    def _updateNodeSync(self,nodeObj:RuntimeNode,id,nodeClassname):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
-        varInfo,varDt = self.getVarDataByType(lvdata['type'])
-        if "set" == getorset and varDt.dataType == 'value':
-            props = varInfo.dictProp
-            for k,v in props.items():
-                fact.addProperty(nodeObj,k,lvdata['name'],v)
-        pass
+        catObj = self.getVariableCategoryById(id,retObject=True)
+        if catObj:
+            catObjInstancer:VarMgrBaseWidgetType = catObj.instancer
+            instancerType = None
+            for k,v in catObjInstancer.instancerKind.items():
+                if nodeClassname == v:
+                    instancerType = k
+                    break
+            if instancerType:
+                catObjInstancer.onCreateVarFromTree(fact,lvdata,nodeObj,instancerType)
+            
+
+        # varInfo,varDt = self.getVarDataByType(lvdata['type'])
+        # if "set" == getorset and varDt.dataType == 'value':
+        #     props = varInfo.dictProp
+        #     for k,v in props.items():
+        #         fact.addProperty(nodeObj,k,lvdata['name'],v)
+        # pass
         
 
-    def _updateNode(self,nodeObj:RuntimeNode,id,getorset,catObjInstancer):
+    def _updateNode(self,nodeObj:RuntimeNode,id,instancerType,catObjInstancer):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
         if not lvdata:
@@ -585,13 +597,14 @@ class VariableManager(QDockWidget):
         _class = nodeObj.nodeClass
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         cfg = fact.getNodeLibData(_class)
-        nodeObj.set_property('name',f'{cfg["name"].format("<b>"+lvdata["name"]+"</b>")}',False,
-            doNotRename=True)
+        nodeObj.set_property('name',cfg["name"].format(
+            catObjInstancer.resolveCreatedNodeName(lvdata["name"])
+        ),False,doNotRename=True)
         nodeObj.set_property('nameid',id,False)
 
         nodeObj.set_port_deletion_allowed(True)
 
-        catObjInstancer.onCreateVarFromTree(fact,lvdata,nodeObj,getorset)
+        catObjInstancer.onCreateVarFromTree(fact,lvdata,nodeObj,instancerType)
 
         nodeObj.update()
         pass
@@ -728,6 +741,30 @@ class VariableManager(QDockWidget):
             icn = QIcon(dt.icon)
             icn = updateIconColor(icn,varInfo.color)
             return icn
+
+    def getColorByType(self,fulltypename):
+        if fulltypename == "null": return [255,255,255,255]
+        if fulltypename == "Exec": return [255,255,255,255]
+        varInfo, dt = self.getVarDataByType(fulltypename,False)
+        color = None
+        if isinstance(varInfo,list):
+            color = varInfo[0].color
+        else:
+            color = varInfo.color
+        return [*color.getRgb()]
+    
+    def getCustomPropsByType(self,fulltypename):
+        """Получает пользовательское свойство по типу (для инпут портов)"""
+        if fulltypename == "null": return {}
+        if fulltypename == "Exec": return {}
+        varInfo, dt = self.getVarDataByType(fulltypename,False)
+        prtInfo = None
+        if isinstance(varInfo,list):
+            prtInfo = varInfo[0].dictProp
+        else:
+            prtInfo = varInfo.dictProp
+
+        return prtInfo
 
     def syncVariableManagerWidget(self):
         self.loadVariables(self.variables,False)
