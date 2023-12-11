@@ -576,14 +576,12 @@ class VariableManager(QDockWidget):
         pass
         
 
-    def _updateNode(self,nodeObj:RuntimeNode,id,getorset):
+    def _updateNode(self,nodeObj:RuntimeNode,id,getorset,catObjInstancer):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
-        #varInfo,varDt = self._getVarDataByRepr(lvdata['reprType'],lvdata['reprDataType'])
-        varInfo,varDt = self.getVarDataByType(lvdata['type'])
-        
+                
         _class = nodeObj.nodeClass
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         cfg = fact.getNodeLibData(_class)
@@ -593,55 +591,7 @@ class VariableManager(QDockWidget):
 
         nodeObj.set_port_deletion_allowed(True)
 
-        portColor = None
-
-        #setup partial icon with color support
-        kvdat = []
-        if isinstance(varInfo,list):
-            for i,varInfoElement in enumerate(varInfo):
-                if i==0:
-                    portColor = [*varInfoElement.color.getRgb()]
-                kvdat.append(varDt.icon[i])
-                kvdat.append(varInfoElement.color)
-        else:
-            kvdat = [varDt.icon,varInfo.color]
-            portColor = [*varInfo.color.getRgb()]
-        nodeObj.update_icon_parts(kvdat,False)
-
-        if "set" == getorset and varDt.dataType == 'value':
-            props = varInfo.dictProp
-            for k,v in props.items():
-                fact.addProperty(nodeObj,k,lvdata['name'],v)
-
-        vardict = None
-        realType = lvdata['type']
-        if "set" == getorset:
-            vardict = {
-                "type":realType, #varInfo.variableType
-                "allowtypes":[realType],
-                #"color":[255,0,0,255],
-                "color": portColor,
-                "display_name":True,
-                "mutliconnect":False,
-                "style":None,
-            }
-            fact.addInput(nodeObj,lvdata['name'],vardict)
-
-            #Adding output with multiconnect
-            vardict = vardict.copy()
-            vardict["mutliconnect"] = True
-            fact.addOutput(nodeObj,lvdata['name'],vardict)
-        else:
-            vardict = {
-                "type":realType,
-                "allowtypes":[realType],
-                #"color":[255,0,0,255],
-                "color": portColor,
-                "display_name":True,
-                "mutliconnect":False,
-                "style":None,
-            }
-            fact.addOutput(nodeObj,"Значение",vardict)
+        catObjInstancer.onCreateVarFromTree(fact,lvdata,nodeObj,getorset)
 
         nodeObj.update()
         pass
@@ -851,3 +801,13 @@ class VariableManager(QDockWidget):
         
         del dictGroup
         self.widVarTree.expandAll()
+
+    def getVariableCategoryById(self,idvar,retObject=False):
+        """Получает категорию переменной по айди"""
+        for cat,items in self.variables.items():
+            if idvar in items:
+                if retObject:
+                    return self.getVariableCategoryByType(cat)
+                else:
+                    return cat
+        return None

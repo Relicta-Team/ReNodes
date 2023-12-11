@@ -163,7 +163,7 @@ class NodeGraphMenu(object):
 
 class ContextMenu(NodeGraphMenu):
     
-    def add_command(self, name, func=None, shortcut=None,actionKind = ""):
+    def add_command(self, name, func=None, shortcut=None,actionKind = "",condition=None,actionContext=None):
         """
         Adds a command to the context menu.
 
@@ -171,6 +171,8 @@ class ContextMenu(NodeGraphMenu):
             name (str): command name.
             func (function): command function eg. "func(``graph``)".
             shortcut (str): shortcut key.
+            condition (function): функция для проверки условия видимости действия. Параметры: context(dict)
+            actionContext: собственный контекст для действия (Any)
 
         Returns:
             NodeGraphQt.NodeGraphCommand: the appended command.
@@ -179,6 +181,9 @@ class ContextMenu(NodeGraphMenu):
         action.graph = self._graph
         action.actionKind = actionKind
         action.optionalFormatter = name
+        action.actionCtx = actionContext
+        if condition and callable(condition):
+            action.conditionVisible = condition
         if LooseVersion(QtCore.qVersion()) >= LooseVersion('5.10'):
             action.setShortcutVisibleInContextMenu(True)
 
@@ -194,6 +199,12 @@ class ContextMenu(NodeGraphMenu):
     
     def prepareActions(self,cat,ctx,fmtText=""):
         for act in self.qmenu.actions():
+            func_condition = act.conditionVisible
+            if func_condition and callable(func_condition):
+                if not func_condition(ctx):
+                    act.setVisible(False)
+                    continue
+            
             act.setVisible(cat == act.actionKind)
             act.actionType = cat
             act.contextData = ctx

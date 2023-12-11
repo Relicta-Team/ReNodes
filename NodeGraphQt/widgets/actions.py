@@ -112,10 +112,15 @@ class ContextAction(QtWidgets.QAction):
         self.contextData = {}
         self.actionKind = ""
         self.optionalFormatter = ""
+        self.conditionVisible = None
+        self.actionCtx = None
         self.triggered.connect(self._on_triggered)
 
     def _on_triggered(self):
-        self.executed.emit(self.actionType,self.contextData,self.graph)
+        from copy import deepcopy
+        ctx = deepcopy(self.contextData)
+        ctx['actionCtx'] = self.actionCtx
+        self.executed.emit(self.actionType,ctx,self.graph)
 
     #! non-used
     def get_action(self, name):

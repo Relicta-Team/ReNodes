@@ -333,20 +333,42 @@ class NodeGraphComponent:
 		# ------------ context menu ------------
 		def __coyvar(actType,ctxDataMap,graph):
 			print(f'{actType}:{ctxDataMap}; {graph}')
+
+		def __createVar__(actType,ctxDataMap,graph):
+			if not actType == "addVariable": return
+			idvar = ctxDataMap["id"]
+			pos = ctxDataMap['pos']
+			type = ctxDataMap['actionCtx']
+			self.createVariableIntoScene(type,idvar,pos)
+
 		def __getvar(actType,ctxDataMap,graph):
+			#TODO delete
 			if not actType == "addVariable": return
 			idvar = ctxDataMap["id"]
 			#nodeSystem :NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
 			self.addVariableToScene("get",idvar,ctxDataMap['pos'])
 		def __setvar(actType,ctxDataMap,graph):
+			#todo delete
 			if not actType == "addVariable": return
 			idvar = ctxDataMap["id"]
 			#nodeSystem : NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
 			self.addVariableToScene("set",idvar,ctxDataMap['pos'])
-		cmd = ctxmenu.add_command("Получить \"{}\"",func=__getvar,actionKind="addVariable")
+		
+		def __canViewActionVar__(ctxDataMap,checkvalue):
+			idvar = ctxDataMap['id']
+			catobj = self.variable_manager.getVariableCategoryById(idvar)
+			if not catobj: return False
+			return catobj.endswith(checkvalue)
+
+		cmd = ctxmenu.add_command("Получить \"{}\"",actionContext="getvar",func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"var"))
 		cmd.set_icon("data\\icons\\FIB_VarGet.png")
-		cmd = ctxmenu.add_command("Установить \"{}\"",func=__setvar,actionKind="addVariable")
+		cmd = ctxmenu.add_command("Установить \"{}\"",actionContext='setvar',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"var"))
 		cmd.set_icon("data\\icons\\FIB_VarSet.png")
+		#todo видимость функции доступна только если в графе нет определения
+		cmd = ctxmenu.add_command("Определение \"{}\"",actionContext='deffunc',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"func"))
+		cmd.set_icon("data\\icons\\icon_Blueprint_OverrideFunction_16x.png")
+		cmd = ctxmenu.add_command("Вызвать \"{}\"",actionContext='callfunc',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"func"))
+		cmd.set_icon("data\\icons\\icon_BluePrintEditor_Function_16px.png")
 
 		
 		cmd = ctxmenu.add_command("TEST",func=__coyvar,actionKind="unk")
@@ -456,6 +478,29 @@ class NodeGraphComponent:
 		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)
 		self.graph.undo_view.blockSignals(True)
 		self.variable_manager._updateNode(nodeObj,varid,getorset)
+		self.graph.undo_view.blockSignals(False)
+		pass
+
+	def createVariableIntoScene(self,instanceType,varid,pos):
+		"""
+			Создание переменной в графе
+			instancerType - getvar,setvar,deffunc,callfunc
+		"""
+		from ReNode.app.application import Application
+		from ReNode.ui.VarMgrWidgetTypes.Widgets import VarMgrBaseWidgetType
+		catObj = self.variable_manager.getVariableCategoryById(varid,retObject=True)
+		if not catObj:
+			Application.refObject.logger.error(f'Cannot find variable category for \'{varid}\'')
+			return
+		catObjInstancer:VarMgrBaseWidgetType = catObj.instancer
+		typename = catObjInstancer.getVariableInstancerClassName(instanceType)
+		if not typename:
+			Application.refObject.logger.error(f'Cannot find variable instancer for \'{instanceType}\'')
+			return
+
+		nodeObj = self.nodeFactory.instance(typename,self.graph,pos)
+		self.graph.undo_view.blockSignals(True)
+		self.variable_manager._updateNode(nodeObj,varid,instanceType,catObjInstancer)
 		self.graph.undo_view.blockSignals(False)
 		pass
 

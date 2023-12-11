@@ -11,6 +11,8 @@ class VarMgrBaseWidgetType:
         - createWidgets
         - статический метод getVariableMakerVisualInfo
         - статчиеский метод onItemCreated
+
+        - статическое поле instancerKind для отношения типа действия к классу переменной (getvar->variable.get)
     """
     def __init__(self):
         from ReNode.ui.VariableManager import VariableManager,VariableCategory
@@ -95,7 +97,92 @@ class VarMgrBaseWidgetType:
         itm = datetime.datetime.now()
         return f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
 
+
+    instancerKind = {
+        "unknown":"noclass"
+    }
+    """Переопределяемый тип отношения типа действия к создаваемому классу переменной"""
+
+    @classmethod
+    def getVariableInstancerClassName(cls,instancerType):
+        """Возвращает имя инстансера для переменной (не переопределяемый)"""
+        return cls.instancerKind.get(instancerType)
+
+    @classmethod
+    def onCreateVarFromTree(cls,fact,lvdata,nodeObj,instancerType):
+        """Обработчик созданной переменной в графе:
+            - fact - ссылка на факторию переменных
+            - lvdata - словарь переменной. Содержит все данные, необходимые для создания
+            - nodeObj - созданной узел
+            - instancerType - тип инстансера (getvar,callfunc, etc...)
+        """
+        raise NotImplementedError()
+    
+    @staticmethod
+    def canVisibleCreateVar(ctx):
+        raise NotImplementedError()
+
 class VarMgrVariableWidget(VarMgrBaseWidgetType):
+
+    instancerKind = {
+        "getvar": "variable.get",
+        "setvar": "variable.set",
+    }
+
+    @classmethod
+    def onCreateVarFromTree(cls, fact,lvdata, nodeObj, instancerType):
+
+        varInfo,varDt = cls.getVarMgr().getVarDataByType(lvdata['type'])
+        portColor = None
+
+        #setup partial icon with color support
+        kvdat = []
+        if isinstance(varInfo,list):
+            for i,varInfoElement in enumerate(varInfo):
+                if i==0:
+                    portColor = [*varInfoElement.color.getRgb()]
+                kvdat.append(varDt.icon[i])
+                kvdat.append(varInfoElement.color)
+        else:
+            kvdat = [varDt.icon,varInfo.color]
+            portColor = [*varInfo.color.getRgb()]
+        nodeObj.update_icon_parts(kvdat,False)
+
+        if "setvar" == instancerType and varDt.dataType == 'value':
+            props = varInfo.dictProp
+            for k,v in props.items():
+                fact.addProperty(nodeObj,k,lvdata['name'],v)
+
+        vardict = None
+        realType = lvdata['type']
+        if "setvar" == instancerType:
+            vardict = {
+                "type":realType, #varInfo.variableType
+                "allowtypes":[realType],
+                #"color":[255,0,0,255],
+                "color": portColor,
+                "display_name":True,
+                "mutliconnect":False,
+                "style":None,
+            }
+            fact.addInput(nodeObj,lvdata['name'],vardict)
+
+            #Adding output with multiconnect
+            vardict = vardict.copy()
+            vardict["mutliconnect"] = True
+            fact.addOutput(nodeObj,lvdata['name'],vardict)
+        else:
+            vardict = {
+                "type":realType,
+                "allowtypes":[realType],
+                #"color":[255,0,0,255],
+                "color": portColor,
+                "display_name":True,
+                "mutliconnect":False,
+                "style":None,
+            }
+            fact.addOutput(nodeObj,"Значение",vardict)
+
     def createWidgets(self):
         layout : QVBoxLayout = self.layout
 
@@ -308,6 +395,11 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
     
 class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     
+    instancerKind = {
+        "deffunc": "function.def",
+        "callfunc": "function.call",
+    }
+
     def createWidgets(self):
         layout = self.getMainLayout()
         from ReNode.ui.VarMgrWidgetTypes.FunctionDef import FunctionDefWidget
