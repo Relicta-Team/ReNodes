@@ -578,14 +578,6 @@ class VariableManager(QDockWidget):
                     break
             if instancerType:
                 catObjInstancer.onCreateVarFromTree(fact,lvdata,nodeObj,instancerType)
-            
-
-        # varInfo,varDt = self.getVarDataByType(lvdata['type'])
-        # if "set" == getorset and varDt.dataType == 'value':
-        #     props = varInfo.dictProp
-        #     for k,v in props.items():
-        #         fact.addProperty(nodeObj,k,lvdata['name'],v)
-        # pass
         
 
     def _updateNode(self,nodeObj:RuntimeNode,id,instancerType,catObjInstancer):
