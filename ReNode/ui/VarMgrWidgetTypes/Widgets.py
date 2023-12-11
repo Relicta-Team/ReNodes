@@ -291,6 +291,10 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         default_value = self.widInitVal.get_value()
         varMgr = self.variableManagerRef
 
+        if variable_name == "nameid":
+            self.getVarMgr().showErrorMessageBox("Имя переменной не может быть 'nameid'")
+            return
+
         varInfo = varMgr.getVariableTypedefByType(variable_type)
 
         if not varInfo:
@@ -409,7 +413,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         else:
             icn = "data\\icons\\icon_BluePrintEditor_Function_16px"
 
-        nodeObj.set_icon(icn,True)
+        nodeObj.set_icon(icn,False)
 
         varMgr = cls.getVarMgr()
         isDefineFunc = instancerType == "deffunc"
@@ -557,6 +561,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         retTypename, retDesc = self.getReturnTypeInfo()
         funcParamsDict = self.widFunctionParams.getParamInfo()
         #retType = self.comboButton.get_value()
+
+        #check params
+        for i, param in enumerate(funcParamsDict):
+            if param['name'] == '':
+                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} не имеет имени. Укажите его.")
+                return
+            if param['name'] == "nameid":
+                self.getVarMgr().showErrorMessageBox(f"Параметр {i+1} не может иметь зарезервированное имя nameid. Укажите другое имя.")
+                return
 
         sysname = self.generateSystemName()
 

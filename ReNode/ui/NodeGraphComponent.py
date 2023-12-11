@@ -340,22 +340,20 @@ class NodeGraphComponent:
 			pos = ctxDataMap['pos']
 			type = ctxDataMap['actionCtx']
 			self.createVariableIntoScene(type,idvar,pos)
-
-		def __getvar(actType,ctxDataMap,graph):
-			#TODO delete
-			if not actType == "addVariable": return
-			idvar = ctxDataMap["id"]
-			#nodeSystem :NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
-			self.addVariableToScene("get",idvar,ctxDataMap['pos'])
-		def __setvar(actType,ctxDataMap,graph):
-			#todo delete
-			if not actType == "addVariable": return
-			idvar = ctxDataMap["id"]
-			#nodeSystem : NodeGraphComponent = graph._viewer._tabSearch.nodeGraphComponent
-			self.addVariableToScene("set",idvar,ctxDataMap['pos'])
 		
 		def __canViewActionVar__(ctxDataMap,checkvalue):
 			idvar = ctxDataMap['id']
+			catobj = self.variable_manager.getVariableCategoryById(idvar)
+			if not catobj: return False
+			return catobj.endswith(checkvalue)
+
+		def __cavViewFunctionDefActionVar__(ctxDataMap,checkvalue):
+			# определение будет видно только если в графе ещё нет определения этой функции
+			idvar = ctxDataMap['id']
+			allFuncs = self.graph.get_nodes_by_class("function.def")
+			for node in allFuncs:
+				if node.get_property("nameid") == idvar:
+					return False
 			catobj = self.variable_manager.getVariableCategoryById(idvar)
 			if not catobj: return False
 			return catobj.endswith(checkvalue)
@@ -364,8 +362,7 @@ class NodeGraphComponent:
 		cmd.set_icon("data\\icons\\FIB_VarGet.png")
 		cmd = ctxmenu.add_command("Установить \"{}\"",actionContext='setvar',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"var"))
 		cmd.set_icon("data\\icons\\FIB_VarSet.png")
-		#todo видимость функции доступна только если в графе нет определения
-		cmd = ctxmenu.add_command("Определение \"{}\"",actionContext='deffunc',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"func"))
+		cmd = ctxmenu.add_command("Определение \"{}\"",actionContext='deffunc',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__cavViewFunctionDefActionVar__(ctxDataMap,"func"))
 		cmd.set_icon("data\\icons\\icon_Blueprint_OverrideFunction_16x.png")
 		cmd = ctxmenu.add_command("Вызвать \"{}\"",actionContext='callfunc',func=__createVar__,actionKind="addVariable",condition=lambda ctxDataMap:__canViewActionVar__(ctxDataMap,"func"))
 		cmd.set_icon("data\\icons\\icon_BluePrintEditor_Function_16px.png")

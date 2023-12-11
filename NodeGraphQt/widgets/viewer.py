@@ -742,13 +742,20 @@ class NodeViewer(QtWidgets.QGraphicsView):
         if event.source() and isinstance(event.source(),QtWidgets.QTreeWidget):
             if event.source().objectName() == 'VariableManager.tree':
                 from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-                menu = self.context_menus()['context']
-                menu.setEnabled(True)
+                
                 curitem = event.source().currentItem()
                 varid = curitem.data(0,QtCore.Qt.UserRole)
                 contextData = {'id':varid,'pos':[pos.x(),pos.y()]}
                 graphRef = NodeGraphComponent.refObject.graph
-                graphRef.get_context_menu('context').prepareActions("addVariable",contextData,fmtText=curitem.text(0))
+                actList = graphRef.get_context_menu('context').prepareActions("addVariable",contextData,fmtText=curitem.text(0))
+                
+                if len(actList) == 1:
+                    actList[0]._on_triggered()
+                    return
+
+                menu = self.context_menus()['context']
+                menu.setEnabled(True)
+                
                 menu.exec_(QtGui.QCursor.pos())
                 return
             txt = event.source().currentItem().data(0,QtCore.Qt.UserRole)

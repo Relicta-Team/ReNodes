@@ -182,6 +182,7 @@ class ContextMenu(NodeGraphMenu):
         action.actionKind = actionKind
         action.optionalFormatter = name
         action.actionCtx = actionContext
+        
         if condition and callable(condition):
             action.conditionVisible = condition
         if LooseVersion(QtCore.qVersion()) >= LooseVersion('5.10'):
@@ -198,6 +199,7 @@ class ContextMenu(NodeGraphMenu):
         return command
     
     def prepareActions(self,cat,ctx,fmtText=""):
+        acts = []
         for act in self.qmenu.actions():
             func_condition = act.conditionVisible
             if func_condition and callable(func_condition):
@@ -209,6 +211,10 @@ class ContextMenu(NodeGraphMenu):
             act.actionType = cat
             act.contextData = ctx
             act.setText(act.optionalFormatter.format(fmtText))
+            if act.isVisible():
+                acts.append(act)
+        
+        return acts
 
 class NodesMenu(NodeGraphMenu):
     """
