@@ -109,6 +109,22 @@ def:node:variable
 	option:"nameid"\: {"type"\: "hidden"}	
 	exec:all
 
+def:node:function
+   node:def
+   name:Определить {}
+   libvisible:0
+   code:RUNTIME
+   option:"nameid"\: {"type"\: "hidden"}	
+	exec:out
+
+def:node:function
+   node:call
+   name:{}
+   libvisible:0
+   code:RUNTIME
+   option:"nameid"\: {"type"\: "hidden"}	
+	exec:all
+
 def:node:control
    node:return
    name:Вернуть значение
