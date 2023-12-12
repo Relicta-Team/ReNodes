@@ -240,8 +240,10 @@ class GraphTypeBase:
             connInp = nodeObject.getConnectionInputs()
             usedExec = False
             lastExec = ""
+            hasExec = False
             for k,v in libOuts.items():
                 if v.get('type')=="Exec":
+                    hasExec = True
                     if not lastExec: lastExec = k   
                     conId = connInp.get(k)
                     if conId:
@@ -253,7 +255,8 @@ class GraphTypeBase:
                     raise Exception("Unsupported rule: Entry node not overriden")
                 else:
                     #if nodeObject.visitedExecFlow:
-                    cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
+                    if hasExec:
+                        cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
 
 class ClassGraphType(GraphTypeBase):
 

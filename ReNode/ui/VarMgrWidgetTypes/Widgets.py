@@ -433,7 +433,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         if nodeColor: nodeObj.set_color(*nodeColor)
 
         varMgr = cls.getVarMgr()
-        isPureFunc = lvdata.get("pure")
+        isPureFunc = lvdata.get("isPure")
         canMulCon = True if isDefineFunc else False
         for paramDict in lvdata['params']:
             portClr = varMgr.getColorByType(paramDict['type'])
@@ -468,7 +468,13 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             }
             fact.addOutput(nodeObj,"Результат",portParams)
 
-        if isPureFunc:
+        if isPureFunc and not isDefineFunc:
+            fInp = nodeObj.get_input(0)
+            if fInp and fInp.view.port_typeName == "Exec":
+                nodeObj.delete_input(fInp)
+            fOut = nodeObj.get_output(0)
+            if fOut and fOut.view.port_typeName == "Exec":
+                nodeObj.delete_output(fOut)
             pass
 
         return True

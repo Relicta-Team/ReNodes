@@ -1871,13 +1871,14 @@ class NodeGraph(QtCore.QObject):
             if node:
                 node.NODE_NAME = n_data.get('name', node.NODE_NAME)
                 
-                if n_data.get('custom',{}).get('nameid'):
-                    nodeSystem.variable_manager._updateNodeSync(node,n_data.get('custom',{}).get('nameid'),nodeType)
-                
                 # set properties.
                 for prop in node.model.properties.keys():
                     if prop in n_data.keys():
                         node.model.set_property(prop, n_data[prop])
+                
+                if n_data.get('custom',{}).get('nameid'):
+                    nodeSystem.variable_manager._updateNodeSync(node,n_data.get('custom',{}).get('nameid'),nodeType)
+
                 # set custom properties.
                 for prop, val in n_data.get('custom', {}).items():
                     node.model.set_property(prop, val)

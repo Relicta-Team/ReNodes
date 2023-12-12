@@ -988,22 +988,29 @@ class CodeGenerator:
             code = "func(@thisName) {@thisParams; @out.1};"
             return code
         else:
-            code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\"); @out.1"
+            code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
             params = ['this']
             for i, (k,v) in enumerate(optObj.classLibData['inputs'].items()):
                 if v['type']=="Exec": continue
                 params.append(f"@in.{i+1}")
             code = code.format(', '.join(params))
-            
+
+            isPure = data.get("isPure")
+
+            if isPure:
+                code = f"({code})"
+            else:
+                code = code + "; @out.1"
+
             #copypaste from libgenerator.py -> generateMethodCodeCall
             returnId = -1
-            if optObj.classLibData.get('returnType') not in ['void','null','']:
+            if optObj.classLibData.get('returnType') not in ['void','null',''] and not isPure:
                 for i, (k,v) in enumerate(optObj.classLibData['outputs'].items()):
                     if v['type'] != "Exec" and v['type'] == optObj.classLibData.get('returnType'):
                         returnId = i+1
                         break
             if returnId >= 0:
-                code = f'@genvar.out.{returnId} = {code}'
+                code = f'private @genvar.out.{returnId} = {code}'
 
             code = self.prepareMemberCode(optObj.classLibData,code)
             return code
