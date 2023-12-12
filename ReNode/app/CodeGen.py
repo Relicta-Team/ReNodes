@@ -110,11 +110,19 @@ class CodeGenerator:
             return
         
         self.serialized_graph = layout_data
+        #removing backdrops
+        delIdList = []
+        for name,node in layout_data['nodes'].items():
+            if 'internal.backdrop' == node['class_']:
+                delIdList.append(name)
+        for name in delIdList:
+            del layout_data['nodes'][name]
 
         entrys = self.getAllEntryPoints()
         if not entrys:
             self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
             return
+        self.entryIdList = entrys #лист для валидации точек входа
         
         self.isGenerating = True
 
@@ -535,6 +543,13 @@ class CodeGenerator:
         readyCount = 0
         hasAnyChanges = True # true for enter
         iteration = 0
+
+        # Проверка на присутствие использования одних точек входа в других
+        for ent in self.entryIdList:
+            if ent in topological_order[1:]:
+                self.exception(CGEntryCrossCompileException,source=codeInfo[ent],entry=codeInfo[entryId])
+                hasAnyChanges = False
+                break
 
         self.gObjType.handlePreStartEntry(codeInfo[entryId],self.gObjMeta)
 
@@ -973,12 +988,23 @@ class CodeGenerator:
             code = "func(@thisName) {@thisParams; @out.1};"
             return code
         else:
-            code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
+            code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\"); @out.1"
             params = ['this']
             for i, (k,v) in enumerate(optObj.classLibData['inputs'].items()):
                 if v['type']=="Exec": continue
                 params.append(f"@in.{i+1}")
             code = code.format(', '.join(params))
+            
+            #copypaste from libgenerator.py -> generateMethodCodeCall
+            returnId = -1
+            if optObj.classLibData.get('returnType') not in ['void','null','']:
+                for i, (k,v) in enumerate(optObj.classLibData['outputs'].items()):
+                    if v['type'] != "Exec" and v['type'] == optObj.classLibData.get('returnType'):
+                        returnId = i+1
+                        break
+            if returnId >= 0:
+                code = f'@genvar.out.{returnId} = {code}'
+
             code = self.prepareMemberCode(optObj.classLibData,code)
             return code
 
@@ -1028,7 +1054,9 @@ class CodeGenerator:
 
     def _resetNodesError(self):
         for node_id in self.serialized_graph['nodes'].keys():
-            self.graphsys.graph.get_node_by_id(node_id).resetError()
+            node = self.graphsys.graph.get_node_by_id(node_id)
+            if hasattr(node, 'resetError'):
+                node.resetError()
 
     def findNodesByClass(self, class_to_find):
         node_ids = []
@@ -1059,6 +1087,7 @@ class CodeGenerator:
     def updateValueDataForType(self,value,tname):
         if value is None: return "null"
         if value == "NULL": return value
+        if value == "this": return value
         if not tname: return value
 
         vObj,dtObj = self.getVariableManager().getVarDataByType(tname)

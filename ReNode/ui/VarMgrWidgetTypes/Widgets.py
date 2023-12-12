@@ -433,7 +433,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         if nodeColor: nodeObj.set_color(*nodeColor)
 
         varMgr = cls.getVarMgr()
-        
+        isPureFunc = lvdata.get("pure")
         canMulCon = True if isDefineFunc else False
         for paramDict in lvdata['params']:
             portClr = varMgr.getColorByType(paramDict['type'])
@@ -468,6 +468,9 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             }
             fact.addOutput(nodeObj,"Результат",portParams)
 
+        if isPureFunc:
+            pass
+
         return True
 
     @classmethod
@@ -487,6 +490,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         self.funcitonDescText = QTextEdit()
         self.funcitonDescText.setPlaceholderText("Описание...")
         layRet.addWidget(self.funcitonDescText)
+
+        #pure function flag
+        layRet = QHBoxLayout()
+        layout.addLayout(layRet)
+        pureFuncText__ = QLabel("Чистая функция:")
+        pureFuncText__.setToolTip("Флаг, показывающий, что функция чистая.\nЧистые функции не изменяют целевой объект и вызываются для каждого подключенного узла.")
+        layRet.addWidget(pureFuncText__,alignment=Qt.AlignLeft)
+        self.pureFuncFlag = QCheckBox()
+        layRet.addWidget(self.pureFuncFlag)
 
         # Возаращаемое значение
         layRet = QHBoxLayout()
@@ -577,6 +589,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         funcDesc = self.funcitonDescText.toPlainText()
         retTypename, retDesc = self.getReturnTypeInfo()
         funcParamsDict = self.widFunctionParams.getParamInfo()
+        isPureFunc = self.pureFuncFlag.isChecked()
         #retType = self.comboButton.get_value()
 
         #check params
@@ -600,6 +613,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             "group":funcGrp,
             "desc":funcDesc,
             "params":funcParamsDict,
+            'isPure': isPureFunc,
             "returnType":retTypename,
             "returnDesc":retDesc,
 

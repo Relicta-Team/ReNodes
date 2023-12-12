@@ -228,6 +228,13 @@ class GraphTypeBase:
             При вызове этого метода внутри объекта узла уже содержится актуальный код
         """
         cgObj : CodeGenerator = metaObj.get('codegen')
+        
+        # подготовка метода
+        if "classInfo" in nodeObject.classLibData:
+            mtype = nodeObject.classLibData['classInfo']['type']
+            if mtype == 'method':
+                nodeObject.code = cgObj.prepareMemberCode(nodeObject.classLibData,nodeObject.code)
+
         libOuts = nodeObject.classLibData['inputs']
         if libOuts:
             connInp = nodeObject.getConnectionInputs()

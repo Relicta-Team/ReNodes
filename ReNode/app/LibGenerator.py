@@ -240,10 +240,18 @@ class NodeObjectHandler:
 		
 		paramString = ", ".join(addingParams)
 		#if paramString: paramString = ", " + paramString
-		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
+		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\"); @out.1"
 		
 		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
-		#if self.memberData.get('returnType') not in ['void','null','']:
+		returnId = -1
+		if self.memberData.get('returnType') not in ['void','null','']:
+			for i, (k,v) in enumerate(self['outputs'].items()):
+				if v['type'] != "Exec" and v['type'] == self.memberData.get('returnType'):
+					returnId = i+1
+					break
+		if returnId >= 0:
+			code = f'@genvar.out.{returnId} = {code}'
+
 		#	code = f'@genvar.out.2 = {code}; @locvar.out.2'
 		return code
 
