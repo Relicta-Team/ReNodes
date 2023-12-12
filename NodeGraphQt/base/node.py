@@ -284,7 +284,7 @@ class NodeObject(object):
         r, g, b, a = self.model.color
         return r, g, b
 
-    def set_color(self, r=0, g=0, b=0):
+    def set_color(self, r=0, g=0, b=0,a=0): #Yoabs: added alpha channel
         """
         Sets the color of the node in (red, green, blue) value.
 
