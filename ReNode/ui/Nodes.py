@@ -103,6 +103,8 @@ class RuntimeNode(BaseNode):
 			return dataType == typeinfo[0]
 
 		if getter == '@type':
+			if dataType == "ANY" and typeinfo[0] == dataType:
+				return typeinfo[1] #тип значения редиректится в первый элемент типа
 			return sourceType
 		elif getter == '@typeref':
 			return typeinfo[0]
