@@ -541,7 +541,7 @@ class VariableManager(QDockWidget):
             # Получите категорию переменной из имени элемента
             vardata = self.getVariableDataById(variable_system_name)
             if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
-            category = vardata['category']
+            category = self.getVariableCategoryById(variable_system_name,retObject=False)
             hstack = self.getUndoStack()
 
             canDeleteVariable =  category in self.variables and variable_system_name in self.variables[category]
@@ -591,8 +591,8 @@ class VariableManager(QDockWidget):
         cfg = fact.getNodeLibData(_class)
         nodeObj.set_property('name',cfg["name"].format(
             catObjInstancer.resolveCreatedNodeName(lvdata["name"])
-        ),False,doNotRename=True)
-        nodeObj.set_property('nameid',id,False)
+        ),True,doNotRename=True)
+        nodeObj.set_property('nameid',id,True)
 
         nodeObj.set_port_deletion_allowed(True)
 
@@ -796,6 +796,9 @@ class VariableManager(QDockWidget):
             catObj = self.getVariableCategoryByType(category)
             if not catObj:
                 raise Exception(f"Неизвестная категория для создания переменной: {category}")
+            
+            if not variables: continue #переменных в категории нет
+
             category_item = QTreeWidgetItem([catObj.categoryTreeTextName])
             category_item.setFlags(category_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsDragEnabled)
             self.widVarTree.addTopLevelItem(category_item)

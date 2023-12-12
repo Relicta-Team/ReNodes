@@ -494,11 +494,15 @@ class NodeGraphComponent:
 		if not typename:
 			Application.refObject.logger.error(f'Cannot find variable instancer for \'{instanceType}\'')
 			return
+		
+		self.graph.undo_stack().beginMacro(f"Создание переменной {typename}")
 
 		nodeObj = self.nodeFactory.instance(typename,self.graph,pos)
 		self.graph.undo_view.blockSignals(True)
 		self.variable_manager._updateNode(nodeObj,varid,instanceType,catObjInstancer)
 		self.graph.undo_view.blockSignals(False)
+
+		self.graph.undo_stack().endMacro()
 		pass
 
 	def _initTabs(self,dock):

@@ -147,7 +147,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         else:
             kvdat = [varDt.icon,varInfo.color]
             portColor = [*varInfo.color.getRgb()]
-        nodeObj.update_icon_parts(kvdat,False)
+        nodeObj.update_icon_parts(kvdat,True)
 
         if "setvar" == instancerType and varDt.dataType == 'value':
             props = varInfo.dictProp
@@ -407,16 +407,33 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
 
     @classmethod
     def onCreateVarFromTree(cls, fact,lvdata, nodeObj, instancerType):
+        isDefineFunc = instancerType == "deffunc"
+        
         icn = None
         if instancerType == "deffunc":
             icn = "data\\icons\\icon_Blueprint_OverrideFunction_16x"
         else:
             icn = "data\\icons\\icon_BluePrintEditor_Function_16px"
 
-        nodeObj.set_icon(icn,False)
+        nodeObj.set_icon(icn,True)
+        nodeColor = None
+
+        nodeColor = [
+            149,
+            94,
+            0,
+            255
+            ] if isDefineFunc else [
+                0,
+                69,
+                104,
+                255
+            ]
+
+        if nodeColor: nodeObj.set_color(*nodeColor)
 
         varMgr = cls.getVarMgr()
-        isDefineFunc = instancerType == "deffunc"
+        
         canMulCon = True if isDefineFunc else False
         for paramDict in lvdata['params']:
             portClr = varMgr.getColorByType(paramDict['type'])
