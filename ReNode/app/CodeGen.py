@@ -2,6 +2,7 @@ from collections import defaultdict
 import json
 import re
 import enum
+from copy import deepcopy
 import asyncio
 from ReNode.app.CodeGenExceptions import *
 from ReNode.app.CodeGenWarnings import *
@@ -132,6 +133,8 @@ class CodeGenerator:
 
         # generated lvdata for graph user vars (local,class, methods)
         for vcat,vval in self.getVariableDict().items():
+            if vcat not in ["localvar","classvar"]:
+                continue
             for i, (k,v) in enumerate(vval.items()):
                 lvData = {}
                 self.localVariableData[k] = lvData
@@ -250,11 +253,18 @@ class CodeGenerator:
         entNodeData = {_id: CodeGenerator.NodeData(_id,self) for _id in entrys}
         for ent in entrys:
             entData = self.serialized_graph['nodes'][ent]
-            if entData['class_'] in entDict:
+            checkedKey = entData['class_']
+            #userfunc validate
+            nodeObj = entNodeData[ent]
+            if nodeObj.getUserNodeId():
+                userId = nodeObj.getUserNodeId()
+                checkedKey = userId
+
+            if checkedKey in entDict:
                 src = entNodeData[ent]
-                entObj = entNodeData[entDict[entData['class_']]]
+                entObj = entNodeData[entDict[checkedKey]]
                 self.exception(CGDuplicateEntryException,source=src,entry=entObj)
-            entDict[entData['class_']] = ent
+            entDict[checkedKey] = ent
         del entDict
 
     def generateOrderedCode(self, entrys):
@@ -454,6 +464,20 @@ class CodeGenerator:
 
             self.visitedExecFlow = False
 
+            #user nodes section
+            self.userNodeType = None
+
+        def getUserNodeType(self):
+            """Получает тип пользовательской переменной"""
+            nameid = self.objectData.get("custom",{}).get("nameid")
+            if not nameid: return None
+            cat = self.refCodegen.getVariableManager().getVariableCategoryById(nameid)
+            if not cat: return
+            return cat
+
+        def getUserNodeId(self):
+            return self.objectData.get("custom",{}).get("nameid")
+
         def __repr__(self) -> str:
             return f'ND:{self.nodeId} ({self.nodeClass})'
 
@@ -465,7 +489,8 @@ class CodeGenerator:
             node_data = self.refCodegen.serialized_graph['nodes'][self.nodeId]
             self.objectData = node_data
             self.nodeClass = node_data['class_']
-            self.classLibData = self.refCodegen.getNodeLibData(self.nodeClass)
+            
+            self.classLibData = deepcopy(self.refCodegen.getNodeLibData(self.nodeClass)) #копирвание потому что исходная дата может измениться при runtime_ports и т.д.
 
             self.code = self.classLibData['code']
 
@@ -527,18 +552,21 @@ class CodeGenerator:
                 obj_data = obj.objectData
                 class_data = obj.classLibData
 
-                
-                node_inputs = class_data['inputs']
-                node_outputs = class_data['outputs']
+                isCustomVariable = False
+                isCustomFunction = False
 
-                isLocalVar = node_code == "RUNTIME" or obj_data.get('custom',{}).get('nameid')
+                #определяем является ли эта переменная кастомной
+                if obj_data.get('custom',{}).get('nameid'):
+                    catvar = self.getVariableManager().getVariableCategoryById(obj_data['custom'].get('nameid'))
+                    isCustomVariable = catvar in ['localvar','classvar']
+                    isCustomFunction = catvar in ["classfunc"]
 
                 hasRuntimePorts = class_data.get('runtime_ports')
 
-                inputs_fromLib = node_inputs.items()
-                outputs_fromLib = node_outputs.items()
+                inputs_fromLib = class_data['inputs'].items()
+                outputs_fromLib = class_data['outputs'].items()
 
-                if isLocalVar:
+                if isCustomVariable:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
                     generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid)
@@ -577,6 +605,49 @@ class CodeGenerator:
                         outputs_fromLib = list(outputs_fromLib)
                         outputs_fromLib.append((outName,{'type':self.localVariableData[nameid]['type']}))
         
+                if isCustomFunction:
+                    isEntryPoint = node_id == entryId
+                    nameid = obj_data['custom']['nameid']
+                    
+                    #first alloc entry
+                    if node_code == "RUNTIME":
+                        if isEntryPoint:
+                            self.exception(CGUnhandledObjectException,source=obj,context="Пользовательская точка входа не содержит сгенерированного кода")
+                        
+                        userdata = self.getVariableManager().getVariableDataById(nameid)
+                        
+                        # обновление портов
+                        newInputs = {}
+                        newOutputs = {}
+                        
+                        for portDict in obj_data['input_ports']:
+                            newInputs[portDict['name']] = {
+                                'type': portDict['type']
+                            }
+                        for portDict in obj_data['output_ports']:
+                            newOutputs[portDict['name']] = {
+                                'type': portDict['type']
+                            }
+                        class_data['inputs'] = newInputs
+                        class_data['outputs'] = newOutputs
+
+                        #update classmeta
+                        class_data['classInfo'] = {
+                            "class": self.gObjMeta['classname'],
+                            "name": userdata['name'].lower(),
+                            "type": "method",
+                        }
+                        #update return type
+                        class_data['returnType'] = userdata['returnType']
+
+                        #update local vars
+                        inputs_fromLib = newInputs.items()
+                        outputs_fromLib = newOutputs.items()
+
+                        # первичная генерация
+                        newcode = self.getFunctionData(node_className,nameid,obj)
+                        node_code = newcode
+
                 if "@genvar." in node_code:
                     genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
 
@@ -890,6 +961,27 @@ class CodeGenerator:
         
         return code,varPortName,isGet,varCat
 
+    def getFunctionData(self,className,nameid,optObj:NodeData=None) -> str:
+        """Получает информацию о пользовательской функции
+            :param className: имя функции
+            :param nameid: имя функции
+            :return: код, список входных параметров, список выходных параметров
+        """
+        data = self.getVariableManager().getVariableDataById(nameid)
+        isDef = className.endswith(".def")
+        if isDef:
+            code = "func(@thisName) {@thisParams; @out.1};"
+            return code
+        else:
+            code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
+            params = ['this']
+            for i, (k,v) in enumerate(optObj.classLibData['inputs'].items()):
+                if v['type']=="Exec": continue
+                params.append(f"@in.{i+1}")
+            code = code.format(', '.join(params))
+            code = self.prepareMemberCode(optObj.classLibData,code)
+            return code
+
     # returns map: key
     def getExecPins(self,id,retPortname=False):
         return self.getConnectionsMap(self.ConnectionType.Output,id,retPortname)
@@ -948,7 +1040,8 @@ class CodeGenerator:
     def getAllEntryPoints(self):
         node_ids = []
         for node_id, node_data in self.serialized_graph["nodes"].items():
-            libData = self.getNodeLibData(node_data['class_'])
+            nodeClass = node_data['class_']
+            libData = self.getNodeLibData(nodeClass)
             isClassMember = "classInfo" in libData
             if isClassMember:
                 isMethod = libData["classInfo"]["type"] == "method"
@@ -956,9 +1049,11 @@ class CodeGenerator:
                     # сбор методов: только те у которых memtype -> def, event
                     memType = libData.get("memtype")
                     if not memType:
-                        raise Exception(f"Corrupted memtype for method '{node_data['class_']}'; Info: {libData}")
+                        raise Exception(f"Corrupted memtype for method '{nodeClass}'; Info: {libData}")
                     if memType in ["def","event"]:
                         node_ids.append(node_id)
+            if nodeClass == "function.def":
+                node_ids.append(node_id)
         return node_ids
 
     def updateValueDataForType(self,value,tname):

@@ -701,6 +701,8 @@ class VariableManager(QDockWidget):
         if fulltypename == "null": return "Ничего"
         
         vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
+        if not vRet or not dtObj: return "Неизвестно"
+
         if dtObj.dataType == 'value':
             return vRet.variableTextName
         else:

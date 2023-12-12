@@ -334,11 +334,46 @@ class ClassGraphType(GraphTypeBase):
     
     def handlePreStartEntry(self, nodeObject, metaObj):
         from ReNode.app.CodeGen import CodeGenerator
+        from copy import deepcopy
         nodeObject :CodeGenerator.NodeData = nodeObject
         code = ""
         cgObj : CodeGenerator = metaObj.get('codegen')
         node_code = nodeObject.code
         classLibData = nodeObject.classLibData
+        objData = nodeObject.objectData
+
+        userid = nodeObject.getUserNodeId()
+        if objData.get("port_deletion_allowed") and userid:
+            userdata = cgObj.getVariableManager().getVariableDataById(userid)
+            #pathing classLib
+            #classLibData = deepcopy(classLibData) #!копирование не требуется
+            
+            inps = {}
+            for dictPort in objData['input_ports']:
+                inps[dictPort['name']] = {
+                    'type': dictPort['type'],
+                }
+            outs = {}
+            for dictPort in objData['output_ports']:
+                outs[dictPort['name']] = {
+                    'type': dictPort['type'],
+                }
+            classLibData['inputs'] = inps
+            classLibData['outputs'] = outs
+
+            #update classmeta
+            classLibData['classInfo'] = {
+                "class": metaObj['classname'],
+                "name": userdata['name'].lower(),
+                "type": "method",
+            }
+            #update return type
+            classLibData['returnType'] = userdata['returnType']
+
+        # пользовательское определение функции
+        uservar = nodeObject.getUserNodeType()
+        if uservar and uservar == "classfunc":
+            node_code = cgObj.getFunctionData(nodeObject.nodeClass,nodeObject.getUserNodeId())
 
         node_code = cgObj.prepareMemberCode(classLibData,node_code)
 
