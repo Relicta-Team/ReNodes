@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QWidget
 
 from ReNode.app.utils import updatePixmapColor, mergePixmaps
 from ReNode.ui.NodePainter import getDrawPortStyleId
-
+from ReNode.app.Constants import NodeRenderType
 #! use this for animated node
 # class AnimatedItem(QGraphicsItem):
 #     def __init__(self):
@@ -77,6 +77,8 @@ class NodeItem(AbstractNodeItem):
         self._proxy_mode_threshold = 70
 
         self._error_item = XErrorItem(self,"ОШИБКА","")
+
+        self._node_render_type = NodeRenderType.Default
 
         # Tuple of (port,widget, sizeH)
         self._tupleWidgetData : list[tuple] = None
@@ -136,26 +138,38 @@ class NodeItem(AbstractNodeItem):
                              rect.height() - (margin * 2))
 
         radius = 4.0
-        painter.setBrush(QtGui.QColor(*self.color))
+        #painter.setBrush(QtGui.QColor(*self.color))
+        painter.setBrush(QtGui.QColor(20, 20, 20, 240))
         painter.drawRoundedRect(rect, radius, radius)
 
         # light overlay on background when selected.
-        if self.selected:
-            painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
-            painter.drawRoundedRect(rect, radius, radius)
+        # if self.selected:
+        #     painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
+        #     painter.drawRoundedRect(rect, radius, radius)
 
         # node name background.
-        padding = 3.0, 2.0
+        padding = 1.0,0.0 #3.0, 2.0
         text_rect = self._text_item.boundingRect()
         text_rect = QtCore.QRectF(text_rect.x() + padding[0],
                                   rect.y() + padding[1],
                                   rect.width() - padding[0] - margin,
                                   text_rect.height() - (padding[1] * 2))
-        if self.selected:
-            painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
-        else:
-            painter.setBrush(QtGui.QColor(0, 0, 0, 80))
-        painter.drawRoundedRect(text_rect, 3.0, 3.0)
+        # if self.selected:
+        #     painter.setBrush(QtGui.QColor(*NodeEnum.SELECTED_COLOR.value))
+        # else:
+        #     painter.setBrush(QtGui.QColor(0, 0, 0, 80))
+        # painter.drawRoundedRect(text_rect, 3.0, 3.0)
+
+        #p1 = QtCore.QPointF(text_rect.left(), text_rect.height()/2)
+        #p2 = QtCore.QPointF(text_rect.right(), text_rect.height())
+        p1 = text_rect.topLeft()
+        p2 = text_rect.bottomRight()
+        gradMain = QtGui.QLinearGradient(p1,p2)
+        gradMain.setSpread(QtGui.QGradient.PadSpread)
+        gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
+        gradMain.setColorAt(1, QtGui.QColor(20, 20, 20, 0))
+        painter.setBrush(QtGui.QBrush(gradMain))
+        painter.drawRoundedRect(text_rect, radius, radius)
 
         # node border
         if self.selected:
@@ -164,7 +178,7 @@ class NodeItem(AbstractNodeItem):
                 *NodeEnum.SELECTED_BORDER_COLOR.value
             )
         else:
-            border_width = 0.8
+            border_width = 1.2 #0.8
             border_color = QtGui.QColor(*self.border_color)
 
         border_rect = QtCore.QRectF(rect.left(), rect.top(),
@@ -1186,8 +1200,9 @@ class NodeItem(AbstractNodeItem):
         """
         port.setParentItem(None)
         text.setParentItem(None)
-        self.scene().removeItem(port)
-        self.scene().removeItem(text)
+        if self.scene(): #Yobas: fix remove port on scene not loaded (on deserialize graph)
+            self.scene().removeItem(port)
+            self.scene().removeItem(text)
         del port
         del text
 
