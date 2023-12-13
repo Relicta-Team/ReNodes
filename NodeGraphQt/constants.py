@@ -114,6 +114,9 @@ class NodeEnum(Enum):
     SELECTED_COLOR = (255, 255, 255, 30)
     #: default node border color when selected.
     SELECTED_BORDER_COLOR = (254, 207, 42, 255)
+    
+    #: Icon size in custom rendered node
+    ICON_CUSTOM_RENDER_SIZE = 40
 
 # ==================================== PORT ====================================
 

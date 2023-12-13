@@ -5,9 +5,10 @@ import json
 import copy
 from ReNode.app.utils import intTryParse
 from ReNode.ui.VariableManager import VariableLibrary
+from ReNode.app.Constants import *
 
 def hexToRGBA(hex):
-	hex = hex.rstrip("#")
+	hex = hex.lstrip("#")
 	if len(hex) == (6):
 		hex += "ff"
 	return list(int(hex[i:i+2], 16) for i in (0, 2, 4, 6))
@@ -345,6 +346,13 @@ class NodeObjectHandler:
 			self.objectNameFull = tokens[1]
 		elif tokenType == "icon":
 			self['icon'] = tokens[1]
+		elif tokenType == "color":
+			clrTok = tokens[1]
+			for n in NodeColor:
+				if clrTok == n.name:
+					clrTok = hexToRGBA(n.value)
+					break
+			self['color'] = clrTok
 		# def visible node in treeview
 		elif tokenType == "libvisible":
 			if intTryParse(tokens[1]) == 0:

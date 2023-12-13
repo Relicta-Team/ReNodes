@@ -149,6 +149,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
             portColor = [*varInfo.color.getRgb()]
         nodeObj.update_icon_parts(kvdat,True)
 
+        nodeObj.set_color(*portColor)
+
         if "setvar" == instancerType and varDt.dataType == 'value':
             props = varInfo.dictProp
             for k,v in props.items():

@@ -468,7 +468,8 @@ class CodeGenerator:
             self.returns = [] #возвращаемые значения (используется для событий и функций)
             self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
 
-            self.scopes = [] #области видимости
+            self.scopes = [] #области видимости (циклы)
+            self.execScopes = [] #области видимости (код)
 
             self.visitedExecFlow = False
 

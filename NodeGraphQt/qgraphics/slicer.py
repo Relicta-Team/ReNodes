@@ -222,11 +222,11 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         #draw basic background
         #gradient color
         if self._lastItem:
+
             gradient = QtGui.QLinearGradient(text_rect.topLeft(), QtCore.QPointF(text_rect.bottomRight().x(), text_rect.bottomRight().y()*2))
-            
             gradient.setSpread(QtGui.QGradient.PadSpread)
             gradient.setColorAt(0.2, QtGui.QColor(*self._lastItem.color))
-            gradient.setColorAt(1.0, QtGui.QColor(80, 80, 80, 50))
+            gradient.setColorAt(0.4, QtGui.QColor(40, 40, 40, 245))
         else:
             gradient = QtGui.QColor(80, 80, 80, 255)
         painter.setBrush(QtGui.QBrush(gradient))

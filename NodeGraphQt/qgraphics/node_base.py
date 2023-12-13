@@ -78,7 +78,9 @@ class NodeItem(AbstractNodeItem):
 
         self._error_item = XErrorItem(self,"ОШИБКА","")
 
+        # тип рендера узла
         self._node_render_type = NodeRenderType.Default
+        self._default_font_size = 11 #размер текста по умолчанию. требует перерендера при изменении
 
         # Tuple of (port,widget, sizeH)
         self._tupleWidgetData : list[tuple] = None
@@ -162,14 +164,27 @@ class NodeItem(AbstractNodeItem):
 
         #p1 = QtCore.QPointF(text_rect.left(), text_rect.height()/2)
         #p2 = QtCore.QPointF(text_rect.right(), text_rect.height())
-        p1 = text_rect.topLeft()
-        p2 = text_rect.bottomRight()
-        gradMain = QtGui.QLinearGradient(p1,p2)
-        gradMain.setSpread(QtGui.QGradient.PadSpread)
-        gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
-        gradMain.setColorAt(1, QtGui.QColor(20, 20, 20, 0))
-        painter.setBrush(QtGui.QBrush(gradMain))
-        painter.drawRoundedRect(text_rect, radius, radius)
+        if self._node_render_type == NodeRenderType.NoHeader:
+            # gradMain = QtGui.QRadialGradient(rect.center(), rect.width() / 2, rect.center())
+            # gradMain.setSpread(QtGui.QGradient.PadSpread)
+            # gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
+            # gradMain.setColorAt(0.8, QtGui.QColor(20, 20, 20, 0))
+            # painter.setBrush(QtGui.QBrush(gradMain))
+            # #elrect = QtCore.QRectF(rect.top()-4,rect.left()-4,rect.width()-4,rect.height()-4)
+            # painter.drawEllipse(rect)
+            #todo use focalPoint
+
+            pass
+
+        else:
+            p1 = text_rect.topLeft()
+            p2 = text_rect.bottomRight()
+            gradMain = QtGui.QLinearGradient(p1,p2)
+            gradMain.setSpread(QtGui.QGradient.PadSpread)
+            gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
+            gradMain.setColorAt(1, QtGui.QColor(20, 20, 20, 0))
+            painter.setBrush(QtGui.QBrush(gradMain))
+            painter.drawRoundedRect(text_rect, radius, radius)
 
         # node border
         if self.selected:
@@ -431,6 +446,9 @@ class NodeItem(AbstractNodeItem):
         # width, height from node name text.
         text_w = self._text_item.boundingRect().width()
         text_h = self._text_item.boundingRect().height()
+        if self._node_render_type == NodeRenderType.NoHeader:
+            #text_w = 0
+            text_h = 0
 
         # width, height from node ports.
         port_width = 0.0
@@ -551,6 +569,17 @@ class NodeItem(AbstractNodeItem):
         return width, height
 
     def _align_icon_horizontal(self, h_offset, v_offset):
+        if self._node_render_type == NodeRenderType.NoHeader:
+            scale = NodeEnum.ICON_CUSTOM_RENDER_SIZE.value
+            pix = self._icon_item.pixmap()
+            if pix.size().height() != scale:
+                pix = pix.scaledToHeight(scale, QtCore.Qt.SmoothTransformation)
+                self._icon_item.setPixmap(pix)
+                self._icon_item.setOpacity(0.5)
+            origRect = self.boundingRect()
+            icnRect = self._icon_item.boundingRect()
+            self._icon_item.setPos(origRect.center().x()-icnRect.width()/2,origRect.center().y()-icnRect.height()/2)
+            return
         icon_rect = self._icon_item.boundingRect()
         text_rect = self._text_item.boundingRect()
         x = self.boundingRect().left() + 2.0
@@ -581,6 +610,13 @@ class NodeItem(AbstractNodeItem):
             raise RuntimeError('Node graph layout direction not valid!')
 
     def _align_label_horizontal(self, h_offset, v_offset):
+        if self._node_render_type == NodeRenderType.NoHeader:
+            #draw text at center
+            text_rect = self._text_item.boundingRect()
+            x = self.boundingRect().center().x() - (text_rect.width() / 2)
+            y = self.boundingRect().center().y() - (text_rect.height() / 2)
+            self._text_item.setPos(x + h_offset, y + v_offset)
+            return
         rect = self.boundingRect()
         text_rect = self._text_item.boundingRect()
         #x = rect.center().x() - (text_rect.width() / 2) #Yodes: here we can setup left offest
@@ -780,6 +816,9 @@ class NodeItem(AbstractNodeItem):
 
     def _draw_node_horizontal(self):
         height = self._text_item.boundingRect().height() + 4.0
+
+        if self._node_render_type == NodeRenderType.NoHeader:
+            height = 2
 
         # update port text items in visibility.
         for port, text in self._input_items.items():
@@ -1057,7 +1096,7 @@ class NodeItem(AbstractNodeItem):
         desc = None
         if "@desc:" in name:
             name,desc = name.split("@desc:")
-        nametext = f'<span style=\'font-family: Arial; font-size: 11pt;\'>{name}</span>'
+        nametext = f'<span style=\'font-family: Arial; font-size: {self._default_font_size}pt;\'>{name}</span>'
         if desc:
             nametext += f'<br/><font size=""4"><i>{desc}</i></font>'
         self._text_item.setHtml(nametext)

@@ -14,6 +14,7 @@ def:node:operators
 	path:Операторы
 	node:if_branch
 	name:Ветка
+   color:Operator
 	desc:Оценивает условие ветки.
 	icon:data\\icons\\icon_Blueprint_Branch_16x
 	code:if (@in.2) then {@out.1} else {@out.2};
@@ -30,6 +31,7 @@ def:node:operators
 
 	node:while
 	name:Цикл
+   color:Operator
 	desc:Выполнение кода несколько раз пока условие истинно.\nОбратите внимание, что этот цикл может выполняться только 10000 раз. При достижении лимита выполнения цикл остановится.
 	icon:data\\icons\\icon_Blueprint_Loop_16x
 	code:while {@in.2} do {@out.1}; @out.2
@@ -48,6 +50,7 @@ def:node:operators
 	node:for_loop
 	name:Цикл в диапазоне
 	namelib:Цикл в диапазоне
+   color:Operator
 	desc:Вызывается несколько раз. Диапазон задается входными параметрами "Первый индекс" и "Последний индекс"
 	icon:data\\icons\\icon_Blueprint_Loop_16x
 	code:for "@genvar.out.2" from (@in.2) to (@in.3) do {@out.1}; @out.3
@@ -68,6 +71,7 @@ def:node:operators
 	node:foreach_loop
 	name:Цикл по списку
 	namelib:Цикл по списку (перебор коллекции)
+   color:Operator
 	desc:Цикл для перебора коллекций (например, массивов).
 	icon:data\\icons\\icon_Blueprint_ForEach_16x
 	code:private @genvar.out.2 = NIL; private @genvar.out.3 = NIL; {@locvar.out.2 = _x; @locvar.out.3 = _foreachindex; @out.1} foreach (@in.2); @out.4
@@ -166,7 +170,6 @@ def:node:array
    in:int:Индекс:Индекс элемента массива. Отсчет начинается с 0. Для получения первого элемента массива используется индекс 0, а для последнего - количество элементов минус 1.
    in:auto:Элемент
       opt:typeget=array;@value.1
-
 
 $ENDREGION:FUNCTIONS
 $REGION:CLASSMEM

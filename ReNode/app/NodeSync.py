@@ -1,5 +1,5 @@
 
-
+from ReNode.app.Constants import *
 from ReNode.app.Logger import RegisterLogger
 from copy import deepcopy
 
@@ -15,6 +15,7 @@ class NodeSyncronizer:
         self.refValidatedGraph = None
     
     def getFactory(self): return self.graphRef.getFactory()
+    def getVarMgr(self): return self.graphRef.variable_manager
 
     def wrapNodeLink(self,node_id,optText=None,clr="#17E62C"): return self.graphRef.log_dock.__class__.wrapNodeLink(node_id,optText)
     def createNodeLink(self,graphRef,node_id,otext=None,clr="#17E62C"): return self.graphRef.log_dock.__class__.createNodeLink(graphRef,node_id,otext,clr)
@@ -61,9 +62,35 @@ class NodeSyncronizer:
 
         #временная проверка variable get и set
         self.validateVarGetSetRtPorts(nodeId,dictValues,link)
+
+        self.validateColors(nodeId,dictValues,link)
         
         # Проверка узла
         # Имя должно соответствовать названию из класса только если это не геттер/сеттер для переменной
+
+    def validateColors(self,nodeId,dictValues,link):
+        """Стандартный валидатор цвета"""
+        className = dictValues['class_']
+        classInfo = self.getFactory().getNodeLibData(className)
+        color = classInfo['color']
+        if color != dictValues['color']:
+            if NodeColor.isConstantColor(className):
+                self.warn(f"Node {link} obsolete color. Updating...")
+                dictValues['color'] = color
+
+            # varcheck
+            if className.startswith('variable.'):
+                self.warn(f"Variable node {link} obsolete color. Updating...")
+                vmgr = self.getVarMgr()
+                nameid = dictValues['custom']['nameid']
+                typename = None
+                for cat,list in self.refDict['graph'].get('variables',{}).items():
+                    if nameid in list:
+                        typename = list[nameid]['type']
+                if typename:
+                    newcolor = vmgr.getColorByType(typename)
+                    dictValues['color'] = newcolor
+
 
     def validateVarGetSetRtPorts(self,nodeId,dictValues,link):
         className, classInfo, objOptions = self.unpackData(dictValues)
