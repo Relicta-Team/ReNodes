@@ -465,7 +465,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
                 "display_name":True,
                 "color":portClr,
                 "type":lvdata['returnType'],
-                "allowtypes":[paramDict['type']],
+                "allowtypes":[lvdata['returnType']],
                 "style":None,
             }
             fact.addOutput(nodeObj,"Результат",portParams)
