@@ -173,7 +173,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
             #Adding output with multiconnect
             vardict = vardict.copy()
             vardict["mutliconnect"] = True
-            fact.addOutput(nodeObj,lvdata['name'],vardict)
+            fact.addOutput(nodeObj,"Значение",vardict)
         else:
             vardict = {
                 "type":realType,
