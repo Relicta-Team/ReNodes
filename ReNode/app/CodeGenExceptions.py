@@ -152,3 +152,8 @@ class CGLocalVariableMetaKeywordNotFound(CGBaseException):
     id = 602
     text = "Точка входа {entry} не имеет определения мета-оператора для локальных переменных."
     desc = "<span style='color:darkorange;'> Обратитесь к разработчику для решения данной проблемы.</span> В точке входа не найден мета-оператор <b>initvars</b>. Вероятнее всего проблема вызывана ошибкой генерации кода."
+
+class CGScopeVariableNotFoundException(CGBaseException):
+    id = 603
+    text = "Недопустимое использование подключения узла {src}"
+    desc = "Узел {src} не может получить данные из недоступной области видимости узла {targ}."
