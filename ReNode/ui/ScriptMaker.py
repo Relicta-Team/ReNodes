@@ -338,7 +338,7 @@ class WizardScriptMaker(QWizard):
 				},
 				"parentData": {
 					"name": "Родительский режим",
-					"class": "GMBase",
+					"class": "ScriptedGamemode",
 				},
 			}
 		)
@@ -354,7 +354,7 @@ class WizardScriptMaker(QWizard):
 				},
 				"parentData": {
 					"name": "Родительская роль",
-					"class": "BasicRole",
+					"class": "ScriptedRole",
 				},
 			}
 		)

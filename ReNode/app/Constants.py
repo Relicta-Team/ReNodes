@@ -21,11 +21,41 @@ class NodeRenderType(Enum):
 class NodeColor(Enum):
     Operator = rgbaToHex(119,119,119,255) #white
 
-    Event = rgbaToHex(255,0,0,255) #red
-    Function = rgbaToHex(121,201,255,255) #blue
+    Event = rgbaToHex(255,0,0,255) #red #5b0802
+    Function = "#004568" #rgbaToHex(121,201,255,255) #blue #004568
     PureFunction = rgbaToHex(170,238,160,255) #green
-    EntryFunction = rgbaToHex(204,0,255,255) #yellow
+    EntryFunction = "#955e00" #yellow
+    Constant = "#124d41"
+    Getter = "#25888F"
+
+    @staticmethod
+    def getMethodMapAssoc():
+        return {
+            "method": {
+                "color": NodeColor.Function.value,
+                "icon": "data\\icons\\icon_BluePrintEditor_Function_16px"
+            },
+            "event": {
+                "color": NodeColor.Event.value,
+                "icon": "data\\icons\\icon_Blueprint_Event_16x",
+                "code": "func(@thisName) {@thisParams; @out.1}"
+            },
+            "get": {
+                "color": NodeColor.Getter.value,
+                "icon": "data\\icons\\FIB_VarGet"
+            },
+            "const": {
+                "color": NodeColor.Constant.value,
+                "icon": "data\\icons\\Icon_Sequencer_Key_Part_24x"
+            },
+            "def": {
+                "color": NodeColor.EntryFunction.value,
+                "icon": "data\\icons\\icon_Blueprint_OverrideFunction_16x",
+                "code": "func(@thisName) {@thisParams; @out.1}"
+            }
+        }
 
     @staticmethod
     def isConstantColor(nodeclass):
+        """Узел с неизменяемым цветом"""
         return nodeclass.startswith("operators.")

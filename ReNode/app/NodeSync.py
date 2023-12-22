@@ -72,6 +72,7 @@ class NodeSyncronizer:
         """Стандартный валидатор цвета"""
         className = dictValues['class_']
         classInfo = self.getFactory().getNodeLibData(className)
+        if not classInfo: return
         color = classInfo['color']
         if color != dictValues['color']:
             if NodeColor.isConstantColor(className):

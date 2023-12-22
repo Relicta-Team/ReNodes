@@ -278,7 +278,7 @@ class NodeObjectHandler:
 				self.memberData['returnDesc'] = unescape(tokens[2])
 		elif tokenType == 'prop':
 			propType = tokens[1]
-			if propType not in ['all','get','set','none']:
+			if propType not in ['all','get','set','none','pure']:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong prop type: {propType}")
 			self.memberData['prop'] = propType
 			pass
@@ -299,10 +299,13 @@ class NodeObjectHandler:
 			if mtype in ['event','def']:
 				self.execTypes = 'out'
 			if mtype == "const":
+				self.execTypes = 'pure'
 				self.memberData['classProp'] = 1
 		elif tokenType == 'exec':
 			execType = tokens[1]
 			self.execTypes = execType
+		elif tokenType == 'lockoverride':
+			self['lockoverride'] = intTryParse(tokens[1])
 		elif tokenType == "in":
 			
 			self.lastPortRef = {
@@ -428,8 +431,13 @@ class NodeObjectHandler:
 			#! fix type for nodes
 			self['memtype'] = mtype
 			del memberData['type']
+			
+			hasLockedOverride = 'lockoverride' in memberData
+			if hasLockedOverride:
+				hasLockedOverride = memberData['lockoverride'] == 1
+				del memberData['lockoverride']
 
-			tableTypes = ["method","event","get","const","def"]
+			tableTypes = NodeColor.getMethodMapAssoc()
 			if mtype not in tableTypes:
 				raise ValueError(f"[{self.objectNameFull}]: Wrong method type: {mtype}")
 
@@ -440,38 +448,24 @@ class NodeObjectHandler:
 			_canOverrideColor = "color" not in self.memberData
 			_canOverrideIcon = 'icon' not in self.memberData
 			if _canOverrideCode:
-				codeList_ = [
-					"",# call method(generated runtime at generateMethodCodeCall)
-					"func(@thisName) {@thisParams; @out.1}",# event define (события не вызываются пользователем)
-					"", #method getter runtme at generateMethodCodeCall
-					"",#"func(@thisName) { @propvalue }", #const (!USED AS DEFINE)
-					"func(@thisName) {@thisParams; @out.1}", #define method
-				]
-				curCode_ = codeList_[tableTypes.index(mtype)]
+				curCode_ = tableTypes[mtype].get('code')
 				if curCode_: self['code'] = curCode_
 
 			if _canOverrideColor:
-				nodeColorList = [
-					hexToRGBA("004568"),#method
-					hexToRGBA("5b0802"),#event old:6d0101
-					hexToRGBA("25888F"),#getter
-					hexToRGBA("124d41"),#constant
-					hexToRGBA("955e00"),#def
-				]
-				newColor = nodeColorList[tableTypes.index(mtype)]
+				# nodeColorList = [
+				# 	hexToRGBA("004568"),#method
+				# 	hexToRGBA("5b0802"),#event old:6d0101
+				# 	hexToRGBA("25888F"),#getter
+				# 	hexToRGBA("124d41"),#constant
+				# 	hexToRGBA("955e00"),#def
+				# ]
+				newColor = tableTypes[mtype].get('color')
 				self['color'] = newColor
 			if _canOverrideIcon:
-				iconList = [
-					"data\\icons\\icon_BluePrintEditor_Function_16px",#method
-					"data\\icons\\icon_Blueprint_Event_16x",#event
-					"data\\icons\\FIB_VarGet",#getter
-					"data\\icons\\Icon_Sequencer_Key_Part_24x",#["data\\icons\\FIB_VarGet","#14CCA7"],#constant
-					"data\\icons\\icon_Blueprint_OverrideFunction_16x",#def
-				]
-				self['icon'] = iconList[tableTypes.index(mtype)]
+				self['icon'] = tableTypes[mtype].get('icon')
 
 			#if mtype method or getter then add method def prop
-			if mtype in ['method','get']:
+			if mtype in ['method','get'] and not hasLockedOverride:
 				cpyObj = self.safecopy()
 				#adding postfix to method define
 				cpyObj.objectNameFull += ".def"
@@ -523,7 +517,7 @@ class NodeObjectHandler:
 			#removing lines for update generated
 			self.lineList.clear()
 
-			if curPropType == 'none':
+			if curPropType in ['none','pure']:
 				memberData = None
 			elif curPropType in ['all','get','set']:
 				_hasGet = curPropType in ['all','get']
@@ -532,7 +526,7 @@ class NodeObjectHandler:
 					newobj = self.copy(True)
 					newobj.objectNameFull += f".get"
 					newobj['code'] = f'this getVariable "{newobj.memberName}"'
-					newobj.execTypes = 'all'
+					newobj.execTypes = 'pure'
 					newobj.pushBackLines([
 						f'out:{newobj["returnType"]}:Значение'
 					])

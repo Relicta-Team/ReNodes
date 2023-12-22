@@ -600,6 +600,10 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         isPureFunc = self.pureFuncFlag.isChecked()
         #retType = self.comboButton.get_value()
 
+        if retTypename == 'null' and isPureFunc:
+            self.getVarMgr().showErrorMessageBox("Нельзя создать чистую функцию, которая не возвращает значение.")
+            return False
+
         #check params
         uniParams = []
         for i, param in enumerate(funcParamsDict):
