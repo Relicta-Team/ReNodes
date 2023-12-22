@@ -152,13 +152,17 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
     def loadText(self):
         if not self._lastItem: return
+        from ReNode.app.application import Application
+
         className = self._lastItem.nodeClass
         libInfo = self._refFactory.getNodeLibData(className)
         text = f"Ошибка [{className}] "
         if libInfo:
-            text = f'<span style="font-size: 24pt">{self._lastItem.name} ({className})</span>'
+            classNamePostfix = ""
+            if Application.isDebugMode():
+                classNamePostfix = f' ({className})'
+            text = f'<span style="font-size: 24pt">{self._lastItem.name}{classNamePostfix}</span>'
 
-            from ReNode.app.application import Application
             from ReNode.ui.VariableManager import VariableManager
             if Application.isDebugMode():
                 idSearch = self._lastItem.id
@@ -169,9 +173,20 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             # if hasattr(self._lastItem,"_error_item"):
             #     if self._lastItem._error_item.isVisible():
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
-            text += f'<br/>Путь: {libInfo.get("path") or "нет"}<br/>'
+            text += f'<br/><b>Путь:</b> {libInfo.get("path") or "нет"}<br/>'
 
-            text += f'<br/>Описание: {libInfo.get("desc") or "отсутствует"}<br/>'
+            text += f'<br/><b>Описание:</b> {libInfo.get("desc") or "отсутствует"}<br/>'
+
+            if libInfo.get("memtype"):
+                valdesc = "Нет"
+                valinfo = "Ничего"
+                retType = libInfo.get("returnType")
+                retDesc = libInfo.get("returnDesc")
+                if retType:
+                    valinfo = VariableManager.refObject.getTextTypename(retType)
+                if retDesc:
+                    valdesc = retDesc
+                text += f"<br/><b>Возвращаемое значение</b>: ({valinfo}) - {valdesc}<br/>"
 
             #VariableManager.refObject.getVariableDataById()
 

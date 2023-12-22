@@ -143,9 +143,9 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
                 if i==0:
                     portColor = [*varInfoElement.color.getRgb()]
                 kvdat.append(varDt.icon[i])
-                kvdat.append(varInfoElement.color)
+                kvdat.append(varInfoElement.color.darker(65))
         else:
-            kvdat = [varDt.icon,varInfo.color]
+            kvdat = [varDt.icon,varInfo.color.darker(65)]
             portColor = [*varInfo.color.getRgb()]
         nodeObj.update_icon_parts(kvdat,True)
 

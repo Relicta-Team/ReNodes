@@ -47,6 +47,16 @@
 			"cwd": "${workspaceFolder}",
 			"console": "integratedTerminal",
 			"justMyCode": true,
+		},
+		{
+			"name": "Release",
+			"type": "python",
+			"request": "launch",
+			// uses main in rootdir
+			"program": "./main.py",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": true,
 		}
 	]
 }
