@@ -156,7 +156,7 @@ class Inspector(QDockWidget):
             self.setPropValue(cat,sysname,None,True)
         pass
 
-    def addProperty(self,definedFromClass,category,propSysName,propName,propObject=None):
+    def addProperty(self,definedFromClass,category,propSysName,propName,propObject=None,defaultValue=None):
         hlayout = QGridLayout()
         hlayout.setSpacing(2)
         name = QLabelWithIcon(propName)
@@ -175,7 +175,9 @@ class Inspector(QDockWidget):
 
             #register reference to property view
             self.propWidgetRefs[category + "." + propSysName] = (name,propObject)
-            propObject.setProperty("default",propObject.get_value())
+            if defaultValue == None or defaultValue == "$NULL$":
+                defaultValue = propObject.get_value()
+            propObject.setProperty("default",defaultValue)
             
             if isinstance(propObject,QCheckBox):
                 layProp = (0,1)
@@ -288,6 +290,7 @@ class Inspector(QDockWidget):
                     fName = nodeData['name']
                     fDesc = nodeData.get('desc',"")
                     fRet = propContents['return'] #для отладки типов можно брать из инспектора
+                    fDefault = propContents.get('defval',"$NULL$")
                     # отладочная проверка
                     if nodeData['returnType'] != propContents['return']:
                         from ReNode.app.application import Application
@@ -306,7 +309,7 @@ class Inspector(QDockWidget):
                         else:
                             propObj = vObj.classInstance()
                     
-                    nameObj = self.addProperty(baseName,cat,propName,fName,propObj)
+                    nameObj = self.addProperty(baseName,cat,propName,fName,propObj,fDefault)
                     if vType:
                         icns = vType.icon
                         clrs = vObj

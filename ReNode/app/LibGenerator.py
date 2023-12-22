@@ -290,6 +290,9 @@ class NodeObjectHandler:
 		elif tokenType == 'classprop':
 			clsprop = intTryParse(tokens[1])
 			self.memberData['classProp'] = clsprop
+		#значение по умолчанию
+		elif tokenType == 'defval':
+			self.memberData['defval'] = tokens[1]
 		#method specific data
 
 		#method type: method,event,get,const
@@ -709,9 +712,19 @@ class NodeObjectHandler:
 				"fields": {}, #поля, доступные в инспекторе
 				"methods": {} #методы, доступные в инспекторе
 			}
+			defvalue = memberData.get('defval',"$NULL$")
+			rettype = self['returnType']
+
+			if rettype == 'bool':
+				defvalue = bool(defvalue)
+			elif rettype != 'string':
+				evaled = eval(defvalue)
+				if evaled != None: defvalue = evaled
+
 			propData = {
 				'node': self.objectNameFull,
-				'return': self['returnType']
+				'return': rettype,
+				'defval': defvalue
 			}
 			if self.isField:
 				prps__['inspectorProps']['fields'][self.memberName] = propData
