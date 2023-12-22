@@ -575,15 +575,21 @@ class NodeObjectHandler:
 
 		# Помещаем инстансер
 		if self['memtype'] not in ['event',"def"]:
+			#старый владелец объекта
+			# self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+			# instanceOption = ("Цель", {
+			# 		"type":"list",
+			# 		"disabledListInputs": ["Этот объект"],
+			# 		"text": "Вызывающий",
+			# 		"default": "Этот объект",
+			# 		"values": [["Этот объект","this"], "Цель"],
+			# 		"typingList": ["self",f"{self.memberClass}^"]
+			# 	})
+			# self['options'].insert(0,instanceOption)
 			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
 			instanceOption = ("Цель", {
-					"type":"list",
-					"disabledListInputs": ["Этот объект"],
-					"text": "Вызывающий",
-					"default": "Этот объект",
-					"values": [["Этот объект","this"], "Цель"],
-					"typingList": ["self",f"{self.memberClass}^"]
-				})
+					"type":"objcaller",
+			})
 			self['options'].insert(0,instanceOption)
 
 			#if get and const insert return value

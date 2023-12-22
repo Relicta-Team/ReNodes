@@ -419,6 +419,8 @@ class NodeFactory:
 			node.add_filepath(name=optname,label=optvals.get('text',''),value=optvals.get('default',''),ext=optvals.get('ext'),root=optvals.get('root'),title=optvals.get('title'))
 		if type=='hidden':
 			node.create_property(name=optname,value=optvals.get('default',None))
+		if type=="objcaller":
+			node.add_text_input(name=optname,label=optvals.get('text',''),text="Этот объект",isObjCaller=True)
 
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
 		#todo: change algorithm multitypes check

@@ -243,7 +243,7 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_text_input(self, name, label='', text='', tab=None):
+    def add_text_input(self, name, label='', text='', tab=None,isObjCaller=False):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QLineEdit` widget
@@ -266,7 +266,10 @@ class BaseNode(NodeObject):
             tab=tab
         )
         widget = NodeLineEdit(self.view, name, label, text)
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        if isObjCaller:
+            widget.get_custom_widget().setReadOnly(True)
+        else:
+            widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
