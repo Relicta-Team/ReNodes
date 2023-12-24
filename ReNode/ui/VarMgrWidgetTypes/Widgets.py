@@ -150,7 +150,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
     def onCreateVLibData(factory,varDict,classDict):
         sysName = classDict['memberName']
 
-        classDict['classObject']['fields'][sysName] = {
+        classDict['classObject']['fields']['defined'][sysName] = {
             "return": varDict["type"]
         }
 
@@ -451,7 +451,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         #callfunc dict
         sysName = classDict['memberName']
 
-        classDict['classObject']['methods'][sysName] = {
+        classDict['classObject']['methods']['defined'][sysName] = {
             "return": "<undefined>"
         }
 

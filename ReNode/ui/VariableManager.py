@@ -357,6 +357,9 @@ class VariableManager(QDockWidget):
         msg_box.setWindowTitle("Ошибка")
         msg_box.exec_()
 
+    def getVirtualLib(self):
+        return self.nodeGraphComponent.getFactory().vlib
+
     def createVariable(self):
 
         if not self.nodeGraphComponent.sessionManager.getActiveTabData():
@@ -391,6 +394,8 @@ class VariableManager(QDockWidget):
         
         res = curCat.createVariable(variable_name, variable_group)
         if res == True:
+            # infoData = self.nodeGraphComponent.inspector.infoData
+            # self.nodeGraphComponent.getFactory().vlib.onUpdateUserVariables(infoData,self.variables)
             self.widVarName.clear()
             self.widVarGroup.clear()
 
@@ -561,6 +566,10 @@ class VariableManager(QDockWidget):
             hstack.push(VariableDeletedCommand(self,category,self.variables[category][variable_system_name]))
 
             hstack.endMacro()
+
+            # virtLib = self.nodeGraphComponent.getFactory().vlib
+            # infoData = self.nodeGraphComponent.inspector.infoData
+            # virtLib.onUpdateUserVariables(infoData,self.variables)
 
     def _updateNodeSync(self,nodeObj:RuntimeNode,id,nodeClassname):
         from ReNode.app.NodeFactory import NodeFactory
@@ -762,6 +771,14 @@ class VariableManager(QDockWidget):
 
     def syncVariableManagerWidget(self):
         self.loadVariables(self.variables,False)
+        self.syncNodesVirtualLib()
+
+    def syncNodesVirtualLib(self):
+        vlib = self.getVirtualLib()
+        infoData = self.nodeGraphComponent.graph.infoData
+        vars = self.variables
+        vlib.onUpdateUserVariables(infoData,vars)
+        pass
 
     def loadVariables(self, dictData,clearPrevDict = False):
         # Очистите существующие переменные из self.variables и дерева

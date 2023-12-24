@@ -22,7 +22,6 @@ class VirtualLib:
 		self.factory.reloadNativeGeneratedInfo()
 
 	def processLoadingUserGraph(self,path):
-		from ReNode.app.LibGenerator import compileRegion
 		data = FileManagerHelper.loadSessionJson(path)
 		if data:
 			vars = data['graph']['variables']
@@ -48,12 +47,15 @@ class VirtualLib:
 				if cdict.get('path'):
 					basePath = cdict['path']
 					break
-			
-			mdataAll = []
 
 			newclass['path'] = basePath+'.'+infoData['name']
 
-			for cat,varlist in vars.items():
+			self._regenerateUserLib(vars,className,newclass)
+	
+	def _regenerateUserLib(self,vars,className,newclass):
+		from ReNode.app.LibGenerator import compileRegion
+		mdataAll = []
+		for cat,varlist in vars.items():
 
 				gType = VarMgrBaseWidgetType.getInstanceByType(cat)
 				if gType:
@@ -62,19 +64,44 @@ class VirtualLib:
 						classDict = {
 							"className": className,
 							"memberName": sysname,
-							"path": basePath,
+							"path": newclass['path'],
 							"classObject": newclass
 						}
 						mdata = gType.onCreateVLibData(self.factory,dat,classDict)
 						mdataAll.append(mdata)
 			
-			memberData = '\n'.join(mdataAll)
-			factRet = {}
-			compileRegion(memberData,factRet,self.factory.classes)
+		memberData = '\n'.join(mdataAll)
+		factRet = {}
+		compileRegion(memberData,factRet,self.factory.classes)
 
-			for cat,ndat in factRet.items():
-				for nodename,nodedata in ndat.items():
-					self.factory.registerNodeInLib(cat,nodename,nodedata)
-			
-			pass
+		for cat,ndat in factRet.items():
+			for nodename,nodedata in ndat.items():
+				self.factory.registerNodeInLib(cat,nodename,nodedata)
 		
+		pass
+
+	def onUpdateUserVariables(self,infoData,vars):
+		"""Вызывается для перезагрузки библиотеки"""
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		graphObj = NodeGraphComponent.refObject
+		cls = infoData['classname']
+		
+		classData = graphObj.getFactory().getClassData(cls)
+		
+		#удаляем все пользовательские узлы для этого графа
+		for nodename in classData['methods']['nodes']:
+			del self.factory.nodes["methods."+nodename]
+		for nodename in classData['fields']['nodes']:
+			del self.factory.nodes["fields."+nodename]
+		
+		classData['methods']['defined'] = {}
+		classData['methods']['nodes'] = []
+		classData['fields']['defined'] = {}
+		classData['fields']['nodes'] = []
+		del classData['inspectorProps']
+
+		self._regenerateUserLib(vars,cls,classData)
+
+		graphObj.inspector.updateProps()
+
+		pass
