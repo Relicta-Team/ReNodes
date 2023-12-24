@@ -314,7 +314,7 @@ class ClassGraphType(GraphTypeBase):
         from ReNode.app.CodeGen import CodeGenerator
         code = ""
         cgObj : CodeGenerator = metaObj.get('codegen')
-        baseClass = metaObj.get('parent')
+        baseClass = metaObj.get('classname') #metaObj.get('parent')
         infoDataProps = metaObj['infoData']['props']
         classInfo = cgObj.getFactory().getClassData(baseClass)
         inspectorProps = classInfo['inspectorProps']

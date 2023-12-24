@@ -409,6 +409,7 @@ class NodeGraphComponent:
 		tabSearch = self.getTabSearch()
 		tabSearch.generate_treeDict()
 		tabSearch.tree.clear()
+		tabSearch._existsTrees.clear()
 		tabSearch.build_tree(tabSearch.dictTreeGen)
 		tabSearch.tree.sortItems(0,Qt.SortOrder.AscendingOrder)
 

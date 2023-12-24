@@ -103,5 +103,6 @@ class VirtualLib:
 		self._regenerateUserLib(vars,cls,classData)
 
 		graphObj.inspector.updateProps()
+		graphObj.generateTreeDict()
 
 		pass
