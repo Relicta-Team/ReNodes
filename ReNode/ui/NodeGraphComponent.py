@@ -428,7 +428,7 @@ class NodeGraphComponent:
 
 
 	def _initVariableManager(self):
-		variable_manager = VariableManager(actionVarViewer=self.mainWindow.switchVariableViewerAction,nodeSystem=self)
+		variable_manager = VariableManager(nodeSystem=self)
 		self.variable_manager = variable_manager
 		#dock.setWidget(self.mainWindow)
 		#dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea | Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea)
@@ -437,8 +437,6 @@ class NodeGraphComponent:
 		variable_manager.setObjectName("VariableManager")
 		self.mainWindow.addDockWidget(QtCore.Qt.RightDockWidgetArea, variable_manager)
 		#graph.set_pipe_slicing(True) #enabled by default
-
-		self.getFactory().updateLibTypes()
 
 		pass
 

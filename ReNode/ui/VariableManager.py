@@ -99,7 +99,7 @@ class VariableLibrary:
             #base types
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
-				"range": {"min":-999999,"max":999999}
+                "range": {"min":-999999,"max":999999}
             }},color=QtGui.QColor("Sea green")),
             VariableTypedef("float","Дробное число",FloatValueEdit,{"fspin": {
                 "text": "Число",
@@ -154,7 +154,7 @@ class VariableLibrary:
             VariableTypedef("handle","Дескриптор события",IntValueEdit
                 # ,{"spin": {
                 # "text": "Число",
-				# "range": {"min":0,"max":999999}
+                # "range": {"min":0,"max":999999}
                 # }}
             ,color=QtGui.QColor("Sea green").lighter(50)),
 
@@ -194,6 +194,46 @@ class VariableLibrary:
                     colorList.append(t.color.name())
 
         return [icon,colorList]
+    
+    def prepPortColors(self,val:dict):
+        from ReNode.app.NodeFactory import NodeFactory
+        typecolor = {}
+        for objInfo in self.typeList:
+            typecolor[objInfo.variableType] = [*objInfo.color.getRgb()]
+
+        isDefaultColor = None
+        portType = None
+
+        if val['inputs']:
+            for v in val['inputs'].values():
+                portType = v['type']
+
+                if re.findall('[\[\]\,]',portType):
+                    portType = f'array[{portType}]'
+                    typeinfo = re.findall('\w+\^?',portType)
+                    portType = typeinfo[1]
+
+                if portType.endswith("^"): portType = "object" #temp fix object colors
+                
+                isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
+                if portType in typecolor and isDefaultColor:
+                    v['color'] = typecolor[portType]
+                    v['border_color'] = None
+        
+        if val['outputs']:
+            for v in val['outputs'].values():
+                portType = v['type']
+
+                if re.findall('[\[\]\,]',portType):
+                    typeinfo = re.findall('\w+\^?',portType)
+                    portType = typeinfo[1]
+
+                if portType.endswith("^"): portType = "object" #temp fix object colors
+
+                isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
+                if portType in typecolor and isDefaultColor:
+                    v['color'] = typecolor[portType]
+                    v['border_color'] = None
 
 class VariableManager(QDockWidget):
     refObject = None
@@ -394,8 +434,6 @@ class VariableManager(QDockWidget):
         
         res = curCat.createVariable(variable_name, variable_group)
         if res == True:
-            # infoData = self.nodeGraphComponent.inspector.infoData
-            # self.nodeGraphComponent.getFactory().vlib.onUpdateUserVariables(infoData,self.variables)
             self.widVarName.clear()
             self.widVarGroup.clear()
 
@@ -567,10 +605,6 @@ class VariableManager(QDockWidget):
 
             hstack.endMacro()
 
-            # virtLib = self.nodeGraphComponent.getFactory().vlib
-            # infoData = self.nodeGraphComponent.inspector.infoData
-            # virtLib.onUpdateUserVariables(infoData,self.variables)
-
     def _updateNodeSync(self,nodeObj:RuntimeNode,id,nodeClassname):
         from ReNode.app.NodeFactory import NodeFactory
         lvdata = self.getVariableDataById(id)
@@ -657,24 +691,6 @@ class VariableManager(QDockWidget):
         for vobj in self.variableDataType:
             if vobj.dataType == type: return vobj
         return None
-
-    def _getVarDataByRepr(self,vartRepr,vardtRepr):
-        """
-            !УСТАРЕВШИЙ МЕТОД, КОТОРЫЙ НЕ ДОЛЖЕН БЫТЬ ИСПОЛЬЗОВАН!\n
-            Используйте getVarDataByType
-        """
-        reprVar = None
-        if "|" in vartRepr:
-            searcher = vartRepr.split("|")
-            listRet = []
-            for search_pattern in searcher:
-                listRet.append(next((obj for obj in self.variableTempateData if str(obj) == search_pattern),None))
-            reprVar = listRet
-        else:
-            reprVar = next((obj for obj in self.variableTempateData if str(obj) == vartRepr),None)
-        reprDt = next((obj for obj in self.variableDataType if str(obj) == vardtRepr),None)
-
-        return reprVar,reprDt
 
     def getVarDataByType(self,fullTypename,canCreateCopy=False) -> tuple[VariableTypedef | list[VariableTypedef] | None,VariableDataType|None]:
         """

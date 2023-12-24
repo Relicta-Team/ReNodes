@@ -684,6 +684,10 @@ class NodeObjectHandler:
 		self['outputs'] = dataOutputs
 		self['options'] = dict(self['options'])
 
+		#обработка инпутов и отупутов
+		typeLib = self.varLib
+		typeLib.prepPortColors(memberData)
+
 		# Добавляем опции
 		for k,v in dataInputs.items():
 			if v.get('use_custom',False):

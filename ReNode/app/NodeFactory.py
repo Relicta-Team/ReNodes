@@ -199,6 +199,8 @@ class NodeFactory:
 
 	# Синхронизирует цвета нодов в библиотеке с цветом типов 
 	def updateLibTypes(self):
+		raise Exception("Obsoleted function")
+	
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 		if not NodeGraphComponent.refObject or not NodeGraphComponent.refObject.variable_manager:
 			raise Exception(f"Graph component or variable manager not loaded: {NodeGraphComponent.refObject}; {NodeGraphComponent.variable_manager}")
