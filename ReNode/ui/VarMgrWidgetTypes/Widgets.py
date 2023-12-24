@@ -5,6 +5,9 @@ from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTr
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 import datetime
 
+def prepEscape(data):
+    return data.replace(':',"\:").replace('\"',"\\\"")
+
 class VarMgrBaseWidgetType:
     """
         Базовый тип переменной. В унаследованных членах должны быть реализованы:
@@ -14,12 +17,17 @@ class VarMgrBaseWidgetType:
 
         - статическое поле instancerKind для отношения типа действия к классу переменной (getvar->variable.get)
         - классовый метод onCreateVarFromTree - вызывается при создании переменной в графе
+
+        - статическое поле kindTypes - список типов (classfunc,classvar)
+        - статический метод onCreateVLibData для создания узлов в библиотеке из пользовательских данных
     """
     def __init__(self):
         from ReNode.ui.VariableManager import VariableManager,VariableCategory
         self.layout :QVBoxLayout = None
         self.variableManagerRef :VariableManager = None
         self.categoryObject :VariableCategory = None
+
+    kindTypes = []
 
     @staticmethod
     def getVarMgr():
@@ -122,8 +130,43 @@ class VarMgrBaseWidgetType:
     @classmethod
     def resolveCreatedNodeName(cls,oldName):
         return "<b>"+oldName+"</b>"
+    
+    @staticmethod
+    def getInstanceByType(type):
+        for class_ in VarMgrBaseWidgetType.__subclasses__():
+            if type in class_.kindTypes:
+                return class_
+        return None
+
+    @staticmethod
+    def onCreateVLibData(factory,varDict,classDict):
+        """Событие создания ноды в библиотеке. Преобразует пользовательский словарь в словарь библиотеки"""
+        raise NotImplementedError("Require onCreateVLibData(factory,varDict) method")
 
 class VarMgrVariableWidget(VarMgrBaseWidgetType):
+    kindTypes = ['classvar']
+
+    @staticmethod
+    def onCreateVLibData(factory,varDict,classDict):
+        sysName = classDict['memberName']
+
+        classDict['classObject']['fields'][sysName] = {
+            "return": varDict["type"]
+        }
+
+        memberData = [f"def:f:{classDict['className']}.{sysName}_0"]
+        memberData.append(f'name:{prepEscape(varDict["name"])}')
+
+        #todo desc
+        #memberData.append(f'desc:{prepEscape(varDict["desc"])}')
+        memberData.append('prop:all')
+        memberData.append('classprop:1')
+        memberData.append(f'return:{varDict["type"]}') #todo desc for return type
+        value = varDict['value']
+
+        memberData.append(f'defval:{value}')
+
+        return '\n'.join(memberData)
 
     instancerKind = {
         "getvar": "variable.get",
@@ -402,6 +445,38 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
     
 class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     
+    @staticmethod
+    def onCreateVLibData(factory,varDict,classDict):
+        
+        #callfunc dict
+        sysName = classDict['memberName']
+
+        classDict['classObject']['methods'][sysName] = {
+            "return": "<undefined>"
+        }
+
+        memberData = [f"def:m:{classDict['className']}.{sysName}_0"]
+        memberData.append(f'name:{prepEscape(varDict["name"])}')
+        if varDict.get("desc"):
+            memberData.append(f'desc:{prepEscape(varDict["desc"])}')
+        memberData.append("type:method")
+
+        if varDict.get('returnType','null') != 'null':
+            memberData.append(f'return:{prepEscape(varDict["returnType"])}:{prepEscape(varDict["returnDesc"])}')
+
+        execType = "all"
+        if varDict.get('isPure'): execType = "pure"
+
+        memberData.append(f'exec:{execType}')
+
+        #add ports
+        for p in varDict['params']:
+            memberData.append(f'in:{p["type"]}:{prepEscape(p["name"])}:{prepEscape(p["desc"])}')
+
+        return "\n".join(memberData)
+
+    kindTypes = ['classfunc']
+
     instancerKind = {
         "deffunc": "function.def",
         "callfunc": "function.call",

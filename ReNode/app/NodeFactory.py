@@ -3,6 +3,7 @@ from NodeGraphQt.nodes.base_node import BaseNode
 from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
 from ReNode.ui.NodePainter import getDrawPortFunction
+from ReNode.app.VirtualLib import VirtualLib
 import logging
 import re
 logger : logging.Logger = None
@@ -14,6 +15,8 @@ class NodeFactory:
 		global logger
 		logger = RegisterLogger("NodeFactory")
 		
+		self.vlib = VirtualLib(self)
+
 		self.graph = None
 
 		self.version = 0
@@ -47,15 +50,18 @@ class NodeFactory:
 				return obj.__name__
 			return obj
 		logger.info(f"version lib {self.version}")
-		with open("lib_output.json", 'w',encoding='utf-8') as file_out:
-			json.dump(
-				self.nodes,
-				file_out,
-				indent=2,
-				separators=(',', ':'),
-				default=default,
-				ensure_ascii=False
-			)
+		
+		from ReNode.app.application import Application
+		if Application.isDebugMode() or Application.hasArgument('-outlib'):
+			with open("lib_output.json", 'w',encoding='utf-8') as file_out:
+				json.dump(
+					self.nodes,
+					file_out,
+					indent=2,
+					separators=(',', ':'),
+					default=default,
+					ensure_ascii=False
+				)
 	
 	def deserializeLib(self,data):
 		sys = data["system"]
@@ -70,18 +76,21 @@ class NodeFactory:
 
 		#load classes
 		classDict = data.get('classes',{})
+
+		#inheritance process (baseList generate)
+		self.inheritanceProcess(classDict)
+
 		i = 1
 		for classname,classmembers in classDict.items():
 			if (i%100 == 0):
 				logger.info(f"Loading class {i}/{len(classDict)}")
 			classmembers['__childList'] = []
 			classmembers['__inhChild'] = [] #прямые дети
-			classmembers['__inhParent'] = "" #прямые родители
 			self.classes[classname] = classmembers
 			i += 1
 
 
-		logger.info(f'Classes count: {len(self.classes)}')
+		logger.info(f'Native classes count: {len(self.classes)}')
 
 		#validate names
 		logger.info('Validating class names')
@@ -100,19 +109,12 @@ class NodeFactory:
 			for b in bList:
 				bData = self.getClassData(b)
 				bData['__childList'].append(classname)
-
-			# прописываем прямых предков
-			if len(bList) > 1:
-				if curData['__inhParent']:
-					exp__ = curData['__inhParent']
-					raise Exception(f'Class {classname} already has parent ({exp__})')
-				curData['__inhParent'] = bList[1]
 		
 		# второй проход для проброса детей из родителей
 		logger.info("Passing children from parents")
 		for classname,curData in classDict.items():
 			if classname != "object":
-				parent = curData["__inhParent"]
+				parent = curData["baseClass"]
 				parData = self.getClassData(parent)
 				parData['__inhChild'].append(classname)
 		
@@ -120,7 +122,58 @@ class NodeFactory:
 		logger.info("Adding lowercase names")
 		self.classNames = set([x.lower() for x in classDict.keys()])
 		
+		# загрузка пользовательской библиотеки
+		logger.info("Loading user lib")
+		self.vlib.generateUserLib()
+
 		pass
+
+	def reloadNativeGeneratedInfo(self):
+
+		classDict = self.classes
+
+		self.inheritanceProcess(classDict)
+
+		#reset all
+		logger.info("Reset...")
+		for cls,dat in classDict.items():
+			dat['__childList'] = []
+			dat['__inhChild'] = []
+		
+		logger.info('Childlist collect')
+		for classname in classDict.keys():
+			curData = self.getClassData(classname)
+			bList = self.getClassAllParents(classname,False) #родительская иерархия
+			for b in bList:
+				bData = self.getClassData(b)
+				bData['__childList'].append(classname)
+		
+		# второй проход для проброса детей из родителей
+		logger.info("Inhchild process")
+		for classname,curData in classDict.items():
+			if classname != "object":
+				parent = curData["baseClass"]
+				parData = self.getClassData(parent)
+				parData['__inhChild'].append(classname)
+		
+		# генерация имен в нижнем регистре
+		logger.info("Lowercase names")
+		self.classNames = set([x.lower() for x in classDict.keys()])
+
+
+	def inheritanceProcess(self,classDict):
+		const_baseClass = ''
+		classDict['object']['baseClass'] = ""
+
+		for cls,dat in classDict.items():
+			bList = [cls]
+			curObj = cls
+			while curObj != const_baseClass:
+				curObj = classDict[curObj]["baseClass"]
+				if curObj == const_baseClass: break #second pass
+				bList.append(curObj)
+			
+			dat['baseList'] = bList
 
 	def getColorByType(self,type_name,retAsQColor=False):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -476,7 +529,7 @@ class NodeFactory:
 	def getClassParent(self,className):
 		cd = self.getClassData(className)
 		if not cd: return None
-		return cd.get('__inhParent',None)
+		return cd.get('baseClass',None)
 
 	def getClassChilds(self,className,retCopy=True):
 		cd = self.getClassData(className)

@@ -395,7 +395,7 @@ class ClassGraphType(GraphTypeBase):
         className = metaObj['classname']
         parentName = metaObj['parent']
 
-        wrapperCode = f'class({className}) extends({parentName})\n' + sourceCode + "\nendclass"
+        wrapperCode = f'editor_attribute(\"NodeClass\")\nclass({className}) extends({parentName})\n' + sourceCode + "\nendclass"
         
         return wrapperCode
 

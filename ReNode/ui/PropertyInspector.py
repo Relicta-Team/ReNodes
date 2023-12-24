@@ -258,7 +258,7 @@ class Inspector(QDockWidget):
         #collect fields
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
         vmgr : VariableManager = self.nodeGraphComponent.variable_manager
-        classname = self.infoData.get('parent','object')
+        classname = self.infoData.get('classname','object')
         cd = fact.getClassData(classname)
         if not cd:
             self.logger.error("Cannot load class data for {}".format(classname))
