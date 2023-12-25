@@ -240,7 +240,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
             gradient = QtGui.QLinearGradient(text_rect.topLeft(), QtCore.QPointF(text_rect.bottomRight().x(), text_rect.bottomRight().y()*2))
             gradient.setSpread(QtGui.QGradient.PadSpread)
-            gradient.setColorAt(0.2, QtGui.QColor(*self._lastItem.color))
+            gradient.setColorAt(0.2, QtGui.QColor(*self._lastItem.color).lighter(65))
             gradient.setColorAt(0.4, QtGui.QColor(40, 40, 40, 245))
         else:
             gradient = QtGui.QColor(80, 80, 80, 255)

@@ -572,7 +572,8 @@ class NodeObjectHandler:
 		if 'color' not in memberData:
 			self['color'] = self.varLib.getColorByType(retType)
 		if 'icon' not in memberData:
-			self['icon'] = self.varLib.getIconFromTypename(retType,True)
+			icnList = self.varLib.getIconFromTypename(retType,True)
+			self['icon'] = icnList
 	
 	def _preregMethod(self):
 		memberData = self.memberData
