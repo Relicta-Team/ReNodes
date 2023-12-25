@@ -164,8 +164,10 @@ class DictWidget(QWidget):
         self.activeSeachBox = isinstance(widVarType,SearchComboButton)
         if self.activeSeachBox:
             self.widVarTypeRef :SearchComboButton = widVarType
+            self.valWidgetInstancer = None
         else:
             self.valWidgetInstancer = widVarType
+            self.widVarTypeRef = None
         self.initUI()
 
     def isConstDictValue(self): return not self.activeSeachBox
@@ -259,7 +261,7 @@ class DictWidget(QWidget):
     def addArrayElement(self,keyVal=None,valItem=None):
         from ReNode.ui.VariableManager import VariableManager
 
-        if self.widVarTypeRef.get_value() != "string":
+        if self.widVarTypeRef and self.widVarTypeRef.get_value() != "string":
             from ReNode.app.application import Application
             #! потому что например для ключей типа vec3 выпадет исключение при формировании словаря
             Application.refObject.logger.error(f"В текущей версии программы ключами словаря могут быть только строки - \"{self.widVarTypeRef.get_text()}\" не допускается")

@@ -292,7 +292,7 @@ class NodeObjectHandler:
 			self.memberData['classProp'] = clsprop
 		#значение по умолчанию
 		elif tokenType == 'defval':
-			self.memberData['defval'] = tokens[1]
+			self.memberData['defval'] = unescape(tokens[1]).replace("\\:",":")
 		#method specific data
 
 		#method type: method,event,get,const
@@ -566,11 +566,13 @@ class NodeObjectHandler:
 		elif self.objectNameFull.endswith('.set'):
 			memberData['namelib'] = memberData.get('namelib',memberData.get('name',self.memberName)) + " (Установить)"
 
+		retType = memberData['returnType']
+
 		# Устанавливаем цвет поля
 		if 'color' not in memberData:
-			self['color'] = hexToRGBA("212f3b")
+			self['color'] = self.varLib.getColorByType(retType)
 		if 'icon' not in memberData:
-			self['icon'] = ['data\\icons\\pill_16x',self.getVarlibColorByType(memberData['returnType'])]
+			self['icon'] = self.varLib.getIconFromTypename(retType,True)
 	
 	def _preregMethod(self):
 		memberData = self.memberData

@@ -235,6 +235,94 @@ class VariableLibrary:
                     v['color'] = typecolor[portType]
                     v['border_color'] = None
 
+    def getVarDatatypeByType(self,type):
+        for t in self.valueTypeList:
+            if t.dataType == type:
+                return t
+        return None
+
+    def getVarTypedefByType(self,type):
+        for t in self.typeList:
+            if t.variableType == type:
+                return t
+        return None
+
+    def isObjectType(self,type,refClassDict):
+        classData = refClassDict.get(type)
+        if not classData: return False
+        return "object" in classData.get('baseList',[])
+    
+    def getVarDataByType(self,fullTypename,canCreateCopy=False) -> tuple[VariableTypedef | list[VariableTypedef] | None,VariableDataType|None]:
+        """
+            Возвращает tuple (VariableTypedef | list[VariableTypedef],VariableDataType) по полному имени типа
+        """
+        datatype = "value"
+        values = [fullTypename]
+        if re.findall('[\[\]\,]',fullTypename):
+            typeinfo = re.findall('\w+\^?',fullTypename)
+            datatype = typeinfo[0]
+            values = typeinfo[1:]
+        
+        #fullType
+        dtObj = self.getVarDatatypeByType(datatype)
+        valList = []
+        for val in values:
+            valObj = self.getVarTypedefByType(val)
+            if not valObj:
+                raise Exception(f"Variable type not found: {val}; Fulltypename: {fullTypename}")
+            
+            if canCreateCopy:
+                vCopy = valObj.copy(val)
+                valList.append(vCopy)
+            else:
+                valList.append(valObj)
+            
+        vRet = valList if len(valList) > 1 else valList[0]
+        return vRet,dtObj
+    
+    def getIconFromTypename(self,fulltypename,retSerializable = False):
+        """Получает готовую иконку по полному имени типа"""
+        
+        if fulltypename == "Exec": return "" if retSerializable else QIcon()
+        if fulltypename == "null": return "" if retSerializable else QIcon()
+
+        """Возвращает инстанс иконки для типа с нужными цветами"""
+        varInfo, dt = self.getVarDataByType(fulltypename,False)
+
+        if isinstance(varInfo,list):
+            pathes = dt.icon
+            if retSerializable:
+                if not isinstance(pathes,list):
+                    pathes = [pathes]
+                colorList = [cl.color.name()for cl in varInfo]
+                retVal = []
+                for i,pt_ in enumerate(pathes):
+                    retVal.append(pt_)
+                    retVal.append(colorList[i])
+                return retVal
+
+            
+            colors = [o__.color for o__ in varInfo]
+            return QIcon(generateIconParts(pathes,colors))
+        else:
+            if retSerializable: return [dt.icon,varInfo.color.name()]
+
+            icn = QIcon(dt.icon)
+            icn = updateIconColor(icn,varInfo.color)
+            return icn
+
+    def getColorByType(self,fulltypename):
+        """Получает цвет по полному имени типа"""
+        if fulltypename == "null": return [255,255,255,255]
+        if fulltypename == "Exec": return [255,255,255,255]
+        varInfo, dt = self.getVarDataByType(fulltypename,False)
+        color = None
+        if isinstance(varInfo,list):
+            color = varInfo[0].color
+        else:
+            color = varInfo.color
+        return [*color.getRgb()]
+
 class VariableManager(QDockWidget):
     refObject = None
     def __init__(self,actionVarViewer = None,nodeSystem=None):

@@ -163,8 +163,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         memberData.append('classprop:1')
         memberData.append(f'return:{varDict["type"]}') #todo desc for return type
         value = varDict['value']
-
-        memberData.append(f'defval:{value}')
+        strValue = f'{value}'
+        memberData.append(f'defval:{prepEscape(strValue)}')
 
         return '\n'.join(memberData)
 
