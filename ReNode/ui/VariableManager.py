@@ -209,7 +209,7 @@ class VariableLibrary:
                 portType = v['type']
 
                 if re.findall('[\[\]\,]',portType):
-                    portType = f'array[{portType}]'
+                    #portType = f'array[{portType}]'
                     typeinfo = re.findall('\w+\^?',portType)
                     portType = typeinfo[1]
 

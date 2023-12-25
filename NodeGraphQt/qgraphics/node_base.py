@@ -177,10 +177,11 @@ class NodeItem(AbstractNodeItem):
             pass
 
         else:
-            p1 = text_rect.topLeft()
+            icnPad = self._icon_item.boundingRect().width() * 4
+            p1 = QtCore.QPointF(text_rect.topLeft().x() + icnPad, text_rect.topLeft().y())
             p2 = text_rect.bottomRight()
             gradMain = QtGui.QLinearGradient(p1,p2)
-            gradMain.setSpread(QtGui.QGradient.PadSpread)
+            gradMain.setSpread(QtGui.QGradient.Spread.ReflectSpread)
             gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
             gradMain.setColorAt(1, QtGui.QColor(20, 20, 20, 0))
             painter.setBrush(QtGui.QBrush(gradMain))
