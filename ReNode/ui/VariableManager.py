@@ -692,6 +692,20 @@ class VariableManager(QDockWidget):
                 if node.has_property('nameid'):
                     if node.get_property('nameid') == variable_system_name:
                         graph.delete_node(node,True) #push undo for history
+            
+            catObj = self.getVariableCategoryById(variable_system_name,retObject=True)
+            if catObj:
+                varData = self.getVariableDataById(variable_system_name)
+                if varData:
+                    catObjInstancer = catObj.instancer
+                    infoData = self.nodeGraphComponent.inspector.infoData
+                    for instancerType in catObjInstancer.instancerKind.keys():
+                        typename = catObjInstancer.getVariableInstancerClassName(instancerType,infoData,varData)
+                        allNodes = graph.get_nodes_by_class(typename)
+                        if typename and len(allNodes) > 0:
+                            for node in allNodes:
+                                graph.delete_node(node,True)
+
 
             hstack.push(VariableDeletedCommand(self,category,self.variables[category][variable_system_name]))
 
