@@ -23,10 +23,12 @@ class MemberType(enum.Enum):
     """Тип члена отражает какие данные можно вводить в менеджере переменных"""
     Unknown = -1
     """Неизвестный тип члена"""
-    Variable = 0,
+    Variable = 0
     """Переменная хранится в классе, имеет тип данных и значение"""
     Function = 1
     """Функция хранится в классе, имеет параметры и возвращаемое значение"""
+    LocalVariable = 2
+    """Локальная переменная"""
 
 class VariableInfo:
     def __init__(self):
@@ -75,6 +77,8 @@ class VariableCategory:
         if self.memtype == MemberType.Unknown:
             inst = VarMgrBaseWidgetType
         elif self.memtype == MemberType.Variable:
+            inst = VarMgrClassVariableWidget
+        elif self.memtype == MemberType.LocalVariable:
             inst = VarMgrVariableWidget
         elif self.memtype == MemberType.Function:
             inst = VarMgrFunctionWidget
@@ -342,7 +346,7 @@ class VariableManager(QDockWidget):
 
         self.variableCategoryList = [
             #class specific vars
-            VariableCategory(MemberType.Variable,'localvar',"Локальная переменная","Локальные переменные","Локальная переменная - это переменная, создаваемая и существующая в пределах одного события или функции. Используются для записи и хранения временных данных."),
+            VariableCategory(MemberType.LocalVariable,'localvar',"Локальная переменная","Локальные переменные","Локальная переменная - это переменная, создаваемая и существующая в пределах одного события или функции. Используются для записи и хранения временных данных."),
             VariableCategory(MemberType.Variable,'classvar','Переменная класса',"Переменные класса","Переменная класса - это переменная, принадлежащая созданному объекту. (прим. Человек имеет переменную 'Имя', 'Возраст')"),
             VariableCategory(MemberType.Function,'classfunc',"Функция класса","Функции класса","Функции класса - это функция, принадлежащая созданному объекту. (прим. Человек имеет функцию класса 'Проснуться', 'Поднять бровь')"),
 

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem,createTreeContentItem
-from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
+from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts, transliterate
 import datetime
 
 def prepEscape(data):
@@ -28,6 +28,9 @@ class VarMgrBaseWidgetType:
         self.categoryObject :VariableCategory = None
 
     kindTypes = []
+
+    canUpdateNode = False
+    """Флаг обновления узла при создании переменной. Сейчас включен только для локальных переменных"""
 
     @staticmethod
     def getVarMgr():
@@ -113,7 +116,7 @@ class VarMgrBaseWidgetType:
     """Переопределяемый тип отношения типа действия к создаваемому классу переменной"""
 
     @classmethod
-    def getVariableInstancerClassName(cls,instancerType):
+    def getVariableInstancerClassName(cls,instancerType,infoData,varData):
         """Возвращает имя инстансера для переменной (не переопределяемый)"""
         return cls.instancerKind.get(instancerType)
 
@@ -145,6 +148,8 @@ class VarMgrBaseWidgetType:
 
 class VarMgrVariableWidget(VarMgrBaseWidgetType):
     kindTypes = ['classvar']
+
+    canUpdateNode = True
 
     @staticmethod
     def onCreateVLibData(factory,varDict,classDict):
@@ -442,9 +447,33 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         item.setToolTip(1,fulltype)
         
         item.setIcon(1,varmgr.getIconFromTypename(fulltype))
-    
+
+class VarMgrClassVariableWidget(VarMgrVariableWidget):
+    canUpdateNode = False
+    @classmethod
+    def getVariableInstancerClassName(cls,instancerType,infoData,varData):
+        className = infoData['classname']
+        mem = f"fields.{className}.{transliterate(varData['name'])}_0"
+        if instancerType == "setvar":
+            return mem + ".set"
+        elif instancerType == "getvar":
+            return mem + ".get"
+        else:
+            return None
+
 class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     
+    @classmethod
+    def getVariableInstancerClassName(cls,instancerType,infoData,varData):
+        className = infoData['classname']
+        mem = f"methods.{className}.{transliterate(varData['name'])}_0"
+        if instancerType == "deffunc":
+            return mem + ".def"
+        elif instancerType == "callfunc":
+            return mem
+        else:
+            return None
+
     @staticmethod
     def onCreateVLibData(factory,varDict,classDict):
         

@@ -350,10 +350,22 @@ class NodeGraphComponent:
 		def __cavViewFunctionDefActionVar__(ctxDataMap,checkvalue):
 			# определение будет видно только если в графе ещё нет определения этой функции
 			idvar = ctxDataMap['id']
-			allFuncs = self.graph.get_nodes_by_class("function.def")
-			for node in allFuncs:
-				if node.get_property("nameid") == idvar:
-					return False
+			# allFuncs = self.graph.get_nodes_by_class("function.def")
+			# for node in allFuncs:
+			# 	if node.get_property("nameid") == idvar:
+			# 		return False
+			# new logic
+			catObj = self.variable_manager.getVariableCategoryById(idvar,retObject=True)
+			if catObj:
+				varData = self.variable_manager.getVariableDataById(idvar)
+				if varData:
+					catObjInstancer = catObj.instancer
+					infoData = self.inspector.infoData
+					instancerType = "deffunc"
+					typename = catObjInstancer.getVariableInstancerClassName(instancerType,infoData,varData)
+					if typename and len(self.graph.get_nodes_by_class(typename)) > 0:
+						return False
+		
 			catobj = self.variable_manager.getVariableCategoryById(idvar)
 			if not catobj: return False
 			return catobj.endswith(checkvalue)
@@ -470,13 +482,6 @@ class NodeGraphComponent:
 		self.undoView_dock.setObjectName("HistoryDock")
 		self.mainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.undoView_dock)
 
-	def addVariableToScene(self,getorset,varid,pos):
-		nodeObj = self.nodeFactory.instance("variable."+getorset,self.graph,pos)
-		self.graph.undo_view.blockSignals(True)
-		self.variable_manager._updateNode(nodeObj,varid,getorset)
-		self.graph.undo_view.blockSignals(False)
-		pass
-
 	def createVariableIntoScene(self,instanceType,varid,pos):
 		"""
 			Создание переменной в графе
@@ -488,8 +493,13 @@ class NodeGraphComponent:
 		if not catObj:
 			Application.refObject.logger.error(f'Cannot find variable category for \'{varid}\'')
 			return
+		varData = self.variable_manager.getVariableDataById(varid)
+		if not varData:
+			Application.refObject.logger.error(f'Cannot find variable data for \'{varid}\'')
+			return
 		catObjInstancer:VarMgrBaseWidgetType = catObj.instancer
-		typename = catObjInstancer.getVariableInstancerClassName(instanceType)
+		infoData = self.inspector.infoData
+		typename = catObjInstancer.getVariableInstancerClassName(instanceType,infoData,varData)
 		if not typename:
 			Application.refObject.logger.error(f'Cannot find variable instancer for \'{instanceType}\'')
 			return
@@ -497,9 +507,11 @@ class NodeGraphComponent:
 		self.graph.undo_stack().beginMacro(f"Создание переменной {typename}")
 
 		nodeObj = self.nodeFactory.instance(typename,self.graph,pos)
-		self.graph.undo_view.blockSignals(True)
-		self.variable_manager._updateNode(nodeObj,varid,instanceType,catObjInstancer)
-		self.graph.undo_view.blockSignals(False)
+
+		if catObjInstancer.canUpdateNode:
+			self.graph.undo_view.blockSignals(True)
+			self.variable_manager._updateNode(nodeObj,varid,instanceType,catObjInstancer)
+			self.graph.undo_view.blockSignals(False)
 
 		self.graph.undo_stack().endMacro()
 		pass
