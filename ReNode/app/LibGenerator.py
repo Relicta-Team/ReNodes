@@ -722,11 +722,21 @@ class NodeObjectHandler:
 			defvalue = memberData.get('defval',"$NULL$")
 			rettype = self['returnType']
 
-			if rettype == 'bool':
-				defvalue = bool(defvalue)
-			elif rettype != 'string':
-				evaled = eval(defvalue)
-				if evaled != None: defvalue = evaled
+			if defvalue == "$NULL$":
+				if rettype == 'bool':
+					defvalue = False
+				elif rettype in ['int','float']:
+					defvalue = 0
+				elif rettype == 'string':
+					defvalue = ''
+				else:
+					defvalue = None
+			else:
+				if rettype == 'bool':
+					defvalue = bool(defvalue)
+				elif rettype != 'string':
+					evaled = eval(defvalue)
+					if evaled != None: defvalue = evaled
 
 			propData = {
 				'node': self.objectNameFull,

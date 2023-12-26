@@ -460,6 +460,19 @@ class VarMgrClassVariableWidget(VarMgrVariableWidget):
             return mem + ".get"
         else:
             return None
+        
+    def createVariable(self, varname, vargroup):
+        
+        realName = transliterate(varname)
+        className = self.nodeGraphComponent.inspector.infoData.get('classname')
+        if className:
+            members = self.nodeGraphComponent.getFactory().getClassAllFields(className)
+            members = [m.lower() for m in members]
+            if realName.lower() in members:
+                self.getVarMgr().showErrorMessageBox(f"Переменная с именем \"{varname}\" уже существует в классе \"{className}\".")
+                return False
+        
+        return super().createVariable(varname, vargroup)
 
 class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     
@@ -707,6 +720,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         if retTypename == 'null' and isPureFunc:
             self.getVarMgr().showErrorMessageBox("Нельзя создать чистую функцию, которая не возвращает значение.")
             return False
+
+        realName = transliterate(funcName)
+        className = self.nodeGraphComponent.inspector.infoData.get('classname')
+        if className:
+            members = self.nodeGraphComponent.getFactory().getClassAllMethods(className)
+            members = [m.lower() for m in members]
+            if realName.lower() in members:
+                self.getVarMgr().showErrorMessageBox(f"Функция с именем \"{funcName}\" уже существует в классе \"{className}\".")
+                return False
 
         #check params
         uniParams = []

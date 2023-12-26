@@ -580,3 +580,42 @@ class NodeFactory:
 	
 	def classNameExists(self,className):
 		return className.lower() in self.classNames
+	
+	def getClassAllFields(self,className):
+		cd = self.getClassAllParents(className)
+		if not cd: return []
+		retList = []
+		for className in cd:
+			cd = self.getClassData(className)
+			if cd:
+				retList.extend(cd['fields']['defined'].keys())
+		return retList
+	
+	def getClassAllMethods(self,className):
+		cd = self.getClassAllParents(className)
+		if not cd: return []
+		retList = []
+		for className in cd:
+			cd = self.getClassData(className)
+			if cd:
+				retList.extend(cd['methods']['defined'].keys())
+		return retList
+	
+	def getClassAllInspectorProps(self,className):
+		"""Возвращаемый массив не должен быть изменяемым"""
+		cd = self.getClassAllParents(className)
+		if not cd: return {}
+		retList = {
+			"fields": {},
+			"methods": {}
+		}
+		for className in cd:
+			cd = self.getClassData(className)
+			if cd:
+				iprops = cd.get('inspectorProps')
+				if iprops:
+					for k,v in iprops.get('fields',{}).items():
+						retList['fields'][k] = v
+					for k,v in iprops.get('methods',{}).items():
+						retList['methods'][k] = v
+		return retList

@@ -156,8 +156,8 @@ class CodeGenerator:
                 if vcat=='localvar':
                     lvData['alias'] = f"_LVAR{i+1}"
                     lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
-                elif vcat=='classvar':
-                    lvData['alias'] = f"classMember_{i+1}"
+                ##elif vcat=='classvar':
+                #    lvData['alias'] = f"classMember_{i+1}"
                 else:
                     continue
 
@@ -622,6 +622,24 @@ class CodeGenerator:
 
         self.gObjType.handlePreStartEntry(codeInfo[entryId],self.gObjMeta)
 
+        #генерация переменных
+        for k,obj in codeInfo.items():
+            clsName = obj.nodeClass
+            if clsName.startswith("fields.") and clsName.endswith("_0.set"):
+                libName = clsName.replace("_0.set","_0.get")
+                libInfo = self.getFactory().getNodeLibData(libName)
+                if not libInfo:
+                    raise Exception(f'Unknown library object from \'{clsName}\': \'{libName}\'')
+
+                #generate variable
+                gvObj = GeneratedVariable(f'({libInfo["code"]})',obj.nodeId)
+                outName = "Новое значение"
+                gvObj.fromPort = outName #constant
+                gvObj.definedNodeName = obj.nodeId
+                if outName in obj.generatedVars:
+                    raise Exception(f'Unhandled case: {outName} in {obj.generatedVars}')
+                obj.generatedVars[outName] = gvObj
+
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
             iteration += 1
@@ -832,9 +850,11 @@ class CodeGenerator:
                         lvarObj.isUsed = True
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
-                        #тут тоже делаем проверку возможности проброса
-                        if not obj.checkExecScopeVars([lvarObj],codeInfo):
-                            self.exception(CGScopeVariableNotFoundException,source=obj,target=inpObj)                    
+                        # только для локальных переменных проверка
+                        if re.findall("_lvar_\d+_\d+",lvarObj.localName):
+                            #тут тоже делаем проверку возможности проброса
+                            if not obj.checkExecScopeVars([lvarObj],codeInfo):
+                                self.exception(CGScopeVariableNotFoundException,source=obj,target=inpObj)                    
 
                     if inpObj.isReady:
                         # проверка локальных проброшенных переменных

@@ -301,12 +301,12 @@ class ClassGraphType(GraphTypeBase):
         code = ""
         cgObj : CodeGenerator = metaObj.get('codegen')
 
-        for vid,vdat in cgObj.getVariableDict().get('classvar',{}).items():
-            varvalue = cgObj.updateValueDataForType(vdat["value"],vdat['type'])
+        # for vid,vdat in cgObj.getVariableDict().get('classvar',{}).items():
+        #     varvalue = cgObj.updateValueDataForType(vdat["value"],vdat['type'])
             
-            if cgObj._addComments:
-                code += f"\n//cv_init:{vdat['name']}"
-            code += "\n" + f'var({cgObj.localVariableData[vid]["alias"]},{varvalue});'
+        #     if cgObj._addComments:
+        #         code += f"\n//cv_init:{vdat['name']}"
+        #     code += "\n" + f'var({cgObj.localVariableData[vid]["alias"]},{varvalue});'
         
         return code
     
@@ -317,19 +317,25 @@ class ClassGraphType(GraphTypeBase):
         baseClass = metaObj.get('classname') #metaObj.get('parent')
         infoDataProps = metaObj['infoData']['props']
         classInfo = cgObj.getFactory().getClassData(baseClass)
-        inspectorProps = classInfo['inspectorProps']
+        #inspectorProps = classInfo['inspectorProps']
 
-        for fieldSystemName,fieldValue in infoDataProps['fields'].items():
+        allProps = cgObj.getFactory().getClassAllInspectorProps(baseClass)
+
+        for fname,fdata in allProps.get('fields',{}).items():
             if cgObj._addComments:
-                code += f"\n//p_var: {fieldSystemName}"
-            varvalue = cgObj.updateValueDataForType(fieldValue, inspectorProps['fields'][fieldSystemName]['return'])
-            #TODO custom variable defcode
-            code += "\n" + f"[\"{fieldSystemName}\",{varvalue}] call pc_oop_regvar;"
-        
+                code += f"\n//p_field: {fname}"
+            value = fdata['defval']
+            if infoDataProps['fields'].get(fname):
+                value = infoDataProps['fields'][fname]
+                varvalue = cgObj.updateValueDataForType(value, fdata['return'])
+                code += "\n" + f"[\"{fname}\",{varvalue}] call pc_oop_regvar;"
+            else:
+                code += " (default)"
+
         for constSystemname, constval in infoDataProps['methods'].items():
             if cgObj._addComments:
                 code += f"\n//p_const: {constSystemname}"
-            constProp = inspectorProps['methods'][constSystemname]
+            constProp = allProps['methods'][constSystemname]
             sigName = 'methods.' + constProp['node']
             varvalue = cgObj.updateValueDataForType(constval, constProp['return'])
             constLibInfo = cgObj.getFactory().getNodeLibData(sigName)
