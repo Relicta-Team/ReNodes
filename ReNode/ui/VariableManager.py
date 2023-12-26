@@ -984,3 +984,21 @@ class VariableManager(QDockWidget):
                 else:
                     return cat
         return None
+    
+    def getVariableNodeNameById(self,idvar,instancerKindType=None):
+        catObj = self.getVariableCategoryById(idvar,retObject=True)
+        if not catObj: return None
+        vdata = self.getVariableDataById(idvar)
+        if not vdata: return None
+        catObjInstancer = catObj.instancer
+        infoData = self.nodeGraphComponent.inspector.infoData
+        if instancerKindType:
+            return catObjInstancer.getVariableInstancerClassName(instancerKindType,infoData,vdata)
+        else:
+            retList = []
+            for instT in catObjInstancer.instancerKind.keys():
+                typename = catObjInstancer.getVariableInstancerClassName(instT,infoData,vdata)
+                if typename:
+                    retList.append(typename)
+            return retList
+        

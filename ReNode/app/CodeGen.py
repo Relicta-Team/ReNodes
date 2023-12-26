@@ -256,9 +256,20 @@ class CodeGenerator:
             conn['out'][0] = unicalNameDict[outOld]
 
     def _validateEntrys(self,entrys):
+
         #find duplicates entry classes
         entDict = {}
         entNodeData = {_id: CodeGenerator.NodeData(_id,self) for _id in entrys}
+
+        #check defined functions
+        for vid,vdat in self.getVariableDict().get("classfunc",{}).items():
+            instTypename = self.getVariableManager().getVariableNodeNameById(vid,"deffunc")
+            if instTypename:
+                nodeList = self.graphsys.graph.get_nodes_by_class(instTypename)
+                if not nodeList:
+                    ctxInfo = f'{vdat["name"]} ({instTypename})'
+                    self.exception(CGUserEntryNotDefinedException,context=ctxInfo)
+
         for ent in entrys:
             entData = self.serialized_graph['nodes'][ent]
             checkedKey = entData['class_']
