@@ -85,6 +85,11 @@ class CGPortRequiredConnectionException(CGBaseException):
     text = "Входной порт \"{portname}\" узла {src} требует подключения, так как не имеет пользовательского свойства"
     desc = "Порт \"{portname}\" в узле не имеет опции пользовательских данных и требует подключенного значения."
 
+class CGPortTypeMissmatchException(CGBaseException):
+    id = 103
+    text = "Недопустимый тип для порта \"{portname}\" узла {src}"
+    desc = "Узел {src} не может принять тип порта, полученный от {targ}. Требуется тип \'{ctx}\'"
+
 # ----------------------------------------
 #   301-600 - nodes exceptions
 # ----------------------------------------

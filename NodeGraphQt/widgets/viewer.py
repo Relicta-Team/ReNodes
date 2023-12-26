@@ -46,6 +46,12 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
     if fromTypeName == toTypeName:
         return True
 
+    # check selfports
+    if fromTypeName == "self" or toTypeName == "self":
+        fact = NodeGraphComponent.refObject.getFactory()
+        if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
+            return True
+
     #dynamic set
     #if one port has data and was empty
     """

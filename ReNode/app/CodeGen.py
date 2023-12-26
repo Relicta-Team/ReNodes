@@ -630,9 +630,10 @@ class CodeGenerator:
                 libInfo = self.getFactory().getNodeLibData(libName)
                 if not libInfo:
                     raise Exception(f'Unknown library object from \'{clsName}\': \'{libName}\'')
-
+                codeline = libInfo["code"]
+                codeline = re.sub(f'@in\.1(?=\D|$)', f"@in.2", codeline)
                 #generate variable
-                gvObj = GeneratedVariable(f'({libInfo["code"]})',obj.nodeId)
+                gvObj = GeneratedVariable(f'({codeline})',obj.nodeId)
                 outName = "Новое значение"
                 gvObj.fromPort = outName #constant
                 gvObj.definedNodeName = obj.nodeId
@@ -823,6 +824,19 @@ class CodeGenerator:
                     inpId, portNameConn = inpId #unpack list
 
                     inpObj = codeInfo[inpId]
+
+
+                    # проверка типов self
+                    if input_props['type'] == "self":
+                        typeFrom = self.dpdGraphExt[inpId]['typeout'][portNameConn]
+                        checkedClass = self.gObjMeta['classname']
+                        if typeFrom != checkedClass:
+                            self.exception(CGPortTypeMissmatchException,
+                                           source=obj,
+                                           portname=input_name,
+                                           target=inpObj,
+                                           context=checkedClass)
+
                     if inpObj.generatedVars.get(portNameConn):
                         # если сгенерированная переменная скоуповая и obj не в скоупах inpObj то исключ.
                         if inpObj.nodeType.name == "SCOPED_LOOP":
@@ -1201,6 +1215,8 @@ class CodeGenerator:
         if value is None: return "null"
         if value == "NULL": return value
         if value == "this": return value
+        #for selfcall/selfset/get
+        if value == 'Этот объект' and tname == "self": return "this"
         if not tname: return value
 
         vObj,dtObj = self.getVariableManager().getVarDataByType(tname)

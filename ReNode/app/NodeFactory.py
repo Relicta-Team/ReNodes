@@ -578,6 +578,19 @@ class NodeFactory:
 		parents = self.getClassAllParents(typecheck,False)
 		return baseClassName in parents
 	
+	def isObjectType(self,type):
+		"""
+			Проверяет является ли тип типом объекта (унаследованного от object)
+
+			Допускается использование типов с постфиксом наследования (^)
+		"""
+		if type.endswith("^"): #remove postfix
+			type = type[:-1]
+		
+		if self.isTypeOf(type,"object"):
+			return True
+		return False
+
 	def classNameExists(self,className):
 		return className.lower() in self.classNames
 	

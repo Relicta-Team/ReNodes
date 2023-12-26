@@ -246,12 +246,17 @@ class VariableLibrary:
         return None
 
     def getVarTypedefByType(self,type):
+        if type.endswith("^"): 
+            type = "object"
+        
         for t in self.typeList:
             if t.variableType == type:
                 return t
         return None
 
     def isObjectType(self,type,refClassDict):
+        if type.endswith("^"): type = type[:-1]
+
         classData = refClassDict.get(type)
         if not classData: return False
         return "object" in classData.get('baseList',[])
@@ -761,13 +766,8 @@ class VariableManager(QDockWidget):
             Проверяет является ли тип типом объекта (унаследованного от object)
 
             Допускается использование типов с постфиксом наследования (^)
-        """
-        if type.endswith("^"): #remove postfix
-            type = type[:-1]
-        
-        if self.nodeGraphComponent.getFactory().isTypeOf(type,"object"):
-            return True
-        return False
+        """        
+        return self.nodeGraphComponent.getFactory().isObjectType(type)
 
     def getObjectTypeName(self,type):
         if type.endswith("^"): #remove postfix

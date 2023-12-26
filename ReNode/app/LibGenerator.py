@@ -528,7 +528,7 @@ class NodeObjectHandler:
 				if _hasGet:
 					newobj = self.copy(True)
 					newobj.objectNameFull += f".get"
-					newobj['code'] = f'this getVariable "{newobj.memberName}"'
+					newobj['code'] = f'@in.1 getVariable "{newobj.memberName}"'
 					newobj.execTypes = 'pure'
 					newobj.pushBackLines([
 						f'out:{newobj["returnType"]}:Значение'
@@ -536,7 +536,7 @@ class NodeObjectHandler:
 				if _hasSet:
 					newobj = self.copy(True)
 					newobj.objectNameFull += f".set"
-					newobj['code'] = f'this setVariable ["{newobj.memberName}",@in.2]; @out.1'
+					newobj['code'] = f'@in.2 setVariable ["{newobj.memberName}",@in.3]; @out.1'
 					newobj.execTypes = 'all'
 					_setterLines = [
 						f"in:{newobj['returnType']}:Значение",
@@ -574,6 +574,13 @@ class NodeObjectHandler:
 		if 'icon' not in memberData:
 			icnList = self.varLib.getIconFromTypename(retType,True)
 			self['icon'] = icnList
+
+		portColor = [*self.varLib.getVarTypedefByType("object").color.getRgb()]
+		self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Владелец значения свойства.", "color": portColor}))
+		instanceOption = ("Цель", {
+				"type":"objcaller",
+		})
+		self['options'].insert(0,instanceOption)
 	
 	def _preregMethod(self):
 		memberData = self.memberData
@@ -592,7 +599,8 @@ class NodeObjectHandler:
 			# 		"typingList": ["self",f"{self.memberClass}^"]
 			# 	})
 			# self['options'].insert(0,instanceOption)
-			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события."}))
+			portColor = [*self.varLib.getVarTypedefByType("object").color.getRgb()]
+			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события.","color": portColor}))
 			instanceOption = ("Цель", {
 					"type":"objcaller",
 			})
@@ -734,6 +742,8 @@ class NodeObjectHandler:
 			else:
 				if rettype == 'bool':
 					defvalue = bool(defvalue)
+				elif self.varLib.isObjectType(rettype,self.classMetadata) and defvalue == "nullPtr":
+					defvalue = "nullPtr"
 				elif rettype != 'string':
 					evaled = eval(defvalue)
 					if evaled != None: defvalue = evaled
