@@ -868,8 +868,8 @@ class CodeGenerator:
                                             source=obj,
                                             portname=portNameConn,
                                             target=inpObj)    
-                                #else:
-                                #    self.exception(CGUnhandledObjectException,source=obj,context="Несоответствие узла {src} при сравнении подключений и валидации логики области видимости")
+                            else:
+                                pass
 
                         lvarObj = inpObj.generatedVars.get(portNameConn)
                         lvarObj.isUsed = True

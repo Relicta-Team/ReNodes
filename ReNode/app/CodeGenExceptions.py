@@ -149,6 +149,11 @@ class CGUserEntryNotDefinedException(CGBaseException):
     text = "Точка входа {ctx} не определена"
     desc = "Пользовательская функция {ctx} не определена. Каждая пользовательская функция должна иметь определение."
 
+class CGLoopControlException(CGBaseException):
+    id = 312
+    text = "Недопустимый контекст узла {src}"
+    desc = "Узел {src} может быть использован только в циклах (в теле циклов)"
+
 # ----------------------------------------
 #   601-700 - variables exceptions
 # ----------------------------------------

@@ -179,6 +179,7 @@ class GraphTypeBase:
                         #в теле циклов возвращение значения не ожидаем...
                         # если есть хотябы один возврат
                         for noRetobj in noRetList:
+                            
                             scope = noRetobj.getScopeObj()
                             if scope and scope.nodeType.name == "SCOPED_LOOP":
                                 # если цикловых скоупов больше 1 значит возврат требуется из другого места
@@ -210,7 +211,7 @@ class GraphTypeBase:
         pass
     #endregion
 
-
+    loopControlNodes = ["operators.break_loop","operators.continue_loop"]
     returnNodeType = "control.return"
     def handleReturnNode(self,entryObject,nodeObject,returnObject,metaObj):
         if returnObject.nodeClass == self.returnNodeType:
@@ -234,6 +235,13 @@ class GraphTypeBase:
             mtype = nodeObject.classLibData['classInfo']['type']
             if mtype == 'method':
                 nodeObject.code = cgObj.prepareMemberCode(nodeObject.classLibData,nodeObject.code)
+
+        # проверка эксейперов цикла
+        if nodeObject.nodeClass in self.loopControlNodes:
+            if len(nodeObject.scopes) == 0 or nodeObject.scopes[-1].nodeType.name != "SCOPED_LOOP":
+                from ReNode.app.CodeGenExceptions import CGLoopControlException
+                cgObj.exception(CGLoopControlException,source=nodeObject)
+                return
 
         libOuts = nodeObject.classLibData['inputs']
         if libOuts:
