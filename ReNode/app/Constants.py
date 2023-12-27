@@ -38,7 +38,7 @@ class NodeColor(Enum):
             "event": {
                 "color": NodeColor.Event.value,
                 "icon": "data\\icons\\icon_Blueprint_Event_16x",
-                "code": "func(@thisName) {@thisParams; @out.1}"
+                "code": "func(@thisName) {@thisParams; @out.1};"
             },
             "get": {
                 "color": NodeColor.Getter.value,
@@ -51,7 +51,7 @@ class NodeColor(Enum):
             "def": {
                 "color": NodeColor.EntryFunction.value,
                 "icon": "data\\icons\\icon_Blueprint_OverrideFunction_16x",
-                "code": "func(@thisName) {@thisParams; @out.1}"
+                "code": "func(@thisName) {@thisParams; @out.1};"
             }
         }
 
