@@ -866,6 +866,7 @@ class CodeGenerator:
             execsPorts = [e for e,tp in idat['typeout'].items() if tp == "Exec"]
             isMultiExec = len(execsPorts) > 1
             hasOutConnected = len(idat['out']) > 0
+            connectedOutExecPorts = [k for k in execsPorts if len(idat['out'][k]) > 0]
             
             noLoops = True
             for scpCheck in scopeStack:
@@ -874,7 +875,7 @@ class CodeGenerator:
                     break
 
             # проверка требования возвращаемого типа
-            if len(execsPorts) == 0 or not hasOutConnected:
+            if len(connectedOutExecPorts) == 0 or not hasOutConnected:
                 
                 if needReturn:
                     if noLoops:
