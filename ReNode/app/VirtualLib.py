@@ -16,13 +16,21 @@ class VirtualLib:
 		pathes = FileManagerHelper.getAllGraphPathes()
 		self.logger.info(f'Found {len(pathes)} graphs')
 
+		dataLib = []
 		for path in pathes:
-			self.processLoadingUserGraph(path)
+			data = FileManagerHelper.loadSessionJson(path)
+			dataLib.append(data)
+			self.processLoadingUserGraph(path,data,stage=0)
+		
+		#second pass (graph nodes generate)
+		for i,path in enumerate(pathes):
+			data = dataLib[i]
+			self.processLoadingUserGraph(path,data,stage=1)
 
 		self.factory.reloadNativeGeneratedInfo()
 
-	def processLoadingUserGraph(self,path):
-		data = FileManagerHelper.loadSessionJson(path)
+	def processLoadingUserGraph(self,path,data,stage=0):
+		
 		if data:
 			vars = data['graph']['variables']
 			infoData = data['graph']['info']
@@ -36,7 +44,10 @@ class VirtualLib:
 				"name": infoData['name'],
 				#baseList, __childList, __inhChild
 			}
-			self.factory.classes[infoData['classname']] = newclass
+
+			if stage == 0:
+				self.factory.classes[infoData['classname']] = newclass
+				return
 
 			basePath = "Пользовательские"
 			className = infoData['classname']
@@ -64,7 +75,7 @@ class VirtualLib:
 						classDict = {
 							"className": className,
 							"memberName": sysname,
-							"path": newclass['path'],
+							"path": newclass.get('path',''),
 							"classObject": newclass
 						}
 						mdata = gType.onCreateVLibData(self.factory,dat,classDict)
@@ -89,20 +100,29 @@ class VirtualLib:
 		classData = graphObj.getFactory().getClassData(cls)
 		
 		#удаляем все пользовательские узлы для этого графа
-		for nodename in classData['methods']['nodes']:
+		for nodename in classData['methods'].get('nodes',[]):
 			del self.factory.nodes["methods."+nodename]
-		for nodename in classData['fields']['nodes']:
+		for nodename in classData['fields'].get('nodes',[]):
 			del self.factory.nodes["fields."+nodename]
 		
 		classData['methods']['defined'] = {}
 		classData['methods']['nodes'] = []
 		classData['fields']['defined'] = {}
 		classData['fields']['nodes'] = []
-		del classData['inspectorProps']
+		if 'inspectorProps' in classData:
+			del classData['inspectorProps']
 
 		self._regenerateUserLib(vars,cls,classData)
 
 		graphObj.inspector.updateProps()
 		graphObj.generateTreeDict()
+
+		newTree = graphObj.getTabSearch().dictTreeGen
+
+		#update all tabs
+		curtab = graphObj.sessionManager.getActiveTabData()
+		for tObj in [tab for tab in graphObj.sessionManager.getAllTabs() if tab != curtab]:
+			tObj.graph.isDirty = True
+			tObj.graph.dirty_check(newTree)
 
 		pass

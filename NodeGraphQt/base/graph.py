@@ -160,6 +160,9 @@ class NodeGraph(QtCore.QObject):
         self.hasScriptErrors = False
         self._undo_stack.indexChanged
 
+        self.isDirty = False
+        """Устанавливается в true когда обновляется контент библиотеки"""
+
         self._widget = None
         self._sub_graphs = {}
         self._viewer = (
@@ -204,6 +207,22 @@ class NodeGraph(QtCore.QObject):
         # custom storages (variables, graph info/inspector)
         self.variables = {}
         self.infoData = {}
+
+    def dirty_check(self,srcTree=None):
+        if self.isDirty:
+            tabSearch = self._viewer._tabSearch
+            
+            if not srcTree:
+                tabSearch.generate_treeDict()
+            else:
+                tabSearch.dictTreeGen = srcTree
+            
+            tabSearch.tree.clear()
+            tabSearch._existsTrees.clear()
+            tabSearch.build_tree(tabSearch.dictTreeGen)
+            tabSearch.tree.sortItems(0,QtCore.Qt.SortOrder.AscendingOrder)
+            
+            self.isDirty = False
 
     def __repr__(self):
         return '<{}("root") object at {}>'.format(
