@@ -154,6 +154,10 @@ class GraphTypeBase:
         if not hasConnections:
             cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
 
+        if not node_code.rstrip(' ').endswith(";"):
+            cgObj.nodeWarn(CGNodeEntryCodeMissingSemicolon,source=nodeObject)
+            node_code += ";"
+
         nodeObject.code = node_code
 
     def handlePreStartEntry(self,nodeObjec,metaObj):
