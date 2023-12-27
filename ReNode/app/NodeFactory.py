@@ -275,6 +275,7 @@ class NodeFactory:
 			struct['memtype'] = memType
 
 		struct['runtime_ports'] = data.get('runtime_ports',False)
+		struct['auto_color_icon'] = data.get('auto_color_icon',False)
 
 		struct['visible'] = data.get('isVisibleInLib',True)
 

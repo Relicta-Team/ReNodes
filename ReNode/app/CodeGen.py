@@ -426,6 +426,7 @@ class CodeGenerator:
             self.scopeLevel = scopeLevel
             self.sourceObj = src
             self.portName = port
+            self.isLoopScope = False
 
             self.generatedVars = []
 
@@ -454,6 +455,8 @@ class CodeGenerator:
             self.code = ""
 
             self.generatedVars = {} #key: out portname, value:variable
+
+            self.scopes = [] #области видимости в узле
 
             self.hasError = False
 
@@ -541,20 +544,24 @@ class CodeGenerator:
         for k,obj in codeInfo.items():
             clsName = obj.nodeClass
             if clsName.startswith("fields.") and clsName.endswith("_0.set"):
-                libName = clsName.replace("_0.set","_0.get")
-                libInfo = self.getFactory().getNodeLibData(libName)
-                if not libInfo:
-                    raise Exception(f'Unknown library object from \'{clsName}\': \'{libName}\'')
-                codeline = libInfo["code"]
-                codeline = re.sub(f'@in\.1(?=\D|$)', f"@in.2", codeline)
-                #generate variable
-                gvObj = GeneratedVariable(f'({codeline})',obj.nodeId)
-                outName = "Новое значение"
-                gvObj.fromPort = outName #constant
-                gvObj.definedNodeName = obj.nodeId
-                if outName in obj.generatedVars:
-                    raise Exception(f'Unhandled case: {outName} in {obj.generatedVars}')
-                obj.generatedVars[outName] = gvObj
+                # умная генерация локальной переменной выхода
+                if obj.getConnectionOutputs().get("Новое значение"):
+                    oldCode = obj.code
+                    obj.code = "private @genvar.out.2 = @in.3;" + re.sub(f'@in\.3(?=\D|$)', f"@locvar.out.2", oldCode)
+                # libName = clsName.replace("_0.set","_0.get")
+                # libInfo = self.getFactory().getNodeLibData(libName)
+                # if not libInfo:
+                #     raise Exception(f'Unknown library object from \'{clsName}\': \'{libName}\'')
+                # codeline = libInfo["code"]
+                # codeline = re.sub(f'@in\.1(?=\D|$)', f"@in.2", codeline)
+                # #generate variable
+                # gvObj = GeneratedVariable(f'({codeline})',obj.nodeId)
+                # outName = "Новое значение"
+                # gvObj.fromPort = outName #constant
+                # gvObj.definedNodeName = obj.nodeId
+                # if outName in obj.generatedVars:
+                #     raise Exception(f'Unhandled case: {outName} in {obj.generatedVars}')
+                # obj.generatedVars[outName] = gvObj
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
@@ -766,7 +773,7 @@ class CodeGenerator:
                     # Выход не подключен
                     if not outId: 
                         if hasRuntimePorts:
-                            if not obj.getConnectionType("out",output_name):
+                            if not obj.getConnectionType("out",output_name) and obj.nodeClass != "control.supercall":
                                 self.exception(CGOutputPortTypeRequiredException,source=obj,portname=output_name)
                         
                         node_code = re.sub(f'@out\.{index+1}(?=\D|$)',"",node_code) 
@@ -822,16 +829,17 @@ class CodeGenerator:
 
         entryObj = codeInfo[entryId]
 
+
+
         #post while events
         if stackGenError:
             self.exception(CGStackError,entry=entryObj,source=firstNonGenerated)
 
+        if not stackGenError:
+            if not self.postCheckCode(codeInfo,entryId):
+                hasNodeError = True
+
         if hasNodeError:
-            # strInfo = "\n\t".join([LoggerConsole.wrapNodeLink(self._sanitizeNodeName(s.nodeId),s.nodeId) for s in errList])
-            # if not strInfo: 
-            #     strInfo = "-отсутствуют-" 
-            # else: 
-            #     strInfo = "\n\t" + strInfo
             errLen = len(self._exceptions) - curExceptions
             warnLen = len(self._warnings) - curWarnings
             self.error(f'Точка входа {LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryObj.nodeId),entryObj.nodeId)} не обработана: <b><span style="color:red">{errLen} ошибок,</span> <span style="color:yellow">{warnLen} предупреждений</span></b><br/>')
@@ -842,6 +850,84 @@ class CodeGenerator:
             return "NOT_READY:" + entryObj.code
         
         return entryObj.code
+
+    def postCheckCode(self,codeInfo,entryId):
+        """Постпроверка кода"""
+        dpdGraphExt = self.dpdGraphExt
+        entryObj = codeInfo[entryId]
+        retType = entryObj.classLibData['returnType']
+        needReturn = retType != "null"
+        retTypenameExpect = self.getVariableManager().getTextTypename(retType)
+
+        def enterScope(nodeId,scopeStack:list):
+
+            idat = self.dpdGraphExt[nodeId]
+            srcObj: CodeGenerator.NodeData = codeInfo[nodeId]
+            execsPorts = [e for e,tp in idat['typeout'].items() if tp == "Exec"]
+            isMultiExec = len(execsPorts) > 1
+            hasOutConnected = len(idat['out']) > 0
+            
+            noLoops = True
+            for scpCheck in scopeStack:
+                if scpCheck.isLoopScope:
+                    noLoops = False
+                    break
+
+            # проверка требования возвращаемого типа
+            if len(execsPorts) == 0 or not hasOutConnected:
+                
+                if needReturn:
+                    if noLoops:
+                        if 'control.return' != srcObj.nodeClass:
+                            self.exception(CGReturnNotAllBranchesException,source=srcObj,entry=entryObj,context=retTypenameExpect)
+                else:
+                    if 'control.return' == srcObj.nodeClass:
+                        self.exception(CGReturnTypeUnexpectedException,source=srcObj,entry=entryObj)
+            
+            # проверка операторов контроля цикла
+            if srcObj.nodeClass in ["operators.break_loop","operators.continue_loop"] and noLoops:
+                self.exception(CGLoopControlException,source=srcObj)
+
+
+
+            srcObj.scopes = scopeStack.copy()
+            className = srcObj.nodeClass
+
+            for k,v in idat['typeout'].items():
+                if v == "Exec":
+                    scopePopNeed = False
+                    hasConnection = len(idat['out'][k]) > 0
+
+                    if "if_branch" in className or isMultiExec:
+                        newLvl = scopeStack[-1].scopeLevel + 1
+                        scp = CodeGenerator.ExecScope(srcObj,k,newLvl)
+
+                        if className in NodeDataType.getScopedLoopNodes():
+                            if k == "Тело цикла":
+                                scp.isLoopScope = True
+                            else:
+                                # проверка не подключенных выходов циклов
+                                if not hasConnection and needReturn:
+                                    self.exception(CGReturnNotAllBranchesException,source=srcObj,entry=entryObj,context=retTypenameExpect)
+
+                        scopeStack.append(scp)
+                        scopePopNeed = True
+                    if hasConnection:
+                        src = list(idat['out'][k][0])[0]
+                        enterScope(src,scopeStack)
+                    
+                    if scopePopNeed:
+                        scopeStack.pop()
+        
+        scopes = [CodeGenerator.ExecScope(entryObj,"entry")]
+        
+        if not dpdGraphExt.get(entryId):
+            #TODO нет подключений для точки входа
+            return True
+
+        enterScope(entryId,scopes)
+
+        return True
 
     def formatCode(self, instructions):
         def make_prefix(level):

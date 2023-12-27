@@ -372,6 +372,9 @@ class NodeObjectHandler:
 						"type": "hidden",
 						"default": {}
 					}))
+				self.memberData['auto_color_icon'] = True
+		elif tokenType == "autocoloricon":
+			self.memberData['auto_color_icon'] = intTryParse(tokens[1]) > 0
 		# add specific option to node
 		elif tokenType == "option":
 			_cont :str= tokens[1]

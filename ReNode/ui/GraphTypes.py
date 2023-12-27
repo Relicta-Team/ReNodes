@@ -168,6 +168,15 @@ class GraphTypeBase:
     loopControlNodes = ["operators.break_loop","operators.continue_loop"]
     returnNodeType = "control.return"
     def handleReturnNode(self,entryObject,nodeObject,returnObject,metaObj):
+        cgObj = metaObj.get('codegen')
+
+        if returnObject.nodeClass == "control.supercall":
+            hasValue = returnObject.getConnectionOutputs().get("Значение")
+            needReturn = entryObject.classLibData.get("returnType",'null') != "null"
+            if hasValue:
+                if not needReturn:
+                    from ReNode.app.CodeGenExceptions import CGSuperVoidReturnException
+                    cgObj.exception(CGSuperVoidReturnException,source=returnObject)
         pass
 
     def handleReadyNode(self,nodeObject,entryObj,metaObj):

@@ -152,7 +152,8 @@ class RuntimeNode(BaseNode):
 				port.view._syncTooltip()
 
 		if anySet:
-			self.update_icon_part_color(0,QtGui.QColor(*clr),False)
+			if data.get('auto_color_icon'):
+				self.update_icon_part_color(0,QtGui.QColor(*clr),False)
 
 	def onAutoPortDisconnected(self,src_port_info : Port):
 		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип
@@ -179,7 +180,8 @@ class RuntimeNode(BaseNode):
 
 		data = self.get_property('autoportdata')
 		self.set_property("autoportdata",{},False)
-		self.update_icon_part_color(0,None,False)
+		if data.get('auto_color_icon'):
+			self.update_icon_part_color(0,None,False)
 		for port in portList:
 			port.color = data['color']
 			port.border_color = data['border_color']
