@@ -141,57 +141,7 @@ class GraphTypeBase:
                         initVarsCode += f"//init_lv:{cgObj.localVariableData[nameid]['varname']}\n"
                     initVarsCode += f'private {cgObj.localVariableData[nameid]["alias"]} = {cgObj.localVariableData[nameid]["initvalue"]};\n'
                 
-                #register scopename for function
-                from ReNode.app.CodeGenExceptions import CGReturnTypeUnexpectedException,CGReturnTypeMismatchException,CGReturnTypeNotFoundException,CGReturnNotAllBranchesException
-                hasReturns = False
-                retTypeExpect = nodeObject.classLibData.get("returnType","")
-                executedReturns = [ret for ret in nodeObject.returns if ret.visitedExecFlow]
-                if executedReturns:
-                    hasReturns = True
-                    if retTypeExpect in ['null','']:
-                        cgObj.exception(CGReturnTypeUnexpectedException,source=nodeObject,entry=nodeObject)
-                    else:
-                        #validate returns
-                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
-                        for retNode in executedReturns:
-                            retType = retNode.objectData['input_ports'][1]['type']
-                            if retType and retType != retTypeExpect:
-                                retTypename = cgObj.getVariableManager().getTextTypename(retType)
-                                cgObj.exception(CGReturnTypeMismatchException,source=retNode,entry=nodeObject,context=retTypenameExpect,portname=retTypename)
-                            pass
-                else:
-                    if retTypeExpect not in ['null','']:
-                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
-                        cgObj.exception(CGReturnTypeNotFoundException,source=nodeObject,entry=nodeObject,context=retTypenameExpect)
-
-                if retTypeExpect not in ['null','']:
-                    lastEx = cgObj._exceptions
-                    canCheckAllEnds = True
-                    if lastEx:
-                        lastEx = lastEx[-1]
-                        # дополнительная проверка. если нет ни одного возвращаемого значения то не будем выполнять проверки конца веток
-                        if not isinstance(lastEx,CGReturnTypeNotFoundException):         
-                            canCheckAllEnds = False
-
-                    if canCheckAllEnds:
-                        noRetList = nodeObject.endsWithNoReturns
-                        retTypenameExpect = cgObj.getVariableManager().getTextTypename(retTypeExpect)
-                        #в теле циклов возвращение значения не ожидаем...
-                        # если есть хотябы один возврат
-                        for noRetobj in noRetList:
-                            
-                            scope = noRetobj.getScopeObj()
-                            if scope and scope.nodeType.name == "SCOPED_LOOP":
-                                # если цикловых скоупов больше 1 значит возврат требуется из другого места
-                                #if len(noRetList) > 1:
-                                continue
-                            if not noRetobj.visitedExecFlow:
-                                cgObj.nodeWarn(CGNodeNeverCalledWarning,source=noRetobj)
-                                continue
-                            cgObj.exception(CGReturnNotAllBranchesException,source=noRetobj,entry=nodeObject,context=retTypenameExpect)
-
-                if hasReturns:
-                    initVarsCode += "\nSCOPENAME \"exec\";"
+                initVarsCode += "\nSCOPENAME \"exec\";"
 
                 node_code = node_code.replace("@initvars",initVarsCode)
         else:
@@ -214,11 +164,7 @@ class GraphTypeBase:
     loopControlNodes = ["operators.break_loop","operators.continue_loop"]
     returnNodeType = "control.return"
     def handleReturnNode(self,entryObject,nodeObject,returnObject,metaObj):
-        if returnObject.nodeClass == self.returnNodeType:
-            entryObject.returns.append(returnObject)
-        elif not returnObject.getConnectionOutputs():
-            #прописываем узлы без возвращаемого значения
-            entryObject.endsWithNoReturns.append(returnObject)
+        pass
 
     def handleReadyNode(self,nodeObject,entryObj,metaObj):
         from ReNode.app.CodeGen import CodeGenerator
@@ -235,13 +181,6 @@ class GraphTypeBase:
             mtype = nodeObject.classLibData['classInfo']['type']
             if mtype == 'method':
                 nodeObject.code = cgObj.prepareMemberCode(nodeObject.classLibData,nodeObject.code)
-
-        # проверка эксейперов цикла
-        if nodeObject.nodeClass in self.loopControlNodes:
-            if len(nodeObject.scopes) == 0 or nodeObject.scopes[-1].nodeType.name != "SCOPED_LOOP":
-                from ReNode.app.CodeGenExceptions import CGLoopControlException
-                cgObj.exception(CGLoopControlException,source=nodeObject)
-                return
 
         libOuts = nodeObject.classLibData['inputs']
         if libOuts:
@@ -262,7 +201,6 @@ class GraphTypeBase:
                     cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
                     raise Exception("Unsupported rule: Entry node not overriden")
                 else:
-                    #if nodeObject.visitedExecFlow:
                     if hasExec:
                         cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
 

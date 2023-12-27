@@ -440,62 +440,6 @@ class CodeGenerator:
         def __ne__(self, __value: object) -> bool:
             return not (self == __value)
 
-    def scopePrepass(self,topological_order,codeInfo,entryId):
-        """Создание скоупов для узлов и их связей"""
-        scopesExec = defaultdict(list)
-
-        if entryId not in self.dpdGraphExt: return #no connections -> no scopes
-        loopScopes = NodeDataType.getScopedLoopNodes()
-
-        #add basic scope for entry
-        execScope = [CodeGenerator.ExecScope(codeInfo[entryId],"entry",0)]
-
-        def get_exec_outs(id_,scope=None,execScope:list=None):
-            idat = self.dpdGraphExt[id_]
-            codeObj : CodeGenerator.NodeData = codeInfo[id_]
-            if isinstance(scope,list):
-                codeObj.scopes.extend(scope)
-            iclass = codeObj.nodeClass
-            codeObj.visitedExecFlow = True
-
-            
-            its = self.intersection(execScope,codeObj.execScopes)
-
-            codeObj.execScopes.extend(execScope)
-
-            for k,v in idat['typeout'].items():
-                if v == "Exec":
-                    stackScopeAdd = False
-                    #TODO add while etc
-                    if "if_branch" in iclass:
-                        topScope = execScope[-1]
-                        execScope.append(CodeGenerator.ExecScope(codeObj,k,topScope.scopeLevel+1))
-                        stackScopeAdd = True
-
-                    #loop work
-                    isScopeStart = iclass in loopScopes and k == "Тело цикла"
-                    if isScopeStart:
-                        if scope and len(scope) > 0:
-                            scope.append(codeObj)
-                        else:
-                            scope = [codeObj]
-
-                    if len(idat['out'][k]) > 0:
-                        src = list(idat['out'][k][0])[0]
-                        get_exec_outs(src,scope,execScope=execScope)
-                    
-                    if stackScopeAdd:
-                        execScope.pop()
-
-                    if isScopeStart:
-                        scope.pop()
-                        if len(scope) == 0:
-                            scope = None
-
-        get_exec_outs(entryId,execScope=execScope)
-        #{n:o.scopes for n,o in codeInfo.items()}
-        return scopesExec
-
     #endregion
 
     class NodeData:
@@ -516,14 +460,6 @@ class CodeGenerator:
             self._initNodeClassData()
             self._defineNodeType()
 
-            self.returns = [] #возвращаемые значения (используется для событий и функций)
-            self.endsWithNoReturns = [] #сюда пишутся узлы без подключенных возвращаемых значений (только для энтрипоинтов)
-
-            self.scopes = [] #области видимости (циклы)
-            self.execScopes:list[CodeGenerator.ExecScope] = [] #области видимости (код)
-
-            self.visitedExecFlow = False
-
             #user nodes section
             self.userNodeType = None
 
@@ -540,36 +476,6 @@ class CodeGenerator:
 
         def __repr__(self) -> str:
             return f'ND:{self.nodeId} ({self.nodeClass})'
-
-        def getScopeObj(self):
-            if len(self.scopes) == 0: return None
-            return self.scopes[-1]
-        
-        def checkExecScopeVars(self,varList:list[GeneratedVariable],codeInfo:dict) -> bool:
-            execList = self.execScopes
-            
-            if len(execList) == 0: return True #autoreturn for empty scope
-
-            # execListStack = [] # массив содержит массивы областей видимости
-            # curSt = []
-            # for e in execList:
-            #     if e.scopeLevel == 0:
-            #         curSt = []
-            #         execListStack.append(curSt)
-            #     curSt.append(e)
-
-            for var in varList:
-                varScope = codeInfo[var.definedNodeId].execScopes
-                if varScope:
-                    varScope = varScope[-1]
-                else:
-                    raise Exception(f"Unhandled critical exception: {var}")
-
-                for eqScopes in [s for s in execList if s == varScope]:
-                    if var not in eqScopes.generatedVars:
-                        return False
-            
-            return True
 
         def _initNodeClassData(self):
             node_data = self.refCodegen.serialized_graph['nodes'][self.nodeId]
@@ -615,8 +521,6 @@ class CodeGenerator:
         curWarnings = len(self._warnings)
 
         codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
-
-        self.scopePrepass(topological_order,codeInfo,entryId)
 
         readyCount = 0
         hasAnyChanges = True # true for enter
@@ -786,8 +690,6 @@ class CodeGenerator:
                         obj.generatedVars[gvObj.fromPort] = gvObj
                         
                         allGeneratedVars.append(gvObj)
-                        if obj.execScopes:
-                            obj.execScopes[-1].generatedVars.append(gvObj) #с верхушки стека скоупов добавляем переменную
 
                 inputDict = obj.getConnectionInputs(True)
                 execDict = obj.getConnectionOutputs(True)
@@ -849,49 +751,12 @@ class CodeGenerator:
                                            context=checkedClass)
 
                     if inpObj.generatedVars.get(portNameConn):
-                        # если сгенерированная переменная скоуповая и obj не в скоупах inpObj то исключ.
-                        if inpObj.nodeType.name == "SCOPED_LOOP":
-                            if inpObj not in obj.scopes:
-                                self.exception(CGScopeLoopPortException,
-                                    source=obj,
-                                    portname=portNameConn,
-                                    target=inpObj)
-                            # Вторая проверка на лоченные пути
-                            connectedToSkipped = self.dpdGraphExt[inpObj.nodeId]['out']['При завершении']
-                            if connectedToSkipped:
-                                connTpsList = connectedToSkipped[0] #к завершающему условию всегда только один пайп
-                                # конвертируем в айди узла и какому порту он подключен
-                                connToId, connToPort = list(connTpsList.items())[0]
-                                if codeInfo[connToId] == obj:
-                                    if inpObj in obj.scopes:
-                                        self.exception(CGScopeLoopPortException,
-                                            source=obj,
-                                            portname=portNameConn,
-                                            target=inpObj)    
-                            else:
-                                pass
 
                         lvarObj = inpObj.generatedVars.get(portNameConn)
                         lvarObj.isUsed = True
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
-                        # только для локальных переменных проверка
-                        if re.findall("_lvar_\d+_\d+",lvarObj.localName):
-                            #тут тоже делаем проверку возможности проброса
-                            if not obj.checkExecScopeVars([lvarObj],codeInfo):
-                                self.exception(CGScopeVariableNotFoundException,source=obj,target=inpObj)                    
-
                     if inpObj.isReady:
-                        # проверка локальных проброшенных переменных
-                        localvarNames = re.findall('_lvar_\d+_\d+',inpObj.code)
-                        if localvarNames:
-                            #lvar names to lvarobjs
-                            lvObjList = [lvObj for lvObj in allGeneratedVars if lvObj.localName in localvarNames]
-
-                            if not obj.checkExecScopeVars(lvObjList,codeInfo):
-                                tobj = codeInfo[lvObjList[0].definedNodeId]
-                                self.exception(CGScopeVariableNotFoundException,source=obj,target=tobj)
-                        
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
@@ -916,26 +781,6 @@ class CodeGenerator:
                         continue
 
                     if outputObj.isReady:
-                        
-                        objScope = outputObj.getScopeObj()
-                        #todo objScope is nearTo outputObj -> exception , other case noexception
-                        
-                        # !TODO-> REMOVE: 
-                        # if obj.nodeType.name == "SCOPED_LOOP" and output_name == "При завершении" and objScope:
-                        #     self.exception(CGScopeLoopPortException,
-                        #         source=outputObj,
-                        #         target=obj,
-                        #         portname=output_name
-                        #         )
-                        isNotChildLoop = obj != objScope
-                        if objScope and objScope not in obj.scopes and isNotChildLoop:
-                            loopId = objScope.nodeId
-                            self.exception(CGScopeLoopException,
-                                source=obj,
-                                target=outputObj,
-                                context=LoggerConsole.wrapNodeLink(self._sanitizeNodeName(loopId),loopId)
-                                )
-
                         self.gObjType.handleReturnNode(codeInfo[entryId],obj,outputObj,self.gObjMeta)
                                          
                         node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
