@@ -312,6 +312,7 @@ class NodeFactory:
 			valdata['type'] = val.get('type',key)
 			valdata['typeget'] = val.get('typeget',"")
 			valdata['desc'] = val.get('desc','')
+			valdata['require_connection'] = val.get('require_connection',True)
 			if not isInput:
 				valdata['accepted_paths'] = val.get('accepted_paths',["@any"])
 			cons[key] = valdata

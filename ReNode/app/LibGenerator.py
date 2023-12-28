@@ -344,7 +344,8 @@ class NodeObjectHandler:
 					self.lastPortRef['accepted_paths'] = listParts_
 				if tInside.startswith("typeget"):
 					self.lastPortRef['typeget'] = tInside.split('=')[1]
-		
+				if tInside.startswith("require"):
+					self.lastPortRef['require_connection'] = intTryParse(tInside.split("=")[1]) > 0
 		# -------------------- common spec options -------------------- 
 		
 		# redef node name
