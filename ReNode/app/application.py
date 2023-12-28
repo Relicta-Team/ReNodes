@@ -3,7 +3,6 @@ import time
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from ReNode.app.LibGenerator import GenerateLibFromObj
 from ReNode.app.VERSION import global_version
 from ReNode.app.REVISION import global_revision
 from ReNode.ui.AppWindow import MainWindow
@@ -166,6 +165,7 @@ class ExceptionHandler:
 
 
 def AppMain():
+	from ReNode.app.LibGenerator import GenerateLibFromObj
 	global logger
 	arguments = sys.argv
 

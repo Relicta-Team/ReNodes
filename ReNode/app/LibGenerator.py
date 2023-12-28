@@ -6,6 +6,7 @@ import copy
 from ReNode.app.utils import intTryParse
 from ReNode.ui.VariableManager import VariableLibrary
 from ReNode.app.Constants import *
+from ReNode.app.application import Application
 
 def hexToRGBA(hex):
 	hex = hex.lstrip("#")
@@ -42,7 +43,8 @@ def getRegionData(content:str,region_name:str,returnDict=False) -> dict | str | 
 		return region_data
 
 def printDebug(str):
-	print(f"DEBUG: {str}")
+	if Application.isDebugMode():
+		print(f"DEBUG: {str}")
 
 
 def getTokens(content):
@@ -777,7 +779,7 @@ def compileRegion(members,nodeLib,classmeta):
 	for __line in members.splitlines():
 		line = __line.lstrip('\t ')
 		if not line: continue
-		printDebug(f'compile line: {line}')
+		#printDebug(f'compile line: {line}')
 		tokens = getTokens(line) # def,type,memname
 		if not tokens: raise ValueError(f"Wrong member line: {line}")
 		tokenType = tokens[0]
@@ -789,6 +791,8 @@ def compileRegion(members,nodeLib,classmeta):
 				curMember = None
 			if len(tokens) < 3: raise ValueError(f"Wrong define member line: {line}")
 			
+			printDebug(f'compile node: {line}')
+
 			memName = tokens[2]
 			memType = tokens[1]
 			collectLines = []

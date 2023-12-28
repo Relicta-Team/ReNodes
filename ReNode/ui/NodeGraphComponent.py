@@ -105,18 +105,7 @@ class NodeGraphComponent:
 
 		self.generateTreeDict()
 		
-		from ReNode.app.application import Application
-		if Application.isDebugMode():
-			#self.graph.load_session(".\\session.json")
-			# with  open(".\\templates_tests.txt",encoding='utf-8') as f:
-			# 	QtWidgets.QApplication.clipboard().setText('\n'.join(f.readlines()))
-			# self.variable_manager.loadVariables(self.graph.variables)
-			# #todo load info
-			# self.graph.infoData['classname'] = 'debug_session'
-			# self.graph.paste_nodes()
-			self.editorDock.setWidget(None)
-		else:
-			self.editorDock.setWidget(None)
+		self.editorDock.setWidget(None)
 
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application
