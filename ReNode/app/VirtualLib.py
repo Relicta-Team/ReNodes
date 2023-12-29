@@ -3,24 +3,34 @@ from ReNode.app.Logger import RegisterLogger
 from ReNode.app.utils import transliterate
 from ReNode.ui.VarMgrWidgetTypes.Widgets import VarMgrBaseWidgetType
 import time
-from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 
 class VirtualLib:
 
 	class MyHandler(FileSystemEventHandler):
-		cache = set()
+		def __init__(self) -> None:
+			super().__init__()
+			self.vlib = VirtualLib.refObject
+			self.logger = VirtualLib.refObject.logger
+
+		def reloadLibFull(self):
+			self.vlib.factory.loadFactoryFromJson("lib.json")
+
 		def on_modified(self, event):
-		 	if not event.is_directory and event.src_path.endswith('.graph'):
-		 		print(f"File modified: {event.src_path}")
+			if not event.is_directory and event.src_path.endswith('.graph'):
+				self.logger.debug(f"File modified: {event.src_path}")
+				self.reloadLibFull()
 
 		def on_created(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
-				print(f"File created: {event.src_path}")
+				self.logger.debug(f"File created: {event.src_path}")
+				self.reloadLibFull()
 
 		def on_deleted(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
-				print(f"File deleted: {event.src_path}")
+				self.logger.debug(f"File deleted: {event.src_path}")
+				self.reloadLibFull()
 		
 
 	refObject = None
@@ -131,7 +141,7 @@ class VirtualLib:
 		if not classData:
 			#full regenerate user library
 			#self.generateUserLib() nodes and classes not empty
-			self.factory.loadFactoryFromJson("lib.json")
+			#self.factory.loadFactoryFromJson("lib.json")
 			return
 
 		#удаляем все пользовательские узлы для этого графа

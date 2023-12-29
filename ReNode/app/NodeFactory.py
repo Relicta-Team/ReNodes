@@ -6,14 +6,13 @@ from ReNode.ui.NodePainter import getDrawPortFunction
 from ReNode.app.VirtualLib import VirtualLib
 import logging
 import re
-logger : logging.Logger = None
+
 class NodeFactory:
 	
 	defaultColor = (13,18,23,255)
 
 	def __init__(self):
-		global logger
-		logger = RegisterLogger("NodeFactory")
+		self.logger = RegisterLogger("NodeFactory")
 		
 		self.vlib = VirtualLib(self)
 
@@ -27,7 +26,7 @@ class NodeFactory:
 		pass
 
 	def loadFactoryFromJson(self,file_path):
-		logger.info(f"Loading factory from json file {file_path}")
+		self.logger.info(f"Loading factory from json file {file_path}")
 		self.nodes = {}
 		self.classes = {}
 
@@ -36,7 +35,7 @@ class NodeFactory:
 				layout_data = json.load(data_file)
 		except Exception as e:
 			layout_data = None
-			logger.error('Cannot read data from file.\n{}'.format(e))
+			self.logger.error('Cannot read data from file.\n{}'.format(e))
 
 		if not layout_data:
 			return
@@ -49,7 +48,7 @@ class NodeFactory:
 			if callable(obj):
 				return obj.__name__
 			return obj
-		logger.info(f"version lib {self.version}")
+		self.logger.info(f"version lib {self.version}")
 		
 		from ReNode.app.application import Application
 		if Application.isDebugMode() or Application.hasArgument('-outlib'):
@@ -69,9 +68,9 @@ class NodeFactory:
 
 		#load nodes
 		for nodecat,nodelist in data.get('nodes', {}).items():
-			logger.info(f"Loading category: {nodecat}")
+			self.logger.info(f"Loading category: {nodecat}")
 			for node,dataNode in nodelist.items():
-				logger.info(f"	Loading node '{node}'")
+				self.logger.info(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,dataNode)
 
 		#load classes
@@ -83,17 +82,17 @@ class NodeFactory:
 		i = 1
 		for classname,classmembers in classDict.items():
 			if (i%100 == 0):
-				logger.info(f"Loading class {i}/{len(classDict)}")
+				self.logger.info(f"Loading class {i}/{len(classDict)}")
 			classmembers['__childList'] = []
 			classmembers['__inhChild'] = [] #прямые дети
 			self.classes[classname] = classmembers
 			i += 1
 
 
-		logger.info(f'Native classes count: {len(self.classes)}')
+		self.logger.info(f'Native classes count: {len(self.classes)}')
 
 		#validate names
-		logger.info('Validating class names')
+		self.logger.info('Validating class names')
 		for classname,classmembers in classDict.items():
 			bList = classmembers['baseList']
 			for bName in bList:
@@ -102,7 +101,7 @@ class NodeFactory:
 
 
 		# collect class child list
-		logger.info('Collecting class child list')
+		self.logger.info('Collecting class child list')
 		for classname in classDict.keys():
 			curData = self.getClassData(classname)
 			bList = self.getClassAllParents(classname,False) #родительская иерархия
@@ -111,7 +110,7 @@ class NodeFactory:
 				bData['__childList'].append(classname)
 		
 		# второй проход для проброса детей из родителей
-		logger.info("Passing children from parents")
+		self.logger.info("Passing children from parents")
 		for classname,curData in classDict.items():
 			if classname != "object":
 				parent = curData["baseClass"]
@@ -119,11 +118,11 @@ class NodeFactory:
 				parData['__inhChild'].append(classname)
 		
 		# генерация имен в нижнем регистре
-		logger.info("Adding lowercase names")
+		self.logger.info("Adding lowercase names")
 		self.classNames = set([x.lower() for x in classDict.keys()])
 		
 		# загрузка пользовательской библиотеки
-		logger.info("Loading user lib")
+		self.logger.info("Loading user lib")
 		self.vlib.generateUserLib()
 
 		pass
@@ -135,12 +134,12 @@ class NodeFactory:
 		self.inheritanceProcess(classDict)
 
 		#reset all
-		logger.info("Reset...")
+		self.logger.info("Reset...")
 		for cls,dat in classDict.items():
 			dat['__childList'] = []
 			dat['__inhChild'] = []
 		
-		logger.info('Childlist collect')
+		self.logger.info('Childlist collect')
 		for classname in classDict.keys():
 			curData = self.getClassData(classname)
 			bList = self.getClassAllParents(classname,False) #родительская иерархия
@@ -149,7 +148,7 @@ class NodeFactory:
 				bData['__childList'].append(classname)
 		
 		# второй проход для проброса детей из родителей
-		logger.info("Inhchild process")
+		self.logger.info("Inhchild process")
 		for classname,curData in classDict.items():
 			if classname != "object":
 				parent = curData["baseClass"]
@@ -157,7 +156,7 @@ class NodeFactory:
 				parData['__inhChild'].append(classname)
 		
 		# генерация имен в нижнем регистре
-		logger.info("Lowercase names")
+		self.logger.info("Lowercase names")
 		self.classNames = set([x.lower() for x in classDict.keys()])
 
 
