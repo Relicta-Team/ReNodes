@@ -181,7 +181,7 @@ class LoggerConsole(QDockWidget):
             self.messages.pop(0)
         
         # call in next frame
-        QTimer.singleShot(0, lambda: self.update())
+        QTimer.singleShot(0, self.update)
 
     def update(self):
         if not self.log_text: return
