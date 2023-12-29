@@ -151,9 +151,17 @@ class TabSearchMenu(QWidget):
 
     def item_contains_words(self, item, search_words):
         item_text = item.text(0).lower()
+        item_classname = item.data(0,QtCore.Qt.UserRole)
+        hasClassname = not (item_classname is None)
+        if hasClassname:
+            clsData = self.nodeGraphComponent.getFactory().getNodeLibData(item_classname)
+            item_classname = item_classname.lower()
         contains = False
         for word_group in search_words:
             if word_group in item_text:
+                contains = True
+                break
+            if hasClassname and word_group in item_classname:
                 contains = True
                 break
         return contains

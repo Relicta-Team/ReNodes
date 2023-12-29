@@ -161,7 +161,12 @@ class VariableLibrary:
                 # "range": {"min":0,"max":999999}
                 # }}
             ,color=QtGui.QColor("Sea green").lighter(50)),
-
+            VariableTypedef("list","Абстрактный массив",PropAbstract
+                ,color=QtGui.QColor("#EBE01E")
+            ),
+            VariableTypedef("void","Абстрактное значение",PropAbstract
+                ,color=QtGui.QColor("#02D109")
+            )
         ]
 
         self.valueTypeList = [
@@ -425,7 +430,7 @@ class VariableManager(QDockWidget):
         layout.addLayout(self.layoutCatWidgets)
 
         self._curCategory : VarMgrBaseWidgetType = None #string name
-        self._updateCategory(self.variableCategoryList[2].category)
+        self._updateCategory(self.variableCategoryList[0].category)
 
         # Кнопка создания переменной
         self.widCreateVar = QPushButton("Создать")
