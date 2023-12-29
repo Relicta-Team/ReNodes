@@ -739,6 +739,24 @@ class CodeGenerator:
                                         break
 
                         inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
+                        
+                        # validate canuse member
+                        if inlineValue == 'this' and libOption['type'] == "objcaller":
+                            catchErrThis = True
+                            memname = "*class_info_not_found"
+                            if "classInfo" in class_data:
+                                clsInfo = class_data['classInfo']
+                                memtype = clsInfo['type']
+                                memname = clsInfo['name']
+                                if memtype == 'field':
+                                    if memname in self.getFactory().getClassAllFields(self.gObjMeta['classname']):
+                                        catchErrThis = False
+                                if memtype == 'method':
+                                    if memname in self.getFactory().getClassAllMethods(self.gObjMeta['classname']):
+                                        catchErrThis = False
+                            if catchErrThis:
+                                self.exception(CGMemberNotExistsException,source=obj,context=[memname,self.gObjMeta['classname'],clsInfo['class']],portname=input_name)
+
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue
 
