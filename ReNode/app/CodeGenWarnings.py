@@ -42,7 +42,7 @@ class CGBaseWarning:
                 postText = "<span style='color:#FFF2B0;'>"+warnDesc+"</span>"
                 postText = "\n- Подробнее: " + postText
                 #postText = '<p title="tootip">some block of text</p>'
-            return f"<b>WARN-{class_.id}</b>: " + class_.text.format(
+            return f"<b>[{class_.__name__}:WARN-{class_.id}]</b>: " + class_.text.format(
                 src=self.src,
                 portname=self.portname,
                 targ=self.targ,
@@ -86,6 +86,11 @@ class CGNodeEntryCodeMissingSemicolon(CGBaseWarning):
     id = 304
     text = "Отсутствие завершающей точки с запятой в коде {src}"
     desc = "Шаблон кода для {src} не заканчивается точкой с запятой. Если это не пользовательский узел, обратитесь к разработчику для исправления кода этого узла."
+
+class CGNodeNullWarning(CGBaseWarning):
+    id = 305
+    text = "Узел {src} не существует"
+    desc = "Узел {src} не найден в библиотеке узлов и потому не может быть использован."
 
 # ----------------------------------------
 #   601-700 - variables warnings

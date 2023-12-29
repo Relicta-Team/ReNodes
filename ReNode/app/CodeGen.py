@@ -95,6 +95,8 @@ class CodeGenerator:
         
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
+        self.dpdGraphExt = {}
+        self.gObjMeta = {}
         
         self._addComments = addComments
         
@@ -118,6 +120,8 @@ class CodeGenerator:
         for name in delIdList:
             del layout_data['nodes'][name]
 
+        self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
+
         entrys = self.getAllEntryPoints()
         if not entrys:
             self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
@@ -125,72 +129,73 @@ class CodeGenerator:
         self.entryIdList = entrys #лист для валидации точек входа
         
         self.isGenerating = True
+        if not self._exceptions:
+            self._resetNodesError()
 
-        self._resetNodesError()
+            self.log("Старт генерации...")
+            timestamp = int(time.time()*1000.0)
+            
+            code = "// Code generated:\n"
+            # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
+            self.localVariableData = {}
+            self.gObjType = self.getGraphTypeObject()
+            self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,self.graphsys.graph.infoData)
 
-        self.log("Старт генерации...")
-        timestamp = int(time.time()*1000.0)
-        
-        code = "// Code generated:\n"
-        # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
-        self.localVariableData = {}
-        self.gObjType = self.getGraphTypeObject()
-        self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,self.graphsys.graph.infoData)
+            self.log("Генерация переменных")
 
-        self.log("Генерация переменных")
-
-        # generated lvdata for graph user vars (local,class, methods)
-        for vcat,vval in self.getVariableDict().items():
-            if vcat not in ["localvar","classvar"]:
-                continue
-            for i, (k,v) in enumerate(vval.items()):
-                lvData = {}
-                self.localVariableData[k] = lvData
-                lvData['type'] = v['type']
-                lvData['usedin'] = None
-                
-                lvData['category'] = vcat
-                lvData['portname'] = v['name']
-                lvData['varname'] = v['name']
-                #transliterate(v['name']) for get transliterate name
-                if vcat=='localvar':
-                    lvData['alias'] = f"_LVAR{i+1}"
-                    lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
-                ##elif vcat=='classvar':
-                #    lvData['alias'] = f"classMember_{i+1}"
-                else:
+            # generated lvdata for graph user vars (local,class, methods)
+            for vcat,vval in self.getVariableDict().items():
+                if vcat not in ["localvar","classvar"]:
                     continue
+                for i, (k,v) in enumerate(vval.items()):
+                    lvData = {}
+                    self.localVariableData[k] = lvData
+                    lvData['type'] = v['type']
+                    lvData['usedin'] = None
+                    
+                    lvData['category'] = vcat
+                    lvData['portname'] = v['name']
+                    lvData['varname'] = v['name']
+                    #transliterate(v['name']) for get transliterate name
+                    if vcat=='localvar':
+                        lvData['alias'] = f"_LVAR{i+1}"
+                        lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
+                    ##elif vcat=='classvar':
+                    #    lvData['alias'] = f"classMember_{i+1}"
+                    else:
+                        continue
 
 
-        # generate classvars
-        code += self.gObjType.cgHandleVariables(self.gObjMeta)
+            # generate classvars
+            code += self.gObjType.cgHandleVariables(self.gObjMeta)
 
-        self.log("Генерация свойств инспектора")
+            self.log("Генерация свойств инспектора")
 
-        # generate inspector props
-        code += self.gObjType.cgHandleInspectorProps(self.gObjMeta)
+            # generate inspector props
+            code += self.gObjType.cgHandleInspectorProps(self.gObjMeta)
 
-        self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
-        self.__generateNames(entrys)
+            self.__generateNames(entrys)
 
-        
-        self._validateEntrys(entrys)
+            
+            self._validateEntrys(entrys)
 
-        self.log("Генерация связей")
-        self.dpdGraphExt = self.createDpdGraphExt()
+            self.log("Генерация связей")
+            self.dpdGraphExt = self.createDpdGraphExt()
 
-        self.log("Генерация кода узлов")
-        generated_code = self.generateOrderedCode(entrys)
-        code += "\n" + generated_code
-        
-        code = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
-        
-        code = f'//gdate: {datetime.datetime.now()}\n' + code
+            self.log("Генерация кода узлов")
+            generated_code = self.generateOrderedCode(entrys)
+            code += "\n" + generated_code
+            
+            code = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
+            
+            code = f'//gdate: {datetime.datetime.now()}\n' + code
 
-        if self.isDebugMode():
-            from PyQt5.QtWidgets import QApplication
-            QApplication.clipboard().setText(code)
-
+            if self.isDebugMode():
+                from PyQt5.QtWidgets import QApplication
+                QApplication.clipboard().setText(code)
+        else:
+            #exception generator
+            timestamp = int(time.time()*1000.0)
         
 
         self.log(f"\t- Предупреждений: {len(self._warnings)}; Ошибок: {len(self._exceptions)}")
@@ -1137,9 +1142,14 @@ class CodeGenerator:
 
     def getAllEntryPoints(self):
         node_ids = []
+        cleanupList = []
         for node_id, node_data in self.serialized_graph["nodes"].items():
             nodeClass = node_data['class_']
             libData = self.getNodeLibData(nodeClass)
+            if not libData:
+                self.nodeWarn(CGNodeNullWarning,source=node_id)
+                cleanupList.append(node_id)
+                continue
             isClassMember = "classInfo" in libData
             if isClassMember:
                 isMethod = libData["classInfo"]["type"] == "method"
@@ -1152,6 +1162,16 @@ class CodeGenerator:
                         node_ids.append(node_id)
             if nodeClass == "function.def":
                 node_ids.append(node_id)
+        
+        for nclenup in cleanupList:
+            self.serialized_graph["nodes"].pop(nclenup)
+        for conn in self.serialized_graph['connections']:
+            if conn['in'][0] in cleanupList or conn['out'][0] in cleanupList:
+                self.serialized_graph['connections'].remove(conn)
+        
+        if cleanupList:
+            self.exception(CGUnexistNodeError)
+        
         return node_ids
 
     def updateValueDataForType(self,value,tname):
@@ -1316,10 +1336,10 @@ class CodeGenerator:
         self._exceptions.append(ex)
 
     def nodeWarn(self,
-                    exType,source:NodeData | None=None,
+                    exType,source:NodeData |str| None=None,
                     portname:str|None=None,
-                    target:NodeData | None=None, 
-                    entry:NodeData | None=None,
+                    target:NodeData |str| None=None, 
+                    entry:NodeData |str| None=None,
                     context=None):
         """
         Предупреждающее сообщение для узлов
@@ -1334,13 +1354,22 @@ class CodeGenerator:
         linkEntryId = None
 
         if source: 
-            sourceId = source.nodeId
+            if isinstance(source,CodeGenerator.NodeData):
+                sourceId = source.nodeId
+            else:
+                sourceId = source
             linkSourceId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(sourceId),sourceId)
         if target: 
-            targetId = target.nodeId
+            if isinstance(target,CodeGenerator.NodeData):
+                targetId = target.nodeId
+            else:
+                targetId = target
             linkTargetId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(targetId),targetId)
         if entry: 
-            entryId = entry.nodeId
+            if isinstance(entry,CodeGenerator.NodeData):
+                entryId = entry.nodeId
+            else:
+                entryId = entry
             linkEntryId = LoggerConsole.wrapNodeLink(self._sanitizeNodeName(entryId),entryId)
 
         params = {

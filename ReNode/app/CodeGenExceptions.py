@@ -40,7 +40,7 @@ class CGBaseException:
             postText = "<span style='color:#FFF2B0;'>"+self.getExceptionDescription()+"</span>"
             postText = "\n- Подробнее: " + postText
             #postText = '<p title="tootip">some block of text</p>'
-        return f"<b>ERR-{class_.id}</b>: " + class_.text.format(
+        return f"<b>[{class_.__name__}:ERR-{class_.id}]</b>: " + class_.text.format(
             src=self.src,
             portname=self.portname,
             targ=self.targ,
@@ -65,6 +65,11 @@ class CGStackError(CGBaseException):
     id = 3
     text = "Ошибка стека генерации - отсутствует совместимая информация для генерации {entry}"
     desc = "При обработке отсортированного дерева узлов кодогенератор не смог найти допустимых замен без которых дальнейшая обработка невыполнима. Возможная проблема в {src}"
+
+class CGUnexistNodeError(CGBaseException):
+    id = 4
+    text = "Найдены несуществующие узлы. Генерация невозможна."
+    desc = "Удалите все узлы, которых не существует в библиотеке. Каждый из таких узлов помечен предупреждающим сообщением в консоли."
 
 # ----------------------------------------
 #   101-300 - ports exceptions
