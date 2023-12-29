@@ -2,15 +2,41 @@ from ReNode.app.FileManager import FileManagerHelper
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.utils import transliterate
 from ReNode.ui.VarMgrWidgetTypes.Widgets import VarMgrBaseWidgetType
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 
 class VirtualLib:
+
+	class MyHandler(FileSystemEventHandler):
+		cache = set()
+		def on_modified(self, event):
+		 	if not event.is_directory and event.src_path.endswith('.graph'):
+		 		print(f"File modified: {event.src_path}")
+
+		def on_created(self, event):
+			if not event.is_directory and event.src_path.endswith('.graph'):
+				print(f"File created: {event.src_path}")
+
+		def on_deleted(self, event):
+			if not event.is_directory and event.src_path.endswith('.graph'):
+				print(f"File deleted: {event.src_path}")
+		
+
 	refObject = None
 	def __init__(self,factory):
 		from ReNode.app.NodeFactory import NodeFactory
+		
 		self.logger = RegisterLogger("VirtualLib")
 		VirtualLib.refObject = self
 		self.factory : NodeFactory = factory
-	
+
+		path = '.'  # Замените на путь к вашей директории
+		event_handler = VirtualLib.MyHandler()
+		observer = Observer()
+		observer.schedule(event_handler, path, recursive=True)
+		observer.start()
+
 	def generateUserLib(self):
 		self.logger.info("Start searching graphs...")
 		pathes = FileManagerHelper.getAllGraphPathes()
@@ -35,19 +61,23 @@ class VirtualLib:
 			vars = data['graph']['variables']
 			infoData = data['graph']['info']
 
-			#class register
-			newclass = {
-				"baseClass": infoData['parent'],
-				"defined": {"file":path,"line":1},
-				"fields": {"defined": {}},
-				"methods": {"defined": {}},
-				"name": infoData['name'],
-				#baseList, __childList, __inhChild
-			}
+
 
 			if stage == 0:
+				#class register
+				newclass = {
+					"baseClass": infoData['parent'],
+					"defined": {"file":path,"line":1},
+					"fields": {"defined": {}},
+					"methods": {"defined": {}},
+					"name": infoData['name'],
+					#baseList, __childList, __inhChild
+				}
 				self.factory.classes[infoData['classname']] = newclass
 				return
+			
+			if stage == 1:
+				newclass = self.factory.classes[infoData['classname']]
 
 			basePath = "Пользовательские"
 			className = infoData['classname']
@@ -98,7 +128,12 @@ class VirtualLib:
 		cls = infoData['classname']
 		
 		classData = graphObj.getFactory().getClassData(cls)
-		
+		if not classData:
+			#full regenerate user library
+			#self.generateUserLib() nodes and classes not empty
+			self.factory.loadFactoryFromJson("lib.json")
+			return
+
 		#удаляем все пользовательские узлы для этого графа
 		for nodename in classData['methods'].get('nodes',[]):
 			del self.factory.nodes["methods."+nodename]
