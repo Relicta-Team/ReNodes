@@ -107,7 +107,7 @@ class MainWindow( QMainWindow ):
 	def onExit(self):
 		#logger.info("Выход")
 		if self.nodeGraph.sessionManager.validateExit():
-			exit(0)
+			sys.exit(0)
 
 	def onReloadStyle(self,string):
 		logger.info("STYLE UPDATE")
