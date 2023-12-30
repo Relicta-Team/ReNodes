@@ -89,6 +89,7 @@ class NodeObjectHandler:
 			"options": [],#{}
 		}
 		self.lastPortRef = None
+		self.hasAutoPort = False #при true добавляется автопортдата
 
 		# Определение имени класса и имени члена
 		self.memberClass = None
@@ -183,6 +184,8 @@ class NodeObjectHandler:
 		dst.memberClass = src.memberClass
 		dst.memberName = src.memberName
 		dst.memberNameFull = src.memberNameFull
+
+		dst.hasAutoPort = src.hasAutoPort
 
 		dst.refAllObjects = src.refAllObjects
 		if addToAllObjects:
@@ -320,6 +323,8 @@ class NodeObjectHandler:
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = unescape(tokens[3])
 			self.memberData['inputs'].append((tokens[2],self.lastPortRef))
+			if tokens[1] == 'auto' and not self.hasAutoPort:
+				self.pushBackLines(["runtimeports:1"])
 		elif tokenType == "out":
 			self.lastPortRef = {
 				'type': tokens[1],
@@ -328,24 +333,28 @@ class NodeObjectHandler:
 			if len(tokens) > 3:
 				self.lastPortRef['desc'] = unescape(tokens[3])
 			self.memberData['outputs'].append((tokens[2],self.lastPortRef))
+			if tokens[1] == 'auto' and not self.hasAutoPort:
+				self.pushBackLines(["runtimeports:1"])
 		elif tokenType == 'opt':
 			for tInside in tokens[1:]:
 				if tInside.startswith("mul"):
 					self.lastPortRef['mutliconnect'] = intTryParse(tInside.split('=')[1]) > 0
-				if tInside.startswith("dname"):
+				elif tInside.startswith("dname"):
 					self.lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
-				if tInside.startswith('allowtypes'):
+				elif tInside.startswith('allowtypes'):
 					self.lastPortRef['allowtypes'] = tInside.split('|')
-				if tInside.startswith("custom"):
+				elif tInside.startswith("custom"):
 					self.lastPortRef['use_custom'] = intTryParse(tInside.split('=')[1]) > 0
-				if tInside.startswith("pathes"):
+				elif tInside.startswith("pathes"):
 					parts_ = tInside.split('=')
 					listParts_ = parts_[1].split('|') if len(parts_) > 1 and not parts_[1].isspace() else []
 					self.lastPortRef['accepted_paths'] = listParts_
-				if tInside.startswith("typeget"):
+				elif tInside.startswith("typeget"):
 					self.lastPortRef['typeget'] = tInside.split('=')[1]
-				if tInside.startswith("require"):
+				elif tInside.startswith("require"):
 					self.lastPortRef['require_connection'] = intTryParse(tInside.split("=")[1]) > 0
+				else:
+					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
 		
 		# redef node name
@@ -375,7 +384,7 @@ class NodeObjectHandler:
 						"type": "hidden",
 						"default": {}
 					}))
-				self.memberData['auto_color_icon'] = True
+				self.memberData['auto_color_icon'] = False
 		elif tokenType == "autocoloricon":
 			self.memberData['auto_color_icon'] = intTryParse(tokens[1]) > 0
 		# add specific option to node
@@ -661,11 +670,15 @@ class NodeObjectHandler:
 		overrideRuntime = 'runtime_ports' in memberData
 		for k,v in self['inputs']:
 			if overrideRuntime and v['type'] == 'auto':
+				if not v.get('typeget'):
+					v['typeget'] = 'ANY;@type'
 				v['type'] = ''
 			if v['type'] == "Exec":
 				v["style"] = "triangle"
 		for k,v in self['outputs']:
 			if overrideRuntime and v['type'] == 'auto':
+				if not v.get('typeget'):
+					v['typeget'] = 'ANY;@type'
 				v['type'] = ''
 			if v['type'] == "Exec":
 				v["style"] = "triangle"
@@ -706,7 +719,7 @@ class NodeObjectHandler:
 		typeLib.prepPortColors(memberData)
 
 		# Добавляем опции
-		for k,v in dataInputs.items():
+		for k,v in dataInputs.items():				
 			if v.get('use_custom',False):
 				del v['use_custom']
 				opt = self.getVarlibOptionByType(v.get('type'),k)
@@ -818,7 +831,7 @@ def compileRegion(members,nodeLib,classmeta):
 		obj.generateJson() #generate main
 		
 		if obj.isSystem:
-			nextPath = obj['path']
+			nextPath = obj.memberData.get('path','')
 
 # generate lib (using flag -genlib)
 def GenerateLibFromObj():
