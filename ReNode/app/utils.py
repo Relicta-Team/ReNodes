@@ -17,11 +17,11 @@ def loadStylesheet(filename: str):
     QApplication.instance().setStyleSheet(str(stylesheet, encoding='utf-8'))
     return str(stylesheet, encoding='utf-8')
 
-def intTryParse(value):
+def intTryParse(value,default=0):
     try:
         return int(value)
     except ValueError:
-        return 0
+        return default
     
 def floatTryParse(value):
     try:

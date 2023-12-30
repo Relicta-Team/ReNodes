@@ -164,7 +164,7 @@ class NodeItem(AbstractNodeItem):
 
         #p1 = QtCore.QPointF(text_rect.left(), text_rect.height()/2)
         #p2 = QtCore.QPointF(text_rect.right(), text_rect.height())
-        if self._node_render_type == NodeRenderType.NoHeader:
+        if self._node_render_type in NodeRenderType.getNoHeaderTypes():
             # gradMain = QtGui.QRadialGradient(rect.center(), rect.width() / 2, rect.center())
             # gradMain.setSpread(QtGui.QGradient.PadSpread)
             # gradMain.setColorAt(0.0, QtGui.QColor(*self.color))
@@ -447,7 +447,7 @@ class NodeItem(AbstractNodeItem):
         # width, height from node name text.
         text_w = self._text_item.boundingRect().width()
         text_h = self._text_item.boundingRect().height()
-        if self._node_render_type == NodeRenderType.NoHeader:
+        if self._node_render_type in NodeRenderType.getNoHeaderTypes():
             #text_w = 0
             text_h = 0
 
@@ -513,7 +513,8 @@ class NodeItem(AbstractNodeItem):
             width += widget_width
         if widget_height:
             # add bottom margin for node widget.
-            height += 4.0
+            if self._node_render_type not in NodeRenderType.getNoHeaderTypes():
+                height += 4.0
         height *= 1.05
         return width, height
 
@@ -570,16 +571,19 @@ class NodeItem(AbstractNodeItem):
         return width, height
 
     def _align_icon_horizontal(self, h_offset, v_offset):
-        if self._node_render_type == NodeRenderType.NoHeader:
+        if self._node_render_type == NodeRenderType.NoHeaderIcon:
             scale = NodeEnum.ICON_CUSTOM_RENDER_SIZE.value
             pix = self._icon_item.pixmap()
-            if pix.size().height() != scale:
+            if pix.size().height() < scale:
                 pix = pix.scaledToHeight(scale, QtCore.Qt.SmoothTransformation)
                 self._icon_item.setPixmap(pix)
                 self._icon_item.setOpacity(0.5)
             origRect = self.boundingRect()
             icnRect = self._icon_item.boundingRect()
             self._icon_item.setPos(origRect.center().x()-icnRect.width()/2,origRect.center().y()-icnRect.height()/2)
+            return
+        if self._node_render_type == NodeRenderType.NoHeaderText:
+            self._icon_item.setOpacity(0.0)
             return
         icon_rect = self._icon_item.boundingRect()
         text_rect = self._text_item.boundingRect()
@@ -611,12 +615,16 @@ class NodeItem(AbstractNodeItem):
             raise RuntimeError('Node graph layout direction not valid!')
 
     def _align_label_horizontal(self, h_offset, v_offset):
-        if self._node_render_type == NodeRenderType.NoHeader:
+        if self._node_render_type == NodeRenderType.NoHeaderText:
             #draw text at center
             text_rect = self._text_item.boundingRect()
             x = self.boundingRect().center().x() - (text_rect.width() / 2)
             y = self.boundingRect().center().y() - (text_rect.height() / 2)
+            self._text_item.setOpacity(0.5)
             self._text_item.setPos(x + h_offset, y + v_offset)
+            return
+        if self._node_render_type == NodeRenderType.NoHeaderIcon:
+            self._text_item.setOpacity(0.0)
             return
         rect = self.boundingRect()
         text_rect = self._text_item.boundingRect()
@@ -818,7 +826,7 @@ class NodeItem(AbstractNodeItem):
     def _draw_node_horizontal(self):
         height = self._text_item.boundingRect().height() + 4.0
 
-        if self._node_render_type == NodeRenderType.NoHeader:
+        if self._node_render_type in NodeRenderType.getNoHeaderTypes():
             height = 2
 
         # update port text items in visibility.

@@ -4,6 +4,7 @@ from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
 from ReNode.ui.NodePainter import getDrawPortFunction
 from ReNode.app.VirtualLib import VirtualLib
+from ReNode.app.Constants import NodeRenderType
 import logging
 import re
 
@@ -275,6 +276,7 @@ class NodeFactory:
 
 		struct['runtime_ports'] = data.get('runtime_ports',False)
 		struct['auto_color_icon'] = data.get('auto_color_icon',False)
+		struct['render_type'] = data.get('render_type',NodeRenderType.Default.name)
 
 		struct['visible'] = data.get('isVisibleInLib',True)
 
@@ -389,6 +391,10 @@ class NodeFactory:
 		node._view.nodeClass = nodename
 
 		node.uid = graphref.incrementId
+
+		node._view._node_render_type = NodeRenderType[cfg['render_type']]
+		if node._view._node_render_type == NodeRenderType.NoHeaderText:
+			node._view._default_font_size *= 2
 		#node.create_property("class_",nodename)
 
 		if "internal." in nodename:

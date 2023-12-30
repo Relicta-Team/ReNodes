@@ -7,6 +7,7 @@ from ReNode.app.utils import intTryParse
 from ReNode.ui.VariableManager import VariableLibrary
 from ReNode.app.Constants import *
 from ReNode.app.application import Application
+from ReNode.app.Constants import NodeRenderType
 
 def hexToRGBA(hex):
 	hex = hex.lstrip("#")
@@ -387,6 +388,10 @@ class NodeObjectHandler:
 				self.memberData['auto_color_icon'] = False
 		elif tokenType == "autocoloricon":
 			self.memberData['auto_color_icon'] = intTryParse(tokens[1]) > 0
+		elif tokenType == "rendertype":
+			if not NodeRenderType.typeExists(tokens[1]):
+				raise Exception(f"Unknown render type: {tokens[1]}")
+			self.memberData['render_type'] = NodeRenderType[tokens[1]].name
 		# add specific option to node
 		elif tokenType == "option":
 			_cont :str= tokens[1]

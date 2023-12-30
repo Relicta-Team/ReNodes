@@ -16,6 +16,20 @@ def rgbaToHex(r,g,b,a=255):
 class NodeRenderType(Enum):
     Default = 0
     NoHeader = 1
+    NoHeaderText = 2
+    NoHeaderIcon = 3
+
+    @staticmethod
+    def getNoHeaderTypes():
+        return [NodeRenderType.NoHeaderIcon,NodeRenderType.NoHeaderText]
+
+    @staticmethod
+    def typeExists(value):
+        if value in NodeRenderType.__members__:
+            return True
+        if value in [v.value for v in NodeRenderType.__members__.values()]:
+            return True
+        return False
 
 
 class NodeColor(Enum):
