@@ -131,6 +131,17 @@ class GraphTypeBase:
         
         if not nodeObject.isReady: return ""
 
+        # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
+        varlistalloc = ["'this'"]
+        varlistpassed = ["this"]
+        #       adding lvars and params (all context local vars)
+        for localName in cgObj.contextVariablesUsed:
+            varlistalloc.append(f"\"{localName}\"")
+            varlistpassed.append(f"{localName}")
+        
+        node_code = node_code.replace("@context.get",f"[{','.join(varlistpassed)}]")
+        node_code = node_code.replace("@context.alloc",f"params [{','.join(varlistalloc)}]")
+
         hasConnections = nodeObject.getConnectionOutputs()
         
         if "@initvars" in node_code:

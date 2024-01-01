@@ -68,6 +68,8 @@ class CodeGenerator:
 
         # те переменные, которые хоть раз используют установку или получение должны быть сгенерены
         self.localVariablesUsed = set()
+        # любые локальные данные пишутся в это хранилище
+        self.contextVariablesUsed = set()
 
         self.gObjType : GraphTypeBase = None
         self.gObjMeta :dict[str:object]= None
@@ -303,6 +305,7 @@ class CodeGenerator:
                 self.log(f"    -------- Генерация точки входа {i+1}/{len(entrys)}")
 
                 self.localVariablesUsed = set()
+                self.contextVariablesUsed = set()
                 
                 # Топологическая сортировка узлов
                 #self.log("    -- Сортировка")
@@ -553,20 +556,6 @@ class CodeGenerator:
                 if obj.getConnectionOutputs().get("Новое значение"):
                     oldCode = obj.code
                     obj.code = "private @genvar.out.2 = @in.3;" + re.sub(f'@in\.3(?=\D|$)', f"@locvar.out.2", oldCode)
-                # libName = clsName.replace("_0.set","_0.get")
-                # libInfo = self.getFactory().getNodeLibData(libName)
-                # if not libInfo:
-                #     raise Exception(f'Unknown library object from \'{clsName}\': \'{libName}\'')
-                # codeline = libInfo["code"]
-                # codeline = re.sub(f'@in\.1(?=\D|$)', f"@in.2", codeline)
-                # #generate variable
-                # gvObj = GeneratedVariable(f'({codeline})',obj.nodeId)
-                # outName = "Новое значение"
-                # gvObj.fromPort = outName #constant
-                # gvObj.definedNodeName = obj.nodeId
-                # if outName in obj.generatedVars:
-                #     raise Exception(f'Unhandled case: {outName} in {obj.generatedVars}')
-                # obj.generatedVars[outName] = gvObj
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
@@ -614,6 +603,8 @@ class CodeGenerator:
                                 self.exception(CGLocalVariableDuplicateUseException,source=obj,context=self.localVariableData[nameid]['varname'],entry=entryObj,target=usedIn)
                         lvar_alias = self.localVariableData[nameid]['alias']
                         node_code = generated_code.replace(nameid,lvar_alias)
+                        if isGet:
+                            self.contextVariablesUsed.add(lvar_alias)
                         if isSet:
                             #generate variable out
                             gvObj = GeneratedVariable(lvar_alias,node_id)
@@ -783,6 +774,8 @@ class CodeGenerator:
                     if inpObj.generatedVars.get(portNameConn):
 
                         lvarObj = inpObj.generatedVars.get(portNameConn)
+                        if not lvarObj.isUsed:
+                            self.contextVariablesUsed.add(lvarObj.localName)
                         lvarObj.isUsed = True
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
@@ -892,9 +885,11 @@ class CodeGenerator:
             connectedOutExecPorts = [k for k in execsPorts if len(idat['out'][k]) > 0]
             
             noLoops = True
+            loopObj = None
             for scpCheck in scopeStack:
                 if scpCheck.isLoopScope:
                     noLoops = False
+                    loopObj = scpCheck.sourceObj
                     break
 
             # проверка требования возвращаемого типа
@@ -911,6 +906,9 @@ class CodeGenerator:
             # проверка операторов контроля цикла
             if srcObj.nodeClass in ["operators.break_loop","operators.continue_loop"] and noLoops:
                 self.exception(CGLoopControlException,source=srcObj)
+            # проверка таймеров внутри циклов
+            if srcObj.nodeClass in ["operators.callafter","operators.callaftercond"] and not noLoops:
+                self.exception(CGLoopTimerException,source=srcObj,target=loopObj)
 
 
 
