@@ -154,15 +154,15 @@
       }
     },
     "mpos":[
-      297.4639963345085,
-      102.81165967836452,
-      543.379446584153,
-      511.4159497262603
+      1053.1490229429394,
+      -638.5210953832935,
+      855.1082080194703,
+      804.807725194793
     ],
-    "mzoom":-0.05
+    "mzoom":-0.39
   },
   "nodes":{
-    "0x1afc09cd850":{
+    "0x1a527e7b410":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"test_func_returned\"",
@@ -186,8 +186,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":259.0,
-      "height":121.4,
+      "width":204.0,
+      "height":117.4,
       "pos":[
         204.48981080916357,
         52.583094208070634
@@ -197,7 +197,7 @@
       "subgraph_session":{},
       "class_":"methods.Testgraph.test_func_returned_0.def"
     },
-    "0x1afc4001310":{
+    "0x1a527e94510":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Branch_16x",
       "name":"Ветка",
@@ -223,7 +223,7 @@
       "selected":false,
       "visible":true,
       "width":192.0,
-      "height":86.75,
+      "height":82.75,
       "pos":[
         574.085553262544,
         2.2381503051171303
@@ -236,50 +236,7 @@
       },
       "class_":"operators.if_branch"
     },
-    "0x1afc4035e50":{
-      "type_":"runtime_domain.RuntimeNode",
-      "icon":[
-        "data\\icons\\pill_16x",
-        "#2e8b57"
-      ],
-      "name":"Счетчик режима",
-      "color":[
-        33,
-        47,
-        59,
-        255
-      ],
-      "border_color":[
-        74,
-        84,
-        85,
-        255
-      ],
-      "text_color":[
-        255,
-        255,
-        255,
-        180
-      ],
-      "disabled":false,
-      "selected":false,
-      "visible":true,
-      "width":340.0,
-      "height":125.60000000000001,
-      "pos":[
-        705.017346111896,
-        105.19306434050513
-      ],
-      "layout_direction":0,
-      "port_deletion_allowed":false,
-      "subgraph_session":{},
-      "custom":{
-        "Цель":"Этот объект",
-        "Значение":0
-      },
-      "class_":"fields.Testgraph.Schetchik rezhima_0.set"
-    },
-    "0x1afc404f790":{
+    "0x1a527ec8d90":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_Node_16x",
@@ -308,7 +265,7 @@
       "selected":false,
       "visible":true,
       "width":160,
-      "height":77.30000000000001,
+      "height":73.30000000000001,
       "pos":[
         1698.535744165407,
         101.95929561107079
@@ -362,7 +319,7 @@
       },
       "class_":"control.return"
     },
-    "0x1afc4008e10":{
+    "0x1a527eca410":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x",
@@ -390,8 +347,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":303.0,
-      "height":61.550000000000004,
+      "width":270.0,
+      "height":60,
       "pos":[
         1218.8668577423696,
         253.98451027989674
@@ -404,7 +361,7 @@
       },
       "class_":"fields.ScriptedGamemode.descExtended_0.get"
     },
-    "0x1afc4008410":{
+    "0x1a527ec9750":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x",
@@ -433,10 +390,10 @@
       "selected":false,
       "visible":true,
       "width":340.0,
-      "height":125.60000000000001,
+      "height":121.60000000000001,
       "pos":[
-        1092.4681059290494,
-        -6.250206544687803
+        1143.620133899261,
+        49.554694549226994
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -447,7 +404,7 @@
       },
       "class_":"fields.ScriptedGamemode.duration_0.set"
     },
-    "0x1afc400a810":{
+    "0x1a527ed96d0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -476,10 +433,10 @@
       "selected":false,
       "visible":true,
       "width":228.0,
-      "height":61.550000000000004,
+      "height":60,
       "pos":[
-        1343.2548437316284,
-        -81.67201783361904
+        1558.5144946262967,
+        -13.12564855431129
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -489,7 +446,7 @@
       },
       "class_":"fields.Testgraph.testobj_0.get"
     },
-    "0x1afc4081d10":{
+    "0x1a527ef17d0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"no_ret_test\"",
@@ -513,8 +470,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":210.0,
-      "height":75.2,
+      "width":167.0,
+      "height":71.2,
       "pos":[
         118.97702173541666,
         246.70235389255504
@@ -524,7 +481,7 @@
       "subgraph_session":{},
       "class_":"methods.Testgraph.no_ret_test_0.def"
     },
-    "0x1afc4083d90":{
+    "0x1a527ef3650":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_OverrideFunction_16x",
       "name":"Определение \"ret_bool\"",
@@ -548,7 +505,7 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":189.0,
+      "width":160,
       "height":60,
       "pos":[
         140.99023088623517,
@@ -559,7 +516,7 @@
       "subgraph_session":{},
       "class_":"methods.Testgraph.ret_bool_0.def"
     },
-    "0x1afc4064590":{
+    "0x1a527ef3e10":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\icon_Blueprint_Node_16x",
@@ -588,7 +545,7 @@
       "selected":false,
       "visible":true,
       "width":160,
-      "height":77.30000000000001,
+      "height":73.30000000000001,
       "pos":[
         884.0751013833775,
         416.9829165669284
@@ -615,21 +572,34 @@
           "multi_connection":false,
           "display_name":true,
           "color":[
+            128,
+            0,
+            0,
+            255
+          ],
+          "type":"bool"
+        }
+      ],
+      "output_ports":[],
+      "custom":{
+        "autoportdata":{
+          "color":[
             255,
             255,
             255,
             255
           ],
-          "type":""
+          "border_color":[
+            255,
+            255,
+            255,
+            255
+          ]
         }
-      ],
-      "output_ports":[],
-      "custom":{
-        "autoportdata":{}
       },
       "class_":"control.return"
     },
-    "0x1afc4065910":{
+    "0x1a527f19210":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -657,8 +627,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":338.0,
-      "height":61.550000000000004,
+      "width":297.0,
+      "height":60,
       "pos":[
         56.93960774440137,
         467.4954131497761
@@ -671,7 +641,7 @@
       },
       "class_":"fields.ScriptedGamemode.canAddAspect_0.get"
     },
-    "0x1afc4065590":{
+    "0x1a527eca010":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\node_base.png",
       "name":"Прервать цикл",
@@ -707,7 +677,7 @@
       "subgraph_session":{},
       "class_":"operators.break_loop"
     },
-    "0x1afc4067850":{
+    "0x1a527f18790":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Loop_16x",
       "name":"Цикл в диапазоне",
@@ -732,8 +702,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":264.0,
-      "height":137.15,
+      "width":234.0,
+      "height":133.15,
       "pos":[
         696.2668148118069,
         -144.093132291227
@@ -747,7 +717,7 @@
       },
       "class_":"operators.for_loop"
     },
-    "0x1afc40655d0":{
+    "0x1a527f18ed0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Node_16x",
       "name":"Вызов базового метода",
@@ -772,11 +742,11 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":193.0,
-      "height":75.2,
+      "width":160,
+      "height":71.2,
       "pos":[
-        1056.5177975108736,
-        -137.7501679411472
+        1060.9151890091125,
+        -140.68176227330653
       ],
       "layout_direction":0,
       "port_deletion_allowed":true,
@@ -841,7 +811,7 @@
       },
       "class_":"control.supercall"
     },
-    "0x1afc40c8190":{
+    "0x1a527f3b990":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -870,10 +840,10 @@
       "selected":false,
       "visible":true,
       "width":400.0,
-      "height":212.75,
+      "height":208.75,
       "pos":[
-        1296.7298156347688,
-        -209.78206795158036
+        1584.1435394550242,
+        -224.21288253669778
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -884,7 +854,7 @@
       },
       "class_":"fields.ScriptedGamemode.descExtended_0.set"
     },
-    "0x1afc40ab810":{
+    "0x1a527f3aad0":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\icon_Blueprint_Node_16x",
       "name":"Вызов базового метода",
@@ -909,8 +879,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":193.0,
-      "height":75.2,
+      "width":167.0,
+      "height":71.2,
       "pos":[
         427.2038096820993,
         240.81407447876165
@@ -978,7 +948,7 @@
       },
       "class_":"control.supercall"
     },
-    "0x1afc40cb2d0":{
+    "0x1a527f63890":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1007,7 +977,7 @@
       "selected":false,
       "visible":true,
       "width":340.0,
-      "height":115.10000000000001,
+      "height":111.10000000000001,
       "pos":[
         477.037498077171,
         376.85753613206924
@@ -1021,7 +991,7 @@
       },
       "class_":"fields.Testgraph.bultest_0.set"
     },
-    "0x1afc40cb850":{
+    "0x1a527f62f50":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":"data\\icons\\node_base.png",
       "name":"Прервать цикл",
@@ -1057,7 +1027,7 @@
       "subgraph_session":{},
       "class_":"operators.break_loop"
     },
-    "0x1afc4117190":{
+    "0x1a527f8e990":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pill_16x.png",
@@ -1085,8 +1055,8 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":228.0,
-      "height":61.550000000000004,
+      "width":231.0,
+      "height":60,
       "pos":[
         473.02951237860975,
         509.83584331296856
@@ -1099,7 +1069,7 @@
       },
       "class_":"fields.Testgraph.testobj_0.get"
     },
-    "0x1afc40cb890":{
+    "0x1a527f8f110":{
       "type_":"runtime_domain.RuntimeNode",
       "icon":[
         "data\\icons\\pillmapkey_16x.png",
@@ -1157,147 +1127,504 @@
         "nameid":"0x1e171623a50_2023125183717911037"
       },
       "class_":"variable.get"
+    },
+    "0x1a527fb5790":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillmapkey_16x.png",
+        "#ff87ff",
+        "data\\icons\\pillmapvalue_16x.png",
+        "#31ffea"
+      ],
+      "name":"Установить <b>куку</b>",
+      "color":[
+        255,
+        0,
+        255,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":73.30000000000001,
+      "pos":[
+        1394.4156951977711,
+        -278.59991437020676
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[
+        {
+          "name":"Вход",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"куку",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,color]"
+        }
+      ],
+      "output_ports":[
+        {
+          "name":"Выход",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            255,
+            255,
+            255
+          ],
+          "type":"Exec",
+          "style":1
+        },
+        {
+          "name":"Значение",
+          "multi_connection":true,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,color]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1e171623a50_2023125183717911037"
+      },
+      "class_":"variable.set"
+    },
+    "0x1a527fb6b50":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pillmapkey_16x.png",
+        "#ff87ff",
+        "data\\icons\\pillmapvalue_16x.png",
+        "#31ffea"
+      ],
+      "name":"Получить <b>куку</b>",
+      "color":[
+        255,
+        0,
+        255,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":160,
+      "height":60,
+      "pos":[
+        1236.2923432933126,
+        -189.7775376831343
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":true,
+      "subgraph_session":{},
+      "input_ports":[],
+      "output_ports":[
+        {
+          "name":"Значение",
+          "multi_connection":false,
+          "display_name":true,
+          "color":[
+            255,
+            0,
+            255,
+            255
+          ],
+          "type":"dict[string,color]"
+        }
+      ],
+      "custom":{
+        "nameid":"0x1e171623a50_2023125183717911037"
+      },
+      "class_":"variable.get"
+    },
+    "0x1a527fb6b10":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":"data\\icons\\icon_Blueprint_Timeline_16x",
+      "name":"Таймер",
+      "color":[
+        119,
+        119,
+        119,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":214.0,
+      "height":93.25,
+      "pos":[
+        1130.5671220663237,
+        -377.1217662621327
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "Время":1.0
+      },
+      "class_":"operators.callafter"
+    },
+    "0x1a527fdfb90":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":"data\\icons\\icon_ClockwiseRotation_16x",
+      "name":"Условный таймер",
+      "color":[
+        119,
+        119,
+        119,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":292.0,
+      "height":122.65,
+      "pos":[
+        989.893822534136,
+        -572.5737089061723
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "Условие":false,
+        "Таймаут":3.0
+      },
+      "class_":"operators.callaftercond"
+    },
+    "0x1a526d42310":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":[
+        "data\\icons\\pill_16x.png",
+        "#800000"
+      ],
+      "name":"бултест",
+      "color":[
+        128,
+        0,
+        0,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":238.0,
+      "height":60,
+      "pos":[
+        678.6644230372096,
+        -367.9349266657669
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "Цель":"Этот объект"
+      },
+      "class_":"fields.Testgraph.bultest_0.get"
+    },
+    "0x1a526c73e90":{
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":"data\\icons\\icon_BluePrintEditor_Function_16px",
+      "name":"no_ret_test",
+      "color":[
+        0,
+        69,
+        104
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":304.0,
+      "height":208.75,
+      "pos":[
+        1408.6310766025629,
+        -533.5501684529997
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "Цель":"Этот объект",
+        "string_param":""
+      },
+      "class_":"methods.Testgraph.no_ret_test_0"
     }
   },
   "connections":[
     {
       "out":[
-        "0x1afc09cd850",
+        "0x1a527e7b410",
         "Выход"
       ],
       "in":[
-        "0x1afc404f790",
+        "0x1a527e94510",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1afc4001310",
+        "0x1a527e7b410",
+        "p1"
+      ],
+      "in":[
+        "0x1a527fb6b10",
+        "Время"
+      ]
+    },
+    {
+      "out":[
+        "0x1a527e7b410",
+        "p2"
+      ],
+      "in":[
+        "0x1a527ec9750",
+        "Значение"
+      ]
+    },
+    {
+      "out":[
+        "0x1a527e94510",
         "Истина"
       ],
       "in":[
-        "0x1afc4067850",
+        "0x1a527f18790",
         "Вход"
       ]
     },
     {
-      "out":[
-        "0x1afc4001310",
-        "Ложь"
-      ],
       "in":[
-        "0x1afc4035e50",
-        "Вход"
-      ]
-    },
-    {
-      "out":[
-        "0x1afc4035e50",
-        "Выход"
-      ],
-      "in":[
-        "0x1afc4008410",
-        "Вход"
-      ]
-    },
-    {
-      "out":[
-        "0x1afc4035e50",
-        "Новое значение"
-      ],
-      "in":[
-        "0x1afc4008410",
-        "Значение"
-      ]
-    },
-    {
-      "in":[
-        "0x1afc404f790",
+        "0x1a527ec8d90",
         "Вход"
       ],
       "out":[
-        "0x1afc4008410",
+        "0x1a527ec9750",
         "Выход"
       ]
     },
     {
       "in":[
-        "0x1afc404f790",
-        "Вход"
-      ],
-      "out":[
-        "0x1afc40c8190",
-        "Выход"
-      ]
-    },
-    {
-      "in":[
-        "0x1afc404f790",
+        "0x1a527ec8d90",
         "Возвращаемое значение"
       ],
       "out":[
-        "0x1afc4008e10",
+        "0x1a527eca410",
+        "Значение"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527ec9750",
+        "Вход"
+      ],
+      "out":[
+        "0x1a527f3b990",
+        "Выход"
+      ]
+    },
+    {
+      "out":[
+        "0x1a527ef3650",
+        "Выход"
+      ],
+      "in":[
+        "0x1a527f3aad0",
+        "Вход"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527ef3e10",
+        "Вход"
+      ],
+      "out":[
+        "0x1a527f3aad0",
+        "Выход"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527ef3e10",
+        "Возвращаемое значение"
+      ],
+      "out":[
+        "0x1a527f3aad0",
         "Значение"
       ]
     },
     {
       "out":[
-        "0x1afc4083d90",
-        "Выход"
-      ],
-      "in":[
-        "0x1afc40ab810",
-        "Вход"
-      ]
-    },
-    {
-      "in":[
-        "0x1afc4065590",
-        "Вход"
-      ],
-      "out":[
-        "0x1afc4067850",
-        "Тело цикла"
-      ]
-    },
-    {
-      "out":[
-        "0x1afc4067850",
+        "0x1a527f18790",
         "При завершении"
       ],
       "in":[
-        "0x1afc40655d0",
+        "0x1a527f18ed0",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1afc40655d0",
+        "0x1a527f18ed0",
         "Выход"
       ],
       "in":[
-        "0x1afc40c8190",
+        "0x1a527fb6b10",
         "Вход"
       ]
     },
     {
       "out":[
-        "0x1afc40655d0",
+        "0x1a527f18ed0",
         "Значение"
       ],
       "in":[
-        "0x1afc40c8190",
+        "0x1a527f3b990",
+        "Значение"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527f3b990",
+        "Вход"
+      ],
+      "out":[
+        "0x1a527fb5790",
+        "Выход"
+      ]
+    },
+    {
+      "out":[
+        "0x1a527f3aad0",
+        "Значение"
+      ],
+      "in":[
+        "0x1a527f63890",
+        "Значение"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527fb5790",
+        "Вход"
+      ],
+      "out":[
+        "0x1a526c73e90",
+        "Выход"
+      ]
+    },
+    {
+      "in":[
+        "0x1a527fb5790",
+        "куку"
+      ],
+      "out":[
+        "0x1a527fb6b50",
         "Значение"
       ]
     },
     {
       "out":[
-        "0x1afc40ab810",
-        "Значение"
+        "0x1a527fb6b10",
+        "Вызов"
       ],
       "in":[
-        "0x1afc40cb2d0",
-        "Значение"
+        "0x1a526c73e90",
+        "Вход"
       ]
     }
   ]
