@@ -721,7 +721,7 @@ class VariableManager(QDockWidget):
                                 graph.delete_node(node,True)
 
 
-            hstack.push(VariableDeletedCommand(self,category,self.variables[category][varId]))
+            hstack.push(VariableDeletedCommand(self,category,varId))
 
             hstack.endMacro()
 
