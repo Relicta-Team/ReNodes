@@ -489,13 +489,13 @@ class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
 
     blockedProps = set(["systemname","reprType","reprDataType"])
 
-    def __init__(self, varmgr, cat,varname,prop,value,defaultvalue):
+    def __init__(self, varmgr, cat,varId,prop,value,defaultvalue):
         super(VariableChangePropertyCommand, self).__init__()
 
         if prop in VariableChangePropertyCommand.blockedProps:
             raise Exception(f"Property {prop} is blocked for change")
 
-        self._varStorage = varmgr.variables[cat][varname]
+        self._varStorage = varmgr.variables[cat][varId]
         self.setText('Изменение свойств переменной "{}"'.format(self._varStorage['name']))
         self._varmgr = varmgr
         self._name = prop
@@ -518,8 +518,8 @@ class ChangeGroupNameForVariables(QtWidgets.QUndoCommand):
         self._category = cat
         self._oldgroup = oldgroup
         self._newgroup = newgroup
-        vdatvals = self._varmgr.variables[self._category].values()
-        self._changedvarsId = set([vardat['systemname'] for vardat in vdatvals if vardat.get('group',None) == oldgroup])
+        vdatvals = self._varmgr.variables[self._category].items()
+        self._changedvarsId = set([varId for varId,vardat in vdatvals if vardat.get('group',None) == oldgroup])
     
     def undo(self):
         for sysname,vardat in self._varmgr.variables[self._category].items():
@@ -546,8 +546,8 @@ class DeleteGroupForVariables(QtWidgets.QUndoCommand):
         self._varmgr = varmgr
         self._category = cat
         self._group = group
-        vdatvals = self._varmgr.variables[self._category].values()
-        self._changedvarsId = set([vardat['systemname'] for vardat in vdatvals if vardat.get('group',None) == group])
+        vdatvals = self._varmgr.variables[self._category].items()
+        self._changedvarsId = set([varid for varid,vardat in vdatvals if vardat.get('group',None) == group])
         self._variableData = {sysname:vardat for sysname,vardat in self._varmgr.variables[self._category].items() if sysname in self._changedvarsId}
     
     def deleteVariableInGraph(self):

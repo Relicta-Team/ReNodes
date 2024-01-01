@@ -665,11 +665,11 @@ class VariableManager(QDockWidget):
 
     def changeVariableGroup(self, item):
         if item:
-            variable_system_name = item.data(0, Qt.UserRole)
+            varId = item.data(0, Qt.UserRole)
             
             # Получите категорию переменной из имени элемента
-            vardata = self.getVariableDataById(variable_system_name)
-            if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
+            vardata = self.getVariableDataById(varId)
+            if not vardata: raise Exception(f"Cant find variable by system name: {varId}")
 
             oldname = vardata.get('group',"")            
             newname,result = self.nodeGraphComponent.graph.input_dialog("Введите новое имя группы. Удалите текст для того, чтобы разгрупировать переменную",
@@ -680,7 +680,7 @@ class VariableManager(QDockWidget):
             if oldname == newname: return
 
             hstack = self.getUndoStack()
-            hstack.push(VariableChangePropertyCommand(self,vardata['category'],variable_system_name,'group',newname,""))
+            hstack.push(VariableChangePropertyCommand(self,vardata['category'],varId,'group',newname,""))
 
     def deleteVariable(self, item):
         if item:

@@ -154,7 +154,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
     @staticmethod
     def onCreateVLibData(factory,varDict,classDict):
-        sysName = classDict['memberName']
+        sysName = varDict['systemname']
 
         classDict['classObject']['fields']['defined'][sysName] = {
             "return": varDict["type"]
@@ -446,7 +446,7 @@ class VarMgrClassVariableWidget(VarMgrVariableWidget):
     @classmethod
     def getVariableInstancerClassName(cls,instancerType,infoData,varData):
         className = infoData['classname']
-        mem = f"fields.{className}.{transliterate(varData['name'])}_0"
+        mem = f"fields.{className}.{(varData['systemname'])}_0"
         if instancerType == "setvar":
             return mem + ".set"
         elif instancerType == "getvar":
@@ -472,7 +472,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     @classmethod
     def getVariableInstancerClassName(cls,instancerType,infoData,varData):
         className = infoData['classname']
-        mem = f"methods.{className}.{transliterate(varData['name'])}_0"
+        mem = f"methods.{className}.{(varData['systemname'])}_0"
         if instancerType == "deffunc":
             return mem + ".def"
         elif instancerType == "callfunc":
@@ -484,7 +484,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
     def onCreateVLibData(factory,varDict,classDict):
         
         #callfunc dict
-        sysName = classDict['memberName']
+        sysName = varDict['systemname']
 
         classDict['classObject']['methods']['defined'][sysName] = {
             "return": "<undefined>"
