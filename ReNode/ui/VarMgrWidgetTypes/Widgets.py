@@ -8,6 +8,9 @@ import datetime
 def prepEscape(data):
     return data.replace(':',"\:").replace('\"',"\\\"")
 
+def prepVariableName(origName):
+    return transliterate(origName,replaceSpaceToUnderline=True)
+
 class VarMgrBaseWidgetType:
     """
         Базовый тип переменной. В унаследованных членах должны быть реализованы:
@@ -81,20 +84,18 @@ class VarMgrBaseWidgetType:
         if not varmgr.variables.get(cat_sys_name):
             varmgr.variables[cat_sys_name] = {}
         
-        variableSystemName = vardict.get('systemname')
-        if not variableSystemName:
-            raise Exception(f"Не указано системное имя идентификатора! {vardict}")
+        varId = self.generateVariableId()
         
-        if variableSystemName in varmgr.variables[cat_sys_name]:
-            varmgr.showErrorMessageBox(f"Коллизия системных имен идентификаторов. Айди '{variableSystemName}' уже существует!")
+        if varId in varmgr.variables[cat_sys_name]:
+            varmgr.showErrorMessageBox(f"Коллизия системных имен идентификаторов. Айди '{varId}' уже существует! Повторите попытку создания.")
             return
         
         for cat,stor in varmgr.variables.items():
-            if variableSystemName in stor:
-                varmgr.showErrorMessageBox(f"Коллизия системных имен идентификаторов. Айди '{variableSystemName}' уже существует в другой категории - {cat}")
+            if varId in stor:
+                varmgr.showErrorMessageBox(f"Коллизия системных имен идентификаторов. Айди '{varId}' уже существует в другой категории - {cat}. Повторите попытку создания.")
                 return
 
-        varmgr.getUndoStack().push(VariableCreatedCommand(varmgr,cat_sys_name,vardict))
+        varmgr.getUndoStack().push(VariableCreatedCommand(varmgr,cat_sys_name,vardict,varId))
 
     @staticmethod
     def getVariableMakerVisualInfo(variable_id,variable_data):
@@ -105,7 +106,7 @@ class VarMgrBaseWidgetType:
         """Пост-обработчик создания элемента в дереве. Например, можно установить описание или иконку"""
         return None
 
-    def generateSystemName(self):
+    def generateVariableId(self):
         itm = datetime.datetime.now()
         return f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
 
@@ -340,10 +341,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         variable_type = self.widVarType.get_value() #имя типа (string,int,object...)
         default_value = self.widInitVal.get_value()
         varMgr = self.variableManagerRef
-
-        if variable_name == "nameid":
-            self.getVarMgr().showErrorMessageBox("Имя переменной не может быть 'nameid'")
-            return
+        
+        realName = prepVariableName(variable_name)
 
         varInfo = varMgr.getVariableTypedefByType(variable_type)
 
@@ -389,20 +388,14 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
         if dt.dataType != "value":
             var_typename = f"{dt.dataType}[{var_typename}]"
-        
-        itm = datetime.datetime.now()
-        #variableSystemName = hex(id(itm))
-        variableSystemName = f'{hex(id(itm))}_{itm.year}{itm.month}{itm.day}{itm.hour}{itm.minute}{itm.second}{itm.microsecond}'
 
         vardict = {
             "name": variable_name,
             "type": var_typename,
-            "datatype": dt.dataType, #TODO remove
             "value": default_value,
             "category": cat_sys_name,
             "group": variable_group,
-            #TODO сделать чтобы системные имена генерировались от обычных
-            "systemname": variableSystemName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
+            "systemname": realName, # никогда не должно изменяться и всегда эквивалентно ключу в категории
             
             "reprType": reprType,#todo remove
             "reprDataType": str(dt),#todo remove
@@ -463,13 +456,13 @@ class VarMgrClassVariableWidget(VarMgrVariableWidget):
         
     def createVariable(self, varname, vargroup):
         
-        realName = transliterate(varname)
+        realName = prepVariableName(varname)
         className = self.nodeGraphComponent.inspector.infoData.get('classname')
         if className:
             members = self.nodeGraphComponent.getFactory().getClassAllFields(className)
             members = [m.lower() for m in members]
             if realName.lower() in members:
-                self.getVarMgr().showErrorMessageBox(f"Переменная с именем \"{varname}\" уже существует в классе \"{className}\".")
+                self.getVarMgr().showErrorMessageBox(f"Переменная с именем \"{varname}\" ({realName}) уже существует в классе \"{className}\".")
                 return False
         
         return super().createVariable(varname, vargroup)
@@ -721,13 +714,13 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             self.getVarMgr().showErrorMessageBox("Нельзя создать чистую функцию, которая не возвращает значение.")
             return False
 
-        realName = transliterate(funcName)
+        realName = prepVariableName(funcName)
         className = self.nodeGraphComponent.inspector.infoData.get('classname')
         if className:
             members = self.nodeGraphComponent.getFactory().getClassAllMethods(className)
             members = [m.lower() for m in members]
             if realName.lower() in members:
-                self.getVarMgr().showErrorMessageBox(f"Функция с именем \"{funcName}\" уже существует в классе \"{className}\".")
+                self.getVarMgr().showErrorMessageBox(f"Функция с именем \"{funcName}\" ({realName}) уже существует в классе \"{className}\".")
                 return False
 
         #check params
@@ -744,8 +737,6 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
                 return
             uniParams.append(param['name'])
 
-        sysname = self.generateSystemName()
-
         funcInfo = {
             "name":funcName,
             "group":funcGrp,
@@ -755,7 +746,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             "returnType":retTypename,
             "returnDesc":retDesc,
 
-            "systemname": sysname
+            "systemname": realName
         }
 
         self.registerVariable(funcInfo)

@@ -28,6 +28,10 @@ class NodeSyncronizer:
         self.refValidatedGraph = graphRef
         self.refDict = graphDict
 
+        for cat,vardata in graphDict['graph'].get('variables',{}).items():
+            for varid,varprops in vardata.items():
+                self.validateVariable(cat,varid,varprops)
+
         nodes = graphDict['nodes']
         startIndex = graphRef.incrementId + 1
         for k,v in nodes.items():
@@ -48,6 +52,15 @@ class NodeSyncronizer:
         objOptions = dictValues.get('custom')
 
         return className, classInfo, objOptions
+
+    def validateVariable(self,category,varId,dictValues):
+        if "systemname" in dictValues:
+            sysname = dictValues["systemname"]
+            if sysname.startswith("0x"):
+                from ReNode.ui.VarMgrWidgetTypes.Widgets import prepVariableName
+                newsysname = prepVariableName(dictValues['name'])
+                dictValues["systemname"] = newsysname
+                self.log(f"Renamed variable sysname {varId}: {sysname} -> {newsysname}")
 
     def validateNode(self,nodeId,dictValues,link):
         # defines

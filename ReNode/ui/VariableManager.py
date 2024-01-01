@@ -533,6 +533,10 @@ class VariableManager(QDockWidget):
             # Выведите сообщение об ошибке
             self.showErrorMessageBox(f"Идентификатор '{variable_name}' уже существует в категории '{curCatObj.categoryTreeTextName}'!")
             return
+        # reserved check
+        if variable_name == "nameid":
+            self.showErrorMessageBox(f"Идентификатор не может быть '{variable_name}'")
+            return
         
         res = curCat.createVariable(variable_name, variable_group)
         if res == True:
@@ -681,15 +685,15 @@ class VariableManager(QDockWidget):
     def deleteVariable(self, item):
         if item:
             # Получите системное имя переменной, хранящееся в данных элемента
-            variable_system_name = item.data(0, Qt.UserRole)
+            varId = item.data(0, Qt.UserRole)
             
             # Получите категорию переменной из имени элемента
-            vardata = self.getVariableDataById(variable_system_name)
-            if not vardata: raise Exception(f"Cant find variable by system name: {variable_system_name}")
-            category = self.getVariableCategoryById(variable_system_name,retObject=False)
+            vardata = self.getVariableDataById(varId)
+            if not vardata: raise Exception(f"Cant find variable by system name: {varId}")
+            category = self.getVariableCategoryById(varId,retObject=False)
             hstack = self.getUndoStack()
 
-            canDeleteVariable =  category in self.variables and variable_system_name in self.variables[category]
+            canDeleteVariable =  category in self.variables and varId in self.variables[category]
             if not canDeleteVariable:
                 self.showErrorMessageBox(f"Невозможно удалить несуществующую переменную {vardata['name']} из категории {category}")
                 return
@@ -700,12 +704,12 @@ class VariableManager(QDockWidget):
             allnodes = graph.get_nodes_by_class(None)
             for node in allnodes:
                 if node.has_property('nameid'):
-                    if node.get_property('nameid') == variable_system_name:
+                    if node.get_property('nameid') == varId:
                         graph.delete_node(node,True) #push undo for history
             
-            catObj = self.getVariableCategoryById(variable_system_name,retObject=True)
+            catObj = self.getVariableCategoryById(varId,retObject=True)
             if catObj:
-                varData = self.getVariableDataById(variable_system_name)
+                varData = self.getVariableDataById(varId)
                 if varData:
                     catObjInstancer = catObj.instancer
                     infoData = self.nodeGraphComponent.inspector.infoData
@@ -717,7 +721,7 @@ class VariableManager(QDockWidget):
                                 graph.delete_node(node,True)
 
 
-            hstack.push(VariableDeletedCommand(self,category,self.variables[category][variable_system_name]))
+            hstack.push(VariableDeletedCommand(self,category,self.variables[category][varId]))
 
             hstack.endMacro()
 

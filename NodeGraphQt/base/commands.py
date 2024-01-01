@@ -451,35 +451,38 @@ class PortVisibleCmd(QtWidgets.QUndoCommand):
 # ========================= custom commands ===========================
 
 class VariableCreatedCommand(QtWidgets.QUndoCommand):
-    def __init__(self, varmgr, cat,variable):
+    def __init__(self, varmgr, cat,variable,varId):
         super(VariableCreatedCommand, self).__init__()
         self.setText('Создание переменной "{}"'.format(variable['name']))
         self._variable = variable
         self._category = cat
         self._varmgr = varmgr
+        self._varId = varId
 
     def undo(self):
-        self._varmgr.variables[self._category].pop(self._variable['systemname'])
+        self._varmgr.variables[self._category].pop(self._varId)
         self._varmgr.syncVariableManagerWidget()
     
     def redo(self):
-        self._varmgr.variables[self._category][self._variable['systemname']] = self._variable
+        self._varmgr.variables[self._category][self._varId] = self._variable
         self._varmgr.syncVariableManagerWidget()
 
 class VariableDeletedCommand(QtWidgets.QUndoCommand):
-    def __init__(self, varmgr, cat,variable):
+    def __init__(self, varmgr, cat,varId):
         super(VariableDeletedCommand, self).__init__()
+        variable = varmgr.variables[cat][varId]
         self.setText('Удаление переменной "{}"'.format(variable['name']))
         self._variable = variable
         self._category = cat
         self._varmgr = varmgr
+        self._varId = varId
 
     def undo(self):
-        self._varmgr.variables[self._category][self._variable['systemname']] = self._variable
+        self._varmgr.variables[self._category][self._varId] = self._variable
         self._varmgr.syncVariableManagerWidget()
     
     def redo(self):
-        self._varmgr.variables[self._category].pop(self._variable['systemname'])
+        self._varmgr.variables[self._category].pop(self._varId)
         self._varmgr.syncVariableManagerWidget()
 
 class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
