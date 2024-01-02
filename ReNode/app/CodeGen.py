@@ -37,7 +37,7 @@ class NodeDataType(enum.Enum):
 
 class GeneratedVariable:
     def __init__(self,locname,definedNodeId):
-        self.localName = locname 
+        self.localName = locname #+ f'/*NODE:{definedNodeId}*/' #postcommnet for old parser validator
         self.definedNodeId = definedNodeId
         self.isUsed = False
         
@@ -588,7 +588,7 @@ class CodeGenerator:
                 if isCustomVariable:
                     nameid = obj_data['custom']['nameid']
                     #define variable code
-                    generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid)
+                    generated_code, portName, isGet,varCat = self.getVariableData(node_className,nameid,optObj=obj)
                     isSet = not isGet
                     outName = "Значение"
                     # update generated code only first time
@@ -906,9 +906,12 @@ class CodeGenerator:
             # проверка операторов контроля цикла
             if srcObj.nodeClass in ["operators.break_loop","operators.continue_loop"] and noLoops:
                 self.exception(CGLoopControlException,source=srcObj)
-            # проверка таймеров внутри циклов
-            if srcObj.nodeClass in ["operators.callafter","operators.callaftercond"] and not noLoops:
-                self.exception(CGLoopTimerException,source=srcObj,target=loopObj)
+            # проверка таймеров внутри циклов и возвращаемого значения
+            if srcObj.nodeClass in ["operators.callafter","operators.callaftercond"]:
+                if not noLoops:
+                    self.exception(CGLoopTimerException,source=srcObj,target=loopObj)
+                if needReturn:
+                    self.exception(CGTimerUnallowedReturnException,source=srcObj,entry=entryObj)
 
 
 
@@ -948,6 +951,75 @@ class CodeGenerator:
             return True
 
         enterScope(entryId,scopes)
+
+        #parse syntax
+        from sqf.analyzer import analyze
+        from sqf.parser import parse
+        from sqf.base_type import BaseTypeContainer
+        from sqf.base_type import get_coord
+        enCode = entryObj.code
+        # enCode = "#define class(v) NOP\n"\
+        #     +"#define extends(v) NOP\n"\
+        #     +"#define editor_attribute(v) NOP\n"\
+        #     +"#define endclass NOP\n"\
+        #     +"#define NOP ;\n"\
+        #     +"#define this locationNull\n"\
+        #     +"#define func(v) v = \n"\
+        #     +enCode
+
+        pr = parse(enCode)
+        resultAnalyze = analyze(pr)
+
+        #collect allvars
+        allVars = []
+        for v in codeInfo.values():
+            if v.generatedVars:
+                allVars.extend([varObj for varObj in v.generatedVars.values()])
+
+        # реализация проверки переменных
+        hasFoundLvarExeptions = False
+        mapIdToCode = {k:c.code for k,c in codeInfo.items()}
+        clines : list[str] = enCode.splitlines()
+        for ex in resultAnalyze.exceptions:
+            lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+)\" is not from this scope \(not private\)",ex.args[1])
+            if lvarNameAsList:
+                lvarName = lvarNameAsList[0]
+                line_num, col_count = ex.position
+
+                #! OLD ALG
+                # search next to lvar /*NODE:NAME*/ and get name (example: "_lvar_3_65/*NODE:Test node name*/" -> returns "Test node name") 
+                # line_num -= 1 # from index to line
+                # startIndex = len(lvarName) + len("/*NODE:")
+                # nodeIdName = clines[line_num][col_count+startIndex-1:]
+                # endIndex = nodeIdName.find("*/")
+                # nodeIdName = nodeIdName[:endIndex]
+                # self.exception(CGScopeVariableNotFoundException,source=codeInfo[nodeIdName])
+
+                #new alg (optimized)
+                line_num -= 1
+                for lvarObj in allVars:
+                    if lvarObj.localName == lvarName:
+                        defId = lvarObj.definedNodeId      
+                        defPort = lvarObj.fromPort
+                        probTargError = None
+                        minLen = len(enCode)
+                        for idErr,codeCheck in mapIdToCode.items():
+                            lenCode = len(codeCheck)
+                            mathedIdx = clines[line_num].find(codeCheck,max(col_count-lenCode,0))
+                            if mathedIdx == -1: continue
+                            founder = clines[line_num][mathedIdx:]
+                            newLen = len(founder)
+                            if newLen < minLen and lvarName in founder:
+                                minLen = newLen
+                                probTargError = idErr
+                        if probTargError == entryId:
+                            probTargError = None
+                        else:
+                            probTargError = codeInfo[probTargError]
+                        
+                        self.exception(CGScopeLocalVariableException,source=codeInfo[defId],portname=defPort,target=probTargError)
+                        break
+        if hasFoundLvarExeptions: return False
 
         return True
 
@@ -1032,7 +1104,7 @@ class CodeGenerator:
     def intersection(self,list_a, list_b):
         return [ e for e in list_a if e in list_b ]
 
-    def getVariableData(self,className,nameid) -> tuple[str,str,bool]:
+    def getVariableData(self,className,nameid,optObj:NodeData=None) -> tuple[str,str,bool]:
         """
         Возвращает код и тип аксессора переменной
             :param className: класснейм переменной
