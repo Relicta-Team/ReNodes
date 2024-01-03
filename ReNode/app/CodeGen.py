@@ -161,7 +161,7 @@ class CodeGenerator:
                     #transliterate(v['name']) for get transliterate name
                     if vcat=='localvar':
                         lvData['alias'] = f"_LVAR{i+1}"
-                        lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'])
+                        lvData['initvalue'] = self.updateValueDataForType(v['value'],v['type'],"lvar_init:"+v['name'])
                     ##elif vcat=='classvar':
                     #    lvData['alias'] = f"classMember_{i+1}"
                     else:
@@ -320,6 +320,8 @@ class CodeGenerator:
             self.log("Форматирование")
 
             return self.formatCode(code)
+        except CGCompileAbortException:
+            return "//compile abort\n"
         except Exception as e:
             strFullException = traceback.format_exc()
 
@@ -689,7 +691,7 @@ class CodeGenerator:
                         gvObj.fromPort = dictKeys[indexOf]
                         gvObj.definedNodeName = node_id
                         if gvObj.fromPort in obj.generatedVars:
-                            raise Exception(f'Unhandled case: {gvObj.fromPort} in {obj.generatedVars}')
+                            raise Exception(f'Unhandled case: node {obj.nodeClass} from port {gvObj.fromPort} in {obj.generatedVars}')
                         obj.generatedVars[gvObj.fromPort] = gvObj
                         
                         allGeneratedVars.append(gvObj)
@@ -714,8 +716,8 @@ class CodeGenerator:
                                 self.exception(CGInputPortTypeRequiredException,source=obj,portname=input_name)
                             
                         inlineValue = obj_data['custom'].get(input_name,'NULL')
-
-                        if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL":
+                        isOptionalPort = not input_props.get('require_connection',True)
+                        if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL" and not isOptionalPort:
                             self.exception(CGPortRequiredConnectionException,source=obj,portname=input_name)
 
                         libOption = class_data['options'].get(input_name)
@@ -728,8 +730,10 @@ class CodeGenerator:
                                     if optList == inlineValue:
                                         self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
                                         break
-
-                        inlineValue = self.updateValueDataForType(inlineValue,input_props['type'])
+                        if isOptionalPort:
+                            inlineValue = 'NIL'
+                        else:
+                            inlineValue = self.updateValueDataForType(inlineValue,input_props['type'],obj)
                         
                         # validate canuse member
                         if inlineValue == 'this' and libOption['type'] == "objcaller":
@@ -1142,6 +1146,7 @@ class CodeGenerator:
         isDef = className.endswith(".def")
         if isDef:
             code = "func(@thisName) {@thisParams; @out.1};"
+            raise Exception(f"Code not ready for node " + className+"; Custom functions not supported")
             return code
         else:
             code = "[{}] call (this getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
@@ -1262,7 +1267,21 @@ class CodeGenerator:
         
         return node_ids
 
-    def updateValueDataForType(self,value,tname):
+    def vtWarn(self,optObj=None,mes=''):
+        if isinstance(optObj,str):
+            mes = f'Внутреннее предупреждение {optObj}; {mes}'
+            optObj = None 
+        if optObj:
+            self.nodeWarn(CGValueCompileWarning,source=optObj,ctx=mes)
+        else:
+            self.warning(mes)
+            self._warnings.append(None)
+        if self.isGenerating:
+            self.exception(CGInternalValueCompileError)
+            raise CGCompileAbortException()
+
+
+    def updateValueDataForType(self,value,tname,optObj=None):
         if value is None: return "null"
         if value == "NULL": return value
         if value == "this": return value
@@ -1278,7 +1297,7 @@ class CodeGenerator:
                 evaluated = ["[ "]
                 for v in value:
                     if len(evaluated) > 1: evaluated.append(", ")
-                    evaluated.append(self.updateValueDataForType(v,vObj.variableType))
+                    evaluated.append(self.updateValueDataForType(v,vObj.variableType,optObj))
                 evaluated.append(" ]")
                 return "".join(evaluated)
             elif dtName == "dict":
@@ -1289,9 +1308,9 @@ class CodeGenerator:
                     if objStack: objStack.append(", ")
 
                     objStack.append("[")
-                    objStack.append(self.updateValueDataForType(key,vObj[0].variableType))
+                    objStack.append(self.updateValueDataForType(key,vObj[0].variableType,optObj))
                     objStack.append(", ")
-                    objStack.append(self.updateValueDataForType(val,vObj[1].variableType))
+                    objStack.append(self.updateValueDataForType(val,vObj[1].variableType,optObj))
                     objStack.append("]")
                 
                 evaluated.extend(objStack)
@@ -1301,7 +1320,7 @@ class CodeGenerator:
                 evaluated = ["([ "]
                 for v in value:
                     if len(evaluated) > 1: evaluated.append(", ")
-                    evaluated.append(self.updateValueDataForType(v,vObj.variableType))
+                    evaluated.append(self.updateValueDataForType(v,vObj.variableType,optObj))
                 evaluated.append(" ]createHASHMAPfromArray [])")
                 return "".join(evaluated)
             else:
@@ -1334,20 +1353,36 @@ class CodeGenerator:
         elif tname == "bool":
             return str(value).lower()
         elif tname in ['float','int']:
-            return str(value)
+            gval = str(value)
+            
+            pts = gval.split(".")
+            if len(pts[0]) > 6:
+                self.vtWarn(optObj,f"Превышено количество знаков для {tname} ({gval}). Возможна потеря точности")
+            if len(pts) > 1 and len(pts[1]) > 6:
+                self.vtWarn(optObj,f"Превышено количество знаков после запятой для {tname} ({gval}). Возможна потеря точности")
+                    
+            return gval
         elif self.getVariableManager().isObjectType(tname):
             return value
         elif re.match('vector\d+',tname):
-            return self.updateValueDataForType(value,"array[float]")
+            return self.updateValueDataForType(value,"array[float]",optObj)
         elif tname == "color":
-            return self.updateValueDataForType(value,"array[float]")
+            return self.updateValueDataForType(value,"array[float]",optObj)
         elif tname in ['handle','model']:
-            return str(value)
+            gval = str(value)
+            if tname == 'handle':
+                if value < -1:
+                    self.vtWarn(optObj,f'Недопустимый тип неопределенного {tname}: {value}')
+                if value >= 3.4028235e38:
+                    self.vtWarn(optObj,f'Слишком большое значение для {tname}: {value}')
+                if '.' in gval:
+                    self.vtWarn(optObj,f'Неверное значение для {tname}: {value}')
+            return gval
         else:
             if not self.isDebugMode(): 
                 raise Exception(f"Unknown type {tname} (value: {value} ({type(value)}))")
             else:
-                self.warning("Cant repr type value: {} = {} ({})".format(tname,value,type(value)))
+                self.vtWarn(optObj,"Cant repr type value: {} = {} ({})".format(tname,value,type(value)))
 
         return value
     
@@ -1509,6 +1544,8 @@ class CodeGenerator:
             className = dictLib['classInfo']['class']
             memName = dictLib['classInfo']['name']
             memType = dictLib['classInfo']['type']
+            fullName = className + "." + memName
+            #returnType = dictLib.get('returnType','null')
 
             code = code.replace('@thisClass',className)
             
@@ -1536,7 +1573,15 @@ class CodeGenerator:
                     if not inRange: continue
 
                     if outValues['type'] != "Exec" and outValues['type'] != "":
-                        paramList.append('\"@genvar.out.{}\"'.format(indexVar+1))
+                        if outValues.get('gen_param',True):
+                            isOptParam = not outValues.get("require_connection",True)
+                            newParam = '\"@genvar.out.{}\"'.format(indexVar+1)
+                            if isOptParam:
+                                if 'default_value' not in outValues:
+                                    raise Exception(f"Missing default_value property for port {outKey} in member {fullName}")
+                                optVal = self.updateValueDataForType(outValues['default_value'],outValues['type'],"prep_param:"+fullName+"."+outKey)
+                                newParam = f'[{newParam},{optVal}]'
+                            paramList.append(newParam)
                 
                 paramCtx = f'params [{", ".join(paramList)}]'
                 #adding initvars keyword

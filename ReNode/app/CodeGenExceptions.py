@@ -1,5 +1,8 @@
 from ReNode.ui.LoggerConsole import LoggerConsole
 
+class CGCompileAbortException(Exception):
+    pass
+
 class CGBaseException:
     id = 0
     text = "Неизвестная ошибка"
@@ -70,6 +73,11 @@ class CGUnexistNodeError(CGBaseException):
     id = 4
     text = "Найдены несуществующие узлы. Генерация невозможна."
     desc = "Удалите все узлы, которых не существует в библиотеке. Каждый из таких узлов помечен предупреждающим сообщением в консоли."
+
+class CGInternalValueCompileError(CGBaseException):
+    id = 5
+    text = "Внутренняя ошибка преобразований"
+    desc = "Обнаружена ошибка преобразования значений. Смотрите последнее предупреждение."
 
 # ----------------------------------------
 #   101-300 - ports exceptions

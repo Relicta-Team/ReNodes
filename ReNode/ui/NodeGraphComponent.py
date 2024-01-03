@@ -253,6 +253,7 @@ class NodeGraphComponent:
 		nmenu.add_command("Удалить",func=delete_nodes,node_type="all",shortcut="Del")
 		nmenu.add_command("Извлечь",func=extract_nodes,node_type="all")
 		nmenu.add_command("Очистить подключения",func=clear_node_connections,node_type='all')
+		nmenu.add_command("Сбросить все свойства",func=reset_all_node_props,node_type='all')
 		nmenu.add_separator()
 		nmenu.add_command("Снять выделение",func=clear_node_selection,node_type='all')
 

@@ -54,6 +54,18 @@ def extract_nodes(graph,node=None):
             node = [node]
     graph.extract_nodes(node)
 
+def reset_all_node_props(graph,node=None):
+    
+    classLib = graph._factoryRef.getNodeLibData(node.nodeClass)
+    if classLib:
+        graph.undo_stack().beginMacro('Сброс свойств узла ' + node.nodeClass)
+        for propName,propData in classLib.get("options",{}).items():
+            if 'default' in propData:
+                node.set_property(propName,propData['default'])
+        graph.undo_stack().endMacro()
+
+        
+
 
 def clear_node_connections(graph):
     """

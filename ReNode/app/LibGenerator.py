@@ -56,6 +56,7 @@ class NodeObjectHandler:
 	def __init__(self,objName,objectType,nodeLibDict,classMetadata,__lineList):
 		self.nodeLib = nodeLibDict #ссылка на базовый словарь узлов
 		self.classMetadata = classMetadata #ссылка на словарь метаданных классов
+		"""Ссылка на словарь метаданных классов (наследование, члены)"""
 		self.objectNameFull = objName #базовое полное имя члена
 		self.objectType = objectType #тип-категория члена (метод, поле, функция)
 
@@ -354,6 +355,12 @@ class NodeObjectHandler:
 					self.lastPortRef['typeget'] = tInside.split('=')[1]
 				elif tInside.startswith("require"):
 					self.lastPortRef['require_connection'] = intTryParse(tInside.split("=")[1]) > 0
+				elif tInside.startswith("gen_param"):
+					self.lastPortRef['gen_param'] = intTryParse(tInside.split("=")[1]) > 0
+				elif tInside.startswith("def="):
+					serVal = tInside[4:]
+					dval = self.varLib.parseGameValue(serVal,self.lastPortRef['type'],self.classMetadata)
+					self.lastPortRef['default_value'] = dval
 				else:
 					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
@@ -754,28 +761,12 @@ class NodeObjectHandler:
 			defvalue = memberData.get('defval',"$NULL$")
 			rettype = self['returnType']
 
-			if defvalue == "$NULL$":
-				if rettype == 'bool':
-					defvalue = False
-				elif rettype in ['int','float']:
-					defvalue = 0
-				elif rettype == 'string':
-					defvalue = ''
-				else:
-					defvalue = None
-			else:
-				if rettype == 'bool':
-					defvalue = bool(defvalue)
-				elif self.varLib.isObjectType(rettype,self.classMetadata) and defvalue == "nullPtr":
-					defvalue = "nullPtr"
-				elif rettype != 'string':
-					evaled = eval(defvalue)
-					if evaled != None: defvalue = evaled
+			parsedValue = self.varLib.parseGameValue(defvalue,rettype,self.classMetadata)
 
 			propData = {
 				'node': self.objectNameFull,
 				'return': rettype,
-				'defval': defvalue
+				'defval': parsedValue
 			}
 			if self.isField:
 				prps__['inspectorProps']['fields'][self.memberName] = propData

@@ -60,6 +60,10 @@ class CGGenericWarning(CGBaseWarning):
     text = "{ctx}"
     desc = ""
 
+class CGValueCompileWarning(CGBaseWarning):
+    id = 2
+    text = "Узел {src}: {ctx}"
+
 # ----------------------------------------
 #   101-300 - ports warnings
 # ----------------------------------------

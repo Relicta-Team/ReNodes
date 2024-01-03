@@ -507,6 +507,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         #add ports
         for p in varDict['params']:
             memberData.append(f'in:{p["type"]}:{prepEscape(p["name"])}:{prepEscape(p["desc"])}')
+            optionParams = []
+            if p.get("opt",False): #check require connection
+                optionParams.append("require=0")
+                #так как параметр опциональный то подклчение не требуется
+            
+            serVal = prepEscape(str(p['value'])) #serialized value
+            optionParams.append('def={}'.format(serVal))
+            if optionParams:
+                memberData.append(f'opt:{":".join(optionParams)}')
 
         return "\n".join(memberData)
 

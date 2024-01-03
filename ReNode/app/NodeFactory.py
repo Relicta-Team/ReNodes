@@ -291,7 +291,7 @@ class NodeFactory:
 		struct['outputs'] = self._deserializeConnectors(data.get('outputs'),False)
 
 		#custom node options
-		struct['options'] = self._deserializeOptions(data.get('options'))
+		struct['options'] = self._deserializeOptions(data.get('options'),struct['inputs'])
 
 		self.nodes[typename] = struct
 
@@ -314,12 +314,17 @@ class NodeFactory:
 			valdata['typeget'] = val.get('typeget',"")
 			valdata['desc'] = val.get('desc','')
 			valdata['require_connection'] = val.get('require_connection',True)
+			if not val.get("gen_param",True): #без генерации параметра
+				valdata['gen_param'] = False
+			if 'default_value' in val:
+				valdata['default_value'] = val.get('default_value')
+
 			if not isInput:
 				valdata['accepted_paths'] = val.get('accepted_paths',["@any"])
 			cons[key] = valdata
 		return cons	
 
-	def _deserializeOptions(self,cnts: dict):
+	def _deserializeOptions(self,cnts: dict,refInputs: dict):
 		opts = {}
 		if not cnts: return opts
 
@@ -332,6 +337,9 @@ class NodeFactory:
 			
 			for keyopt,valopt in val.items():
 				valdat[keyopt] = valopt
+
+			if key in refInputs and 'default_value' in refInputs[key]:
+				valdat['default'] = refInputs[key]['default_value']
 			
 			opts[key] = valdat
 				

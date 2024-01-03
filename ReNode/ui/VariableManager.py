@@ -18,6 +18,7 @@ import datetime
 from ReNode.app.Logger import RegisterLogger
 import re
 import enum
+import ast
 
 class MemberType(enum.Enum):
     """Тип члена отражает какие данные можно вводить в менеджере переменных"""
@@ -35,12 +36,18 @@ class VariableInfo:
         pass
 
 class VariableTypedef:
-    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None):
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None,defaultValue=None,parseFunction=None):
         self.variableType = vart #typename
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
         self.dictProp = dictProp
         self.color : QColor = color
+
+        self.defaultValue = defaultValue
+        self.parseFunction = parseFunction
+
+        if self.defaultValue is None or not self.parseFunction:
+            raise Exception("Both default value and parse function must be set for type " + vart)
 
         if "|" in self.variableType:
             raise Exception(f"{self.variableType} is not a valid typename; Token \"|\" is not allowed in typename")
@@ -56,11 +63,11 @@ class VariableTypedef:
         vMgr = VariableManager.refObject
         if vMgr.isObjectType(vtype):
             vtextname = vMgr.getObjectTypeName(vtype)
-        return VariableTypedef_Copy(vtype,vtextname,self.classInstance,self.dictProp,self.color)
+        return VariableTypedef_Copy(vtype,vtextname,self.classInstance,self.dictProp,self.color,self.defaultValue,self.parseFunction)
 
 class VariableTypedef_Copy(VariableTypedef):
-    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None):
-        super().__init__(vart,vartText,classMaker,dictProp,color)
+    def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None,dval=None,pfunc=None):
+        super().__init__(vart,vartText,classMaker,dictProp,color,dval,pfunc)
 
     #def __del__(self):
     #    print(f'!!!!!!!!!!!! temp variable deleted: {self}')
@@ -88,11 +95,18 @@ class VariableCategory:
         self.instancer = inst
 
 class VariableDataType:
-    def __init__(self,vartext='',vartype='',varicon='',instancer=None):
+    def __init__(self,vartext='',vartype='',varicon='',instancer=None,defaultValue=None,parseFunction=None):
         self.text = vartext
         self.dataType = vartype
         self.icon = varicon #string or list of string
         self.instance = instancer
+        
+        self.defaultValue = defaultValue
+        self.parseFunction = parseFunction
+        if defaultValue is None:
+            raise Exception("Default value must be set for datatype " + vartype)
+        if parseFunction is None:
+            raise Exception("Parse function must be set for datatype " + vartype)
     
     def __repr__(self):
         return f"{self.dataType} ({self.text})"
@@ -104,7 +118,8 @@ class VariableLibrary:
             VariableTypedef("int","Целое число",IntValueEdit,{"spin": {
                 "text": "Число",
                 "range": {"min":-999999,"max":999999}
-            }},color=QtGui.QColor("Sea green")),
+            }},color=QtGui.QColor("Sea green"),
+            defaultValue=0,parseFunction=int),
             VariableTypedef("float","Дробное число",FloatValueEdit,{"fspin": {
                 "text": "Число",
                 "range": {"min":-999999,"max":999999},
@@ -112,32 +127,39 @@ class VariableLibrary:
                     "step": 0.5,
                     "decimals": 5
                 }
-            }},color=QtGui.QColor("Yellow green")),
+            }},color=QtGui.QColor("Yellow green"),
+            defaultValue=0.0,parseFunction=float),
             # VariableTypedef("string","Строка",PropLineEdit,{"input": {
             #     "text": "Текст"
             # }},color=QtGui.QColor("Magenta")),
             VariableTypedef("string","Строка",PropTextEdit,{"edit": {
                 "text": "Текст"
-            }},color=QtGui.QColor("Magenta")),
+            }},color=QtGui.QColor("Magenta"),
+            defaultValue="",parseFunction=lambda x: x),
             VariableTypedef("bool","Булево",PropCheckBox,{"bool":{
                 "text": "Булево"
-            }},color=QtGui.QColor("Maroon")),
+            }},color=QtGui.QColor("Maroon"),
+            defaultValue=False,parseFunction=lambda x: x.lower() == "true"),
 
             #colors
             VariableTypedef("color","Цвет",PropColorPickerRGB,{"color": {
                 "text": "Цвет"
-            }},color=QtGui.QColor("#00C7B3")),
+            }},color=QtGui.QColor("#00C7B3"),
+            defaultValue=[0,0,0,0],parseFunction=lambda x: [float(t) for t in x.strip('[]').split(',')[:4]]),
             VariableTypedef("color","Цвет с альфа-каналом",PropColorPickerRGBA,{"color": {
                 "text": "Цвет"
-            }},color=QtGui.QColor("#048C7F")),
+            }},color=QtGui.QColor("#048C7F"),
+            defaultValue=[0,0,0,0],parseFunction=lambda x: [float(t) for t in x.strip('[]').split(',')[:4]]),
 
             #vectors
             VariableTypedef("vector2","2D Вектор",PropVector2,{"vec2": {
                 "text": "Вектор"
-            }},color=QtGui.QColor("#D4A004")),
+            }},color=QtGui.QColor("#D4A004"),
+            defaultValue=[0,0],parseFunction=lambda x: [float(t) for t in x.strip('[]').split(',')[:2]]),
             VariableTypedef("vector3","3D Вектор",PropVector3,{"vec3": {
                 "text": "Вектор"
-            }},color=QtGui.QColor("#D48104")),
+            }},color=QtGui.QColor("#D48104"),
+            defaultValue=[0,0,0],parseFunction=lambda x: [float(t) for t in x.strip('[]').split(',')[:3]]),
             #TODO need specwidget for use this
             # VariableTypedef("vector4","4D Вектор",PropVector4,{"vector": {
             #     "text": "Вектор"
@@ -149,32 +171,87 @@ class VariableLibrary:
                 #     "text": "Объект"
                 #     }
                 # }
-            ,color=QtGui.QColor("#1087C7")),
+            ,color=QtGui.QColor("#1087C7"),
+            defaultValue='nullPtr',parseFunction=lambda x: x),
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
                 # "text": "Модель"
                 # }}
-            ,color=QtGui.QColor("#4C4CA8")),
+            ,color=QtGui.QColor("#4C4CA8"),
+            defaultValue='objNull',parseFunction=lambda x: x),
             VariableTypedef("handle","Дескриптор события",IntValueEdit
                 # ,{"spin": {
                 # "text": "Число",
                 # "range": {"min":0,"max":999999}
                 # }}
-            ,color=QtGui.QColor("Sea green").lighter(50)),
+            ,color=QtGui.QColor("Sea green").lighter(50),
+            defaultValue=-1,parseFunction=int),
             VariableTypedef("list","Абстрактный массив",PropAbstract
-                ,color=QtGui.QColor("#EBE01E")
+                ,color=QtGui.QColor("#EBE01E"),
+                defaultValue='[]',parseFunction=lambda x: x,
             ),
             VariableTypedef("void","Абстрактное значение",PropAbstract
-                ,color=QtGui.QColor("#02D109")
+                ,color=QtGui.QColor("#02D109"),
+                defaultValue='NIL',parseFunction=lambda x: x
             )
         ]
+        
+        #parseFunction(str,tuple[str]) -> parseFunction("[1,2,3]",["int"])
+        def _parseDataVal(val,types,refClassDict):
+            parsed = ast.literal_eval(val)
+            
+            if parsed:
+                if isinstance(parsed,dict):
+                    fitem = list(parsed.items())[0]
+                else:
+                    fitem = parsed[0]
+                
+                for i in range(len(types)):
+                    kit = fitem[i]
+                    tit = types[i]
+                    parsvt = self.parseGameValue(str(kit),tit,refClassDict)
+                    if parsvt != kit:
+                        raise Exception(f'Error on parse value')
+                return parsed
+            else:
+                return parsed
 
         self.valueTypeList = [
-            VariableDataType("Значение","value","data\\icons\\pill_16x.png",None),
-            VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget),
-            VariableDataType("Словарь","dict",["data\\icons\\pillmapkey_16x.png","data\\icons\\pillmapvalue_16x.png"],DictWidget),
-            VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget),
+            VariableDataType("Значение","value","data\\icons\\pill_16x.png",None,
+                defaultValue=object(),
+                parseFunction=lambda val,types,rd:val),
+            VariableDataType("Массив","array","data\\icons\\ArrayPin.png",ArrayWidget,
+                defaultValue=[],
+                parseFunction=_parseDataVal),
+            VariableDataType("Словарь","dict",["data\\icons\\pillmapkey_16x.png","data\\icons\\pillmapvalue_16x.png"],DictWidget,
+                defaultValue={},
+                parseFunction=_parseDataVal),
+            VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget,
+                defaultValue=[],
+                parseFunction=_parseDataVal),
         ]
+
+    def parseGameValue(self,strval:str,returnType:str,refClassDict:dict):
+        """Парсит строчное игровое значение в значение для работы редактора (любой python тип)"""
+        #parse object type
+        if self.isObjectType(returnType,refClassDict):
+            returnType = "object"
+        
+        tObj,dtObj = self.getVarDataByType(returnType,False)
+
+        isValueType = dtObj.dataType == 'value'
+            
+        if strval == "$NULL$":
+            return tObj.defaultValue if isValueType else dtObj.defaultValue
+        else:
+            if isValueType:
+                return tObj.parseFunction(strval)
+            else:
+                if isinstance(tObj,list):
+                    valist = tuple(t.variableType for t in tObj)
+                else:
+                    valist = tuple([tObj.variableType])
+                return dtObj.parseFunction(strval,valist,refClassDict)
 
     def getTypeIcon(self,typ:str,colorize=False):
         valueType = "value"
@@ -244,13 +321,13 @@ class VariableLibrary:
                     v['color'] = typecolor[portType]
                     v['border_color'] = None
 
-    def getVarDatatypeByType(self,type):
+    def getVarDatatypeByType(self,type)->VariableDataType|None:
         for t in self.valueTypeList:
             if t.dataType == type:
                 return t
         return None
 
-    def getVarTypedefByType(self,type):
+    def getVarTypedefByType(self,type)->VariableTypedef|None:
         if type.endswith("^"): 
             type = "object"
         
@@ -259,7 +336,7 @@ class VariableLibrary:
                 return t
         return None
 
-    def isObjectType(self,type,refClassDict):
+    def isObjectType(self,type,refClassDict)->bool:
         if type.endswith("^"): type = type[:-1]
 
         classData = refClassDict.get(type)

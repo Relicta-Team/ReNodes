@@ -74,6 +74,12 @@ class DataTypeSelectorGroup(QWidget):
         self.defValWid = QLineEdit() #DictWidget(instancer,optData)
         lay.addWidget(self.defValWid,self._ivalXPos,ofsY+1,1,3)
 
+        optionalValue = QCheckBox()
+        optionalValue.setText("Необязательный")
+        optionalValue.setToolTip("Если включено, то параметр является необязательным.\nПри добавлении узла вызова функции в граф во время компиляции не будет требоваться подключение к этому порту параметра.")
+        self.optionalValueWid = optionalValue
+        lay.addWidget(optionalValue,self._ivalXPos+1,ofsY+0,1,4)
+
         if not srcLayout:
             self.setLayout(lay)
             self.srcLayout = lay
@@ -171,7 +177,7 @@ class FunctionDefWidget(QWidget):
         for i, elay in enumerate(self.arrayElements):
             elay.itemAt(0).widget().setText(f'{i+1}: ')
 
-        self.getParamInfo()
+        #self.getParamInfo()
 
     def get_value(self):
         return None
@@ -207,6 +213,9 @@ class FunctionDefWidget(QWidget):
 
         def get_defVarWid(self):
             return self._group.defValWid
+        
+        def get_optionalValueWid(self):
+            return self._group.optionalValueWid
 
     def packTypeInfoFromWidgets(self,tp,dtp,optTp2OrValue):
         retType = tp.get_value()
@@ -227,7 +236,8 @@ class FunctionDefWidget(QWidget):
                 "name",
                 "desc",
                 "type",
-                "value"
+                "value",
+                "opt"
             }
         
         """
@@ -240,15 +250,17 @@ class FunctionDefWidget(QWidget):
             paramDataType = grid.paramDataType.currentData() #value,dict,array,etc...
             paramType = grid.paramType.get_value()
             defaultValue = grid.get_defVarWid().get_value()
+            isOptional = grid.get_optionalValueWid().isChecked()
 
             typenameFull = self.packTypeInfoFromWidgets(grid.paramType,grid.paramDataType,grid.get_defVarWid())
 
-            print(f"{paramDataType}[{paramType}] {paramName} - {paramDesc} = {defaultValue}")
+            #print(f"{paramDataType}[{paramType}] {paramName} - {paramDesc} = {defaultValue}")
             paramData.append({
                 "name": paramName,
                 "desc": paramDesc,
                 "type": typenameFull,
-                "value": defaultValue
+                "value": defaultValue,
+                "opt": isOptional
             })
 
         return paramData

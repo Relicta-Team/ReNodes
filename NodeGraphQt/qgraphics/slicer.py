@@ -178,12 +178,14 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             text += f'<br/><b>Описание:</b> {libInfo.get("desc") or "отсутствует"}<br/>'
 
             if libInfo.get("memtype"):
-                valdesc = "Нет"
+                valdesc = "Без описания"
                 valinfo = "Ничего"
                 retType = libInfo.get("returnType")
                 retDesc = libInfo.get("returnDesc")
                 if retType:
                     valinfo = VariableManager.refObject.getTextTypename(retType)
+                    clr = VariableManager.refObject.getColorByType(retType)
+                    valinfo = f'<span style="color: rgba({",".join([str(ci) for ci in clr])})"><b>{valinfo}</b></span>'
                 if retDesc:
                     valdesc = retDesc
                 text += f"<br/><b>Возвращаемое значение</b>: ({valinfo}) - {valdesc}<br/>"
@@ -192,14 +194,18 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
             iTxt = []
             for o in self._lastItem.inputs:
-                desc = libInfo['inputs'].get(o.name)
-                if desc:
-                    desc = desc.get("desc",'')
+                inpLib = libInfo['inputs'].get(o.name)
+                desc = ""
+                req = False
+                if inpLib:
+                    desc = inpLib.get("desc",'')
+                    req = inpLib.get("require_connection",True)
                 # проверка на рантайм описание
                 if desc:
                     desc = ": " + desc
-                else:
-                    desc = ""
+                if not req:
+                    desc = f'<i>(Необязательый)</i> {desc}'
+                
                 iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
             iTxt = "<br/>".join(iTxt)
             text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'

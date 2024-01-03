@@ -297,7 +297,7 @@ class ClassGraphType(GraphTypeBase):
             value = fdata['defval']
             if infoDataProps['fields'].get(fname):
                 value = infoDataProps['fields'][fname]
-                varvalue = cgObj.updateValueDataForType(value, fdata['return'])
+                varvalue = cgObj.updateValueDataForType(value, fdata['return'],'def_field:'+fname)
                 code += "\n" + f"[\"{fname}\",{varvalue}] call pc_oop_regvar;"
             else:
                 code += " (default)"
@@ -307,7 +307,7 @@ class ClassGraphType(GraphTypeBase):
                 code += f"\n//p_const: {constSystemname}"
             constProp = allProps['methods'][constSystemname]
             sigName = 'methods.' + constProp['node']
-            varvalue = cgObj.updateValueDataForType(constval, constProp['return'])
+            varvalue = cgObj.updateValueDataForType(constval, constProp['return'],'def_const:'+fname)
             constLibInfo = cgObj.getFactory().getNodeLibData(sigName)
             defCode = constLibInfo.get('defcode',"func(@thisName) { @propvalue };")
             defCode = cgObj.prepareMemberCode(constLibInfo,defCode)
