@@ -3,10 +3,15 @@ Node editor sources for ReSDK_A3
 
 Used in [ReSDK Arma3 project](../../../ReSDK_A3.vr) for visual scripting.
 
+# Third party libs
+[sqflinter](https://github.com/gruppe-adler/sqf/tree/main) - BSD-3-Clause license
+[watchdog](https://github.com/gorakhargosh/watchdog) - Apache License 2.0
+[beautifulsoup4](https://pypi.org/project/beautifulsoup4/) - MIT License
+[NodeGraphQt](https://github.com/jchanvfx/NodeGraphQt) - MIT License
 
 # Информация токенов библиотеки
 
-
+> Информация ниже устарела и не поддерживается в актуальном состоянии
 
 ## Опции
 - **code** - инструкции для генерации кода.
