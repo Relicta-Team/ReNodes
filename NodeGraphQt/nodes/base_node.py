@@ -288,6 +288,17 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
+    def add_makeport(self,port_type=None,name=None,srcName=None,text_format=None):
+        """makeport buttons"""
+        if port_type != 'in':
+            raise Exception('Only input ports are supported in this version for makeport option')
+        val = None
+        self.create_property(name,value=val,widget_type=NodePropWidgetEnum.HIDDEN.value)
+        wid = NodePortMakerButtons(self.view,name,port_type,text_format,sourceName=srcName)
+        self.view.add_widget(wid)
+
+        self.view.draw_node()
+
     def add_spinbox(self,name,label='',text=0,range={"min":0,"max":1},tab=None):
         """Custom spinbox widget"""
         self.create_property(
@@ -559,6 +570,9 @@ class BaseNode(NodeObject):
                 '"ports_removable" is not enabled.'.format(port.name()))
         if port.locked():
             raise PortError('Error: Can\'t delete a port that is locked!')
+        #clear connections
+        port.clear_connections(push_undo=False) #TODO undo work
+
         self._inputs.remove(port)
         self._model.inputs.pop(port.name())
         self._view.delete_input(port.view)
@@ -589,6 +603,9 @@ class BaseNode(NodeObject):
                 '"ports_removable" is not enabled.'.format(port.name()))
         if port.locked():
             raise PortError('Error: Can\'t delete a port that is locked!')
+        #clear connections
+        port.clear_connections(push_undo=False) #TODO undo work
+
         self._outputs.remove(port)
         self._model.outputs.pop(port.name())
         self._view.delete_output(port.view)

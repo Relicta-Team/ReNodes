@@ -197,6 +197,11 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 inpLib = libInfo['inputs'].get(o.name)
                 desc = ""
                 req = False
+
+                # для автопортов берем с первого элемента
+                if not inpLib and 'makeport_in' in libInfo['options']:
+                    inpLib = libInfo['inputs'].get(self._lastItem.inputs[0].name)
+
                 if inpLib:
                     desc = inpLib.get("desc",'')
                     req = inpLib.get("require_connection",True)
@@ -204,7 +209,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 if desc:
                     desc = ": " + desc
                 if not req:
-                    desc = f'<i>(Необязательый)</i> {desc}'
+                    desc = f' <i>(Необязательый)</i>{desc}'
                 
                 iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
             iTxt = "<br/>".join(iTxt)

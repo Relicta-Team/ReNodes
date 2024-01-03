@@ -122,7 +122,7 @@ class RuntimeNode(BaseNode):
 		data = self.getFactoryData()
 
 		anySet = False
-		for name, port in self.inputs().items():
+		for idx, (name, port) in enumerate(self.inputs().items()):
 			if port.view.port_typeName == '':
 				if not anySet:
 					anySet = True
@@ -132,7 +132,14 @@ class RuntimeNode(BaseNode):
 					},False)
 				port.view.color = clr
 				port.view.border_color = brdclr
-				port.view.port_typeName = self._calculate_autoport_type(tp,data['inputs'].get(name))
+				infoPortName = name
+				# переопределяем имя порта если это узел с создавалкой портов (прим. makeArray)
+				if 'makeport_in' in data['options']:
+					srcName = data['options']['makeport_in']['src']
+					textName = data['options']['makeport_in']['text_format'].format(value=idx+1,index=idx)
+					if name == textName:
+						infoPortName = srcName
+				port.view.port_typeName = self._calculate_autoport_type(tp,data['inputs'].get(infoPortName))
 				port.view.update()
 				port.view._syncTooltip()
 
@@ -160,9 +167,15 @@ class RuntimeNode(BaseNode):
 		#tp = src_port_info.view.port_typeName
 		data = self.getFactoryData()
 		portList = []
-		for name,port in self.inputs().items():
+		for idx, (name,port) in enumerate(self.inputs().items()):
+			srcName = ''
+			if 'makeport_in' in data['options']:
+				srcName = data['options']['makeport_in']['src']
+				textName = data['options']['makeport_in']['text_format'].format(value=idx+1,index=idx)
+
 			# Узнаем является порт автоматическим
-			if data['inputs'].get(name) and data['inputs'].get(name).get("type") == "":
+			if (data['inputs'].get(name) and data['inputs'].get(name).get("type") == "") or \
+			(textName == name and data['inputs'].get(srcName) and data['inputs'].get(srcName).get("type") == ""):
 				# Если порт не подключен коллекционируем, иначе выходим
 				if len(port.view.connected_ports) == 0:
 					portList.append(port)

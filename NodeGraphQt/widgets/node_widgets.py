@@ -11,9 +11,12 @@ from NodeGraphQt.errors import NodeWidgetError
 
 class _NodeGroupBox(QtWidgets.QGroupBox):
 
-    def __init__(self, label, parent=None):
+    def __init__(self, label, options=None,parent=None):
         super(_NodeGroupBox, self).__init__(parent)
-        layout = QtWidgets.QVBoxLayout(self)
+        if options.get("hlayout",False):
+            layout = QtWidgets.QHBoxLayout(self)
+        else:
+            layout = QtWidgets.QVBoxLayout(self)
         layout.setSpacing(1)
         self.setTitle(label)
 
@@ -237,7 +240,7 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         widget = self.widget()
         return widget.get_node_widget()
 
-    def set_custom_widget(self, widget):
+    def set_custom_widget(self, widget,options={}):
         """
         Set the custom QWidget used in the node.
 
@@ -246,7 +249,7 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         """
         if self.widget():
             raise NodeWidgetError('Custom node widget already set.')
-        group = _NodeGroupBox(self._label)
+        group = _NodeGroupBox(self._label,options=options)
         group.add_node_widget(widget)
         self.setWidget(group)
 
@@ -543,6 +546,88 @@ class NodeTextEdit(NodeBaseWidget):
         """
         if text != self.get_value():
             self.get_custom_widget().setPlainText(text)
+            self.on_value_changed()
+
+class NodePortMakerButtons(NodeBaseWidget):
+    def __init__(self, parent=None,name=None,makertype=None, text_format='{value}',sourceName=None):
+        label = 'Входные' if makertype=='in' else 'Выходные'
+        label = "{} порты".format(label)
+        label = "<= " + label if makertype=='in' else label + "=> "
+        super(NodePortMakerButtons, self).__init__(parent, name, label)
+        self.text_format = text_format
+        self.maker_type = makertype
+        self.sourceName = sourceName
+
+        addButton = QtWidgets.QPushButton('Добавить')
+        removeButton = QtWidgets.QPushButton('Удалить')
+
+        addButton.clicked.connect(self.on_add_port)
+        removeButton.clicked.connect(self.on_remove_port)
+
+        #registering widgets
+        opts={
+            "hlayout":True
+        }
+        self.set_custom_widget(addButton,options=opts)
+        grp = self.widget()
+        grp.add_node_widget(removeButton)
+
+    def on_add_port(self):
+        nodeItem = self.node
+        listPorts =nodeItem.inputs #list[PortItem]-> (.name, .port_typeName)
+        if len(listPorts) < 1: return
+        if len(listPorts) >= 100: return
+        prtItm = listPorts[0]
+        if prtItm.name != self.sourceName: raise Exception(f'Wrong sourceName {prtItm.name} != {self.sourceName}')
+
+        #for reftonode basic: portitem.refPort<as Port>.model.node
+        origNode = prtItm.refPort.model.node
+        calculatedName = self.text_format.format(value=len(listPorts)+1,index=len(listPorts))
+        
+        origNode.add_input(
+            name=calculatedName,
+            multi_input=prtItm.multi_connection,
+            display_name=prtItm.display_name,
+            color=prtItm.color,
+            locked=prtItm.locked,
+            painter_func=prtItm._port_painterStyle,
+            portType=prtItm.port_typeName
+        )
+
+        pass
+    def on_remove_port(self):
+        nodeItem = self.node
+        listPorts =nodeItem.inputs
+        if len(listPorts) <= 1: return
+        prtItm = listPorts[0]
+        if prtItm.name != self.sourceName: raise Exception(f'Wrong sourceName {prtItm.name} != {self.sourceName}')
+        
+        origNode = prtItm.refPort.model.node
+
+        origNode.delete_input(listPorts[-1].refPort) 
+
+    @property
+    def type_(self):
+        return 'PortMakerButtonsWidget'
+
+    def get_value(self):
+        """
+        Returns the widgets current text.
+
+        Returns:
+            str: current text.
+        """
+        return ""
+
+    def set_value(self, text=''):
+        """
+        Sets the widgets current text.
+
+        Args:
+            text (str): new text.
+        """
+        if text != self.get_value():
+            self.get_custom_widget()
             self.on_value_changed()
 
 class NodeSpinBox(NodeBaseWidget):
