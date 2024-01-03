@@ -862,6 +862,23 @@ class VariableManager(QDockWidget):
         if not cType: return None
         return cType.get("name",type)
 
+    def prepareTypeForCreate(self,fulltypename):
+        """Подготовка типа для использования. Добавляет постфиксы ^ к именам объектов"""
+        if fulltypename == 'null': return fulltypename
+        vobj,dtobj = self.getVarDataByType(fulltypename)
+        if dtobj.dataType == 'value':
+            if self.isObjectType(fulltypename) and not fulltypename.endswith("^"): fulltypename += '^'
+        else:
+            typeinfo = re.findall('\w+\^?',fulltypename)
+            rval = typeinfo[0]+"["
+            for i in range(1,len(typeinfo)):
+                tdat = typeinfo[i]
+                if self.isObjectType(tdat) and not tdat.endswith("^"): tdat += '^'
+                if i > 1: rval += ","
+                rval += tdat
+            rval += ']'
+            return rval
+
     def getVariableTypedefByType(self,type,useTextTypename=False) -> None | VariableTypedef:
         if self.isObjectType(type):
             type = "object"

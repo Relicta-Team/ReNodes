@@ -711,6 +711,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         return retType,retDesc
 
     def createVariable(self,varname,vargroup):
+        varMgr = self.getVarMgr()
         funcName = varname
         funcGrp = vargroup
         funcDesc = self.funcitonDescText.toPlainText()
@@ -718,6 +719,8 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         funcParamsDict = self.widFunctionParams.getParamInfo()
         isPureFunc = self.pureFuncFlag.isChecked()
         #retType = self.comboButton.get_value()
+
+        retTypename = varMgr.prepareTypeForCreate(retTypename)
 
         if retTypename == 'null' and isPureFunc:
             self.getVarMgr().showErrorMessageBox("Нельзя создать чистую функцию, которая не возвращает значение.")

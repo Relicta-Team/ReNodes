@@ -218,14 +218,24 @@ class FunctionDefWidget(QWidget):
             return self._group.optionalValueWid
 
     def packTypeInfoFromWidgets(self,tp,dtp,optTp2OrValue):
+        from ReNode.ui.VariableManager import VariableManager
+        varMgr = VariableManager.refObject
+
         retType = tp.get_value()
         datatype = dtp.currentData()
         if datatype != "value":
             containerType = retType
+            if varMgr.isObjectType(containerType): containerType += "^"
+
             if datatype=='dict':
                 assert(isinstance(optTp2OrValue,DictWidget))
-                containerType += f",{optTp2OrValue.selectType.get_value()}"
+                secType = optTp2OrValue.selectType.get_value()
+                if varMgr.isObjectType(secType): secType += "^"
+                containerType += f",{secType}"
             retType = f'{datatype}[{containerType}]'
+        else:
+            if varMgr.isObjectType(retType):
+                retType += "^"
 
         return retType
 
