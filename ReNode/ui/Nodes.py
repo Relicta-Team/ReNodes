@@ -45,8 +45,14 @@ class RuntimeNode(BaseNode):
 		return
 
 	def getFactoryData(self):
+		return self.getFactory().getNodeLibData(self.nodeClass)
+
+	def getVariableManager(self):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-		return NodeGraphComponent.refObject.getFactory().getNodeLibData(self.nodeClass)
+		return NodeGraphComponent.refObject.variable_manager
+	def getFactory(self):
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		return NodeGraphComponent.refObject.getFactory()
 
 	def isAutoPortNode(self):
 		return self.has_property('autoportdata')
@@ -120,8 +126,11 @@ class RuntimeNode(BaseNode):
 		brdclr = src_port_info.view.border_color
 		tp = src_port_info.view.port_typeName
 		data = self.getFactoryData()
+		varMgr = self.getVariableManager()
+		fact = self.getFactory()
 
 		anySet = False
+		needUpdateNode = False
 		for idx, (name, port) in enumerate(self.inputs().items()):
 			if port.view.port_typeName == '':
 				if not anySet:
@@ -143,6 +152,12 @@ class RuntimeNode(BaseNode):
 				port.view.update()
 				port.view._syncTooltip()
 
+				#! свойства нельзя удалять...
+				# props = varMgr.getCustomPropsByType(port.view.port_typeName,propname=name)
+				# for k,v in props.items():
+				# 	fact.addProperty(self,k,name,v)
+				# 	needUpdateNode = True
+
 
 		for name, port in self.outputs().items():
 			if port.view.port_typeName == '':
@@ -161,6 +176,8 @@ class RuntimeNode(BaseNode):
 		if anySet:
 			if data.get('auto_color_icon'):
 				self.update_icon_part_color(0,QtGui.QColor(*clr),False)
+		
+		if needUpdateNode: self.update()
 
 	def onAutoPortDisconnected(self,src_port_info : Port):
 		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип

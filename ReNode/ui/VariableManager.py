@@ -981,7 +981,7 @@ class VariableManager(QDockWidget):
             color = varInfo.color
         return [*color.getRgb()]
     
-    def getCustomPropsByType(self,fulltypename):
+    def getCustomPropsByType(self,fulltypename,propname = None):
         """Получает пользовательское свойство по типу (для инпут портов)"""
         if fulltypename == "null": return {}
         if fulltypename == "Exec": return {}
@@ -991,7 +991,11 @@ class VariableManager(QDockWidget):
             prtInfo = varInfo[0].dictProp
         else:
             prtInfo = varInfo.dictProp
-
+        if propname:
+            for prpName,prpDat in prtInfo.items():
+                prpDat = prpDat.copy()
+                prpDat['text'] = propname
+                prtInfo[prpName] = prpDat
         return prtInfo
 
     def syncVariableManagerWidget(self):
