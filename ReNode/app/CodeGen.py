@@ -1306,7 +1306,7 @@ class CodeGenerator:
                 if not isinstance(vObj,list): raise Exception(f"Wrong dict type: {vObj}")
 
                 #TODO реализовать хэширование (и возможно дехеширование) ключей
-                if vObj[1] != "string":
+                if vObj[0] != "string":
                     self.vtWarn(optObj,"Недопустимый тип ключей словаря {} (ожидатеся тип - строка)".format(vObj[1]))
 
                 for key,val in value.items():
