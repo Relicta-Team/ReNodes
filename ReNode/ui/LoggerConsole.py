@@ -1,5 +1,5 @@
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QTextBrowser,QMainWindow,QTextEdit,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QHBoxLayout,QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QTextBrowser,QMainWindow,QTextEdit,QMessageBox,QAction,QCompleter,QListView,QMenu,QLabel, QDockWidget, QWidget, QHBoxLayout,QVBoxLayout, QComboBox, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QDialog, QDialogButtonBox
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
 import logging
@@ -26,9 +26,38 @@ class ClickableTextBrowser(QTextBrowser):
             elif anchor.startswith("gref::"):
                 patterns = anchor.replace("gref::", "").split(":")
                 self.clicked.emit("gref",patterns)
+            elif anchor.startswith("errinfo::"):
+                patterns = anchor.replace("errinfo::", "").split(":")
+                self.clicked.emit("errinfo",patterns)
         else:
             super().mousePressEvent(event)
 
+class NewWindow(QDialog):
+    def __init__(self, classType, objRef):
+        super().__init__()
+
+        self.setWindowTitle("Описание")  # Установите заголовок окна
+        self.setWindowIcon(QIcon("data/icon.ico"))  # Установите иконку окна
+        self.setWindowModality(Qt.ApplicationModal)  # Установите модальность окна на уровне приложения
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        
+        layout = QVBoxLayout()
+
+        text_browser = QTextBrowser()
+        text_browser.setOpenLinks(False)
+        text_browser.setOpenExternalLinks(False)
+
+        exTxt = objRef.getMoreExceptionInfo()
+        text_browser.setHtml(exTxt)
+        
+        layout.addWidget(text_browser)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+        self.setLayout(layout)
+        self.setFixedSize(700,500)
 
 class CmdInputLineEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -116,7 +145,23 @@ class LoggerConsole(QDockWidget):
                 except Exception as e:
                     self.logger.error(f"Ошибка перехода к {graphId}->{nodeUid}: {e}")
                     return
+            elif clickType == "errinfo":
+                try:
+                    from gc import get_objects
+                    address = int(args[1])
+                    objList = [o for o in get_objects() if address == id(o)]
 
+                    if len(objList) > 1: raise Exception("Too much objects at address " + address)
+                    if not objList:
+                        self.logger.warning("Не удалось открыть описание - информация не актуальна.")
+                        return
+
+                    wind = NewWindow(args[0],objList[0])
+                    wind.exec_()
+                    
+                except Exception as e:
+                    self.logger.error(f"Ошибка открытия окна описания {clickType}: {args}")
+                    return
 
 
         text_browser = self.log_text
@@ -204,6 +249,11 @@ class LoggerConsole(QDockWidget):
     def createNodeLink(graphRef,nodeid,text=None,color='#17E62C'):
         if not text: text = nodeid
         return f'<a href="gref::{hex(id(graphRef))}:{nodeid}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
+
+    @staticmethod
+    def createErrorDescriptionLink(typesearch,errobj,text='Подробнее',color='#17E62C'):
+        addr = id(errobj)
+        return f'<a href="errinfo::{typesearch}:{addr}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
 
     def init_ui(self):
         widget = QWidget()

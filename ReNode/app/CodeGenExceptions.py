@@ -7,6 +7,7 @@ class CGBaseException:
     id = 0
     text = "Неизвестная ошибка"
     desc = ""
+    moreInfo = ""
 
     def __init__(self,**kwargs) -> None:
         """
@@ -19,6 +20,9 @@ class CGBaseException:
         self.targ = kwargs.get('targ') or ""
         self.ctx = kwargs.get('ctx') or ""
         self.entry = kwargs.get('entry') or ""
+
+        from ReNode.ui.LoggerConsole import LoggerConsole
+        self.exRef = LoggerConsole.createErrorDescriptionLink("err",self,text=self.getShortErrorInfo(),color='#FFF2B0')
     
     def getShortErrorInfo(self):
         return f'ERR-{self.__class__.id}'
@@ -35,6 +39,24 @@ class CGBaseException:
             )
         return desc
 
+    def getExceptionTextBase(self):
+        return self.__class__.text.format(
+            src=self.src,
+            portname=self.portname,
+            targ=self.targ,
+            ctx=self.ctx,
+            entry=self.entry
+        )
+    
+    def getExceptionMoreInfo(self):
+        return self.__class__.moreInfo.format(
+            src=self.src,
+            portname=self.portname,
+            targ=self.targ,
+            ctx=self.ctx,
+            entry=self.entry
+        )
+    
     def getExceptionText(self,addDesc = False):
         class_ = self.__class__
         postText = class_.desc if addDesc else ""
@@ -43,13 +65,28 @@ class CGBaseException:
             postText = "<span style='color:#FFF2B0;'>"+self.getExceptionDescription()+"</span>"
             postText = "\n- Подробнее: " + postText
             #postText = '<p title="tootip">some block of text</p>'
-        return f"<b>[{class_.__name__}:ERR-{class_.id}]</b>: " + class_.text.format(
-            src=self.src,
-            portname=self.portname,
-            targ=self.targ,
-            ctx=self.ctx,
-            entry=self.entry
-        ) + postText
+        return f"<b>[{class_.__name__}:{self.exRef}]</b>: " + self.getExceptionTextBase() + postText
+    
+    def getMoreExceptionInfo(self,headerSize=25,contentSize=23):
+        ret = []
+        nextLine = "<br/>"
+        ret.append("<span style='font-size:"+str(headerSize)+"px;'>")
+        ret.append(f"<b>Имя исключения:</b> {self.__class__.__name__}")
+        ret.append(nextLine)
+        ret.append(f"<b>Код исключения:</b> {self.__class__.id} ({self.getShortErrorInfo()})")
+        ret.append(nextLine)
+        ret.append(nextLine)
+        ret.append("</span>")
+        
+        ret.append("<span style='font-size:"+str(contentSize)+"px;'>")
+        ret.append(f'<b>Содержание:</b> {self.getExceptionTextBase()}')
+        ret.append(nextLine)
+        ret.append(f'<b>Описание:</b> {self.getExceptionDescription()}')
+        ret.append(nextLine)
+        ret.append(f'<b>Подробная информация:</b> {self.getExceptionMoreInfo() or "Отсутствует"}')
+        ret.append("</span>")
+
+        return ''.join(ret)
 
 # ----------------------------------------
 #   1-100 - reserved critical exception

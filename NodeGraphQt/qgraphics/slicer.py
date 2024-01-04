@@ -120,8 +120,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         text_item = descriptionTextItem(text, self)
         #text_item.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
         #text_item.e QtWidgets.QGraphicsTextItem.GraphicsItemFlag.
-        text_item.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
-
+        text_item.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse | QtCore.Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        text_item.setOpenExternalLinks(True)
+        
         text_item.setHtml('<span style="font-family: Arial; font-size: 12pt;">' + text + '</span><br>Description: <span style="font-family: Arial; font-size: 4pt;">Test description</span>')
         text_item.setFont(font)
         text_item.setDefaultTextColor(QtGui.QColor(255, 255, 255))  # adjust the text color as needed
@@ -227,6 +228,21 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
             oTxt = "<br/>".join(oTxt)
             text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Выходные порты: {"<br/>" + oTxt if oTxt else "отсутствуют"}</span>'
+
+            #todo replace reference
+            #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
+            from re import search
+            regexPattern = r'(\[([\w\\\/\.а-яА-Я]+)\s+([^\]]*)\])'
+            while True:
+                pats = search(regexPattern, text)
+                if not pats: break
+                if len(pats.groups()) != 3: raise Exception(f"Parsing reference error: {text}")
+                fullMacro, ref, name = pats.groups()
+                if not ref.startswith("https://"): ref = "https://" + ref
+                text = text.replace(fullMacro, f'<a  style=\"color: green;\"href=\"{ref}\">{name}</a>')
+
+            pass
+            
 
         self.text_item.setHtml('<span style="font-family: Arial; font-size: 12pt;">' + text + '</span>')
 

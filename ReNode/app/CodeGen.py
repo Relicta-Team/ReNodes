@@ -213,8 +213,8 @@ class CodeGenerator:
         self.isGenerating = False
 
         #cleanup data
-        self._exceptions.clear()
-        self._warnings.clear()
+        #self._exceptions.clear()
+        #self._warnings.clear()
         self.gObjMeta.clear()
         self.dpdGraphExt.clear()
 
@@ -1543,11 +1543,16 @@ class CodeGenerator:
             "entry": linkEntryId
         }
         ex : CGBaseException = exType(**params)
+
+        #exRef = LoggerConsole.createErrorDescriptionLink("err",ex)
+
         exText = ex.getExceptionText(addDesc=True)
         if exText in [regEx.getExceptionText(addDesc=True) for regEx in self._exceptions]:
             #skip exception duplicate
             self.warning(f"<span style='font-size:8px;'>Подавление дубликата исключения ({ex.__class__.__name__})</span>")
             return
+        
+        #exText += exRef
         self.error(exText)
         #self.error(f)
 
