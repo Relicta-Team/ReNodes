@@ -705,6 +705,49 @@ class CodeGenerator:
                         
                         allGeneratedVars.append(gvObj)
 
+                if "@genport." in node_code and hasRuntimePorts:
+                    # обновление портов
+                    #TODO вынести в функцию с проверками
+                    newInputs = {}
+                    newOutputs = {}
+                    
+                    for portDict in obj_data['input_ports']:
+                        newInputs[portDict['name']] = {
+                            'type': portDict['type']
+                        }
+                    for portDict in obj_data['output_ports']:
+                        newOutputs[portDict['name']] = {
+                            'type': portDict['type']
+                        }
+                    class_data['inputs'] = newInputs
+                    class_data['outputs'] = newOutputs
+                    #update types
+                    inputs_fromLib = newInputs.items()
+                    outputs_fromLib = newOutputs.items()
+                    
+                    #------------- genvar ports process ---------------
+                    while True:
+                        rez = re.search(r'(@genport\.(in|out)\.(\d+)\((.*?)\))',node_code)
+                        if not rez: break
+                        fullPattern,portType, portNumber, delimConnector = rez.groups()
+
+                        # prep ports
+                        mpInfo = class_data['options']['makeport_'+portType]
+                        formatter = mpInfo['text_format']
+                        sourcePort = mpInfo['src']
+                        portNumber = int(portNumber)
+                        resultReplacerList = []
+                        collectionPorts = class_data['inputs' if portType == 'in' else 'outputs'].keys()
+                        for _iPort, _portColName in enumerate(collectionPorts):
+                            if formatter.format(value=_iPort+1,index=_iPort) == _portColName:
+                                if _iPort+1 >= portNumber:
+                                    resultReplacerList.append(f'@{portType}.{_iPort+1}')
+
+                        replStr = delimConnector.join(resultReplacerList)
+                        node_code = node_code.replace(fullPattern,replStr)
+
+                    pass
+
                 inputDict = obj.getConnectionInputs(True)
                 execDict = obj.getConnectionOutputs(True)
 

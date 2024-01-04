@@ -9,7 +9,7 @@ def:node:array
    desc:Создает массив из указанных элементов
    icon:data\\icons\\icon_Blueprint_MakeArray_16x.png
    exec:pure
-   code:[ @genport.in.( ,) ]
+   code:[ @genport.in.1(,) ]
    in:auto:[0]
       opt:typeget=array;@value.1
    out:auto:Массив
