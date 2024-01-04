@@ -160,7 +160,7 @@ def:node:operators
 		namelib:Цикл по списку (перебор коллекции)
 		desc:Цикл для перебора коллекций (например, массивов).
 		icon:data\\icons\\icon_Blueprint_ForEach_16x
-		code:private @genvar.out.2 = NIL; private @genvar.out.3 = NIL; {@locvar.out.2 = _x; @locvar.out.3 = _foreachindex; @out.1} foreach (@in.2); @out.4
+		code:@genvar.out.2.internal(_x) @genvar.out.3.internal(_foreachindex); {@out.1} foreach (@in.2); @out.4
 		runtimeports:1
 		autocoloricon:0
 		in:Exec:Вход
@@ -357,7 +357,7 @@ def:m:ScriptedGamemode.getAntagRoleFull_0
 		name:Получить тип полного антагониста
 		namelib:Обработчик полных антагонистов
 		desc:Возвращает строковое название класса полного (уникального) антагониста, которое переопределит роль зашедшего игрока. Срабатывает при старте раунда для игроков, которые выбрали полных или любых антагонистов и чьи роли могут стать полными антагонистами.\n
-		code:func(@thisName) { @thisParams; @genvar.out.4 = _countInGame; @genvar.out.5 = _countProbFullAntags; @out.1 };
+		code:func(@thisName) { @thisParams;@genvar.out.4.internal(_countInGame)@genvar.out.5.internal(_countProbFullAntags) @out.1 };
 		return:string:Название класса полного антагониста. Если возвращается пустая строка - значит игрок не станет антагонистом и его роль не переопределится.
 		type:event
 		out:ServerClient^:Клиент:Объект проверяемого клиента, зашедший в игру на старте раунда.

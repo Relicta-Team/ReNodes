@@ -681,21 +681,48 @@ class CodeGenerator:
                         node_code = newcode
 
                 if "@genvar." in node_code:
-                    genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
-
+                    #pat = r'@genvar\.(\w+\.\d+)(\.internal\((.*?)\))?'
+                    pat = r'(@genvar\.(\w+\.\d+)((?:\.\w+\([^()]*\))*))'
+                    patParams = r'(\w+)\(([^()]*)\)'
                     dictKeys = [k for i,(k,v) in enumerate(outputs_fromLib)]
                     dictValues = [v for i,(k,v) in enumerate(outputs_fromLib)]
-                    for _irepl, replClear in enumerate(genList):
-                        lvar = f'_lvar_{index_stack}_{_irepl}' #do not change
-                        wordpart = re.sub('\.\d+','',replClear)
-                        numpart = re.sub('\w+\.','',replClear)
+                    genCount = 0
+                    while True:
+                        matchObj = re.search(pat, node_code)
+                        if not matchObj: break
+                        fullTextTemplate, ptypeInfo, optionals = matchObj.groups()
+
+                        lvar = f'_lvar_{index_stack}_{genCount}' #do not change
+                        wordpart = re.sub('\.\d+','',ptypeInfo)
+                        if wordpart != 'out':
+                            self.exception(CGInternalCompilerError,source=obj,context=f'Pattern port type error (expected "out"): {fullTextTemplate}')
+                            break
+                        numpart = re.sub('\w+\.','',ptypeInfo)
                         indexOf = int(numpart)-1
+                        genCount += 1
+                        replacerInfo = lvar
 
-                        node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
-
-                        #replacing @locvar.out.1
-                        node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
-
+                        if optionals:
+                            for opt in optionals[1:].split('.'):
+                                matchParamsObj = re.search(patParams, opt)
+                                if not matchParamsObj: 
+                                    self.exception(CGInternalCompilerError,source=obj,context=f'Pattern param error: {fullTextTemplate}')
+                                    break
+                                if len(matchParamsObj.groups()) != 2: 
+                                    self.exception(CGInternalCompilerError,source=obj,context=f'Pattern param count error: {fullTextTemplate}')
+                                    break
+                                paramName, paramValue = matchParamsObj.groups()
+                                if paramName == 'internal':
+                                    replacerInfo = ''
+                                    lvar = paramValue
+                                else:
+                                    self.exception(CGInternalCompilerError,source=obj,context=f'Unknown option {paramName} in pattern: {fullTextTemplate}')
+                                    break
+                        #replacers
+                        node_code = node_code.replace(fullTextTemplate, replacerInfo)
+                        node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',replacerInfo,node_code)
+                        
+                        # create var
                         gvObj = GeneratedVariable(lvar,node_id)
                         gvObj.fromPort = dictKeys[indexOf]
                         gvObj.definedNodeName = node_id
@@ -704,6 +731,33 @@ class CodeGenerator:
                         obj.generatedVars[gvObj.fromPort] = gvObj
                         
                         allGeneratedVars.append(gvObj)
+                    
+                    #!old algorithm
+                    #region Old genvar algorithm
+                    # genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
+
+                    # dictKeys = [k for i,(k,v) in enumerate(outputs_fromLib)]
+                    # dictValues = [v for i,(k,v) in enumerate(outputs_fromLib)]
+                    # for _irepl, replClear in enumerate(genList):
+                    #     lvar = f'_lvar_{index_stack}_{_irepl}' #do not change
+                    #     wordpart = re.sub('\.\d+','',replClear)
+                    #     numpart = re.sub('\w+\.','',replClear)
+                    #     indexOf = int(numpart)-1
+
+                    #     node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
+
+                    #     #replacing @locvar.out.1
+                    #     node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
+
+                    #     gvObj = GeneratedVariable(lvar,node_id)
+                    #     gvObj.fromPort = dictKeys[indexOf]
+                    #     gvObj.definedNodeName = node_id
+                    #     if gvObj.fromPort in obj.generatedVars:
+                    #         raise Exception(f'Unhandled case: node {obj.nodeClass} from port {gvObj.fromPort} in {obj.generatedVars}')
+                    #     obj.generatedVars[gvObj.fromPort] = gvObj
+                        
+                    #     allGeneratedVars.append(gvObj)
+                    #endregion
 
                 if "@genport." in node_code and hasRuntimePorts:
                     # обновление портов
@@ -1037,7 +1091,8 @@ class CodeGenerator:
         mapIdToCode = {k:c.code for k,c in codeInfo.items()}
         clines : list[str] = enCode.splitlines()
         for ex in resultAnalyze.exceptions:
-            lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+)\" is not from this scope \(not private\)",ex.args[1])
+            
+            lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+|_foreachindex|_x|_y)\" is not from this scope \(not private\)",ex.args[1],re.IGNORECASE)
             if lvarNameAsList:
                 lvarName = lvarNameAsList[0]
                 line_num, col_count = ex.position
@@ -1068,7 +1123,7 @@ class CodeGenerator:
                             if newLen < minLen and lvarName in founder:
                                 minLen = newLen
                                 probTargError = idErr
-                        if probTargError == entryId:
+                        if probTargError == entryId or probTargError == None:
                             probTargError = None
                         else:
                             probTargError = codeInfo[probTargError]
