@@ -348,27 +348,36 @@ class CodeGenerator:
             self.exception(CGUnhandledException,context=strFullException)
             return f"//unhandled exception\n"
 
+    def getPortInputType(self,node,port): 
+        ndata = self.serialized_graph['nodes'][node]
+        if ndata.get("port_deletion_allowed"):
+            return next((pinfo['type'] for pinfo in ndata['input_ports'] if pinfo['name'] == port),None)
+        else:
+            return self.getNodeLibData(ndata['class_']) ['inputs'][port].get("type")
+    def getPortOutputType(self,node,port): 
+        ndata = self.serialized_graph['nodes'][node]
+        if ndata.get("port_deletion_allowed"):
+            return next((pinfo['type'] for pinfo in ndata['output_ports'] if pinfo['name'] == port),None)
+        else:
+            return self.getNodeLibData(ndata['class_']) ['outputs'][port].get("type")
+
+    def getPortNames_Runtime(self,node,tps):
+        ndata = self.serialized_graph['nodes'][node]
+        if ndata.get("port_deletion_allowed"):
+            return [pinfo['name'] for pinfo in ndata['input_ports' if tps=='in' else 'output_ports'] ]
+        else:
+            return [pinfo for pinfo in self.getNodeLibData(ndata['class_']) ['inputs' if tps=='in' else 'outputs'].keys() ]
+
     def createDependencyGraph(self,collectOnlyExecutePins=False):
-        def getPortInputType(node,port): 
-            ndata = self.serialized_graph['nodes'][node]
-            if ndata.get("port_deletion_allowed"):
-                return next((pinfo['type'] for pinfo in ndata['input_ports'] if pinfo['name'] == port),None)
-            else:
-                return self.getNodeLibData(ndata['class_']) ['inputs'][port].get("type")
-        def getPortOutputType(node,port): 
-            ndata = self.serialized_graph['nodes'][node]
-            if ndata.get("port_deletion_allowed"):
-                return next((pinfo['type'] for pinfo in ndata['output_ports'] if pinfo['name'] == port),None)
-            else:
-                return self.getNodeLibData(ndata['class_']) ['outputs'][port].get("type")
 
         graph = defaultdict(list)
         for connection in self.serialized_graph['connections']:
             input_node, portInName = connection["in"]
             output_node, portOutName = connection["out"]
             if collectOnlyExecutePins:
-                typeIn = getPortInputType(input_node, portInName)
-                typeOut = getPortOutputType(output_node, portOutName)
+                #typeIn = self.getPortInputType(input_node, portInName)
+                #typeOut = self.getPortOutputType(output_node, portOutName)
+                pass
             graph[input_node].append(output_node)
             graph[output_node].append(input_node)
         return graph
@@ -394,12 +403,12 @@ class CodeGenerator:
     #region Dependency graph extension with relations
 
     def __initDPDConnectionTypes(self,nodename,ref):
-        inNodeInfo = self.getNodeLibData(self.serialized_graph['nodes'][nodename]['class_'])
-        for k,v in inNodeInfo['inputs'].items():
-            ref['typein'][k] = v['type']
-        outNodeInfo = self.getNodeLibData(self.serialized_graph['nodes'][nodename]['class_'])
-        for k,v in outNodeInfo['outputs'].items():
-            ref['typeout'][k] = v['type']
+        inNodeInfo = self.getPortNames_Runtime(nodename,'in')
+        for portName in inNodeInfo:
+            ref['typein'][portName] = self.getPortInputType(nodename,portName)
+        outNodeInfo = self.getPortNames_Runtime(nodename,'out')
+        for portName in outNodeInfo:
+            ref['typeout'][portName] = self.getPortOutputType(nodename,portName)
 
     def createDpdGraphExt(self):
         graph = {}
