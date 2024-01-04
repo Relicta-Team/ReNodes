@@ -186,6 +186,7 @@ class RuntimeNode(BaseNode):
 		portList = []
 		for idx, (name,port) in enumerate(self.inputs().items()):
 			srcName = ''
+			textName = ''
 			if 'makeport_in' in data['options']:
 				srcName = data['options']['makeport_in']['src']
 				textName = data['options']['makeport_in']['text_format'].format(value=idx+1,index=idx)
