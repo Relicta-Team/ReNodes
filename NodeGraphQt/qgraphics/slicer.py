@@ -175,8 +175,8 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #     if self._lastItem._error_item.isVisible():
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/><b>Путь:</b> {libInfo.get("path") or "нет"}<br/>'
-
-            text += f'<br/><b>Описание:</b> {libInfo.get("desc") or "отсутствует"}<br/>'
+            dText = libInfo.get("desc").replace("\n","<br/>")
+            text += f'<br/><b>Описание:</b> {dText or "отсутствует"}<br/>'
 
             if libInfo.get("memtype"):
                 valdesc = "Без описания"
