@@ -1123,6 +1123,10 @@ class NodeItem(AbstractNodeItem):
         desc = None
         if "@desc:" in name:
             name,desc = name.split("@desc:")
+        
+        #add bold
+        if self._node_render_type in NodeRenderType.getNoHeaderTypes():
+            name = f'<b>{name}</b>'    
         nametext = f'<span style=\'font-family: Arial; font-size: {self._default_font_size}pt;\'>{name}</span>'
         if desc:
             nametext += f'<br/><font size=""4"><i>{desc}</i></font>'
