@@ -205,6 +205,22 @@ class GraphTypeBase:
             mtype = nodeObject.classLibData['classInfo']['type']
             if mtype == 'method':
                 nodeObject.code = cgObj.prepareMemberCode(nodeObject.classLibData,nodeObject.code)
+            #check recursion
+            if "classInfo" in entryObj.classLibData and entryObj != nodeObject:
+                entryClass = entryObj.classLibData['classInfo']['class']
+                entryMember = entryObj.classLibData['classInfo']['name']
+
+                #callerClass = nodeObject.classLibData['classInfo']['class']
+                callerMember = nodeObject.classLibData['classInfo']['name']
+                # если вызывающая функция есть в этом классе и имена точки входа совпадают - это рекурсия
+
+                if callerMember in cgObj.getFactory().getClassAllMethods(entryClass) and \
+                    entryMember == callerMember:
+                    cgObj.nodeWarn(CGFunctionRecursionWarning,source=nodeObject,entry=entryObj)
+                
+
+
+
 
         libOuts = nodeObject.classLibData['inputs']
         if libOuts:

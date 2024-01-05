@@ -204,8 +204,11 @@ class VariableLibrary:
                 if isinstance(parsed,dict):
                     fitem = list(parsed.items())[0]
                 else:
-                    fitem = parsed[0]
+                    fitem = [parsed[0]]
                 
+                if len(types) != len(fitem):
+                    raise ValueError(f"Types count {len(types)} != {len(fitem)} on parse data value {val} as {types}")
+
                 for i in range(len(types)):
                     kit = fitem[i]
                     tit = types[i]

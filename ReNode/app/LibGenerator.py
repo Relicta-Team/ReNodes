@@ -358,7 +358,7 @@ class NodeObjectHandler:
 				elif tInside.startswith("gen_param"):
 					self.lastPortRef['gen_param'] = intTryParse(tInside.split("=")[1]) > 0
 				elif tInside.startswith("def="):
-					serVal = tInside[4:]
+					serVal = tInside[4:].replace("\\:",":")
 					dval = self.varLib.parseGameValue(serVal,self.lastPortRef['type'],self.classMetadata)
 					self.lastPortRef['default_value'] = dval
 				else:
