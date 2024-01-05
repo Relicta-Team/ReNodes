@@ -217,13 +217,14 @@ class RuntimeNode(BaseNode):
 				else:
 					return
 
-		data = self.get_property('autoportdata')
-		self.set_property("autoportdata",{},False)
 		if data.get('auto_color_icon'):
 			self.update_icon_part_color(0,None,False)
+		#restore base ports color
+		dataAutoport = self.get_property('autoportdata')
+		self.set_property("autoportdata",{},False)
 		for port in portList:
-			port.color = data['color']
-			port.border_color = data['border_color']
+			port.color = dataAutoport['color']
+			port.border_color = dataAutoport['border_color']
 			port.view.port_typeName = ''
 			port.view.update()
 			port.view._syncTooltip()

@@ -392,7 +392,8 @@ class NodeObjectHandler:
 						"type": "hidden",
 						"default": {}
 					}))
-				self.memberData['auto_color_icon'] = False
+				#do not override if exists
+				self.memberData['auto_color_icon'] = self.memberData.get('auto_color_icon',False)
 		elif tokenType == "autocoloricon":
 			self.memberData['auto_color_icon'] = intTryParse(tokens[1]) > 0
 		elif tokenType == "rendertype":
