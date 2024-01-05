@@ -108,6 +108,14 @@ class RuntimeNode(BaseNode):
 
 			return dataType == typeinfo[0]
 
+		#check type
+		acceptedType = False
+		for checkedType in libCalculator.get('allowtypes',[sourceType]):
+			if checkedType == sourceType:
+				acceptedType = True
+				break
+		if not acceptedType: return "!not_accepted_type"
+
 		if getter == '@type':
 			if dataType == "ANY" and typeinfo[0] == dataType:
 				return typeinfo[1] #тип значения редиректится в первый элемент типа

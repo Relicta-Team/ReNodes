@@ -678,8 +678,16 @@ class NodeObjectHandler:
 		if 'icon' in memberData:
 			memberData['icon'] = memberData['icon'].replace('\\\\','\\') #self.preparePath(memberData['icon'])
 
-		#TODO change out/in types from auto to ""
 		overrideRuntime = 'runtime_ports' in memberData
+		# автоматическое выключение отображения имен портов если рендер тип подходит и пользователь не задал вручную режим отображения имени узлу
+		#? Логику можно улучшить, сделав проверку определения для каждого порта
+		canAutoSetDisplayNames = memberData.get('render_type',NodeRenderType.Default.name) in [n.name for n in NodeRenderType.getNoHeaderTypes()]
+		if canAutoSetDisplayNames:
+			#если найдены порты с определенным типом то мы не можем рендерить автоматически порты
+			if [vData[1] for vData in self['inputs'] if vData[1].get('display_name') != None]:
+				canAutoSetDisplayNames = False
+			if [vData[1] for vData in self['outputs'] if vData[1].get('display_name') != None]:
+				canAutoSetDisplayNames = False
 		for k,v in self['inputs']:
 			if overrideRuntime and v['type'] == 'auto':
 				if not v.get('typeget'):
@@ -687,6 +695,8 @@ class NodeObjectHandler:
 				v['type'] = ''
 			if v['type'] == "Exec":
 				v["style"] = "triangle"
+			if canAutoSetDisplayNames: #and 'display_name' not in v:
+				v['display_name'] = False
 		for k,v in self['outputs']:
 			if overrideRuntime and v['type'] == 'auto':
 				if not v.get('typeget'):
@@ -694,6 +704,8 @@ class NodeObjectHandler:
 				v['type'] = ''
 			if v['type'] == "Exec":
 				v["style"] = "triangle"
+			if canAutoSetDisplayNames:
+				v['display_name'] = False
 
 	def registerNode(self,memberRegion):
 		memberData = self.memberData

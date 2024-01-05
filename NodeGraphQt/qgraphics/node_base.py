@@ -571,6 +571,17 @@ class NodeItem(AbstractNodeItem):
         return width, height
 
     def _align_icon_horizontal(self, h_offset, v_offset):
+        if self._node_render_type == NodeRenderType.NoHeader:
+            scale = NodeEnum.ICON_CUSTOM_RENDER_SIZE.value
+            pix = self._icon_item.pixmap()
+            if pix.size().height() < scale:
+                pix = pix.scaledToHeight(scale, QtCore.Qt.SmoothTransformation)
+                self._icon_item.setPixmap(pix)
+                self._icon_item.setOpacity(0.5)
+            origRect = self.boundingRect()
+            icnRect = self._icon_item.boundingRect()
+            self._icon_item.setPos(origRect.center().x()-icnRect.width()/2,origRect.center().y()-icnRect.height()/2)
+            return
         if self._node_render_type == NodeRenderType.NoHeaderIcon:
             scale = NodeEnum.ICON_CUSTOM_RENDER_SIZE.value
             pix = self._icon_item.pixmap()
@@ -615,6 +626,13 @@ class NodeItem(AbstractNodeItem):
             raise RuntimeError('Node graph layout direction not valid!')
 
     def _align_label_horizontal(self, h_offset, v_offset):
+        if self._node_render_type == NodeRenderType.NoHeader:
+            text_rect = self._text_item.boundingRect()
+            x = self.boundingRect().center().x() - (text_rect.width() / 2)
+            y = self.boundingRect().center().y() - (text_rect.height() / 2)
+            self._text_item.setOpacity(0.6)
+            self._text_item.setPos(x + h_offset, y + v_offset)
+            return
         if self._node_render_type == NodeRenderType.NoHeaderText:
             #draw text at center
             text_rect = self._text_item.boundingRect()

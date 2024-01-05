@@ -21,7 +21,7 @@ class NodeRenderType(Enum):
 
     @staticmethod
     def getNoHeaderTypes():
-        return [NodeRenderType.NoHeaderIcon,NodeRenderType.NoHeaderText]
+        return [NodeRenderType.NoHeaderIcon,NodeRenderType.NoHeaderText,NodeRenderType.NoHeader]
 
     @staticmethod
     def typeExists(value):

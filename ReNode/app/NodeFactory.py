@@ -309,7 +309,8 @@ class NodeFactory:
 			valdata['display_name'] = val.get('display_name',displayName)
 			valdata['mutliconnect'] = val.get('mutliconnect',isMulticonnect)
 			valdata['style'] = self._kindPortStyle(val.get('style',"default"))
-			valdata['allowtypes'] = val.get('allowtypes')
+			if 'allowtypes' in val:
+				valdata['allowtypes'] = val.get('allowtypes')
 			valdata['type'] = val.get('type',key)
 			valdata['typeget'] = val.get('typeget',"")
 			valdata['desc'] = val.get('desc','')

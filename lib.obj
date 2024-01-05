@@ -1,6 +1,18 @@
 v1
 $REGION:FUNCTIONS
 
+def:node:array
+   node:clearArray
+   name:Очистить массив
+   desc:Удаляет все элементы из массива, делая его пустым.
+   icon:data\\icons\\ArrayPin.png
+   exec:all
+   rendertype:NoHeader
+   autocoloricon:1
+   code:(@in.2) resize 0; @out.1
+   in:auto:Массив:Ссылка на массив, который будет очищен.
+      opt:typeget=array;@type
+
 def:node:math
       node:clamp
       name:Ограничение
