@@ -1,6 +1,23 @@
 v1
 $REGION:FUNCTIONS
 
+def:node:math
+      node:clamp
+      name:Ограничение
+      path:Математические
+      namelib:Ограничение числа
+      exec:pure
+      desc:Ограничивает входное число диапазоном между нижней и верхней границей
+      code:[@in.1,@in.2,@in.3]call clampNumber
+      in:auto:Число
+         opt:typeget=value;@type:allowtypes=int|float:dname=0
+      in:auto:Нижняя граница
+         opt:typeget=value;@type:allowtypes=int|float:dname=0
+      in:auto:Верхняя граница
+         opt:typeget=value;@type:allowtypes=int|float:dname=0
+      out:float:Результат
+         opt:typeget=value;@type:allowtypes=int|float:dname=0
+
 def:node:array
    node:makeArray
    path:Массивы
