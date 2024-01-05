@@ -290,8 +290,6 @@ class BaseNode(NodeObject):
 
     def add_makeport(self,port_type=None,name=None,srcName=None,text_format=None):
         """makeport buttons"""
-        if port_type != 'in':
-            raise Exception('Only input ports are supported in this version for makeport option')
         val = None
         self.create_property(name,value=val,widget_type=NodePropWidgetEnum.HIDDEN.value)
         wid = NodePortMakerButtons(self.view,name,port_type,text_format,sourceName=srcName)

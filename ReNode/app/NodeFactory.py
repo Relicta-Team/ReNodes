@@ -492,8 +492,8 @@ class NodeFactory:
 			node.create_property(name=optname,value=optvals.get('default',None))
 		if type=="objcaller":
 			node.add_text_input(name=optname,label=optvals.get('text',''),text="Этот объект",isObjCaller=True)
-		if type=='makeport_in':
-			node.add_makeport(port_type='in',name=optname,srcName=optvals.get('src',''),text_format=optvals.get('text_format'))
+		if type=='makeport_in' or type=='makeport_out':
+			node.add_makeport(port_type='in' if type=='makeport_in' else 'out',name=optname,srcName=optvals.get('src',''),text_format=optvals.get('text_format'))
 
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
 		#todo: change algorithm multitypes check
