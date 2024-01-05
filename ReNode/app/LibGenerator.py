@@ -344,7 +344,7 @@ class NodeObjectHandler:
 				elif tInside.startswith("dname"):
 					self.lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
 				elif tInside.startswith('allowtypes'):
-					self.lastPortRef['allowtypes'] = tInside.split('|')
+					self.lastPortRef['allowtypes'] = tInside.split('=')[1].split('|')
 				elif tInside.startswith("custom"):
 					self.lastPortRef['use_custom'] = intTryParse(tInside.split('=')[1]) > 0
 				elif tInside.startswith("pathes"):
