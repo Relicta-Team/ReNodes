@@ -24,7 +24,7 @@ class NodeDataType(enum.Enum):
     SCOPED_LOOP = 2
     
     @staticmethod
-    def getScopedLoopNodes(): return ["operators.for_loop","operators.foreach_loop"]
+    def getScopedLoopNodes(): return ["operators.for_loop","operators.foreach_loop","operators.while_loop"]
 
     @staticmethod
     def getNodeType(classname:str):
@@ -928,6 +928,8 @@ class CodeGenerator:
                 obj.code = node_code
 
                 if obj.isReady:
+                    if '@nodeStackId' in obj.code:
+                        obj.code = obj.code.replace('@nodeStackId',str(index_stack))
                     self.gObjType.handleReadyNode(obj,codeInfo[entryId],self.gObjMeta)
 
             # --- post check stack

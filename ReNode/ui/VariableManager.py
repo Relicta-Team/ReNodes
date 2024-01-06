@@ -871,6 +871,7 @@ class VariableManager(QDockWidget):
         vobj,dtobj = self.getVarDataByType(fulltypename)
         if dtobj.dataType == 'value':
             if self.isObjectType(fulltypename) and not fulltypename.endswith("^"): fulltypename += '^'
+            return fulltypename
         else:
             typeinfo = re.findall('\w+\^?',fulltypename)
             rval = typeinfo[0]+"["

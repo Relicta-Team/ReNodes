@@ -498,6 +498,8 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
 
         if varDict.get('returnType','null') != 'null':
             memberData.append(f'return:{prepEscape(varDict["returnType"])}:{prepEscape(varDict["returnDesc"])}')
+        else:
+            memberData.append(f'return:{prepEscape(varDict.get("returnType","null"))}')
 
         execType = "all"
         if varDict.get('isPure'): execType = "pure"
