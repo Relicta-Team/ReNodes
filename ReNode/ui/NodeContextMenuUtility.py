@@ -1,14 +1,24 @@
 from Qt import QtWidgets, QtCore, QtGui
 
+def get_real_used_nodes(graph,node):
+    selNodes = graph.selected_nodes()
+    if node:
+        if node in selNodes:
+            node = selNodes
+        else:
+            selNodes.append(node)
+            node = selNodes
+    else:
+        node = selNodes
+    if not node: return None
+    return node
+
 def copy_nodes(graph,node=None):
     """
     Copy nodes to the clipboard.
     """
-    if graph.selected_nodes():
-        node = None
-    else:
-        if node:
-            node = [node]
+    node = get_real_used_nodes(graph,node)
+    if not node: return
     graph.copy_nodes(node)
 
 
@@ -16,12 +26,9 @@ def cut_nodes(graph,node):
     """
     Cut nodes to the clip board.
     """
-    if graph.selected_nodes():
-        node = None
-    else:
-        if node:
-            node = [node]
-    graph.cut_nodes()
+    node = get_real_used_nodes(graph,node)
+    if not node: return
+    graph.cut_nodes(node)
 
 
 def paste_nodes(graph):
@@ -35,11 +42,8 @@ def delete_nodes(graph,node=None):
     """
     Delete selected node.
     """
-    if graph.selected_nodes():
-        node = graph.selected_nodes()
-    else:
-        if node:
-            node = [node]
+    node = get_real_used_nodes(graph,node)
+    if not node: return
     graph.delete_nodes(node)
 
 
@@ -47,11 +51,8 @@ def extract_nodes(graph,node=None):
     """
     Extract selected nodes.
     """
-    if graph.selected_nodes():
-        node = graph.selected_nodes()
-    else:
-        if node:
-            node = [node]
+    node = get_real_used_nodes(graph,node)
+    if not node: return
     graph.extract_nodes(node)
 
 def reset_all_node_props(graph,node=None):
