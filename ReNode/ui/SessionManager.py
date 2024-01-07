@@ -64,6 +64,9 @@ class TabData:
                 self.graph.end_undo()
                 self.graph.clear_undo_stack()
 
+                cg = SessionManager.refObject.graphSystem.codegen
+                cg.generateProcess(graph=self.graph,addComments=True,silentMode=True)
+
     def __repr__(self) -> str:
         from sys import getsizeof
         return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'

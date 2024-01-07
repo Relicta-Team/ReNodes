@@ -55,6 +55,7 @@ class CodeGenerator:
 
         self.generated_code = ""
         self.graphsys = NodeGraphComponent.refObject
+        self.graph = None #ref to graph qt
 
         self.serialized_graph = None
 
@@ -79,7 +80,7 @@ class CodeGenerator:
 
     def getGraphTypeObject(self):
         """Получает объект типа графа"""
-        gtype = self.graphsys.graph.infoData['type']
+        gtype = self.graph.infoData['type']
         return GraphTypeFactory.getInstanceByType(gtype)
 
     def getNodeLibData(self,cls):
@@ -89,12 +90,12 @@ class CodeGenerator:
         return self.graphsys.variable_manager
 
     def getVariableDict(self) -> dict:
-        return self.getVariableManager().variables
+        return self.graph.variables
     
     def getFactory(self) -> NodeFactory:
         return self.graphsys.nodeFactory
 
-    def generateProcess(self,addComments=True,silentMode=False):
+    def generateProcess(self,graph=None,addComments=True,silentMode=False):
         
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
@@ -104,22 +105,27 @@ class CodeGenerator:
         self._addComments = addComments
         self._silentMode = silentMode
 
+        if not graph:
+            self.graph = self.graphsys.graph
+        else:
+            self.graph = graph
+
         self.successCompiled = False
 
         try:
             timestamp = int(time.time()*1000.0)
 
-            layout_data = self.graphsys.graph._serialize(self.graphsys.graph.all_nodes())
+            layout_data = self.graph._serialize(self.graph.all_nodes())
 
             if not layout_data:
                 self.exception(CGGraphSerializationError,context="Не найдена информация для генерации")
                 raise CGCompileAbortException()
             if not layout_data.get('nodes'):
                 self.warning("Добавьте узлы в граф")
-                raise CGCompileAbortException()
+                layout_data['nodes'] = {}
             if not layout_data.get('connections'):
                 self.warning("Добавьте связи в граф")
-                raise CGCompileAbortException()
+                layout_data['connections'] = {}
             
             self.serialized_graph = layout_data
             #removing backdrops
@@ -141,14 +147,14 @@ class CodeGenerator:
             self.isGenerating = True
             
             self._resetNodesError()
-
-            self.log("Старт генерации...",True)
+            iData = self.graph.infoData
+            self.log(f"Старт генерации графа \"{iData['name']}\"",True)
             
             code = "// Code generated:\n"
             # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
             self.localVariableData = {}
             self.gObjType = self.getGraphTypeObject()
-            self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,self.graphsys.graph.infoData)
+            self.gObjMeta = self.gObjType.createGenMetaInfoObject(self,iData)
 
             self.log("Генерация переменных")
 
@@ -281,7 +287,7 @@ class CodeGenerator:
 
             if self._debug_rename:
                 #self.graphsys.graph.get_node_by_id(k).set_name(newname)
-                node = self.graphsys.graph.get_node_by_id(k)
+                node = self.graph.get_node_by_id(k)
                 
                 node.view.text_item.setHtml(newname)
                 node.view.draw_node()
@@ -308,7 +314,7 @@ class CodeGenerator:
         for vid,vdat in self.getVariableDict().get("classfunc",{}).items():
             instTypename = self.getVariableManager().getVariableNodeNameById(vid,"deffunc")
             if instTypename:
-                nodeList = self.graphsys.graph.get_nodes_by_class(instTypename)
+                nodeList = self.graph.get_nodes_by_class(instTypename)
                 if not nodeList:
                     ctxInfo = f'{vdat["name"]} ({instTypename})'
                     self.exception(CGUserEntryNotDefinedException,context=ctxInfo)
@@ -533,7 +539,7 @@ class CodeGenerator:
         def getNodeObject(self):
             cg = self.refCodegen
             nodeid = cg._sanitizeNodeName(self.nodeId)
-            return cg.graphsys.graph.get_node_by_id(nodeid)
+            return cg.graph.get_node_by_id(nodeid)
     
         def markAsError(self):
             if not self.hasError:
@@ -544,7 +550,7 @@ class CodeGenerator:
     def getNodeObjectById(self,nodeid):
             cg = self
             nodeid = cg._sanitizeNodeName(nodeid)
-            return cg.graphsys.graph.get_node_by_id(nodeid)
+            return cg.graph.get_node_by_id(nodeid)
 
     def generateFromTopology(self, topological_order, entryId):
 
@@ -1340,7 +1346,7 @@ class CodeGenerator:
 
     def _resetNodesError(self):
         for node_id in self.serialized_graph['nodes'].keys():
-            node = self.graphsys.graph.get_node_by_id(node_id)
+            node = self.graph.get_node_by_id(node_id)
             if hasattr(node, 'resetError'):
                 node.resetError()
 
@@ -1518,7 +1524,8 @@ class CodeGenerator:
         self.logger.info(text)
 
     def error(self,text,forceAdd=False):
-        if self._silentMode and not forceAdd: return
+        #!errors always printing
+        #if self._silentMode and not forceAdd: return
         self.logger.error(text)
 
     def warning(self,text,forceAdd=False):
@@ -1645,7 +1652,7 @@ class CodeGenerator:
     
     def getNodeConnectionType(self,node_id,inout,portname):
         node_id = self._sanitizeNodeName(node_id)
-        obj = self.graphsys.graph.get_node_by_id(node_id)
+        obj = self.graph.get_node_by_id(node_id)
         if inout == "in":
             return obj.inputs()[portname].view.port_typeName
         elif inout == "out":
@@ -1656,7 +1663,7 @@ class CodeGenerator:
     def _debug_setName(self,node_id,name):
         node_id = self._sanitizeNodeName(node_id)
         
-        orig = self.graphsys.graph.get_node_by_id(node_id)
+        orig = self.graph.get_node_by_id(node_id)
         
         orig.view.text_item.setHtml(orig.view.text_item.toHtml() + name)
         orig.view.draw_node()
