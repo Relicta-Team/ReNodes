@@ -7,7 +7,7 @@ import re
 configValues = {
     "main": {
         "version": 2,
-        "workdir": ".",
+        "workdir": "src\\ReNode",
         #"tempvalue": True
     },
     "internal": {
