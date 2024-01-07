@@ -75,6 +75,7 @@ class CodeGenerator:
         self.gObjMeta :dict[str:object]= None
 
         self.isGenerating = False
+        self.successCompiled = False
 
     def getGraphTypeObject(self):
         """Получает объект типа графа"""
@@ -93,7 +94,7 @@ class CodeGenerator:
     def getFactory(self) -> NodeFactory:
         return self.graphsys.nodeFactory
 
-    def generateProcess(self,addComments=True):
+    def generateProcess(self,addComments=True,silentMode=False):
         
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
@@ -101,41 +102,47 @@ class CodeGenerator:
         self.gObjMeta = {}
         
         self._addComments = addComments
-        
-        layout_data = self.graphsys.graph._serialize(self.graphsys.graph.all_nodes())
+        self._silentMode = silentMode
 
-        if not layout_data:
-            return
-        if not layout_data.get('nodes'):
-            self.warning("Добавьте узлы в граф")
-            return
-        if not layout_data.get('connections'):
-            self.warning("Добавьте связи в граф")
-            return
-        
-        self.serialized_graph = layout_data
-        #removing backdrops
-        delIdList = []
-        for name,node in layout_data['nodes'].items():
-            if 'internal.backdrop' == node['class_']:
-                delIdList.append(name)
-        for name in delIdList:
-            del layout_data['nodes'][name]
+        self.successCompiled = False
 
-        self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
+        try:
+            timestamp = int(time.time()*1000.0)
 
-        entrys = self.getAllEntryPoints()
-        if not entrys:
-            self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
-            return
-        self.entryIdList = entrys #лист для валидации точек входа
-        
-        self.isGenerating = True
-        if not self._exceptions:
+            layout_data = self.graphsys.graph._serialize(self.graphsys.graph.all_nodes())
+
+            if not layout_data:
+                self.exception(CGGraphSerializationError,context="Не найдена информация для генерации")
+                raise CGCompileAbortException()
+            if not layout_data.get('nodes'):
+                self.warning("Добавьте узлы в граф")
+                raise CGCompileAbortException()
+            if not layout_data.get('connections'):
+                self.warning("Добавьте связи в граф")
+                raise CGCompileAbortException()
+            
+            self.serialized_graph = layout_data
+            #removing backdrops
+            delIdList = []
+            for name,node in layout_data['nodes'].items():
+                if 'internal.backdrop' == node['class_']:
+                    delIdList.append(name)
+            for name in delIdList:
+                del layout_data['nodes'][name]
+
+            self._originalReferenceNames = dict() #тут хранятся оригинальные айди нодов при вызове генерации имен
+
+            entrys = self.getAllEntryPoints()
+            if not entrys:
+                self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
+                raise CGCompileAbortException()
+            self.entryIdList = entrys #лист для валидации точек входа
+            
+            self.isGenerating = True
+            
             self._resetNodesError()
 
-            self.log("Старт генерации...")
-            timestamp = int(time.time()*1000.0)
+            self.log("Старт генерации...",True)
             
             code = "// Code generated:\n"
             # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
@@ -195,28 +202,57 @@ class CodeGenerator:
             if self.isDebugMode():
                 from PyQt5.QtWidgets import QApplication
                 QApplication.clipboard().setText(code)
-        else:
-            #exception generator
-            timestamp = int(time.time()*1000.0)
-        
 
-        self.log(f"\t- Предупреждений: {len(self._warnings)}; Ошибок: {len(self._exceptions)}")
-        if self._exceptions:
-            self.log("- <span style=\"color:red;\">Генерация завершена с ошибками</span>")
-        else:
-            self.log("- <span style=\"color:green;\">Генерация завершена</span>")
-        
-        timeDiff = int(time.time()*1000.0) - timestamp
-        self.log(f"Процедура завершена за {timeDiff} мс")
-        self.log("================================")
-        
-        self.isGenerating = False
+            self.successCompiled = True
 
-        #cleanup data
-        #self._exceptions.clear()
-        #self._warnings.clear()
-        self.gObjMeta.clear()
-        self.dpdGraphExt.clear()
+        except CGCompileAbortException:
+            pass
+        except Exception as e:
+            strFullException = traceback.format_exc()
+
+            styleinfo = '''
+                background: #13f4f4f4;
+                border: 1px solid #ddd;
+                border-left: 3px solid #ffD90000;
+                border-right: 3px solid #ffD90000;
+                border-top: 3px solid #ffD90000;
+                border-bottom: 30px solid #ffD90000;
+                border-radius: 10px;
+                color: #EBEBEB;
+                font-size: 15px;
+                line-height: 1.2;
+                max-width: 100%;
+                overflow: auto;
+                padding: 1em 1.5em;
+                display: block;
+                page-break-inside: avoid;
+                word-wrap: normal;
+            '''
+            styleinfo = styleinfo.replace("\n","")
+            strFullException = f'{e.__class__.__name__}<pre style="{styleinfo}">\n{strFullException}</pre>'
+            self.exception(CGUnhandledException,context=strFullException)
+            
+        finally:
+            
+            self.log(f"\t- Предупреждений: {len(self._warnings)}; Ошибок: {len(self._exceptions)}")
+            if self._exceptions:
+                self.log("- <span style=\"color:red;\">Генерация завершена с ошибками</span>")
+            else:
+                self.log("- <span style=\"color:green;\">Генерация завершена</span>")
+            
+            timeDiff = int(time.time()*1000.0) - timestamp
+            if not self.successCompiled or self._exceptions:
+                self.warning("Граф не скомпилирован",True)
+            self.log(f"Процедура завершена за {timeDiff} мс",True)
+            self.log("================================",True)
+            
+            self.isGenerating = False
+
+            #cleanup data
+            #self._exceptions.clear()
+            #self._warnings.clear()
+            self.gObjMeta.clear()
+            self.dpdGraphExt.clear()
 
     def __generateNames(self,entry : list):
         import copy
@@ -294,59 +330,32 @@ class CodeGenerator:
         del entDict
 
     def generateOrderedCode(self, entrys):
-        try:
-            self.log("    Создание зависимостей")
-            # Создание графа зависимостей
-            graph = self.createDependencyGraph(collectOnlyExecutePins=True)
+    
+        self.log("    Создание зависимостей")
+        # Создание графа зависимостей
+        graph = self.createDependencyGraph(collectOnlyExecutePins=True)
 
-            code = ""
+        code = ""
 
-            for i,ent in enumerate(entrys):
-                self.log(f"    -------- Генерация точки входа {i+1}/{len(entrys)}")
+        for i,ent in enumerate(entrys):
+            self.log(f"    -------- Генерация точки входа {i+1}/{len(entrys)}")
 
-                self.localVariablesUsed = set()
-                self.contextVariablesUsed = set()
-                
-                # Топологическая сортировка узлов
-                #self.log("    -- Сортировка")
-                topological_order = self.topologicalSort(ent, graph)
+            self.localVariablesUsed = set()
+            self.contextVariablesUsed = set()
+            
+            # Топологическая сортировка узлов
+            #self.log("    -- Сортировка")
+            topological_order = self.topologicalSort(ent, graph)
 
-                #self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
-                entryObj = self.serialized_graph['nodes'][ent]
-                if self._addComments:
-                    code += f"\n//p_entry: {entryObj['class_']}\n"
-                code += self.generateFromTopology(topological_order,ent)
+            #self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
+            entryObj = self.serialized_graph['nodes'][ent]
+            if self._addComments:
+                code += f"\n//p_entry: {entryObj['class_']}\n"
+            code += self.generateFromTopology(topological_order,ent)
 
-            self.log("Форматирование")
+        self.log("Форматирование")
 
-            return self.formatCode(code)
-        except CGCompileAbortException:
-            return "//compile abort\n"
-        except Exception as e:
-            strFullException = traceback.format_exc()
-
-            styleinfo = '''
-                background: #13f4f4f4;
-                border: 1px solid #ddd;
-                border-left: 3px solid #ffD90000;
-                border-right: 3px solid #ffD90000;
-                border-top: 3px solid #ffD90000;
-                border-bottom: 30px solid #ffD90000;
-                border-radius: 10px;
-                color: #EBEBEB;
-                font-size: 15px;
-                line-height: 1.2;
-                max-width: 100%;
-                overflow: auto;
-                padding: 1em 1.5em;
-                display: block;
-                page-break-inside: avoid;
-                word-wrap: normal;
-            '''
-            styleinfo = styleinfo.replace("\n","")
-            strFullException = f'{e.__class__.__name__}<pre style="{styleinfo}">\n{strFullException}</pre>'
-            self.exception(CGUnhandledException,context=strFullException)
-            return f"//unhandled exception\n"
+        return self.formatCode(code)
 
     def getPortInputType(self,node,port): 
         ndata = self.serialized_graph['nodes'][node]
@@ -1504,13 +1513,16 @@ class CodeGenerator:
         from ReNode.app.application import Application
         return Application.isDebugMode()
 
-    def log(self,text):
+    def log(self,text,forceAdd=False):
+        if self._silentMode and not forceAdd: return
         self.logger.info(text)
 
-    def error(self,text):
+    def error(self,text,forceAdd=False):
+        if self._silentMode and not forceAdd: return
         self.logger.error(text)
 
-    def warning(self,text):
+    def warning(self,text,forceAdd=False):
+        if self._silentMode and not forceAdd: return
         self.logger.warning(text)
 
     def exception(self,

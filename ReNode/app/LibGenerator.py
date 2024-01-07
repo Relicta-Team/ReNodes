@@ -242,13 +242,16 @@ class NodeObjectHandler:
 	def generateMethodCodeCall(self):
 		code = '['
 		addingParams = []
+		objCaller = '@in.2'
 		for i, (k,v) in enumerate(self['inputs'].items()):
 			if v['type'] != "Exec" and v['type'] != "":
 				addingParams.append(f'@in.{i+1}')
+			if v['type'] == 'self':
+				objCaller = f'@in.{i+1}'
 		
 		paramString = ", ".join(addingParams)
 		#if paramString: paramString = ", " + paramString
-		code += paramString + f"] call ((@in.2) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\"); @out.1"
+		code += paramString + f"] call (({objCaller}) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
 		
 		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
 		returnId = -1
@@ -257,8 +260,11 @@ class NodeObjectHandler:
 				if v['type'] != "Exec" and v['type'] == self.memberData.get('returnType'):
 					returnId = i+1
 					break
-		if returnId >= 0:
+		isPureCalling = self.memberData['memtype'] == 'const'
+		if returnId >= 0 and not isPureCalling:
 			code = f'@genvar.out.{returnId} = {code}'
+		if not isPureCalling:
+			code += "; @out.1"
 
 		#	code = f'@genvar.out.2 = {code}; @locvar.out.2'
 		return code
