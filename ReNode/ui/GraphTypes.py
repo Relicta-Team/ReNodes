@@ -410,7 +410,7 @@ class GamemodeGraph(ClassGraphType):
     create_classnameText = "Имя класса режима"
     path_nameText = "Путь к файлу режима"
     parent_nameText = "Родительский режим"
-    parent_classnameText = "GMBase"
+    parent_classnameText = "ScriptedGamemode"
     
     canCreateFromWizard = True
     createFolder = True
@@ -434,9 +434,14 @@ class RoleGraph(ClassGraphType):
     create_classnameText = "Имя класса роли"
     path_nameText = "Путь к файлу роли"
     parent_nameText = "Родительская роль"
-    parent_classnameText = "BasicRole"
+    parent_classnameText = "ScriptedRole"
 
     canCreateFromWizard = True
+
+    def getFirstInitMethods(self):
+        return [
+            #TODO implement
+        ]
     
 class GameObjectGraph(ClassGraphType):
     name = "Игровой объект"
