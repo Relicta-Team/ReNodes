@@ -140,6 +140,8 @@ class GraphTypeBase:
         varlistpassed = ["this"]
         #       adding lvars and params (all context local vars)
         for localName in cgObj.contextVariablesUsed:
+            #do not pass iterator special vars
+            if localName.lower() in ["_x","_foreachindex"]: continue
             varlistalloc.append(f"\"{localName}\"")
             varlistpassed.append(f"{localName}")
         
