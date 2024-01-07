@@ -87,7 +87,7 @@ class Application:
 
 		logger = logging.getLogger("main")
 		self.logger = logger
-		logger.setLevel(logging.DEBUG)
+		logger.setLevel(logging.DEBUG if Application.isDebugMode() else logging.INFO)
 		logger.addHandler(handler)
 
 		#stdout handler

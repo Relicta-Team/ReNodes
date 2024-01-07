@@ -57,7 +57,8 @@ def registerConsoleLoggers(conref):
         logobject.addHandler(OutputLoggerHandler(conref))
 
 def RegisterLogger(logname="main"):
+    from ReNode.app.application import Application
     logobject = logging.getLogger(logname)
-    logobject.setLevel(logging.DEBUG)
+    logobject.setLevel(logging.DEBUG if Application.isDebugMode() else logging.INFO)
     RegisterLoggerStdoutHandler(logobject)
     return logobject
