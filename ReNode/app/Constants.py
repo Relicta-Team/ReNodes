@@ -37,7 +37,7 @@ class NodeColor(Enum):
 
     Event = rgbaToHex(255,0,0,255) #red #5b0802
     Function = "#004568" #rgbaToHex(121,201,255,255) #blue #004568
-    PureFunction = rgbaToHex(170,238,160,255) #green
+    PureFunction = "#346B2B"#rgbaToHex(170,238,160,255) #green
     EntryFunction = "#955e00" #yellow
     Constant = "#124d41"
     Getter = "#25888F"

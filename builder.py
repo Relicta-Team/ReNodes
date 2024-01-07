@@ -4,8 +4,7 @@ import re
 
 pathRevisionFile = "ReNode/app/REVISION.py"
 pathVersionFile = "ReNode/app/VERSION.py"
-deployProjectPath = "path_to_resdk_deploy" #TODO
-
+deployProjectPath = "C:/Users/Илья/Documents/Arma 3 - Other Profiles/User/missions/resdk_fork.vr/ReNode" #TODO
 print(f"Start builder. Args: {sys.argv}")
 
 # arguments inputed: major, minor
@@ -25,7 +24,8 @@ if len(args) > 1:
 			doUpdateMinor = True
 			updateVersionFileTask = True
 		elif argval == "deploy":
-			print("Deploy not implemented now")
+			deploySource = True
+			updateVersionFileTask = True
 
 if updateVersionFileTask:
 	print("Update version file")
@@ -51,3 +51,35 @@ print("Update revision file")
 revision = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('utf-8')
 revision = str(revision).replace('\\n', '').replace('\r','').replace('\n','')
 open(pathRevisionFile, 'w').write("global_revision = \"" + str(revision) + "\"")
+
+if deploySource:
+	import os
+	import sys
+	import shutil
+	try:
+		data = """
+		pyinstaller --noconfirm --onefile --windowed --icon "./data/icon.ico" --name "ReNode" --hidden-import "NodeGraphQt" --additional-hooks-dir "./NodeGraphQt-0.6.11" --paths "."  "./main.py"
+		"""
+
+		return_ = os.system(data)
+		print("Compiler result " + str(return_))
+		if return_ != 0:
+			raise Exception("Compiler error: Code " + str(return_))
+		
+		#cleanup deploy folder
+		if os.path.exists(deployProjectPath):
+			shutil.rmtree(deployProjectPath + "/data")
+		if os.path.exists(deployProjectPath + "/ReNode.exe"):
+			os.remove(deployProjectPath + "/ReNode.exe")
+
+		print("Copy files...")
+		dest = deployProjectPath
+
+		shutil.copytree('./data',dest+"/data")
+		shutil.copyfile('./dist/ReNode.exe',dest+"/ReNode.exe")
+
+		print('Done')
+		sys.exit(0)
+	except Exception as e:
+		print(e)
+		sys.exit(1)

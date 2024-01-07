@@ -365,7 +365,10 @@ class NodeObjectHandler:
 					self.lastPortRef['gen_param'] = intTryParse(tInside.split("=")[1]) > 0
 				elif tInside.startswith("def="):
 					serVal = tInside[4:].replace("\\:",":")
-					dval = self.varLib.parseGameValue(serVal,self.lastPortRef['type'],self.classMetadata)
+					typePort = self.lastPortRef['type']
+					if typePort == 'auto' and self.lastPortRef.get('allowtypes',[]):
+						typePort = self.lastPortRef['allowtypes'][0]
+					dval = self.varLib.parseGameValue(serVal,typePort,self.classMetadata)
 					self.lastPortRef['default_value'] = dval
 				else:
 					raise Exception(f"Unsupported option: {tInside}")

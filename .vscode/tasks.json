@@ -53,6 +53,13 @@
             "problemMatcher": []
         },
         {
+            "label": "Build and DEPLOY (to local fork)",
+            "type": "process",
+            "command": "python",
+            "args": ["builder.py","deploy"],
+            "problemMatcher": []
+        },
+        {
             "label": "Build and increment minor",
             "type": "process",
             "dependsOn": [

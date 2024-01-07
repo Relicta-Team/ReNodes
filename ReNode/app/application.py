@@ -62,6 +62,13 @@ class Application:
 	def isDebugMode():
 		return Application.debugMode
 
+	_configInitialized = False
+	@staticmethod
+	def initializeConfig():
+		if Application._configInitialized: return
+		Application._configInitialized = True
+		Config.init()
+
 	#construct
 	def __init__(self,appInstance : QApplication):
 		Application.refObject = self
@@ -107,7 +114,8 @@ class Application:
 			opaqueness+=step
 		time.sleep(1) # hold image on screen for a while
 		splash.close()"""
-		Config.init()
+		
+		Application.initializeConfig()
 
 		self.nodeFactory = NodeFactory()
 
@@ -173,7 +181,7 @@ def AppMain():
 		sys.exit(GenerateLibFromObj())
 	
 	if "-genlib_run" in arguments:
-		GenerateLibFromObj()
+		GenerateLibFromObj()	
 
 	if getattr(sys, 'frozen', False):
 		# Инициализация обработчика исключений
@@ -202,4 +210,11 @@ def AppMain():
 	fs_watcher.fileChanged.connect(application.mainWindow.onReloadStyle)
 
 	logger.info("Application loaded.")
+
+	if Application.hasArgument('-prep_code'):
+		#TODO compile all graphs
+		nodeSystem = Application.refObject.mainWindow.nodeGraph
+		from ReNode.app.FileManager import FileManagerHelper
+		FileManagerHelper.generateScriptLoader()
+
 	sys.exit(app.exec_())

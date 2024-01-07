@@ -6,6 +6,7 @@ from Qt import QtCore, QtGui, QtWidgets
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, PipeSlicerEnum
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_base import NodeItem
+from ReNode.app.utils import clamp
 
 
 class SlicerPipeItem(QtWidgets.QGraphicsPathItem):
@@ -144,7 +145,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         from PyQt5.QtCore import QTimer
         timer = QTimer(view__)
         timer.setSingleShot(True)
-        timer.setInterval(2000)
+        timer.setInterval(800)
         timer.timeout.connect(self.onTimer)
         self.timer = timer
 
@@ -245,6 +246,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             
 
         self.text_item.setHtml('<span style="font-family: Arial; font-size: 12pt;">' + text + '</span>')
+        return True
 
     def paint(self, painter, option, widget):
         option.state = QtWidgets.QStyle.State_None
@@ -296,8 +298,33 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
     
     def doRender(self):
         self.setVisible(True)
-        self.setPos(self._pos + QtCore.QPointF(10, 10))
-        self.loadText()
+        #clamp in viewer pos
+        #vprt self.view.maximumViewportSize()
+        if self.loadText() != True: return
+        
+        #global pos
+        br = self.text_item.boundingRect()
+        
+        srcPos = self._pos + QtCore.QPointF(10, 10)
+        # ! работает, но криво. позже надо доделать...
+        # checkPos = srcPos + QtCore.QPointF(br.width(), br.height())
+
+        # # Получаем прямоугольник области просмотра в координатах сцены
+        # viewRect = self.view.mapToScene(self.view.viewport().rect()).boundingRect()
+
+        # # Ограничиваем позицию виджета текста внутри области просмотра
+        # if not viewRect.contains(checkPos):
+        #     if srcPos.x() < viewRect.left():
+        #         srcPos.setX(viewRect.left())
+        #     elif checkPos.x() + br.width() > viewRect.right():
+        #         srcPos.setX(viewRect.right() - br.width())
+            
+        #     if (srcPos.y()-br.height()) < viewRect.top():
+        #         srcPos.setY(viewRect.top())
+        #     elif checkPos.y() > viewRect.bottom():
+        #         srcPos.setY(viewRect.bottom() - br.height())
+        self.setPos(srcPos)
+        
     def onTimer(self):
         #print("Called timer")
         if self._lastItem:

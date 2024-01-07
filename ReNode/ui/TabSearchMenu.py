@@ -114,7 +114,7 @@ class TabSearchMenu(QWidget):
 
     def onChangeVisible(self,newMode,centerpos=None):
         if newMode:
-            self.tree.collapseAll() #fix collapse all on load
+            #self.tree.collapseAll() #fix collapse all on load
             self.edit.setText("") #fix plain text
             if centerpos:
                 centerpos = self.nodeGraphComponent.graph._viewer.mapToScene(centerpos)

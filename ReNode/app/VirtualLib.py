@@ -94,6 +94,8 @@ class VirtualLib:
 			baseObj = className
 			while baseObj:
 				baseObj = self.factory.getClassParent(baseObj)
+				if not baseObj: break
+
 				cdict = self.factory.getClassData(baseObj)
 				if cdict.get('path'):
 					basePath = cdict['path']
