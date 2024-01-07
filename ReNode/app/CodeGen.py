@@ -2,6 +2,7 @@ from collections import defaultdict
 import json
 import re
 import enum
+import os
 from copy import deepcopy
 import asyncio
 from ReNode.app.CodeGenExceptions import *
@@ -11,6 +12,7 @@ from ReNode.ui.LoggerConsole import LoggerConsole
 from ReNode.ui.GraphTypes import *
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.NodeFactory import NodeFactory
+from ReNode.app.FileManager import FileManagerHelper
 import traceback
 import time
 import datetime
@@ -202,15 +204,40 @@ class CodeGenerator:
             code += "\n" + generated_code
             
             code = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
-            
-            code = f'//gdate: {datetime.datetime.now()}\n' + code
+            #adding header
+            code = f'//gdate:{datetime.datetime.now()}\n' + \
+                    f'#include ".\\resdk_graph.h"\n\n\n' + code
 
             if self.isDebugMode():
                 from PyQt5.QtWidgets import QApplication
                 QApplication.clipboard().setText(code)
 
-            self.successCompiled = True
+            iData = self.gObjMeta['infoData']
+            graphName = FileManagerHelper.getCompiledScriptFilename(iData)
+            
+            #getting graph tab
+            ssmgr = self.graphsys.sessionManager
+            tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
+            if tDat:
+                guidCompile = tDat.createCompilerGUID()
+                code = f'//src:{guidCompile}:{tDat.filePath}\n' + code
+            else:
+                guidCompile = ssmgr.CreateCompilerGUID()
+                #TODO пробросить путь при скрытой компиляции
+                code = f'//src:{guidCompile}:UNRESOLVED_TAB_PATH\n' + code
+            
+            #saving compiled code
+            file_path = os.path.join(FileManagerHelper.getFolderCompiledScripts(),graphName)
+            directory = os.path.dirname(file_path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open(file_path, "w+", encoding="utf-8") as file:
+                file.write(code)
 
+            #regen loaderlist
+            FileManagerHelper.generateScriptLoader()
+
+            self.successCompiled = True
         except CGCompileAbortException:
             pass
         except Exception as e:
@@ -312,7 +339,9 @@ class CodeGenerator:
 
         #check defined functions
         for vid,vdat in self.getVariableDict().get("classfunc",{}).items():
-            instTypename = self.getVariableManager().getVariableNodeNameById(vid,"deffunc")
+            instTypename = self.getVariableManager().getVariableNodeNameById(vid,"deffunc",
+                refVarDict=self.graph.variables,
+                refInfoData=self.graph.infoData)
             if instTypename:
                 nodeList = self.graph.get_nodes_by_class(instTypename)
                 if not nodeList:
@@ -504,7 +533,7 @@ class CodeGenerator:
             """Получает тип пользовательской переменной"""
             nameid = self.objectData.get("custom",{}).get("nameid")
             if not nameid: return None
-            cat = self.refCodegen.getVariableManager().getVariableCategoryById(nameid)
+            cat = self.refCodegen.getVariableManager().getVariableCategoryById(nameid,refVarDict=self.graph.variables)
             if not cat: return
             return cat
 
@@ -602,7 +631,7 @@ class CodeGenerator:
 
                 #определяем является ли эта переменная кастомной
                 if obj_data.get('custom',{}).get('nameid'):
-                    catvar = self.getVariableManager().getVariableCategoryById(obj_data['custom'].get('nameid'))
+                    catvar = self.getVariableManager().getVariableCategoryById(obj_data['custom'].get('nameid'),refVarDict=self.graph.variables)
                     isCustomVariable = catvar in ['localvar','classvar']
                     isCustomFunction = catvar in ["classfunc"]
 
@@ -661,7 +690,7 @@ class CodeGenerator:
                         if isEntryPoint:
                             self.exception(CGUnhandledObjectException,source=obj,context="Пользовательская точка входа не содержит сгенерированного кода")
                         
-                        userdata = self.getVariableManager().getVariableDataById(nameid)
+                        userdata = self.getVariableManager().getVariableDataById(nameid,refVarDict=self.graph.variables)
                         
                         # обновление портов
                         newInputs = {}
@@ -1266,7 +1295,7 @@ class CodeGenerator:
             :param nameid: имя функции
             :return: код, список входных параметров, список выходных параметров
         """
-        data = self.getVariableManager().getVariableDataById(nameid)
+        data = self.getVariableManager().getVariableDataById(nameid,refVarDict=self.graph.variables)
         isDef = className.endswith(".def")
         if isDef:
             code = "func(@thisName) {@thisParams; @out.1};"

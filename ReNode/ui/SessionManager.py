@@ -7,6 +7,7 @@ from ReNode.app.Logger import RegisterLogger
 from ReNode.app.FileManager import FileManagerHelper
 from ReNode.ui.GraphTypes import GraphTypeFactory
 import os
+import uuid
 
 class TabData:
     def __init__(self,name='',file='') -> None:
@@ -33,6 +34,8 @@ class TabData:
             self.onGraphOpened()
         if self.infoData.get('classname'):
             self.name = self.infoData.get('classname')
+        
+        self.lastCompileGUID = self.getLastCompileGUID()
 
     def onGraphOpened(self):
             info = self.infoData
@@ -67,6 +70,11 @@ class TabData:
                 cg = SessionManager.refObject.graphSystem.codegen
                 cg.generateProcess(graph=self.graph,addComments=True,silentMode=True)
 
+    def createCompilerGUID(self):
+        guid = SessionManager.CreateCompilerGUID()
+        self.lastCompileGUID = guid
+        return guid
+
     def __repr__(self) -> str:
         from sys import getsizeof
         return f'{self.name} {hex(id(self))} {getsizeof(self.graph)}'
@@ -79,9 +87,26 @@ class TabData:
     def save(self):
         if not self.filePath:
             return
+        self.infoData['compiledGUID'] = self.lastCompileGUID
         self.graph.save_session(self.filePath,saveMouse=True)
         self.isUnsaved = False
         SessionManager.refObject.syncTabName(self.getIndex())
+
+    def getLastCompileGUID(self):
+        file = os.path.join(FileManagerHelper.getFolderCompiledScripts(),FileManagerHelper.getCompiledScriptFilename(self.infoData))
+        if not os.path.exists(file):
+            ""
+        prefixLen = "//src:8c2a235c-9997-49f9-8b58-04694ce2ae20"
+        with open(file,'r') as f:
+            #read first bytes
+            data = f.read(len(prefixLen))
+            f.close()
+        if len(data) < len(prefixLen):
+            return ''
+        dels = data.split(':')
+        if len(dels) != 2:
+            return ''
+        return dels[1]
 
     #выгрузка и очистка вкладки
     def unloadTabLogic(self):
@@ -198,6 +223,17 @@ class SessionManager(QTabWidget):
 
     def getTabData(self,index) -> TabData:
         return self.tabBar().tabData(index)
+    
+    def getTabByPredicate(self,predicate,checkedValue) -> TabData|None:
+        if predicate and callable(predicate):
+            for tab in self.getAllTabs():
+                if predicate(tab) == checkedValue:
+                    return tab
+        return None
+    
+    @staticmethod
+    def CreateCompilerGUID():
+        return str(uuid.uuid4())
 
     def syncTabName(self,idx):
         tdata = self.getTabData(idx)
@@ -217,7 +253,8 @@ class SessionManager(QTabWidget):
             if gObj: typeName = gObj.getName()
             ttp += f"Тип графа: {typeName}\n\n"
             ttp += f'Класс: {tdata.infoData.get("classname")}\n'
-            ttp += f"Родитель: {tdata.infoData.get('parent')}"
+            ttp += f"Родитель: {tdata.infoData.get('parent')}\n"
+            ttp += f'GUID сброки: {tdata.lastCompileGUID}'
             
         self.tabBar().setTabToolTip(idx,ttp)
 
@@ -271,8 +308,8 @@ class SessionManager(QTabWidget):
             return
         self.newTab(True,path)
 
-    def saveFile(self):
-        tdata = self.getActiveTabData()
+    def saveFile(self,tabData:TabData=None):
+        tdata = tabData or self.getActiveTabData()
         if not tdata:
             self.logger.warning("Нет активной вкладки для сохранения файла")
             return

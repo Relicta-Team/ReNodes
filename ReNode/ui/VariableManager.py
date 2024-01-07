@@ -844,8 +844,9 @@ class VariableManager(QDockWidget):
         nodeObj.update()
         pass
 
-    def getVariableDataById(self,id) -> None | dict:
-        for cat in self.variables.values():
+    def getVariableDataById(self,id,refVarDict=None) -> None | dict:
+        varDict = refVarDict or self.variables
+        for cat in varDict.values():
             for k,v in cat.items():
                 if k == id: return v
         return None
@@ -1086,9 +1087,10 @@ class VariableManager(QDockWidget):
         del dictGroup
         self.widVarTree.expandAll()
 
-    def getVariableCategoryById(self,idvar,retObject=False):
+    def getVariableCategoryById(self,idvar,retObject=False,refVarDict=None):
         """Получает категорию переменной по айди"""
-        for cat,items in self.variables.items():
+        varDict = refVarDict or self.variables
+        for cat,items in varDict.items():
             if idvar in items:
                 if retObject:
                     return self.getVariableCategoryByType(cat)
@@ -1096,13 +1098,13 @@ class VariableManager(QDockWidget):
                     return cat
         return None
     
-    def getVariableNodeNameById(self,idvar,instancerKindType=None):
-        catObj = self.getVariableCategoryById(idvar,retObject=True)
+    def getVariableNodeNameById(self,idvar,instancerKindType=None,refVarDict=None,refInfoData=None):
+        catObj = self.getVariableCategoryById(idvar,retObject=True,refVarDict=refVarDict)
         if not catObj: return None
-        vdata = self.getVariableDataById(idvar)
+        vdata = self.getVariableDataById(idvar,refVarDict=refVarDict)
         if not vdata: return None
         catObjInstancer = catObj.instancer
-        infoData = self.nodeGraphComponent.inspector.infoData
+        infoData = refInfoData or self.nodeGraphComponent.inspector.infoData
         if instancerKindType:
             return catObjInstancer.getVariableInstancerClassName(instancerKindType,infoData,vdata)
         else:
