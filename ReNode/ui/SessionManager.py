@@ -30,9 +30,39 @@ class TabData:
             self.graph.load_session(self.filePath,loadMouse=True)
             self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
             self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
-        
+            self.onGraphOpened()
         if self.infoData.get('classname'):
             self.name = self.infoData.get('classname')
+
+    def onGraphOpened(self):
+            info = self.infoData
+            
+            if info and 'firstInitMethods' in info:
+                initMethods:list[str] = info.get('firstInitMethods')
+                makerList = ['' for _ in range(len(initMethods))]
+                del info['firstInitMethods']
+                fact = SessionManager.refObject.graphSystem.getFactory()
+                parents = fact.getClassAllParents(info.get('classname')) or []
+                for par in parents:
+                    classData = fact.getClassData(par) or {}
+                    nodeClasses = classData.get('methods',{}).get('nodes',[])
+                    for node in nodeClasses:
+                        nodeSysName = 'methods.' + node
+                        nodeData = fact.getNodeLibData(nodeSysName) or {}
+                        classMemberName = nodeData.get('classInfo',{}).get('name','')
+                        if classMemberName in initMethods and nodeData.get('memtype','') in ['def','event']:
+                            indexOf = initMethods.index(classMemberName)
+                            makerList[indexOf] = nodeSysName
+                
+                # create nodes
+                self.graph.begin_undo("Иницализация начальных узлов")
+                newNodes = []
+                for maker in makerList:
+                    newNodes.append(fact.instance(maker,self.graph))
+                if newNodes:
+                    self.graph.auto_layout_nodes(newNodes)
+                self.graph.end_undo()
+                self.graph.clear_undo_stack()
 
     def __repr__(self) -> str:
         from sys import getsizeof

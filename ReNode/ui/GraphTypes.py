@@ -85,6 +85,10 @@ class GraphTypeBase:
     def getDescription(self):
         return self.description
     
+    #initial nodes
+    def getFirstInitMethods(self):
+        return []
+
     #region Code handlers
         
 
@@ -271,6 +275,9 @@ class ClassGraphType(GraphTypeBase):
             "methods": {}
         }
 
+        # first load
+        opts['firstInitMethods'] = self.getFirstInitMethods()
+
         return opts,""
 
 
@@ -406,7 +413,14 @@ class GamemodeGraph(ClassGraphType):
     canCreateFromWizard = True
     createFolder = True
 
-    pass
+    def getFirstInitMethods(self):
+        return [
+            "preSetup",
+            "postSetup",
+            "onTick",
+            "checkFinish",
+            "onFinish"
+        ]
 
 class RoleGraph(ClassGraphType):
     name = "Роль"
