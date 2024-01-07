@@ -116,13 +116,15 @@ def change_color(graph,node):
     curcol = node.color()
     opts = QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog
     #opts |= QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
-    color = QtWidgets.QColorDialog.getColor(
-        QtGui.QColor(*curcol),
-        parent=None,
-        title="Выбор цвета",
-        options=opts
-    )
-    cl = color.getRgb()
-    node.set_color(cl[0],cl[1],cl[2])
-    node._view.update(node._view.boundingRect())
+    dlg = QtWidgets.QColorDialog()
+    dlg.setCurrentColor(QtGui.QColor(*curcol))
+    dlg.setWindowTitle("Выбор цвета")
+    dlg.setOptions(opts)
+    if dlg.exec_() == QtWidgets.QDialog.Accepted:
+        color = dlg.currentColor()
+        cl = color.getRgb()
+        if [*curcol] == [*cl]: return
+        
+        node.set_color(cl[0],cl[1],cl[2])
+        node._view.update(node._view.boundingRect())
 

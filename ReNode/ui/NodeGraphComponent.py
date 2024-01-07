@@ -245,7 +245,7 @@ class NodeGraphComponent:
 		# nmenu.add_menu("TEST NODE MENU")
 		# nmenu.add_command("testcmd",func=test_func,node_type='all') #,node_type='operators.if_branch'
 		
-		nmenu.add_command("Изменить цвет",func=change_color,node_type='nodeGraphQt.nodes.BackdropNode')
+		nmenu.add_command("Изменить цвет",func=change_color,node_type='internal.backdrop')
 		
 		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all",shortcut="Ctrl+C")
 		nmenu.add_command("Вырезать",func=cut_nodes,node_type="all",shortcut="Ctrl+X")
