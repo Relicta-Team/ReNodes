@@ -69,15 +69,18 @@ class NodeObjectHandler:
 		self.isField = self.objectType == 'f'
 		self.isMethod = self.objectType == 'm'
 		self.isSystem = self.objectType == 'node'
+		self.isEnum = self.objectType == 'enum'
 
 		self.isClassMember = self.isField or self.isMethod
 
 		self.refAllObjects : list = None #Ссылка на все объекты
 		self.counterCopy = 0
 
-		self.execTypes = 'all' #all,in,out,none
-		if self.isSystem:
-			self.execTypes = "none" #by default system nodes has no exectypes
+		self.execTypes = 'all' #all,in,out,pure,none
+		if self.isSystem or self.isEnum:
+			self.execTypes = "none" #by default system nodes and enums has no exectypes
+			if self.isEnum:
+				self.enumList = []
 
 		self.path = "" # путь до узла в дереве
 		#TODO remove var
@@ -373,7 +376,16 @@ class NodeObjectHandler:
 				else:
 					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
-		
+		elif tokenType == 'eval' and self.isEnum: #enum node value
+			eName = tokens[1]
+			eVal = intTryParse(tokens[2])
+			enumCase = {
+				'name': eName,
+				'val':eVal,
+			}
+			if len(tokens) > 3:
+				enumCase['desc'] = unescape(tokens[3])
+			self.enumList.append(enumCase)
 		# redef node name
 		elif tokenType == 'node':
 			if self.isSystem:
@@ -443,7 +455,7 @@ class NodeObjectHandler:
 			memberRegion = "fields"
 		elif self.isMethod:
 			memberRegion = "methods"
-		elif self.isSystem:
+		elif self.isSystem or self.isEnum:
 			memberRegion = self.objectType #internal,operators,etc
 		else:
 			raise Exception(f'Unknown member type: {self.objectType}')
@@ -717,6 +729,58 @@ class NodeObjectHandler:
 			if canAutoSetDisplayNames:
 				v['display_name'] = False
 
+	def _preregEnumNode(self):
+		"""
+			Подготовка свитча по перечислению
+			Выполняет генерацию портов и кода свитчера по перечислению
+			Регистрирует новый тип перечисления
+		"""
+		memberData = self.memberData
+		self['inputs'].append(('Вход',{"type":"Exec","mutliconnect":True,"style":"triangle"}))
+		enumTypeFull = f'{self.objectType}.{self.objectNameFull}'
+		portEnumName = memberData.get('name') or self.objectNameFull
+		self['inputs'].append(	(portEnumName,{
+			"type":f'{enumTypeFull}',"mutliconnect":False
+		})	)
+		codegen = "call {private _eIt = @in.2;"
+		for ienum,eDat in enumerate(self.enumList):
+			enumItem = {
+				"type":"Exec",
+				"mutliconnect":False,
+				"style":"triangle",
+			}
+			if eDat.get('desc'):
+				enumItem['desc'] = eDat.get('desc')
+			self['outputs'].append((eDat['name'],enumItem))
+			#code generation
+			codegen += f"if (_eIt == {eDat['val']} /*{self.objectNameFull}.{eDat['name']}*/) exitWith {{@out.{ienum+1}}};"
+		codegen += "};"
+		self['code'] = codegen
+		self['name'] = f'Выбрать из {portEnumName}'
+		self['namelib'] = f'Выбрать из перечисления {portEnumName}'
+		self['icon'] = 'data\\icons\\icon_Blueprint_Switch_16x'
+		self['color'] = NodeColor.EnumSwitch.value
+		
+		values = [[e['name'],e['val']] for e in self.enumList]
+
+		enumListOption = (portEnumName, {
+					"type":"list",
+					"text": portEnumName,
+					"default": self.enumList[0]['name'],
+					"values": values,
+				})
+		self['options'].append(enumListOption)
+
+		# регистрация информации об перечислении внутри спец.класса ReNode_AbstractEnum
+		classmeta = self.classMetadata
+		enumStorage = classmeta['ReNode_AbstractEnum']
+		if 'allEnums' not in enumStorage: enumStorage['allEnums'] = {}
+		enumStorage['allEnums'][enumTypeFull] = {
+			'name': portEnumName,
+			'values': values,
+			'enumList': self.enumList
+		}
+
 	def registerNode(self,memberRegion):
 		memberData = self.memberData
 		classmeta = self.classMetadata
@@ -739,6 +803,8 @@ class NodeObjectHandler:
 		if self.isField: self._preregField()
 		if self.isMethod: self._preregMethod()
 
+		if self.isEnum:
+			self._preregEnumNode()
 		if self.isSystem:
 			self._preregSystemNode()
 

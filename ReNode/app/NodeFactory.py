@@ -652,3 +652,21 @@ class NodeFactory:
 					for k,v in iprops.get('methods',{}).items():
 						retList['methods'][k] = v
 		return retList
+	
+	def getEnumDict(self):
+		"""Возвращает словарь перечислений. 
+			Имя каждого элемента равно типу и узлу для создания свитчера по этому перечислению
+			Каждый элемент имеет значения: name, values (list[vec2(str,int)])
+		"""
+		return self.getClassData("ReNode_AbstractEnum")['allEnums']
+	
+	def getEnumData(self,enumName):
+		"""Возвращает словарь перечислений. 
+			Если не найден - возвращает None
+		"""
+		return self.getEnumDict().get(enumName)
+	
+	def isEnumType(self,enumName):
+		"""Проверяет существование перечисления в библиотеке"""
+		return self.getEnumData(enumName) != None
+	

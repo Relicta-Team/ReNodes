@@ -244,21 +244,23 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         layout.addLayout(type_layout)
 
         self.widVarType = SearchComboButton()
-        treeContent = createTreeDataContent()
+        # treeContent = createTreeDataContent()
 
-        objectTree = treeContent
-        for vobj in self.variableTempateData:
-            icon = QIcon("data\\icons\\pill_16x.png")
-            colored_icon = updateIconColor(icon, vobj.color)
-            _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
-            if vobj.variableType == "object":
-                objectTree = _tempTree
-        #gobj add
-        fact = self.nodeGraphComponent.getFactory()
-        objTree = fact.getClassAllChildsTree("GameObject")
-        addTreeContentItem(objectTree,objTree)
+        # objectTree = treeContent
+        # for vobj in self.variableTempateData:
+        #     icon = QIcon("data\\icons\\pill_16x.png")
+        #     colored_icon = updateIconColor(icon, vobj.color)
+        #     _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+        #     if vobj.variableType == "object":
+        #         objectTree = _tempTree
+        # #gobj add
+        # fact = self.nodeGraphComponent.getFactory()
+        # objTree = fact.getClassAllChildsTree("GameObject")
+        # addTreeContentItem(objectTree,objTree)
 
-        addTreeContentItem(objectTree,fact.getClassAllChildsTree("ServerClient"))
+        # addTreeContentItem(objectTree,fact.getClassAllChildsTree("ServerClient"))
+        # доступны все типы
+        treeContent = self.getVarMgr().getAllTypesTreeContent()
 
         self.widVarType.loadContents(treeContent)
         self.widVarType.changed_event.connect(self._onVariableTypeChanged)

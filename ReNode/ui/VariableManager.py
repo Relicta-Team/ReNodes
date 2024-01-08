@@ -184,6 +184,11 @@ class VariableLibrary:
             }},color=QtGui.QColor("#5C10C7"),
             defaultValue='object',parseFunction=lambda x: x),
 
+            #enum special category
+            VariableTypedef("enum","Перечисление",PropComboBox,
+                color=QtGui.QColor("#2D543E"),
+            defaultValue='-1',parseFunction=int),
+
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
                 # "text": "Модель"
@@ -561,19 +566,36 @@ class VariableManager(QDockWidget):
         pass
 
     def getAllTypesTreeContent(self):
+        """Получает полную библиотеку типов в виде дерева для создания через SearchComboButton"""
         treeContent = createTreeDataContent()
 
         objectTree = treeContent
+        enumTree = treeContent
+        enumIconCommon = QIcon("data\\icons\\Enum")
         for vobj in self.variableTempateData:
             icon = QIcon("data\\icons\\pill_16x.png")
             colored_icon = updateIconColor(icon, vobj.color)
-            _tempTree = addTreeContent(treeContent,vobj.variableType,vobj.variableTextName,colored_icon)
+            dataName = vobj.variableType
+            typeName = vobj.variableTextName
+            if dataName == "enum":
+                dataName = ""
+                typeName = "Перечисления"
+                
+            _tempTree = addTreeContent(treeContent,dataName,typeName,colored_icon)
             if vobj.variableType == "object":
                 objectTree = _tempTree
+            if vobj.variableType == "enum":
+                enumTree = _tempTree
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
         for objTree in fact.getClassAllChildsTree("object")['childs']:
             addTreeContentItem(objectTree,objTree)
+        #enum add
+        ens = fact.getClassData("ReNode_AbstractEnum")['allEnums']
+        for enType,enDict in ens.items():
+            addTreeContentItem(enumTree,createTreeContentItem(enType,enDict['name'],enumIconCommon))
+
+        
         return treeContent
 
     def variableExists(self, category, name):
@@ -870,6 +892,12 @@ class VariableManager(QDockWidget):
         """        
         return self.nodeGraphComponent.getFactory().isObjectType(type)
 
+    def isEnumType(self,type):
+        """
+            Проверяет является ли тип типом перечисления (унаследованного от enum)
+        """
+        return self.nodeGraphComponent.getFactory().isEnumType(type)
+
     def getObjectTypeName(self,type):
         if type.endswith("^"): #remove postfix
             type = type[:-1]
@@ -898,6 +926,8 @@ class VariableManager(QDockWidget):
     def getVariableTypedefByType(self,type,useTextTypename=False) -> None | VariableTypedef:
         if self.isObjectType(type):
             type = "object"
+        if self.isEnumType(type):
+            type = "enum"
         
         for vobj in self.variableTempateData:
            if useTextTypename and vobj.variableTextName == type: return vobj

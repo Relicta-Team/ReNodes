@@ -1522,6 +1522,8 @@ class CodeGenerator:
             return gval
         elif self.getVariableManager().isObjectType(tname):
             return value
+        elif self.getVariableManager().isEnumType(tname):
+            return value
         elif tname in ['class','classname']: #объект тип и имя класса (строка)
             if not self.getFactory().classNameExists(value):
                 pref = "Тип объекта" if 'class'==tname else "Имя класса"

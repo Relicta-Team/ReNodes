@@ -15,7 +15,7 @@ def createTreeDataContent(baseChilds=None):
     }
 
 def addTreeContent(srcDict,data,name,icon):
-    if not data: return None
+    #if not data: return None
 
     childs = srcDict['childs']
 
@@ -30,7 +30,7 @@ def addTreeContent(srcDict,data,name,icon):
     return addedSpan
 
 def createTreeContentItem(data,name,icon):
-    if not data: return None
+    #if not data: return None
     return {
         'name': data,
         'vname': name,
@@ -240,8 +240,10 @@ class CustomMenu(QMenu):
 
     def onClickItem(self,item : QModelIndex):
         if isinstance(item,QModelIndex):
+            if item.data(Qt.UserRole) == '': return
             self.widget.onSetItemData(item.data(Qt.UserRole),item.data(Qt.DisplayRole),item.data(Qt.DecorationRole)) #item.text(0)
         else:
+            if item.data(0,Qt.UserRole) == '': return
             self.widget.onSetItemData(item.data(0,Qt.UserRole),item.data(0,Qt.DisplayRole),item.data(0,Qt.DecorationRole))
         self.close()
 
