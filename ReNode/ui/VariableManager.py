@@ -572,6 +572,7 @@ class VariableManager(QDockWidget):
         objectTree = treeContent
         enumTree = treeContent
         enumIconCommon = QIcon("data\\icons\\Enum")
+        enumItemIcon = None
         for vobj in self.variableTempateData:
             icon = QIcon("data\\icons\\pill_16x.png")
             colored_icon = updateIconColor(icon, vobj.color)
@@ -580,11 +581,14 @@ class VariableManager(QDockWidget):
             if dataName == "enum":
                 dataName = ""
                 typeName = "Перечисления"
+                enumItemIcon = colored_icon
+                colored_icon = enumIconCommon
                 
             _tempTree = addTreeContent(treeContent,dataName,typeName,colored_icon)
             if vobj.variableType == "object":
                 objectTree = _tempTree
             if vobj.variableType == "enum":
+                _tempTree['desc'] = 'Список всех перечислений, определенных в сборке.'
                 enumTree = _tempTree
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
@@ -593,7 +597,7 @@ class VariableManager(QDockWidget):
         #enum add
         ens = fact.getClassData("ReNode_AbstractEnum")['allEnums']
         for enType,enDict in ens.items():
-            addTreeContentItem(enumTree,createTreeContentItem(enType,enDict['name'],enumIconCommon))
+            addTreeContentItem(enumTree,createTreeContentItem(enType,enDict['name'],enumItemIcon))
 
         
         return treeContent
@@ -897,6 +901,9 @@ class VariableManager(QDockWidget):
             Проверяет является ли тип типом перечисления (унаследованного от enum)
         """
         return self.nodeGraphComponent.getFactory().isEnumType(type)
+    
+    def getFactory(self):
+        return self.nodeGraphComponent.getFactory()
 
     def getObjectTypeName(self,type):
         if type.endswith("^"): #remove postfix
@@ -923,15 +930,18 @@ class VariableManager(QDockWidget):
             rval += ']'
             return rval
 
-    def getVariableTypedefByType(self,type,useTextTypename=False) -> None | VariableTypedef:
+    def getVariableTypedefByType(self,type,canCreateCopy=False) -> None | VariableTypedef:
+        sourceType = type
         if self.isObjectType(type):
             type = "object"
         if self.isEnumType(type):
             type = "enum"
         
         for vobj in self.variableTempateData:
-           if useTextTypename and vobj.variableTextName == type: return vobj
-           if vobj.variableType == type: return vobj 
+            if vobj.variableType == type: 
+                if canCreateCopy:
+                    return vobj.copy(sourceType)
+                return vobj
         return None
     
     def getVariableCategoryByType(self,type):

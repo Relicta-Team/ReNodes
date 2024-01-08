@@ -777,7 +777,7 @@ class NodeObjectHandler:
 		if 'allEnums' not in enumStorage: enumStorage['allEnums'] = {}
 		enumStorage['allEnums'][enumTypeFull] = {
 			'name': portEnumName,
-			'values': values,
+			'values': [e['name'] for e in self.enumList],
 			'enumList': self.enumList
 		}
 
