@@ -243,6 +243,20 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
+    def add_typeselect(self,name,label='',value='',tab=None):
+        self.create_property(
+            name,
+            value=value,
+            widget_type=NodePropWidgetEnum.QLINE_EDIT.value,
+            tab=tab
+        )
+        widget = NodeTypeSelect(self.view,name,label,value)
+        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        self.view.add_widget(widget)
+
+        self.view.draw_node()
+
+
     def add_text_input(self, name, label='', text='', tab=None,isObjCaller=False):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`

@@ -7,7 +7,7 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import P
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
-
+from ReNode.ui.SearchMenuWidget import SearchComboButtonAutoload
 
 class _NodeGroupBox(QtWidgets.QGroupBox):
 
@@ -412,6 +412,57 @@ class NodeComboBox(NodeBaseWidget):
         combo_widget = self.get_custom_widget()
         combo_widget.clear()
 
+class NodeTypeSelect(NodeBaseWidget):
+
+    def __init__(self,parent=None,name='',label='',value=''):
+        super(NodeTypeSelect,self).__init__(parent,name,label)
+
+        search = SearchComboButtonAutoload()
+
+        
+        retItem = search.getItemByData(value)
+        if retItem:
+            search.setItemData(*retItem)
+        else:
+            search.setItemData(value)
+        self.set_custom_widget(search)
+        search.value_changed.connect(self.on_value_changed)
+    
+    @property
+    def type_(self):
+        return 'TypeSelectNodeWidget'
+
+    def get_value(self):
+        """
+        Returns the widgets current text.
+
+        Returns:
+            str: current text.
+        """
+        search = self.get_custom_widget()
+        return str(search.get_value())
+
+    def set_value(self, value=''):
+        """
+        Sets the widgets current value.
+
+        Args:
+            text (str): new value classname.
+        """
+        if value != self.get_value():
+            search = self.get_custom_widget()
+            retItem = search.getItemByData(value)
+            if retItem:
+                search.setItemData(*retItem)
+            else:
+                search.setItemData(value,'НЕИЗВЕСТНЫЙ ТИП')
+
+            self.on_value_changed()
+    
+    def on_value_changed(self, *args, **kwargs):
+        custom = self.get_custom_widget()
+        custom.setToolTip(custom.text())
+        return super().on_value_changed(*args, **kwargs)
 
 class NodeLineEdit(NodeBaseWidget):
     """

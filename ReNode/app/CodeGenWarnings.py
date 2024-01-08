@@ -42,13 +42,13 @@ class CGBaseWarning:
                 postText = "<span style='color:#FFF2B0;'>"+warnDesc+"</span>"
                 postText = "\n- Подробнее: " + postText
                 #postText = '<p title="tootip">some block of text</p>'
-            return f"<b>[{class_.__name__}:WARN-{class_.id}]</b>: " + class_.text.format(
-                src=self.src,
-                portname=self.portname,
-                targ=self.targ,
-                ctx=self.ctx,
-                entry=self.entry
-            ) + postText
+        return f"<b>[{class_.__name__}:WARN-{class_.id}]</b>: " + class_.text.format(
+            src=self.src,
+            portname=self.portname,
+            targ=self.targ,
+            ctx=self.ctx,
+            entry=self.entry
+        ) + postText
 
 
 

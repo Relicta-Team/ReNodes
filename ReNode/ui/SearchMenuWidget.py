@@ -59,6 +59,7 @@ def findVec3TreeItemByProperty(tree,name,pname='name'):
 class SearchComboButton(QPushButton):
 
     changed_event = pyqtSignal(str,str,QIcon)
+    value_changed = pyqtSignal(str, object)
 
     def __init__(self,parent=None):
         super().__init__(parent=parent)
@@ -96,7 +97,7 @@ class SearchComboButton(QPushButton):
             if defaultValueTemp:
                 defaultValue = defaultValueTemp
         
-        self.defaultListValue = defaultValue
+            self.defaultListValue = defaultValue
 
         if not self.text():
             self.onSetItemData(*self.defaultListValue)
@@ -125,6 +126,10 @@ class SearchComboButton(QPushButton):
         self.setItemData(data,text,optIcon)
 
         self.changed_event.emit(data,text,self.icon())
+        self.value_changed.emit('noname',data)
+        
+    def getItemByData(self,data):
+        return findVec3TreeItemByProperty(self.dictTree,data)
 
     def setItemData(self,data,text,optIcon=None):
         self.set_text(text or data)
@@ -149,9 +154,26 @@ class SearchComboButton(QPushButton):
     def set_text(self,value):
         self.setText(value)
 
+class SearchComboButtonAutoload(SearchComboButton):
+
+    def __init__(self,parent=None):
+        super().__init__(parent=parent)
+        self.reloadContents()
+    
+    def showPopup(self):
+        self.reloadContents()
+        super().showPopup()
+
+    def reloadContents(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        fact = NodeGraphComponent.refObject.getFactory()
+        treeContent = createTreeDataContent()
+        addTreeContentItem(treeContent,fact.getClassAllChildsTree("object"))
+        self.loadContents(treeContent)
+
 class CustomMenu(QMenu):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent=None)
         #menu can drop from down,up,left,right
         self.widget = parent
 

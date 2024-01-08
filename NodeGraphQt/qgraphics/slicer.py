@@ -327,7 +327,8 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         
     def onTimer(self):
         #print("Called timer")
-        if self._lastItem:
+        # focus need check because on context menu open it will lose focus
+        if self._lastItem and self.view.scene().hasFocus():
             self.doRender()
         pass
 

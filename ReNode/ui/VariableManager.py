@@ -12,7 +12,7 @@ from NodeGraphQt.base.commands import *
 from ReNode.app.utils import updateIconColor, mergePixmaps, generateIconParts
 from ReNode.ui.Nodes import RuntimeNode
 from ReNode.ui.ArrayWidget import *
-from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
+from ReNode.ui.SearchMenuWidget import SearchComboButton,SearchComboButtonAutoload,addTreeContent,createTreeDataContent,addTreeContentItem
 from ReNode.ui.VarMgrWidgetTypes.Widgets import *
 import datetime
 from ReNode.app.Logger import RegisterLogger
@@ -173,6 +173,17 @@ class VariableLibrary:
                 # }
             ,color=QtGui.QColor("#1087C7"),
             defaultValue='nullPtr',parseFunction=lambda x: x),
+            
+            VariableTypedef('class',"Класс",SearchComboButtonAutoload,{"typeselect": {
+                "text": "Тип"
+            }
+            },color=QtGui.QColor("#1044C7"),
+            defaultValue='object',parseFunction=lambda x: x),
+            VariableTypedef("classname","Имя класса",SearchComboButtonAutoload,{"typeselect": {
+                "text": "Имя класса"
+            }},color=QtGui.QColor("#5C10C7"),
+            defaultValue='object',parseFunction=lambda x: x),
+
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
                 # "text": "Модель"

@@ -1425,7 +1425,7 @@ class CodeGenerator:
             mes = f'Внутреннее предупреждение {optObj}; {mes}'
             optObj = None 
         if optObj:
-            self.nodeWarn(CGValueCompileWarning,source=optObj,ctx=mes)
+            self.nodeWarn(CGValueCompileWarning,source=optObj,context=mes)
         else:
             self.warning(mes)
             self._warnings.append(None)
@@ -1522,6 +1522,13 @@ class CodeGenerator:
             return gval
         elif self.getVariableManager().isObjectType(tname):
             return value
+        elif tname in ['class','classname']: #объект тип и имя класса (строка)
+            if not self.getFactory().classNameExists(value):
+                pref = "Тип объекта" if 'class'==tname else "Имя класса"
+                self.vtWarn(optObj,f'{pref} не существует: {value}')
+            else:
+                if tname == 'class': return f'pt_{value}'
+                elif tname == 'classname': return f'"{value}"'
         elif re.match('vector\d+',tname):
             return self.updateValueDataForType(value,"array[float]",optObj)
         elif tname == "color":
