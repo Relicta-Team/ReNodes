@@ -95,7 +95,7 @@ class TabData:
     def getLastCompileGUID(self):
         file = os.path.join(FileManagerHelper.getFolderCompiledScripts(),FileManagerHelper.getCompiledScriptFilename(self.infoData))
         if not os.path.exists(file):
-            ""
+            return ""
         prefixLen = "//src:8c2a235c-9997-49f9-8b58-04694ce2ae20"
         with open(file,'r') as f:
             #read first bytes
