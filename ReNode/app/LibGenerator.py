@@ -592,6 +592,10 @@ class NodeObjectHandler:
 						f'out:{newobj["returnType"]}:Новое значение',
 						"opt:mul=0"
 					]
+					if newobj.memberData.get('defval') != None:
+						dval__ = newobj.memberData.get('defval')
+						serval = str(dval__).replace(':',"\:")
+						_setterLines.insert(1,f"opt:def={serval}")
 					if newobj.memberData.get('classProp',0) > 0 and _hasGet:
 						_setterLines.append('classprop:0') #disable classprop for setter because getter already setup
 					newobj.pushBackLines(_setterLines)
