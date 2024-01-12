@@ -1063,7 +1063,7 @@ class CodeGenerator:
             if srcObj.nodeClass in ["operators.break_loop","operators.continue_loop"] and noLoops:
                 self.exception(CGLoopControlException,source=srcObj)
             # проверка таймеров внутри циклов и возвращаемого значения
-            if srcObj.nodeClass in ["operators.callafter","operators.callaftercond"]:
+            if srcObj.nodeClass in ["control.callafter","control.callaftercond"]:
                 if not noLoops:
                     self.exception(CGLoopTimerException,source=srcObj,target=loopObj)
                 if needReturn:
