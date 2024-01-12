@@ -38,6 +38,7 @@ class VariableInfo:
 class VariableTypedef:
     def __init__(self,vart="",vartText="",classMaker=None,dictProp={},color=None,defaultValue=None,parseFunction=None):
         self.variableType = vart #typename
+        self.originType = vart #оригинальный тип для объектов, перечислений
         self.variableTextName = vartText #representation in utf-8
         self.classInstance = classMaker
         self.dictProp = dictProp
@@ -63,6 +64,8 @@ class VariableTypedef:
         vMgr = VariableManager.refObject
         if vMgr.isObjectType(vtype):
             vtextname = vMgr.getObjectTypeName(vtype)
+        if vMgr.isEnumType(vtype):
+            vtextname = vMgr.getFactory().getEnumData(vtype)['name'] or vtype
         return VariableTypedef_Copy(vtype,vtextname,self.classInstance,self.dictProp,self.color,self.defaultValue,self.parseFunction)
 
 class VariableTypedef_Copy(VariableTypedef):

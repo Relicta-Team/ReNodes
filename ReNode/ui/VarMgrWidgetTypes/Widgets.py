@@ -424,17 +424,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         defvalstr = str(value) if not isinstance(value, str) else value
 
         #varInfo, dt = self._getVarDataByRepr(variable_data['reprType'],variable_data['reprDataType'])
-        varInfo, dt = varmgr.getVarDataByType(fulltype,True)
-        if not varInfo or not dt:
-            raise Exception(f"Невозможно загрузить переменную {variable_id}; Информация и данные о типе: {varInfo}; {dt}")
-
-        if dt.dataType != "value":
-            if isinstance(varInfo,list):
-                variable_type = f'{dt.text} ({", ".join([o__.variableTextName for o__ in varInfo])})'
-            else:
-                variable_type = f'{dt.text} ({varInfo.variableTextName})'
-        else:
-            variable_type = varInfo.variableTextName
+        variable_type = varmgr.getTextTypename(fulltype)
 
         return [name,variable_type,defvalstr]
     
