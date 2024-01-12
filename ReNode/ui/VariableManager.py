@@ -992,6 +992,13 @@ class VariableManager(QDockWidget):
         vRet = valList if len(valList) > 1 else valList[0]
         return vRet,dtObj
 
+    def decomposeType(self,fulltypename):
+        if re.findall('[\[\]\,]',fulltypename):
+            typeinfo = re.findall('[\w\.]+\^?',fulltypename)
+            return typeinfo
+        else:
+            return ['value',fulltypename]
+
     def getTextTypename(self,fulltypename):
         """Возвращает репрезентацию типа в русском названии"""
         if fulltypename == "Exec": return "Выполнение"

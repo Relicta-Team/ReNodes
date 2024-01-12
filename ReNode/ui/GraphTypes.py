@@ -335,7 +335,8 @@ class ClassGraphType(GraphTypeBase):
                 varvalue = f'toString {{{varvalue}}}'
                 code += "\n" + f"[\"{fname}\",{varvalue}] call pc_oop_regvar;"
             else:
-                code += " (default)"
+                if cgObj._addComments:
+                    code += f" (default from {fieldDict.get(fname)})"
 
         for constSystemname, constval in infoDataProps['methods'].items():
             if cgObj._addComments:

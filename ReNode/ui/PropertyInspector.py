@@ -298,25 +298,22 @@ class Inspector(QDockWidget):
                             raise Exception(f"return type mismatch: {nodeData['returnType']} != {propContents['return']}")
 
                     vObj,vType = vmgr.getVarDataByType(fRet)
+                    typeList = vmgr.decomposeType(fRet)
                     propObj = None
                     if vObj:
                         isValType = vType.dataType == 'value'
                         if not isValType: #not value
                             if vType.dataType == "dict":
                                 propObj = vType.instance(vObj[0].classInstance,vObj[1].classInstance)
+                                propObj.on_update_value_type(typeList[2])
                                 #propObj = vType.instance(*[itm.classInstance for itm in vObj])
                             else:
                                 propObj = vType.instance(vObj.classInstance)
                         else:
                             propObj = vObj.classInstance()
                         if hasattr(propObj,'init_enum_values'):
-                            if isValType:
-                                propObj.init_enum_values(fRet)
-                            else:
-                                if isinstance(vObj,list):
-                                    propObj.init_enum_values(vObj[0].variableType)
-                                else:
-                                    propObj.init_enum_values(vObj.variableType)
+                            propObj.init_enum_values(typeList[1])
+
                     
                     nameObj = self.addProperty(baseName,cat,propName,fName,propObj,fDefault)
                     if vType:

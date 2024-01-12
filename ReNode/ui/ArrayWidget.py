@@ -193,6 +193,9 @@ class DictWidget(QWidget):
 
     def init_enum_values(self,keytype):
         self.keytype = keytype
+    def on_update_value_type(self,data):
+        self.valuetype = data
+        self.isEnum = self.getFactory().isEnumType(data)
     #region Internal helpers
     def getNodeGraphComponent(self):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -225,8 +228,7 @@ class DictWidget(QWidget):
                         self.removeArrayElement(item)
                     return
                 #data is real data
-                self.valuetype = data
-                self.isEnum = self.getFactory().isEnumType(data)
+                self.on_update_value_type(data)
             self.selectType.changed_event.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента

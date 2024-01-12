@@ -846,6 +846,47 @@ class CodeGenerator:
 
                     pass
 
+                if "@gettype." in node_code:
+                    pat = r'(@gettype\.(\w+\.\d+)((?:\.\w+\([^()]*\))*))'
+                    patParams = r'(\w+)\(([^()]*)\)'
+                    while True:
+                        matchObj = re.search(pat, node_code)
+                        if not matchObj: break
+                        fullTextTemplate, ptypeInfo, optionals = matchObj.groups()
+
+                        portType = re.sub('\.\d+','',ptypeInfo)
+                        portIndex = int(re.sub('\w+\.','',ptypeInfo))-1
+                        
+
+                        #allocate port
+                        storagePorts_ = inputs_fromLib if portType == 'in' else outputs_fromLib
+                        curPortData = list(storagePorts_)[portIndex]
+                        curPortName = curPortData[0]
+                        curPortInfo = curPortData[1] #not actual info...
+                        factType = obj.getConnectionType(portType,curPortName)
+
+                        replacerInfo = f'{factType}'
+
+                        if optionals:
+                            for opt in optionals[1:].split('.'):
+                                matchParamsObj = re.search(patParams, opt)
+                                if not matchParamsObj: 
+                                    self.exception(CGInternalCompilerError,source=obj,context=f'Gettype pattern param error: {fullTextTemplate}')
+                                    break
+                                if len(matchParamsObj.groups()) != 2: 
+                                    self.exception(CGInternalCompilerError,source=obj,context=f'Gettype pattern param count error: {fullTextTemplate}')
+                                    break
+                                paramName, paramValue = matchParamsObj.groups()
+                                if paramName == "clear_type":
+                                    tpv = factType
+                                    if not tpv: continue
+                                    if tpv.startswith("enum."): tpv = tpv[5:]
+                                    if tpv.endswith("^"): tpv = tpv[:-1]
+                                    replacerInfo = tpv
+                        
+                        #replacers
+                        node_code = node_code.replace(fullTextTemplate, replacerInfo)
+
                 inputDict = obj.getConnectionInputs(True)
                 execDict = obj.getConnectionOutputs(True)
 

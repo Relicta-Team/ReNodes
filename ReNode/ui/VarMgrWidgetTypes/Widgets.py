@@ -388,7 +388,9 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
             if varMgr.isObjectType(kv_valtypeTextname):
                 #add postfix with real type
                 vtypename = kv_valtypeTextname + "^"
-                #vtypename += "^" 
+                #vtypename += "^"
+            if varMgr.isEnumType(kv_valtypeTextname):
+                vtypename = kv_valtypeTextname
             var_typename += "," + vtypename
             reprType += "|" + str(kv_itemInfo)
             pass

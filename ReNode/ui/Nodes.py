@@ -114,6 +114,10 @@ class RuntimeNode(BaseNode):
 			if checkedType == sourceType:
 				acceptedType = True
 				break
+			if checkedType == "*enum":
+				if self.getFactory().isEnumType(sourceType):
+					acceptedType = True
+					break
 		if not acceptedType: return "!not_accepted_type"
 
 		if getter == '@type':
