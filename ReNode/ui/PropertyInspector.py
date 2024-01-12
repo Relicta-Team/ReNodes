@@ -135,16 +135,16 @@ class Inspector(QDockWidget):
             objText = self.getPropNameView(cat,sysname)
             par = objText.property("defClass")
             if hasValue:
-                objText.setText(objText.property("default"))
+                objText.setText(objText.property("defaultName"))
                 if setProp:
                     obj.blockSignals(True)
                     obj.set_value(props[cat][sysname])
                     obj.blockSignals(False)
             else:
-                objText.setText(f"{objText.property('default')} (знач. от {par})")
+                objText.setText(f"{objText.property('defaultName')} (знач. от {par})")
                 if setProp:
                     obj.blockSignals(True)
-                    obj.set_value(obj.property("default"))
+                    obj.set_value(obj.property("defaultValue"))
                     obj.blockSignals(False)
             pass
 
@@ -160,7 +160,7 @@ class Inspector(QDockWidget):
         hlayout = QGridLayout()
         hlayout.setSpacing(2)
         name = QLabelWithIcon(propName)
-        name.setProperty("default",propName)
+        name.setProperty("defaultName",propName)
         name.setProperty("defClass",definedFromClass)
         name.setTextInteractionFlags(name.textInteractionFlags() | Qt.TextSelectableByMouse)
 
@@ -177,7 +177,7 @@ class Inspector(QDockWidget):
             self.propWidgetRefs[category + "." + propSysName] = (name,propObject)
             if defaultValue == None or defaultValue == "$NULL$":
                 defaultValue = propObject.get_value()
-            propObject.setProperty("default",defaultValue)
+            propObject.setProperty("defaultValue",defaultValue)
             
             if isinstance(propObject,QCheckBox):
                 layProp = (0,1)
