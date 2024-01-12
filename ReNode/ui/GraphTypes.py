@@ -331,6 +331,8 @@ class ClassGraphType(GraphTypeBase):
             if infoDataProps['fields'].get(fname) or fieldDict.get(fname) == baseClass:
                 value = infoDataProps['fields'].get(fname,value)
                 varvalue = cgObj.updateValueDataForType(value, fdata['return'],'def_field:'+fname)
+                #calcluate repr ingame (always this solution because in values probably contains comments)
+                varvalue = f'toString {{{varvalue}}}'
                 code += "\n" + f"[\"{fname}\",{varvalue}] call pc_oop_regvar;"
             else:
                 code += " (default)"
