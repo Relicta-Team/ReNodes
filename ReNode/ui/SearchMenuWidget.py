@@ -132,8 +132,8 @@ class SearchComboButton(QPushButton):
         return findVec3TreeItemByProperty(self.dictTree,data)
 
     def setItemData(self,data,text,optIcon=None):
-        self.set_text(text or data)
         self.set_value(data)
+        self.set_text(text or data)
         if optIcon:
             #icn = QIcon("data\\icons\\ArrayPin.png")
             siz = self.font().pixelSize()
@@ -170,6 +170,24 @@ class SearchComboButtonAutoload(SearchComboButton):
         treeContent = createTreeDataContent()
         addTreeContentItem(treeContent,fact.getClassAllChildsTree("object"))
         self.loadContents(treeContent)
+
+    
+    def set_value(self,value):
+        super().set_value(value)
+        retItem = self.getItemByData(value)
+        if retItem:
+            (data,text,optIcon) = retItem
+            self.set_text(text or value)
+            if optIcon:
+                #icn = QIcon("data\\icons\\ArrayPin.png")
+                siz = self.font().pixelSize()
+                self.setIconSize(QSize(siz,siz))
+                self.setIcon(optIcon)
+            else:
+                self.setIcon(QIcon())
+        else:
+            self.set_text(value)
+            self.setIcon(QIcon())
 
 class CustomMenu(QMenu):
     def __init__(self, parent=None):
