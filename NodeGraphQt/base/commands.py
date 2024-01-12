@@ -583,7 +583,7 @@ class __PropertyCommand(QtWidgets.QUndoCommand):
     def getPropertyTextName(self):
         pObj = self.propertyInspectorRef.getPropNameView(self.cat,self.sysname)
         if pObj:
-            return pObj.property("default")
+            return pObj.property("defaultName")
         else:
             return self.sysname
 
