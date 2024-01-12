@@ -100,7 +100,7 @@ class RuntimeNode(BaseNode):
 			if dataType == "value":
 				sourceType = preSource
 
-		typeinfo = re.findall('\w+\^?',sourceType)
+		typeinfo = re.findall('[\w\.]+\^?',sourceType)
 		
 		if chechDatatype:
 			if dataType == "ANY": return True

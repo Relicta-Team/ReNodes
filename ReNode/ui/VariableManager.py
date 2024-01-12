@@ -276,7 +276,7 @@ class VariableLibrary:
         valueType = "value"
         compareType = typ
         if typ.startswith("array") or typ.startswith("set") or typ.startswith("dict"):
-            vdat = re.findall('\w+\^?',compareType)
+            vdat = re.findall('[\w\.]+\^?',compareType)
             valueType = vdat[0]
             compareType = [vdat[1],vdat[2]]
         
@@ -315,11 +315,12 @@ class VariableLibrary:
 
                 if re.findall('[\[\]\,]',portType):
                     #portType = f'array[{portType}]'
-                    typeinfo = re.findall('\w+\^?',portType)
+                    typeinfo = re.findall('[\w\.]+\^?',portType)
                     portType = typeinfo[1]
 
                 if portType.endswith("^"): portType = "object" #temp fix object colors
-                
+                if portType.startswith('enum.'): portType = 'enum'
+
                 isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
                 if portType in typecolor and isDefaultColor:
                     v['color'] = typecolor[portType]
@@ -330,10 +331,11 @@ class VariableLibrary:
                 portType = v['type']
 
                 if re.findall('[\[\]\,]',portType):
-                    typeinfo = re.findall('\w+\^?',portType)
+                    typeinfo = re.findall('[\w\.]+\^?',portType)
                     portType = typeinfo[1]
 
                 if portType.endswith("^"): portType = "object" #temp fix object colors
+                if portType.startswith('enum.'): portType = 'enum'
 
                 isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
                 if portType in typecolor and isDefaultColor:
@@ -369,7 +371,7 @@ class VariableLibrary:
         datatype = "value"
         values = [fullTypename]
         if re.findall('[\[\]\,]',fullTypename):
-            typeinfo = re.findall('\w+\^?',fullTypename)
+            typeinfo = re.findall('[\w\.]+\^?',fullTypename)
             datatype = typeinfo[0]
             values = typeinfo[1:]
         
@@ -920,7 +922,7 @@ class VariableManager(QDockWidget):
             if self.isObjectType(fulltypename) and not fulltypename.endswith("^"): fulltypename += '^'
             return fulltypename
         else:
-            typeinfo = re.findall('\w+\^?',fulltypename)
+            typeinfo = re.findall('[\w\.]+\^?',fulltypename)
             rval = typeinfo[0]+"["
             for i in range(1,len(typeinfo)):
                 tdat = typeinfo[i]
@@ -964,7 +966,7 @@ class VariableManager(QDockWidget):
         datatype = "value"
         values = [fullTypename]
         if re.findall('[\[\]\,]',fullTypename):
-            typeinfo = re.findall('\w+\^?',fullTypename)
+            typeinfo = re.findall('[\w\.]+\^?',fullTypename)
             datatype = typeinfo[0]
             values = typeinfo[1:]
         

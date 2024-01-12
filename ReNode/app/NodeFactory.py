@@ -181,7 +181,7 @@ class NodeFactory:
 
 		if re.findall('[\[\]\,]',type_name):
 			portType = f'array[{type_name}]'
-			typeinfo = re.findall('\w+\^?',portType)
+			typeinfo = re.findall('[\w\.]+\^?',portType)
 			type_name = typeinfo[1]
 
 		#temporary fix
@@ -221,7 +221,7 @@ class NodeFactory:
 
 					if re.findall('[\[\]\,]',portType):
 						portType = f'array[{portType}]'
-						typeinfo = re.findall('\w+\^?',portType)
+						typeinfo = re.findall('[\w\.]+\^?',portType)
 						portType = typeinfo[1]
 
 					if portType.endswith("^"): portType = "object" #temp fix object colors
@@ -236,7 +236,7 @@ class NodeFactory:
 					portType = v['type']
 
 					if re.findall('[\[\]\,]',portType):
-						typeinfo = re.findall('\w+\^?',portType)
+						typeinfo = re.findall('[\w\.]+\^?',portType)
 						portType = typeinfo[1]
 
 					if portType.endswith("^"): portType = "object" #temp fix object colors
