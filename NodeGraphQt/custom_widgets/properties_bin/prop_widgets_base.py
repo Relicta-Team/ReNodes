@@ -177,6 +177,11 @@ class PropComboBox(QtWidgets.QComboBox):
             if idx >= 0:
                 self.value_changed.emit(self.toolTip(), value)
 
+    def init_enum_values(self,typename):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        fact = NodeGraphComponent.refObject.getFactory()
+        if fact.isEnumType(typename):
+            self.addItems(fact.getEnumValues(typename))
 
 class PropCheckBox(QtWidgets.QCheckBox):
     """

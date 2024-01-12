@@ -670,3 +670,5 @@ class NodeFactory:
 		"""Проверяет существование перечисления в библиотеке"""
 		return self.getEnumData(enumName) != None
 	
+	def getEnumValues(self,enumName):
+		return self.getEnumData(enumName)['values']

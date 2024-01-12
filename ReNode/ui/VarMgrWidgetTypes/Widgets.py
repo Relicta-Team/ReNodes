@@ -296,7 +296,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         vart: VariableTypedef = self.variableManagerRef.getVariableTypedefByType(data)
         tobj : VariableDataType = self.variableDataType[self.widDataType.currentIndex()]
 
-        self._updateVariableValueVisual(vart,tobj)
+        self._updateVariableValueVisual(vart,tobj,data)
         pass
 
     def _onDataTypeChanged(self,*args,**kwargs):
@@ -306,9 +306,9 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         curdata = self.widVarType.get_value()
         vart = self.variableManagerRef.getVariableTypedefByType(curdata)
         tobj : VariableDataType = self.variableDataType[newIndexDatatype]
-        self._updateVariableValueVisual(vart,tobj)
+        self._updateVariableValueVisual(vart,tobj,curdata)
 
-    def _updateVariableValueVisual(self,tp,dt):
+    def _updateVariableValueVisual(self,tp,dt,typename_origin=''):
         from ReNode.ui.VariableManager import VariableTypedef,VariableDataType
         tp: VariableTypedef
         dt: VariableDataType
@@ -326,6 +326,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
                 objInstance = dt.instance(tp.classInstance,self.widVarType)
             else:
                 objInstance = dt.instance(tp.classInstance)
+        if hasattr(objInstance,'init_enum_values'):
+            objInstance.init_enum_values(typename_origin)
         
         self.widInitVal = objInstance
         self.layout.insertWidget(idx,self.widInitVal)
@@ -352,10 +354,13 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
             raise Exception(f"Неизвестный тип переменной: {variable_type}")
 
         isObject = varMgr.isObjectType(variable_type)
+        isEnum = varMgr.isEnumType(variable_type)
 
         var_typename = varInfo.variableType
         if isObject: #обновляем тип если это подтип объекта
             var_typename = variable_type + "^" #добавляем символ наследования
+        if isEnum: #переопределяем нумераторный тип
+            var_typename = variable_type
 
         cat_sys_name = categoryObj.category
         dt : VariableDataType = varMgr.variableDataType[self.widDataType.currentIndex()]

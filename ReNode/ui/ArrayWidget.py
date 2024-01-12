@@ -12,7 +12,19 @@ class ArrayWidget(QWidget):
     def __init__(self, instancer=None):
         super(ArrayWidget,self).__init__()
         self.instancer = instancer
+        self.valuetype = '' # это просто строчная репрезентация типа
+        self.isEnum = False
         self.initUI()
+
+    def init_enum_values(self,valuetypes):
+        self.valuetype = valuetypes
+        self.isEnum = self.getFactory().isEnumType(valuetypes)
+
+    def getNodeGraphComponent(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
+    def getFactory(self):
+        return self.getNodeGraphComponent().getFactory()
 
     def initUI(self):
         self.layout = QVBoxLayout()
@@ -80,6 +92,8 @@ class ArrayWidget(QWidget):
         elementValueWidget = None
         if self.instancer:
             elementValueWidget = self.instancer()
+            if self.isEnum:
+                elementValueWidget.init_enum_values(self.valuetype)
             if val:
                 elementValueWidget.set_value(val)
 
@@ -158,6 +172,11 @@ class DictWidget(QWidget):
         from ReNode.ui.VariableManager import VariableManager
         self.varmgr = VariableManager.refObject
         self.instancer = instancer
+
+        self.keytype = '' #not used now
+        self.valuetype = ''
+        self.isEnum = False # for valuetype
+
         if not widVarType: #autodef
             raise Exception("TODO FIX dict widget")
             widVarType = self.varmgr.widVarType
@@ -172,6 +191,15 @@ class DictWidget(QWidget):
 
     def isConstDictValue(self): return not self.activeSeachBox
 
+    def init_enum_values(self,keytype):
+        self.keytype = keytype
+    #region Internal helpers
+    def getNodeGraphComponent(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
+    def getFactory(self):
+        return self.getNodeGraphComponent().getFactory()
+    #endregion
 
     def initUI(self):
         self.layout = QVBoxLayout()
@@ -196,6 +224,9 @@ class DictWidget(QWidget):
                     for item in self.arrayElements.copy():
                         self.removeArrayElement(item)
                     return
+                #data is real data
+                self.valuetype = data
+                self.isEnum = self.getFactory().isEnumType(data)
             self.selectType.changed_event.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента
@@ -288,6 +319,8 @@ class DictWidget(QWidget):
             type = self.selectType.get_value()
             typeObj = VariableManager.refObject.getVariableTypedefByType(type)
             instancerValue = typeObj.classInstance()
+        if self.isEnum:
+            instancerValue.init_enum_values(self.valuetype)
         if valItem:
             instancerValue.set_value(valItem)
         
