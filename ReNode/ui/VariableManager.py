@@ -190,7 +190,7 @@ class VariableLibrary:
             #enum special category
             VariableTypedef("enum","Перечисление",PropComboBox,
                 color=QtGui.QColor("#2D543E"),
-            defaultValue='-1',parseFunction=int),
+            defaultValue='-1',parseFunction=lambda x: x),
 
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
@@ -354,6 +354,8 @@ class VariableLibrary:
     def getVarTypedefByType(self,type)->VariableTypedef|None:
         if type.endswith("^"): 
             type = "object"
+        if type.startswith("enum."):
+            type = "enum"
         
         for t in self.typeList:
             if t.variableType == type:

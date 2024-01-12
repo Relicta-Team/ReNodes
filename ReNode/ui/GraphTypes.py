@@ -315,13 +315,21 @@ class ClassGraphType(GraphTypeBase):
         #inspectorProps = classInfo['inspectorProps']
 
         allProps = cgObj.getFactory().getClassAllInspectorProps(baseClass)
+        fieldDict = {} #key - fieldname, value - class where defined
+        classParentsList = cgObj.getFactory().getClassAllParents(baseClass)
+        for clsCheck in classParentsList:
+            for fieldName_ in cgObj.getFactory().getClassData(clsCheck)['fields']['defined']:
+                if fieldName_ not in fieldDict:
+                    fieldDict[fieldName_] = clsCheck
 
         for fname,fdata in allProps.get('fields',{}).items():
             if cgObj._addComments:
                 code += f"\n//p_field: {fname}"
             value = fdata['defval']
-            if infoDataProps['fields'].get(fname):
-                value = infoDataProps['fields'][fname]
+            # проверяем был ли член определен ранее (запрос переопределения)
+
+            if infoDataProps['fields'].get(fname) or fieldDict.get(fname) == baseClass:
+                value = infoDataProps['fields'].get(fname,value)
                 varvalue = cgObj.updateValueDataForType(value, fdata['return'],'def_field:'+fname)
                 code += "\n" + f"[\"{fname}\",{varvalue}] call pc_oop_regvar;"
             else:

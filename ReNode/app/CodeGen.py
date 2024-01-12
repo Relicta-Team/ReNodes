@@ -1442,7 +1442,7 @@ class CodeGenerator:
         if value == 'Этот объект' and tname == "self": return "this"
         if not tname: return value
 
-        vObj,dtObj = self.getVariableManager().getVarDataByType(tname)
+        vObj,dtObj = self.getVariableManager().getVarDataByType(tname,True)
         dtName = dtObj.dataType
 
         if dtName != "value":
@@ -1523,7 +1523,21 @@ class CodeGenerator:
         elif self.getVariableManager().isObjectType(tname):
             return value
         elif self.getVariableManager().isEnumType(tname):
-            return value
+            enumVals = self.getFactory().getEnumData(tname)['enumList']
+            factValue = None
+            factKey = '$unk_key$'
+            for enumItem in enumVals:
+                if enumItem['name'] == value:
+                    factValue = str(enumItem['val'])
+                    factKey = enumItem['name']
+                    break
+                if enumItem['val'] == value:
+                    factValue = str(enumItem['val'])
+                    factKey = enumItem['name']
+                    break
+            if factValue == None:
+                self.vtWarn(optObj,f'Неизвестное значение перечисления {self.getFactory().getEnumData(tname)["name"]}: {value}')
+            return f'{factValue}/*{tname}:{factKey}*/'
         elif tname in ['class','classname']: #объект тип и имя класса (строка)
             if not self.getFactory().classNameExists(value):
                 pref = "Тип объекта" if 'class'==tname else "Имя класса"

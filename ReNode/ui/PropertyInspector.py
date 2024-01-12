@@ -166,7 +166,7 @@ class Inspector(QDockWidget):
 
         hlayout.addWidget(name,0,0)
        
-        if propObject:
+        if propObject != None:
             #validate values
             if not hasattr(propObject,"set_value"):
                 raise Exception(f"Property {propName} has no set_value method")
@@ -300,7 +300,8 @@ class Inspector(QDockWidget):
                     vObj,vType = vmgr.getVarDataByType(fRet)
                     propObj = None
                     if vObj:
-                        if vType.instance: #not value
+                        isValType = vType.dataType == 'value'
+                        if not isValType: #not value
                             if vType.dataType == "dict":
                                 propObj = vType.instance(vObj[0].classInstance,vObj[1].classInstance)
                                 #propObj = vType.instance(*[itm.classInstance for itm in vObj])
@@ -308,6 +309,14 @@ class Inspector(QDockWidget):
                                 propObj = vType.instance(vObj.classInstance)
                         else:
                             propObj = vObj.classInstance()
+                        if hasattr(propObj,'init_enum_values'):
+                            if isValType:
+                                propObj.init_enum_values(fRet)
+                            else:
+                                if isinstance(vObj,list):
+                                    propObj.init_enum_values(vObj[0].variableType)
+                                else:
+                                    propObj.init_enum_values(vObj.variableType)
                     
                     nameObj = self.addProperty(baseName,cat,propName,fName,propObj,fDefault)
                     if vType:
