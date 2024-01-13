@@ -118,6 +118,10 @@ class RuntimeNode(BaseNode):
 				if self.getFactory().isEnumType(sourceType):
 					acceptedType = True
 					break
+			if checkedType == "*struct":
+				if self.getFactory().isStructType(sourceType):
+					acceptedType = True
+					break
 		if not acceptedType: return "!not_accepted_type"
 
 		if getter == '@type':
