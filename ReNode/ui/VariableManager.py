@@ -196,7 +196,7 @@ class VariableLibrary:
 
             #struct special category
             VariableTypedef("struct","Структура",StructureWidget,
-                color=QtGui.QColor("#041CBD"),
+                color=QtGui.QColor("#2B4FBA"),
             defaultValue='[]',parseFunction=lambda x: ast.literal_eval(x)),
 
             VariableTypedef("model","Модель",PropLineEdit

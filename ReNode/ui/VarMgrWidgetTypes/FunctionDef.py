@@ -88,7 +88,7 @@ class DataTypeSelectorGroup(QWidget):
         
         self.onDataTypeChanged()
 
-    def updateVisual(self,vartype,datatype):
+    def updateVisual(self,vartype,datatype,typename_origin=''):
         from ReNode.ui.VariableManager import VariableTypedef,VariableDataType
         vartype: VariableTypedef
         datatype: VariableDataType
@@ -106,7 +106,8 @@ class DataTypeSelectorGroup(QWidget):
                 objInstance = datatype.instance(vartype.classInstance,self.widParamType)
             else:
                 objInstance = datatype.instance(vartype.classInstance)
-        
+        if hasattr(objInstance,"init_enum_values"):
+            objInstance.init_enum_values(typename_origin)
         self.defValWid = objInstance
         self.srcLayout.addWidget(self.defValWid,self._ivalXPos,self.ofsY+1,1,3)
         #self.layout.insertWidget(idx,self.widInitVal)
@@ -122,7 +123,7 @@ class DataTypeSelectorGroup(QWidget):
         curdata = self.widParamType.get_value()
         vart: VariableTypedef = VariableManager.refObject.getVariableTypedefByType(curdata)
         tobj : VariableDataType = VariableManager.refObject.variableDataType[newIndexDatatype]
-        self.updateVisual(vart,tobj)
+        self.updateVisual(vart,tobj,curdata)
 
     def onParamTypeChanged(self):
         from ReNode.ui.VariableManager import VariableTypedef,VariableDataType,VariableManager
