@@ -70,6 +70,7 @@ class NodeObjectHandler:
 		self.isMethod = self.objectType == 'm'
 		self.isSystem = self.objectType == 'node'
 		self.isEnum = self.objectType == 'enum'
+		self.isStruct = self.objectType == "struct"
 
 		self.isClassMember = self.isField or self.isMethod
 
@@ -77,10 +78,13 @@ class NodeObjectHandler:
 		self.counterCopy = 0
 
 		self.execTypes = 'all' #all,in,out,pure,none
-		if self.isSystem or self.isEnum:
+		if self.isSystem or self.isEnum or self.isStruct:
 			self.execTypes = "none" #by default system nodes and enums has no exectypes
 			if self.isEnum:
 				self.enumList = []
+			if self.isStruct:
+				self.structList = []
+				self.structSerializedValues = {}
 
 		self.path = "" # путь до узла в дереве
 		#TODO remove var
@@ -376,16 +380,39 @@ class NodeObjectHandler:
 				else:
 					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
-		elif tokenType == 'eval' and self.isEnum: #enum node value
-			eName = tokens[1]
-			eVal = intTryParse(tokens[2])
-			enumCase = {
-				'name': eName,
-				'val':eVal,
-			}
-			if len(tokens) > 3:
-				enumCase['desc'] = unescape(tokens[3])
-			self.enumList.append(enumCase)
+		elif tokenType == 'eval' and (self.isEnum or self.isStruct): #enum node value
+			if self.isEnum:
+				eName = tokens[1]
+				eVal = intTryParse(tokens[2])
+				enumCase = {
+					'name': eName,
+					'val':eVal,
+				}
+				if len(tokens) > 3:
+					enumCase['desc'] = unescape(tokens[3])
+				self.enumList.append(enumCase)
+			elif self.isStruct:
+				sType = tokens[1]
+				sName = tokens[2]
+				structInfo = {
+					'type':sType,
+					'name': sName
+				}
+				if len(tokens) > 3:
+					sVal = tokens[3]
+					if sVal == '':
+						sVal = "$NULL$" #auto detect default value
+				else:
+					sVal = "$NULL$"
+				
+				self.structSerializedValues[sName] = sVal
+
+				sVal = self.varLib.parseGameValue(unescape(sVal),sType,self.classMetadata)
+				structInfo['val'] = sVal
+				if len(tokens) > 4:
+					structInfo['desc'] = unescape(tokens[4])
+				self.structList.append(structInfo)
+				
 		# redef node name
 		elif tokenType == 'node':
 			if self.isSystem:
@@ -455,7 +482,7 @@ class NodeObjectHandler:
 			memberRegion = "fields"
 		elif self.isMethod:
 			memberRegion = "methods"
-		elif self.isSystem or self.isEnum:
+		elif self.isSystem or self.isEnum or self.isStruct:
 			memberRegion = self.objectType #internal,operators,etc
 		else:
 			raise Exception(f'Unknown member type: {self.objectType}')
@@ -785,6 +812,59 @@ class NodeObjectHandler:
 			'enumList': self.enumList
 		}
 
+	def _preregStruct(self):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+		structStorage = classmeta['ReNode_AbstractEnum']
+		if 'allStructs' not in structStorage: structStorage['allStructs'] = {}
+
+		structTypeFull = f'{self.objectType}.{self.objectNameFull}'
+		structName = memberData.get('name') or self.objectNameFull
+		structList = self.structList #name,type,value,?desc
+
+		structStorage['allStructs'][structTypeFull] = {
+			'name': structName,
+			'values': structList
+		}
+
+		# генерация make struct, break struct
+		for helperType in ["make","break"]:
+			newobj = self.copy(True)
+			newobj.objectType = 'node'
+			newobj.isStruct = False
+			newobj.isSystem = True
+			newobj.objectNameFull = f"structHelper"
+			isMake = helperType == "make"
+			newobj.execTypes = 'pure' if isMake else 'all'
+			
+			newobj.lineList.clear()
+			structLines = [f"node:{structTypeFull}_{helperType}"]
+			namebase_ = "Создать" if isMake else "Разобрать"
+			structLines.append(f'name:{namebase_} {structName}')
+			structLines.append(f'namelib:{namebase_} структуру {structName}')
+			icnPath = 'icon_Blueprint_MakeStruct_16x' if isMake else 'icon_Blueprint_BreakStruct_16x'
+			structLines.append(f'icon:data\\icons\\{icnPath}')
+			clr__ = "StructMake" if isMake else "PureFunction"
+			structLines.append(f'color:{clr__}')
+			structLines.append(f'{"out" if isMake else "in"}:{structTypeFull}:{structName}{":" + memberData["desc"] if memberData.get("desc") else ""}')
+			i_ = 1 if isMake else 2
+			code = []
+			for pInfo in structList:
+				structLines.append(f'{"in" if isMake else "out"}:{pInfo["type"]}:{pInfo["name"]}{":" + pInfo["desc"] if pInfo.get("desc") else ""}')
+				if isMake:
+					structLines.append(f'opt:custom=1:def={self.structSerializedValues[pInfo["name"]]}')
+					code.append(f'@in.{i_}')
+				else:
+					code.append(f'\"@genvar.out.{i_}\"')
+				i_ += 1
+			newobj.pushBackLines(structLines)
+			__preCode = f'[{", ".join(code)}]'
+			if not isMake:
+				__preCode = "(@in.2)params " + __preCode + "; @out.1"
+			newobj['code'] = __preCode
+		
+		
+
 	def registerNode(self,memberRegion):
 		memberData = self.memberData
 		classmeta = self.classMetadata
@@ -809,6 +889,8 @@ class NodeObjectHandler:
 
 		if self.isEnum:
 			self._preregEnumNode()
+		if self.isStruct:
+			self._preregStruct()
 		if self.isSystem:
 			self._preregSystemNode()
 

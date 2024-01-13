@@ -1579,6 +1579,8 @@ class CodeGenerator:
             if factValue == None:
                 self.vtWarn(optObj,f'Неизвестное значение перечисления {self.getFactory().getEnumData(tname)["name"]}: {value}')
             return f'{factValue}/*{tname}:{factKey}*/'
+        elif self.getVariableManager().isStructType(tname):
+            return value
         elif tname in ['class','classname']: #объект тип и имя класса (строка)
             if not self.getFactory().classNameExists(value):
                 pref = "Тип объекта" if 'class'==tname else "Имя класса"

@@ -653,10 +653,12 @@ class NodeFactory:
 						retList['methods'][k] = v
 		return retList
 	
+	#region Enumerator helpers
+
 	def getEnumDict(self):
 		"""Возвращает словарь перечислений. 
 			Имя каждого элемента равно типу и узлу для создания свитчера по этому перечислению
-			Каждый элемент имеет значения: name, values (list[vec2(str,int)])
+			Каждый элемент имеет значения: name, values (list[str])
 		"""
 		return self.getClassData("ReNode_AbstractEnum")['allEnums']
 	
@@ -672,3 +674,32 @@ class NodeFactory:
 	
 	def getEnumValues(self,enumName):
 		return self.getEnumData(enumName)['values']
+
+	#endregion
+
+	#region Structure helpers
+
+	def getStructDict(self):
+		"""
+			Возвращает словарь структур.
+			Каждый элемент имеет значения: name, values (list[dict(name,type,value,?desc)])
+		"""
+		return self.getClassData("ReNode_AbstractEnum")['allStructs']
+	
+	def getStructData(self,structName):
+		"""Возвращает словарь структур. 
+			Если не найден - возвращает None
+		"""
+		return self.getStructDict().get(structName)
+	
+	def isStructType(self,structName):
+		"""Проверяет существование структуры в библиотеке"""
+		return self.getStructData(structName) != None
+	
+	def getStructFields(self,structName):
+		"""Возвращает список полей структуры (name,type,value,?desc)
+		Возвращает реальное значение из библиотеки (не должно изменяться)
+		"""
+		return self.getStructData(structName)['values']
+
+	#endregion

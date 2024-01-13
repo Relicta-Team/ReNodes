@@ -42,6 +42,7 @@ class NodeColor(Enum):
     Constant = "#124d41"
     Getter = "#25888F"
     EnumSwitch = '#8C7516'
+    StructMake = "#011594"
 
     @staticmethod
     def getMethodMapAssoc():

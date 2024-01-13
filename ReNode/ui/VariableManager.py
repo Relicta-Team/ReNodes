@@ -66,6 +66,8 @@ class VariableTypedef:
             vtextname = vMgr.getObjectTypeName(vtype)
         if vMgr.isEnumType(vtype):
             vtextname = vMgr.getFactory().getEnumData(vtype)['name'] or vtype
+        if vMgr.isStructType(vtype):
+            vtextname = vMgr.getFactory().getStructData(vtype)['name'] or vtype
         return VariableTypedef_Copy(vtype,vtextname,self.classInstance,self.dictProp,self.color,self.defaultValue,self.parseFunction)
 
 class VariableTypedef_Copy(VariableTypedef):
@@ -191,6 +193,11 @@ class VariableLibrary:
             VariableTypedef("enum","Перечисление",PropComboBox,
                 color=QtGui.QColor("#2D543E"),
             defaultValue='-1',parseFunction=lambda x: x),
+
+            #struct special category
+            VariableTypedef("struct","Структура",PropAbstract,
+                color=QtGui.QColor("#041CBD"),
+            defaultValue='[]',parseFunction=lambda x: x),
 
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
@@ -323,6 +330,7 @@ class VariableLibrary:
 
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
+                if portType.startswith("struct."): portType = "struct"
 
                 isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
                 if portType in typecolor and isDefaultColor:
@@ -339,6 +347,7 @@ class VariableLibrary:
 
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
+                if portType.startswith("struct."): portType = "struct"
 
                 isDefaultColor = not v.get('color') or v['color']== list(NodeFactory.defaultColor) or v['color'] == [255,255,255,255]
                 if portType in typecolor and isDefaultColor:
@@ -356,6 +365,8 @@ class VariableLibrary:
             type = "object"
         if type.startswith("enum."):
             type = "enum"
+        if type.startswith("struct."):
+            type = "struct"
         
         for t in self.typeList:
             if t.variableType == type:
@@ -580,6 +591,11 @@ class VariableManager(QDockWidget):
         enumTree = treeContent
         enumIconCommon = QIcon("data\\icons\\Enum")
         enumItemIcon = None
+        
+        structTree = treeContent
+        structIconCommon = QIcon("data\\icons\\Struct")
+        structItemIcon = None
+
         for vobj in self.variableTempateData:
             icon = QIcon("data\\icons\\pill_16x.png")
             colored_icon = updateIconColor(icon, vobj.color)
@@ -590,6 +606,11 @@ class VariableManager(QDockWidget):
                 typeName = "Перечисления"
                 enumItemIcon = colored_icon
                 colored_icon = enumIconCommon
+            if dataName == "struct":
+                dataName = ""
+                typeName = "Структуры"
+                structItemIcon = colored_icon
+                colored_icon = structIconCommon
                 
             _tempTree = addTreeContent(treeContent,dataName,typeName,colored_icon)
             if vobj.variableType == "object":
@@ -597,6 +618,9 @@ class VariableManager(QDockWidget):
             if vobj.variableType == "enum":
                 _tempTree['desc'] = 'Список всех перечислений, определенных в сборке.'
                 enumTree = _tempTree
+            if vobj.variableType == "struct":
+                _tempTree['desc'] = 'Список всех структур, определенных в сборке.'
+                structTree = _tempTree
         #gobj add
         fact = self.nodeGraphComponent.getFactory()
         for objTree in fact.getClassAllChildsTree("object")['childs']:
@@ -605,7 +629,9 @@ class VariableManager(QDockWidget):
         ens = fact.getClassData("ReNode_AbstractEnum")['allEnums']
         for enType,enDict in ens.items():
             addTreeContentItem(enumTree,createTreeContentItem(enType,enDict['name'],enumItemIcon))
-
+        strt = fact.getClassData("ReNode_AbstractEnum")['allStructs']
+        for stType,stDict in strt.items():
+            addTreeContentItem(structTree,createTreeContentItem(stType,stDict['name'],structItemIcon))
         
         return treeContent
 
@@ -909,6 +935,9 @@ class VariableManager(QDockWidget):
         """
         return self.nodeGraphComponent.getFactory().isEnumType(type)
     
+    def isStructType(self,type):
+        return self.getFactory().isStructType(type)
+
     def getFactory(self):
         return self.nodeGraphComponent.getFactory()
 
@@ -943,6 +972,8 @@ class VariableManager(QDockWidget):
             type = "object"
         if self.isEnumType(type):
             type = "enum"
+        if self.isStructType(type):
+            type = "struct"
         
         for vobj in self.variableTempateData:
             if vobj.variableType == type: 

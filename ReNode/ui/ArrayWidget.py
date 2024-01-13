@@ -388,3 +388,8 @@ class DictWidget(QWidget):
         self.updateCountText()
                 
         self.callChangeValEvent()
+
+
+class StructureWidget(QWidget):
+
+    value_changed = QtCore.Signal(object)

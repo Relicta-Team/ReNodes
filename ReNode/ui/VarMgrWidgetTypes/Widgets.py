@@ -355,12 +355,14 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
         isObject = varMgr.isObjectType(variable_type)
         isEnum = varMgr.isEnumType(variable_type)
+        isStruct = varMgr.isStructType(variable_type)
 
         var_typename = varInfo.variableType
         if isObject: #обновляем тип если это подтип объекта
             var_typename = variable_type + "^" #добавляем символ наследования
-        if isEnum: #переопределяем нумераторный тип
+        if isEnum or isStruct: #переопределяем нумераторный/структурный тип
             var_typename = variable_type
+
 
         cat_sys_name = categoryObj.category
         dt : VariableDataType = varMgr.variableDataType[self.widDataType.currentIndex()]
@@ -389,7 +391,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
                 #add postfix with real type
                 vtypename = kv_valtypeTextname + "^"
                 #vtypename += "^"
-            if varMgr.isEnumType(kv_valtypeTextname):
+            if varMgr.isEnumType(kv_valtypeTextname) or varMgr.isStructType(kv_valtypeTextname):
                 vtypename = kv_valtypeTextname
             var_typename += "," + vtypename
             reprType += "|" + str(kv_itemInfo)
