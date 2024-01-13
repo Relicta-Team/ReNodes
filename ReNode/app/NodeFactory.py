@@ -402,7 +402,7 @@ class NodeFactory:
 		node.uid = graphref.incrementId
 
 		node._view._node_render_type = NodeRenderType[cfg['render_type']]
-		if node._view._node_render_type == NodeRenderType.NoHeaderText:
+		if node._view._node_render_type in [NodeRenderType.NoHeaderText,NodeRenderType.NoHeader]:
 			node._view._default_font_size *= 2
 		#node.create_property("class_",nodename)
 
