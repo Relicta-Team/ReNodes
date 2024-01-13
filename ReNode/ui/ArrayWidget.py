@@ -1,6 +1,8 @@
 from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QWidget
 from Qt import QtCore
 
 from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
@@ -92,7 +94,7 @@ class ArrayWidget(QWidget):
         elementValueWidget = None
         if self.instancer:
             elementValueWidget = self.instancer()
-            if self.isEnum:
+            if hasattr(elementValueWidget, 'init_enum_values'):
                 elementValueWidget.init_enum_values(self.valuetype)
             if val:
                 elementValueWidget.set_value(val)
@@ -321,7 +323,7 @@ class DictWidget(QWidget):
             type = self.selectType.get_value()
             typeObj = VariableManager.refObject.getVariableTypedefByType(type)
             instancerValue = typeObj.classInstance()
-        if self.isEnum:
+        if hasattr(instancerValue, 'init_enum_values'):
             instancerValue.init_enum_values(self.valuetype)
         if valItem:
             instancerValue.set_value(valItem)
@@ -393,3 +395,109 @@ class DictWidget(QWidget):
 class StructureWidget(QWidget):
 
     value_changed = QtCore.Signal(object)
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.loadedType = "" #"struct.TestStructure"
+        self.initUI()
+
+    def initUI(self):
+        self.layout = QVBoxLayout()
+
+        # Создайте список для хранения элементов массива
+        self.arrayElements = []
+
+        # Создайте область прокрутки для элементов
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaLayout = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.scrollAreaLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.scrollAreaLayout.addStretch(1)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+
+        self.layout.addWidget(self.scrollArea)
+        self.setLayout(self.layout)
+
+    def get_value(self):
+        return [element.itemAt(1).widget().get_value() for element in self.arrayElements]
+
+    def set_value(self,val):
+        if self.arrayElements:
+            for i, vVal in enumerate(val):
+                self.arrayElements[i].itemAt(1).widget().set_value(vVal)
+        else:
+            for elementLayout in self.arrayElements.copy():
+                self.removeArrayElement(elementLayout)
+            
+            self.arrayElements.clear()
+
+            for i, vIt in enumerate(val):
+                self.addArrayElement(i,vIt)
+
+    def init_enum_values(self,structType):
+        if self.getFactory().isStructType(structType):
+            self.loadedType = structType
+
+            svals = [s['val']for s in self.getFactory().getStructFields(self.loadedType)]
+            self.set_value(svals)
+
+    #region Internal helpers
+    def getNodeGraphComponent(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
+    def getFactory(self):
+        return self.getNodeGraphComponent().getFactory()
+    def getVariableManager(self):
+        return self.getNodeGraphComponent().variable_manager
+    #endregion
+
+    def addArrayElement(self,offsetMember,value):
+        sdata = self.getFactory().getStructFields(self.loadedType)
+        if offsetMember >= len(sdata): return
+        structMemInfo = sdata[offsetMember]
+        typename = structMemInfo['type']
+        name = structMemInfo['name']
+        val = structMemInfo['val']
+        varMgr = self.getVariableManager()
+        # Создайте горизонтальный контейнер для нового элемента
+        elementLayout = QHBoxLayout()
+
+        moveUpButton = QLabel(f"{name}")
+
+        elementLayout.addWidget(moveUpButton)
+
+        # Создайте виджет для значения элемента (может быть QLineEdit, QSpinBox или другой)
+        elementValueWidget = None
+        vObj,vDt = varMgr.getVarDataByType(typename,True)
+        if vDt.dataType == "value":
+            elementValueWidget = vObj.classInstance()
+        else:
+            from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import PropAbstract
+            elementValueWidget = PropAbstract()
+        if hasattr(elementValueWidget,"init_enum_values"):
+            typeList = self.getVariableManager().decomposeType(typename)
+            elementValueWidget.init_enum_values(typeList[1])
+        
+        elementValueWidget.set_value(value)
+        
+        elementValueWidget.value_changed.connect(lambda: self.callChangeValEvent())
+        
+        elementLayout.addWidget(elementValueWidget)
+
+        self.arrayElements.append(elementLayout)
+        self.scrollAreaLayout.insertLayout(len(self.arrayElements) - 1, elementLayout)
+
+    def removeArrayElement(self, elementLayout):
+        if elementLayout in self.arrayElements:
+            self.arrayElements.remove(elementLayout)
+            for i in reversed(range(elementLayout.count())):
+                widget = elementLayout.itemAt(i).widget()
+                if widget:
+                    widget.deleteLater()
+            elementLayout.deleteLater()
+
+    def callChangeValEvent(self):
+        self.value_changed.emit(self.get_value())

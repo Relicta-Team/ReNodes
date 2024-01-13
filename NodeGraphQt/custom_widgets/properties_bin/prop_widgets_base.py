@@ -58,7 +58,10 @@ class PropAbstract(QtWidgets.QLabel):
         return self.text()
     def set_value(self, value):
         if value != self.get_value():
-            self.setText(value)
+            _strVal = value
+            if not isinstance(value, str):
+                _strVal = str(value)
+            self.setText(_strVal)
             self.value_changed.emit(self.toolTip(), value)
     
     def get_value(self):
@@ -173,6 +176,7 @@ class PropComboBox(QtWidgets.QComboBox):
     def set_value(self, value):
         if value != self.get_value():
             idx = self.findText(value, QtCore.Qt.MatchExactly)
+            if value == '-1' and idx == -1: idx = 0 #set to first item
             self.setCurrentIndex(idx)
             if idx >= 0:
                 self.value_changed.emit(self.toolTip(), value)
@@ -181,7 +185,8 @@ class PropComboBox(QtWidgets.QComboBox):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         fact = NodeGraphComponent.refObject.getFactory()
         if fact.isEnumType(typename):
-            self.addItems(fact.getEnumValues(typename))
+            evlsList = fact.getEnumValues(typename)
+            self.addItems(evlsList)
 
 class PropCheckBox(QtWidgets.QCheckBox):
     """

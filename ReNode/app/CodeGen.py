@@ -1580,7 +1580,16 @@ class CodeGenerator:
                 self.vtWarn(optObj,f'Неизвестное значение перечисления {self.getFactory().getEnumData(tname)["name"]}: {value}')
             return f'{factValue}/*{tname}:{factKey}*/'
         elif self.getVariableManager().isStructType(tname):
-            return value
+            from ast import literal_eval
+            retVals = []
+            for indexVal, sDict in enumerate(self.getFactory().getStructFields(tname)):
+                sDictType_ = sDict['type']
+                decType_ = self.getVariableManager().decomposeType(sDictType_)
+                valParse = value[indexVal]
+                if decType_[0] != "value":
+                    valParse = literal_eval(valParse)
+                retVals.append(self.updateValueDataForType(valParse,sDictType_,optObj))
+            return f'[{", ".join(retVals)}]'
         elif tname in ['class','classname']: #объект тип и имя класса (строка)
             if not self.getFactory().classNameExists(value):
                 pref = "Тип объекта" if 'class'==tname else "Имя класса"

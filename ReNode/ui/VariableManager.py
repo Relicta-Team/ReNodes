@@ -195,9 +195,9 @@ class VariableLibrary:
             defaultValue='-1',parseFunction=lambda x: x),
 
             #struct special category
-            VariableTypedef("struct","Структура",PropAbstract,
+            VariableTypedef("struct","Структура",StructureWidget,
                 color=QtGui.QColor("#041CBD"),
-            defaultValue='[]',parseFunction=lambda x: x),
+            defaultValue='[]',parseFunction=lambda x: ast.literal_eval(x)),
 
             VariableTypedef("model","Модель",PropLineEdit
                 # ,{"input": {
