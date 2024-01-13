@@ -1144,7 +1144,8 @@ class CodeGenerator:
         scopes = [CodeGenerator.ExecScope(entryObj,"entry")]
         
         if not dpdGraphExt.get(entryId):
-            #TODO нет подключений для точки входа
+            if needReturn:
+                self.exception(CGReturnTypeNotFoundException,source=entryObj,entry=entryObj,context=retTypenameExpect)
             return True
 
         enterScope(entryId,scopes)
