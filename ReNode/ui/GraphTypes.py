@@ -431,7 +431,7 @@ class GamemodeGraph(ClassGraphType):
             "preSetup",
             "postSetup",
             "onTick",
-            "checkFinish",
+            "_checkFinishWrapper",
             "onFinish"
         ]
 
@@ -451,7 +451,10 @@ class RoleGraph(ClassGraphType):
 
     def getFirstInitMethods(self):
         return [
-            #TODO implement
+            "getEquipment",
+            "_onAssignedWrapper",
+            "onEndgameBasic",
+            "_onDeadBasicWrapper"
         ]
     
 class GameObjectGraph(ClassGraphType):
