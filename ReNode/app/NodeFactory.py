@@ -37,6 +37,7 @@ class NodeFactory:
 		except Exception as e:
 			layout_data = None
 			self.logger.error('Cannot read data from file.\n{}'.format(e))
+			raise Exception(f'Не найдена библиотека узлов {file_path}')
 
 		if not layout_data:
 			return

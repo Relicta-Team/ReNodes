@@ -203,11 +203,12 @@ def AppMain():
 	logger.info(appload_text)
 
 	# при обновлении файла стиля вызывает метод onReloadStyle
-	# filewatcher
-	fs_watcher = QtCore.QFileSystemWatcher()
-	fs_watcher.addPath("./data/qss/default.qss")
-	#print fws files
-	fs_watcher.fileChanged.connect(application.mainWindow.onReloadStyle)
+	if Application.isDebugMode():
+		# filewatcher
+		fs_watcher = QtCore.QFileSystemWatcher()
+		fs_watcher.addPath("./data/qss/default.qss")
+		#print fws files
+		fs_watcher.fileChanged.connect(application.mainWindow.onReloadStyle)
 
 	logger.info("Application loaded.")
 

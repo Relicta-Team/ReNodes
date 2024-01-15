@@ -50,11 +50,15 @@ class MainWindow( QMainWindow ):
 	
 	def createMenu(self):
 		from ReNode.ui.LoggerConsole import ConsoleCommand,ClearConsoleCommand
+		from ReNode.app.application import Application
 		self.newAction = QAction('&Новый скрипт', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Новый скрипт")
 		self.openAction = QAction('&Открыть', self, triggered=self.onOpenFile, shortcut="Ctrl+O", statusTip="Открыть")
 		self.saveAction = QAction('&Сохранить', self, triggered=self.onSaveFile, shortcut="Ctrl+S", statusTip="Сохранить")
 		self.exitAction = QAction('&Выход', self, triggered=self.onExit, shortcut="Ctrl+Q", statusTip="Выход")
-		self.reloadStyle = QAction('&Обновить стиль', self, triggered=self.onReloadStyle, shortcut="Ctrl+R")
+		
+		self.reloadStyle = None
+		if Application.isDebugMode():
+			self.reloadStyle = QAction('&Обновить стиль', self, triggered=self.onReloadStyle, shortcut="Ctrl+R")
 
 		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
 
@@ -72,8 +76,10 @@ class MainWindow( QMainWindow ):
 		self.fileMenu.addAction(self.saveAction)
 		self.fileMenu.addSeparator()
 		self.fileMenu.addAction(self.exitAction)
-		self.fileMenu.addSeparator()
-		self.fileMenu.addAction(self.reloadStyle)
+		
+		if self.reloadStyle:
+			self.fileMenu.addSeparator()
+			self.fileMenu.addAction(self.reloadStyle)
 
 		self.editMenu = menubar.addMenu("&Правка")
 		self.editMenu.addAction(self.generateCode)

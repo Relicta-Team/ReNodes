@@ -44,7 +44,9 @@ def clamp(n, min, max):
         return n
     
 def updateIconColor(icon : QIcon, color) -> QIcon:
-    size = icon.availableSizes()[0]
+    avaSizes = icon.availableSizes()
+    if not avaSizes: return icon
+    size = avaSizes[0]
     pixmap = icon.pixmap(icon.actualSize(size))  # Указываете желаемый размер
 
     painter = QPainter(pixmap)

@@ -119,8 +119,12 @@ class NodeGraphComponent:
 
 			if not self.mainWindow.restoreGeometry(winposBytes):
 				Application.refObject.logger.error("Failed to restore window position")
+			else:
+				Application.refObject.logger.info("Loaded windows geometry")
 			if not self.mainWindow.restoreState(stateBytes):
 				Application.refObject.logger.error("Failed to restore window state")
+			else:
+				Application.refObject.logger.info("Loaded windows state")
 			
 		
 		# load opened sessions
