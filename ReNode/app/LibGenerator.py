@@ -297,7 +297,7 @@ class NodeObjectHandler:
 					break
 		isPureCalling = self.memberData['memtype'] == 'const'
 		if returnId >= 0 and not isPureCalling:
-			code = f'@genvar.out.{returnId} = {code}'
+			code = f'private @genvar.out.{returnId} = {code}'
 		if not isPureCalling:
 			code += "; @out.1"
 
