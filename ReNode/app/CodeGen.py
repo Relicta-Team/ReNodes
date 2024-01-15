@@ -212,6 +212,9 @@ class CodeGenerator:
                 from PyQt5.QtWidgets import QApplication
                 QApplication.clipboard().setText(code)
 
+            if self._exceptions:
+                raise CGCompileAbortException()
+
             iData = self.gObjMeta['infoData']
             graphName = FileManagerHelper.getCompiledScriptFilename(iData)
             
