@@ -175,6 +175,22 @@ class GraphTypeBase:
             cgObj.nodeWarn(CGNodeEntryCodeMissingSemicolon,source=nodeObject)
             node_code += ";"
 
+        #check member exists in class
+        if "classInfo" in classLibData:
+            clsInfo = classLibData['classInfo']
+            memtype = clsInfo['type']
+            memname = clsInfo['name']
+            catchErrThis = True
+            if memtype == 'field':
+                if memname in cgObj.getFactory().getClassAllFields(metaObj['classname']):
+                    catchErrThis = False
+            if memtype == 'method':
+                if memname in cgObj.getFactory().getClassAllMethods(metaObj['classname']):
+                    catchErrThis = False
+            if catchErrThis:
+                from ReNode.app.CodeGenExceptions import CGMethodOverrideNotFoundException
+                cgObj.exception(CGMethodOverrideNotFoundException,source=nodeObject,context=metaObj['classname'],target=nodeObject)
+
         nodeObject.code = node_code
 
     def handlePreStartEntry(self,nodeObjec,metaObj):
