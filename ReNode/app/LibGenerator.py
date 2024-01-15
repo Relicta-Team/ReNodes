@@ -129,9 +129,37 @@ class NodeObjectHandler:
 	def __setitem__(self, key, value):
 		self.memberData[key] = value
 
+	def getSpecialTypesStorage(self,typeprefix,typename):
+		dat = self.classMetadata['ReNode_AbstractEnum']
+		if not dat:
+			raise Exception("Empty special type storage")
+		propId = ''
+		if typeprefix == "enum":
+			propId = 'allEnums'
+		elif typeprefix == "struct":
+			propId = 'allStructs'
+		else:
+			raise Exception(f"Unknown typeprefix: {typeprefix}")
+		return dat[propId][typename]
+
 	def getVarlibOptionByType(self,type,textName=None):
 		typeList = NodeObjectHandler.varLib.typeList
 		dictInfo = {}
+		# (portEnumName, {
+		# 			"type":"list",
+		# 			"text": portEnumName,
+		# 			"default": self.enumList[0]['name'],
+		# 			"values": values,
+		# 		})
+		if type.startswith("enum."):
+			stor = self.getSpecialTypesStorage("enum",type)
+			return {
+				"type":"list",
+				"text":textName or stor['name'],
+				"default":stor['values'][0],
+				"values":stor['values']
+			}
+
 		for objVar in typeList:
 			if objVar.variableType == type:
 				props = objVar.dictProp
