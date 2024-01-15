@@ -13,6 +13,7 @@ doUpdateMajor = False
 doUpdateMinor = False
 updateVersionFileTask = False
 deploySource = False
+deployExeOnly = False
 args = sys.argv
 if len(args) > 1:
 	#iterate
@@ -23,9 +24,13 @@ if len(args) > 1:
 		elif argval == "minor":
 			doUpdateMinor = True
 			updateVersionFileTask = True
-		elif argval == "deploy":
+		elif argval in ["deploy","deploy_exe"]:
 			deploySource = True
 			updateVersionFileTask = True
+			if argval == "deploy_exe":
+				deployExeOnly = True
+
+
 
 if updateVersionFileTask:
 	print("Update version file")
@@ -67,15 +72,17 @@ if deploySource:
 			raise Exception("Compiler error: Code " + str(return_))
 		
 		#cleanup deploy folder
-		if os.path.exists(deployProjectPath):
+		if os.path.exists(deployProjectPath) and not deployExeOnly:
 			shutil.rmtree(deployProjectPath + "/data")
 		if os.path.exists(deployProjectPath + "/ReNode.exe"):
 			os.remove(deployProjectPath + "/ReNode.exe")
 
 		print("Copy files...")
+
 		dest = deployProjectPath
 
-		shutil.copytree('./data',dest+"/data")
+		if not deployExeOnly:
+			shutil.copytree('./data',dest+"/data")
 		shutil.copyfile('./dist/ReNode.exe',dest+"/ReNode.exe")
 
 		print('Done')

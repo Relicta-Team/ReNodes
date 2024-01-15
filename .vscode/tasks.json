@@ -27,13 +27,13 @@
             ],
             "problemMatcher": [],
             "group": {
-              "kind": "build",
-              "isDefault": true
+                "kind": "build",
+                "isDefault": true
             },
             "presentation": {
-              "focus": true,
-              "reveal": "always"
-            },
+                "focus": true,
+                "reveal": "always"
+            }
         },
         {
             "label": "Increment major",
@@ -49,14 +49,29 @@
             "label": "Update git revision",
             "type": "process",
             "command": "python",
-            "args": ["builder.py"],
+            "args": [
+                "builder.py"
+            ],
             "problemMatcher": []
         },
         {
             "label": "Build and DEPLOY (to local fork)",
             "type": "process",
             "command": "python",
-            "args": ["builder.py","deploy"],
+            "args": [
+                "builder.py",
+                "deploy"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build EXE and DEPLOY (to local fork)",
+            "type": "process",
+            "command": "python",
+            "args": [
+                "builder.py",
+                "deploy_exe"
+            ],
             "problemMatcher": []
         },
         {
@@ -71,8 +86,8 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-                },
-                "presentation": {
+            },
+            "presentation": {
                 "focus": true,
                 "reveal": "always"
             }
@@ -89,8 +104,8 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-                },
-                "presentation": {
+            },
+            "presentation": {
                 "focus": true,
                 "reveal": "always"
             }
