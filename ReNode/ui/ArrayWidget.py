@@ -466,7 +466,8 @@ class StructureWidget(QWidget):
         elementLayout = QHBoxLayout()
 
         moveUpButton = QLabel(f"{name}")
-
+        if structMemInfo.get('desc',''):
+            moveUpButton.setToolTip(structMemInfo['desc'])
         elementLayout.addWidget(moveUpButton)
 
         # Создайте виджет для значения элемента (может быть QLineEdit, QSpinBox или другой)
