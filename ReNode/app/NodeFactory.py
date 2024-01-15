@@ -72,7 +72,7 @@ class NodeFactory:
 		for nodecat,nodelist in data.get('nodes', {}).items():
 			self.logger.info(f"Loading category: {nodecat}")
 			for node,dataNode in nodelist.items():
-				self.logger.info(f"	Loading node '{node}'")
+				self.logger.debug(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,dataNode)
 
 		#load classes

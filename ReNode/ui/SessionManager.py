@@ -61,7 +61,9 @@ class TabData:
                 self.graph.begin_undo("Иницализация начальных узлов")
                 newNodes = []
                 for maker in makerList:
-                    newNodes.append(fact.instance(maker,self.graph))
+                    iObj = fact.instance(maker,self.graph)
+                    if iObj:
+                        newNodes.append(iObj)
                 if newNodes:
                     self.graph.auto_layout_nodes(newNodes)
                 self.graph.end_undo()

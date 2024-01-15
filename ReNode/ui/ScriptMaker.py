@@ -227,7 +227,7 @@ class WizardScriptMaker(QWizard):
 
 		postfixLabel = self._addLabel("Без примечаний",isRichText=True)
 
-		path = "not_defined"
+		path = gobj.savePath
 		def _validateAll():
 			prefix = ""
 			name = gmname.text()

@@ -6,8 +6,8 @@ import re
 
 configValues = {
     "main": {
-        "version": 2,
-        "workdir": "src\\ReNode",
+        "version": 2, #версия конфига. При добавлении новых атрибутов увеличить на 1
+        "workdir": ".", #рабочая директория. в рабочей директории лежат папки компиляции и графов
         #"tempvalue": True
     },
     "internal": {

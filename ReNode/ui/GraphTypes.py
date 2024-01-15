@@ -424,6 +424,7 @@ class GamemodeGraph(ClassGraphType):
     parent_classnameText = "ScriptedGamemode"
     
     canCreateFromWizard = True
+    savePath = "Graphs\\Gamemodes" 
     createFolder = True
 
     def getFirstInitMethods(self):
@@ -448,6 +449,7 @@ class RoleGraph(ClassGraphType):
     parent_classnameText = "ScriptedRole"
 
     canCreateFromWizard = True
+    savePath = "Graphs\\Roles"
 
     def getFirstInitMethods(self):
         return [
