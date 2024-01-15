@@ -38,7 +38,7 @@ class SplashScreenHandler(logging.Handler):
 
 class Application:
 	
-	appName = "ReNodes"
+	appName = "ReNode"
 	appVersion = (global_version[0],global_version[1])
 	appRevision = global_revision
 	arguments = []
