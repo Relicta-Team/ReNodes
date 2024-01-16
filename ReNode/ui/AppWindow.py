@@ -62,10 +62,10 @@ class MainWindow( QMainWindow ):
 
 		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
 
-		self.switchVariableViewerAction = QAction("Переключить окно &пользовательских свойств",self,triggered=self.switchVariableViewer,shortcut="Alt+1",statusTip="Переключает видимость окна переменных")
-		self.switchLoggerAction = QAction("Переключить окно &логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+2",statusTip="Переключает видимость окна консоли")
-		self.switchHistoryAction = QAction("Переключить окно &истории",self,triggered=self.switchHistoryVisual,shortcut="Alt+3",statusTip="Переключает видимость окна истории")
-		self.switchInspectorAction = QAction("Переключить окно &инспектора",self,triggered=self.switchInspectorVisual,shortcut="Alt+4",statusTip="Переключает видимость окна инспектора")
+		self.switchInspectorAction = QAction("Переключить окно &инспектора",self,triggered=self.switchInspectorVisual,shortcut="Alt+1",statusTip="Переключает видимость окна инспектора")
+		self.switchVariableViewerAction = QAction("Переключить окно &пользовательских свойств",self,triggered=self.switchVariableViewer,shortcut="Alt+2",statusTip="Переключает видимость окна переменных")
+		self.switchLoggerAction = QAction("Переключить окно &логирования",self,triggered=self.switchLoggerVisual,shortcut="Alt+3",statusTip="Переключает видимость окна консоли")
+		self.switchHistoryAction = QAction("Переключить окно &истории",self,triggered=self.switchHistoryVisual,shortcut="Alt+4",statusTip="Переключает видимость окна истории")
 
 		menubar = self.menuBar()
 		self.fileMenu = menubar.addMenu('&ReNodes')
@@ -85,10 +85,11 @@ class MainWindow( QMainWindow ):
 		self.editMenu.addAction(self.generateCode)
 
 		self.windows = menubar.addMenu("&Окна")
+		self.windows.addAction(self.switchInspectorAction)
 		self.windows.addAction(self.switchVariableViewerAction)
 		self.windows.addAction(self.switchLoggerAction)
 		self.windows.addAction(self.switchHistoryAction)
-		self.windows.addAction(self.switchInspectorAction)
+		self.windows.addAction(QAction("Скрыть все окна",self,triggered=self.hideAllWindows,shortcut="Alt+`"))
 		self.windows.addAction(QAction("Сбросить позиции окон",self,triggered=self.resetWindows))
 		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
 		
@@ -151,3 +152,9 @@ class MainWindow( QMainWindow ):
 	def resetWindows(self):
 		self.restoreState(self.nodeGraph._defaultState)
 		self.restoreGeometry(self.nodeGraph._defaultGeometry)
+
+	def hideAllWindows(self):
+		self.nodeGraph.variable_manager.setVisible(False)
+		self.nodeGraph.log_dock.setVisible(False)
+		self.nodeGraph.undoView_dock.setVisible(False)
+		self.nodeGraph.inspector.setVisible(False)
