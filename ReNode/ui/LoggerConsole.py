@@ -111,6 +111,8 @@ class LoggerConsole(QDockWidget):
         self.messages = []
         self.maxMessages = 1024*2
 
+        self.visibilityChanged.connect(self.update)
+
         # debug messages
         #for i in range(self.maxMessages):
         #    self.messages.append(f'Тест сообщение {i}')
@@ -226,7 +228,8 @@ class LoggerConsole(QDockWidget):
             self.messages.pop(0)
         
         # call in next frame
-        QTimer.singleShot(0, self.update)
+        if self.isVisible():
+            QTimer.singleShot(0, self.update)
 
     def update(self):
         if not self.log_text: return
