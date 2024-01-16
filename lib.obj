@@ -309,7 +309,7 @@ def:node:control
 		node:callaftercond
 		name:Условный таймер
 		namelib:Вызов по таймеру с условием
-		desc:Узел "Условный таймер" предназначен для исполнения задержек (пауз) между действиями внутри функции. При поступлении входного импульса выполнение приостанавливается до тех пор, пока условие, вычисляемое каждый кадр не будет истинно. Как только условие станет истинно таймер будет остановлен и пошлётся импульс на 
+		desc:Узел "Условный таймер" предназначен для исполнения задержек (пауз) между действиями внутри функции. При поступлении входного импульса выполнение приостанавливается до тех пор, пока условие, вычисляемое каждый кадр не будет истинно. Как только условие станет истинно таймер будет остановлен и пошлётся импульс на выходной порт "Вызов".
 		color:Operator
 		icon:data\\icons\\icon_ClockwiseRotation_16x
 		code: startAsyncInvoke {@context.alloc; @in.2}, {SCOPENAME "exec"; @context.alloc; @out.1 },@context.get,@in.3,{SCOPENAME "exec"; @context.alloc; @out.2} endAsyncInvoke
@@ -686,6 +686,7 @@ def:node:string
     desc:Создает строку 
     icon:data\\icons\\pill_16x.png
     runtimeports:1
+    color:PureFunction
     exec:pure
     code:[ @genport.in.1(,) ] joinString ""
     in:string:Строка 1
@@ -1881,7 +1882,7 @@ path:Структуры
 
 name:Точка спавна
 desc:Данная структура предназначена для появления персонажей на указанных точках
-eval:enum.SpawnPointType:Тип спавна::Тип точки спавна
+eval:enum.SpawnPointType:Тип спавна:Спавнпоинт:Тип точки спавна
 eval:string:Имя спавна::Имя точки спавна
 
 def:struct:structs
@@ -1891,7 +1892,7 @@ path:Структуры
 name:Точка привязки
 desc:Данная структура предназначена для привязки персонажей к объектам (стульям или кроватям). Работает совместно со структурой точки спавна. Когда указан тип привязки "Глобальная ссылка" будет осуществлён поиск объекта по по глобальной ссылке, а когда указан "Тип объекта" поиск выполнится по указанному типу. При привязке по типу в указанной точке спавна будет выполнен поиск объекта по указанному типу. Если объект по ссылке или по типу не найден - привязки не произойдёт и персонаж появится сразу на точке спавна.
 
-eval:enum.SpawnLocationConnectionType:Тип привязки::Тип поиска объекта для привязки персонажа. Если указан тип привязки "Не определено" - привязка не будет выполнена.
+eval:enum.SpawnLocationConnectionType:Тип привязки:Не определено:Тип поиска объекта для привязки персонажа. Если указан тип привязки "Не определено" - привязка не будет выполнена.
 eval:string:Глобальная ссылка::Уникальное имя объекта на карте для привязки (если выбран тип привязки "Глобальная ссылка").
 eval:classname:Тип объекта:GameObject:Тип объекта для привязки (если выбран тип привязки "Тип объекта"). При выборе привязки по типу на точке спана в небольшом радиусе будет выполнен поиск объекта с указанным типом.
 eval:int:Индекс сиденья:-1:Индекс места для посадки. Предназначено для двухместных и более сидений (например двухспальных кроватей). Значение, равное -1 игнорирует это свойство при привязке.
@@ -1917,15 +1918,26 @@ path:Структуры
     namelib:Определение вторичного навыка
     desc:Определение вторичного навыка. Такими например могут быть скрытность, хирургия, владение холодным оружием и т.д.
     
-eval:enum.SkillType:Тип навыка::Тип навыка для выдачи персонажу.
+eval:enum.SkillType:Тип навыка:'-1':Тип навыка для выдачи персонажу.
 eval:vector2:Диапазон навыка:[0,1]:Диапазон значений навыка для выдачи персонажу.
 
 def:struct:structs
 node:ConditionToStartGamemode
 path:Структуры
 name:Условие запуска
+desc:Данная структура предназначена для проверки возможности начала раунда. Если запуск равен ИСТИНЕ, то таймер в лобби сбросится и выведется сообщение из причины задержки. В ином случае раунд будет запущен.
+
 eval:bool:Запуск:false:Указывает можно ли запустить раунд
 eval:string:Причина задержки:Без описания:Указываемая причина невозможности старта раунда при флаге запуска, равном ИСТИНЕ
+
+def:struct:structs
+node:GamemodeFinishResult
+path:Структуры
+name:Завершение раунда
+desc:Данная структура предназначена для получения результата конца раунда.
+
+eval:int:Результат:0:Результат конца раунда. Число, равное 0 означает, что раунд не завершен.
+eval:string:Описание:Без описания:Текстовое описание результата конца раунда.
 $ENDREGION:FUNCTIONS
 $REGION:CLASSMEM
 def:c:ScriptedGamemode
@@ -1971,17 +1983,18 @@ def:f:ScriptedGamemode.duration_0
 		classprop:1
 		defval:3600
 	
-def:m:ScriptedGamemode.getAntagRoleFull_0
+def:m:ScriptedGamemode._getAntagRoleFullWrapper_0
 
 		name:Получить тип полного антагониста
 		namelib:Обработчик полных антагонистов
 		desc:Возвращает строковое название класса полного (уникального) антагониста, которое переопределит роль зашедшего игрока. Срабатывает при старте раунда для игроков, которые выбрали полных или любых антагонистов и чьи роли могут стать полными антагонистами.\n
-		code:func(@thisName) { @thisParams;@genvar.out.4.internal(_countInGame)@genvar.out.5.internal(_countProbFullAntags) @out.1 };
-		return:string:Название класса полного антагониста. Если возвращается пустая строка - значит игрок не станет антагонистом и его роль не переопределится.
+		code:func(@thisName) { @thisParams;@genvar.out.5.internal(_countInGame)@genvar.out.6.internal(_countProbFullAntags) @out.1 };
+		return:classname:Название класса полного антагониста.
 		type:event
 		out:ServerClient^:Клиент:Объект проверяемого клиента, зашедший в игру на старте раунда.
 			opt:mul=1
 		out:int:Номер клиента:Порядковый номер проверяемого клиента. Отсчет ведется с 1. Для первого клиента это значение будет 1, для второго - 2 и т.д.
+		out:classname:Текущая роль:Имя класса роли, с которой проверяется данный клиент. Верните это значение для ролей игроков, которые не должны стать антагонистами.
 		out:int:Всего игроков:Отражает количество игроков, зашедших в игру на старте раунда. Данное число удобно, когда нам нужно определить антагониста от процентного соотношения всех игроков.
 			opt:gen_param=0
 		out:int:Полных антагонистов:Отражает количество игроков, которые выбрали полных антагонистов. Если никто не выбрал полных антагонистов - на полных антагонистов будут проверены все, исключая игроков, чьи роли не могут быть полными антагонистами.
@@ -1989,11 +2002,10 @@ def:m:ScriptedGamemode.getAntagRoleFull_0
 	
 def:m:ScriptedGamemode.handleAntagRoleHidden_0
 
-		name:Получить тип скрытого антагониста
+		name:Обработчик скрытых антагонистов
 		namelib:Обработчик скрытых антагонистов
 		desc:Возвращает строковое название класса скрытого антагониста, которое переопределит роль зашедшего игрока. Срабатывает при старте раунда, когда все игроки распределены по ролям и загрузились в игру.
 		code:func(@thisName) { @thisParams;@genvar.out.4.internal(_countInGame)@genvar.out.5.internal(_countProbHiddenAntags); @out.1};
-		return:string:Название класса скрытого антагониста. Если возвращается пустая строка - значит игрок не станет скрытым антагонистом и его роль не переопределится.
 		type:event
 		out:ServerClient^:Клиент:Объект проверяемого клиента, зашедший в игру на старте раунда.
 			opt:mul=1
@@ -2003,12 +2015,12 @@ def:m:ScriptedGamemode.handleAntagRoleHidden_0
 		out:int:Скрытых антагонистов:Отражает количество игроков, которые выбрали скрытых антагонистов. Если никто не выбрал скрытых антагонистов - на скрытых антагонистов будут проверены все, исключая игроков, чьи роли не могут быть скрытыми антагонистами.
 			opt:gen_param=0
 	
-def:f:ScriptedGamemode.finishResult_0
+def:f:ScriptedGamemode._currentFinishResult_0
 
 		name:Результат конца раунда
-		namelib:Получить результат конца раунда
-		desc:Результат конца раунда это число, которое отражает исход раунда. Обычно положительные числа являются положительным исходом, а отрицательные - негативным.\nЛюбое значение, отличное от 0 немедленно завершит раунд.
-		prop:get
+		desc:Результат конца раунда это число, которое отражает исход раунда. Обычно положительные (больше 0) числа являются положительным исходом, а отрицательные (меньше 0) - негативным.\nЛюбое значение, отличное от 0 немедленно завершит раунд.
+		prop:all
+		return:struct.GamemodeFinishResult:Результат конца раунда
 	
 def:m:ScriptedGamemode.preSetup_0
 
@@ -2024,21 +2036,12 @@ def:m:ScriptedGamemode.postSetup_0
 		desc:Данное событие вызывается когда раунд начался и все готовые игроки зашли в игру.
 		type:event
 	
-def:m:ScriptedGamemode.checkFinish_0
+def:m:ScriptedGamemode._checkFinishWrapper_0
 
 		name:Проверка конца раунда
 		namelib:Обработка конца раунда
 		desc:Данное событие срабатывает раз в секунду после начала раунда. Чтобы завершить раунд с нужным исходом, используйте узел 'Получить результат конца раунда'.\nДля установки нужного конца раунда используйте узел 'Установить результат конца раунда'.
 		type:event
-		code:func(@thisName) {@thisParams; @out.1; getSelf(finishResult)};
-	
-def:m:ScriptedGamemode.setFinishResult_0
-
-		name:Установить результат конца раунда
-		namelib:Завершить раунд
-		desc:Устанавливает результат конца раунда. Любое число, отличное от 0 является концом раунда. Соответственно 0 означает, что раунд будет продолжаться\nЕсли результат уже установлен, то эта функция перезапишет его.
-		in:int:Результат:Результат конца раунда
-		lockoverride:1
 	
 def:m:ScriptedGamemode.onFinish_0
 
@@ -2076,22 +2079,13 @@ def:m:ScriptedGamemode.getLobbyBackground_0
 		return:string:Путь до лобби-темы
 		defval:lobby\lobby.paa
 	
-def:m:ScriptedGamemode.conditionToStart_0
+def:m:ScriptedGamemode._conditionToStartWrapper_0
 
 		name:Условие запуска раунда
 		namelib:Условие запуска раунда
-		desc:Данное условие выполняется когда таймер истек. Оно нужно например для проверки были ли заняты определенные роли. По умолчанию если нет никаких проверок раунд будет сразу запущен. Для установки запрета на старт используйте узел 'Запрет запуска раунда'.
-		code:func(@thisName) {@thisParams; @out.1; getSelf(__canStartRound)};
+		desc:Данное условие выполняется когда таймер истек. Оно нужно например для проверки были ли заняты определенные роли. По умолчанию если нет никаких проверок раунд будет сразу запущен.
 		type:event
-	
-def:m:ScriptedGamemode.setCannotStartRoundReason_0
-
-		name:Запрет запуска раунда
-		namelib:Запрет запуска раунда
-		desc:Сообщает, что раунд нельзя запустить по указанной причине.
-		type:method
-		in:string:Причина:Описание причины невозможности запуска раунда
-		lockoverride:1
+		return:struct.ConditionToStartGamemode:Воможность запуска раунда
 	
 def:m:ScriptedGamemode.onTick_0
 
@@ -2119,6 +2113,14 @@ def:m:ScriptedGamemode.getCandidatesCount_0
 		in:classname:Роль:Название роли
 		return:int:Количество кандидатов, занявших эту роль.
 	
+def:m:ScriptedGamemode._getRolesWrapper_0
+
+		name:Доступные роли
+		desc:Список ролей, доступных для этого режима. Сюда входят как роли, доступные в лобби, так и роли, видимые после старта раунда. Настройка видимости роли на разных стадиях игры настраивается внутри самих ролей.
+		type:const
+		return:array[classname]:Список ролей, доступных в режиме.
+		defval:[]
+	
 def:c:ReNode_AbstractEnum
 
 		name:Абстрактное перечисление
@@ -2131,14 +2133,6 @@ def:c:ScriptedRole
 		desc:Базовая игровая роль, от которой создаются пользовательские роли.
 		path:Игровая логика.Роли
 	
-def:m:ScriptedRole.__allowedToGamemodes_0
-
-		name:Доступна в режимах
-		namelib:Доступ роли на режимы
-		desc:Отвечает за имя загружаемой в режим карты. Если это пустая строка, то карта не будет загружена
-		type:const
-		return:array[classname]:Список названий режимов, в которых доступна данная роль
-	
 def:f:ScriptedRole.name_0
 
 		name:Имя роли
@@ -2146,6 +2140,7 @@ def:f:ScriptedRole.name_0
 		prop:get
 		classprop:1
 		return:string:Имя роли
+		defval:Роль
 	
 def:f:ScriptedRole.desc_0
 
@@ -2159,10 +2154,28 @@ def:f:ScriptedRole.descInGame_0
 
 		name:Игровое описание роли
 		namelib:Описание роли в игре
-		desc:Описание роли для игры. Если не определено то для игру будет взято описание из "Описание роли".
+		desc:Описание роли для игры. Если не переопределено или пустая строка, то для игры будет взято описание из "Описание роли".
 		prop:get
 		classprop:1
 		return:string:Описание роли для игры
+	
+def:f:ScriptedRole.classMan_0
+
+		name:Класс мужского персонажа
+		desc:Класс мужского типа персонажа.
+		prop:get
+		classprop:1
+		return:classname:Класс для мужского персонажа
+		defval:Mob
+	
+def:f:ScriptedRole.classWoman_0
+
+		name:Класс женского персонажа
+		desc:Класс женского типа персонажа.
+		prop:get
+		classprop:1
+		return:classname:Класс для женского персонажа
+		defval:MobWoman
 	
 def:m:ScriptedRole.isMainRole_0
 
@@ -2175,11 +2188,30 @@ def:m:ScriptedRole.isMainRole_0
 def:f:ScriptedRole.returnInLobbyAfterDead_0
 
 		name:В лобби после смерти
-		namelib:Возврат в лобби после смерти
+		namelib:Возврат в лобби после смерти (разрешить призрака)
 		desc:Опция отвечает за автоматический возврат в лобби после смерти персонажа. Если она включена - возвращает игрока в лобби сразу после смерти, иначе позволяет покинуть тело и в роли призрака наблюдать за остальными.
 		prop:get
+		classprop:1
 		return:bool:Нужно ли вернуть владельца роли в лобби после смерти
-		defval:true
+		defval:false
+	
+def:f:ScriptedRole._deadTimeout_0
+
+		name:Таймаут смерти
+		desc:Время в секундах, после которого призрак сможет вернуться обратно в лобби. Работает только если выключена опция "В лобби после смерти".
+		prop:all
+		classprop:1
+		return:int:Таймаут:Время в секундах, через которое призрак сможет вернуться в лобби.
+		defval:10
+	
+def:m:ScriptedRole._getDeadTimeout_0
+
+		name:Получить таймаут смерти
+		desc:Данное событие предназначено для гибкой настройки получения таймаута смерти. Событие вызывается в момент смерти персонажа, который владеет этой ролью.
+		type:event
+		out:BasicMob^:Моб:Объект моба, для которого вызывалось данное событие.
+		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие. Может быть null ссылкой, если моб умер, когда за него не играл клиент в момент смерти.
+		return:int:Время ожидания для призрака в секундах, после которого он сможет вернуться в лобби.
 	
 def:m:ScriptedRole.canStoreNameAndFaceForValidate_0
 
@@ -2193,7 +2225,7 @@ def:f:ScriptedRole.count_0
 
 		name:Количество заходов
 		namelib:Количество заходов за роль
-		desc:Это число отвечает за количество возможных заходов за роль. Когда каждый игрок заходит за эту роль, то количество уменьшается на 1.
+		desc:Это число отвечает за количество возможных заходов за роль. Когда каждый игрок заходит за эту роль, то количество уменьшается на 1. Когда это число становится равным нулю, то больше не получится зайти за эту роль.
 		prop:get
 		return:int:Количество заходов
 		defval:1
@@ -2232,22 +2264,22 @@ def:m:ScriptedRole._getOtherSkillsWrapper_0
 		type:event
 		return:array[struct.SkillDef]:Массив навыков
 	
-def:m:ScriptedRole.canVisibleAfterStart_0
-
-		name:Видимость роли после старта
-		desc:Будет ли видна эта роль в списке ролей после старта. С помощью входного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
-		type:event
-		out:ServerClient^:Клиент:Объект клиента, который запрашивает видимость роли.
-		return:bool:Видимость роли после старта
-	
 def:m:ScriptedRole.canTakeInLobby_0
 
 		name:Видимость роли в лобби
-		desc:Будет ли видна эта роль в списке ролей до старта раунда из лобби. С помощью входного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
+		desc:Будет ли видна эта роль в списке ролей до старта раунда из лобби. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
 		type:event
 		out:ServerClient^:Клиент:Объект клиента, который запрашивает видимость роли.
 		out:bool:Вывод ошибок:Этот параметр принимает значение ИСТИНА, когда запрос осуществляется с возможностью вывода ошибки. Например, если настроить ограничение на пол для роли, то при включенном флаге можно отправить клиенту сообщение о том, что пол его персонажа не подходит.
 		return:bool:Видимость роли в лобби
+	
+def:m:ScriptedRole.canVisibleAfterStart_0
+
+		name:Видимость роли после старта
+		desc:Будет ли видна эта роль в списке ролей после старта. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
+		type:event
+		out:ServerClient^:Клиент:Объект клиента, который запрашивает видимость роли.
+		return:bool:Видимость роли после старта
 	
 def:m:ScriptedRole.needDiscordRoles_0
 
@@ -2261,9 +2293,9 @@ def:m:ScriptedRole.canBeFullAntag_0
 
 		name:Полный антагонист
 		namelib:Может быть полным антагонистом
-		desc:Отвечает за то, может ли клиент, взявший эту роль быть полным антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль. Полным антагонистам выполняется замена роли, а выбор этих ролей происходит в логике игрового режима.
+		desc:Отвечает за то, может ли клиент, взявший эту роль быть полным антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль - в этом событии не требуется проверять является ли роль ключевой. Полным антагонистам выполняется замена роли, а выбор этих ролей происходит в логике игрового режима.
 		type:event
-		out:ServerClient^:Клиент:Объект клиента, который проверяется на полного антагониста
+		out:ServerClient^:Клиент:Объект клиента, который проверяется на полного антагониста.
 		return:bool:Полный антагонист
 	
 def:m:ScriptedRole.canBeHiddenAntag_0
@@ -2272,39 +2304,30 @@ def:m:ScriptedRole.canBeHiddenAntag_0
 		namelib:Может быть скрытым антагонистом
 		desc:Отвечает за то, может ли клиент, взявший эту роль быть скрытым антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль. Скрытые антагонисты получают свои особые задачи без смены роли, в отличии от полных антагонистов. Выбор таких ролей происходит в логике игрового режима.
 		type:event
-		out:ServerClient^:Клиент:Объект клиента, который проверяется на скрытого антагониста
+		out:ServerClient^:Клиент:Объект клиента, который проверяется на скрытого антагониста.
 		return:bool:Скрытый антагонист
 	
 def:m:ScriptedRole.getBasicMobs_0
 
 		name:Базовые владельцы роли
-		desc:Возвращает список сущностей мобов, игроки которых зашли за эту роль.
+		desc:Возвращает список сущностей мобов, игроки которых заходили за эту роль.
 		type:method
 		exec:pure
 		lockoverride:1
 		return:array[BasicMob^]:Список мобов, зашедших за эту роль
 	
-def:m:ScriptedRole.getMobs_0
-
-		name:Владельцы роли
-		desc:Возвращает список сущностей мобов, которые владеют этой ролью в данный момент. От базовых владельцев этот список может отличаться, так как некоторые персонажи во время игры могут быть назначены на другие роли.
-		type:method
-		exec:pure
-		lockoverride:1
-		return:array[BasicMob^]:Список мобов, владеющих этой ролью
-	
 def:m:ScriptedRole._spawnLocationWrapper_0
 
 		name:Позиция появления
-		namelib:Событие точки появления роли
-		desc:Позиция появления роли (спавна персонажа). Может быть точкой спавна или рандомной точкой спавна.
+		namelib:Событие позиции появления роли
+		desc:Позиция появления роли (спавна персонажа). Может быть точкой спавна или рандомной точкой спавна. Данное событие предназначено для гибкой настройки выбора стартовой точки появления персонажа.
 		type:event
 		return:struct.SpawnPoint:Точка спавна:Рандомная или конечная точка спавна, на которой появится персонаж при заходе за эту роль.
 	
 def:f:ScriptedRole._currentSpawnLocation_0
 
 		name:Точка спавна
-		desc:Позиция спавна персонажа. Можно настроить кастомную логику выбора точки спавна с помощью события точки появления.
+		desc:Позиция спавна персонажа. Данное свойство отвечает за начальное появление персонажа при заходе за роль.
 		prop:get
 		classprop:1
 		return:struct.SpawnPoint:Точка спавна
@@ -2321,7 +2344,7 @@ def:m:ScriptedRole.useRandomDirOnSpawn_0
 def:f:ScriptedRole._currentConnectedTo_0
 
 		name:Точка привязки
-		desc:Позиция спавна персонажа. Можно настроить кастомную логику выбора точки спавна с помощью события точки появления.
+		desc:Точка привязки персонажа. Это свойство позволяет выбрать объект, на котором появится персонаж (кровати, стулья).
 		prop:get
 		classprop:1
 		return:struct.SpawnLocationConnection:Точка привязки рядом с позицией спавна
@@ -2331,7 +2354,7 @@ def:m:ScriptedRole._connectedToWrapper_0
 
 		name:Точка привязки
 		namelib:Событие точки привязки
-		desc:Событие для настройки расширенной логики определения точки привязки.
+		desc:Данное событие предназначено для гибкой настройки логики определения точки привязки.
 		type:event
 		return:struct.SpawnLocationConnection:Точка привязки:Искомый объект привязки.
 	
@@ -2339,11 +2362,11 @@ def:m:ScriptedRole.getEquipment_0
 
 		name:Выдача снаряжения
 		namelib:Событие выдачи снаряжения
-		desc:Событие, которое вызывается единожды при заходе клиента за роль. Используйте его для реализации выдачи снаряжения персонажу.
+		desc:Событие, которое вызывается единожды при заходе клиента за роль и используется для реализации выдачи снаряжения персонажу.
 		type:event
 		out:BasicMob^:Моб:Объект моба, которому будет выдано снаряжение
 	
-def:m:ScriptedRole.onAssigned_impl_0
+def:m:ScriptedRole._onAssignedWrapper_0
 
 		name:При назначении
 		namelib:Событие при назначении за роль
@@ -2353,32 +2376,14 @@ def:m:ScriptedRole.onAssigned_impl_0
 		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие.
 		out:bool:Позднее назначение:Этот порт отвечает за позднее назначение (после старта раунда). Когда возвращает ИСТИНУ - клиент зашёл на старте раунда, а когда ЛОЖЬ - уже после старта раунда.
 	
-def:m:ScriptedRole.onDead_0
-
-		name:При смерти
-		namelib:Событие при смерти на роли
-		desc:Вызывается когда персонаж умирает, будучи назначенным на эту роль. Клиент мог зайти за другую роль и быть назначенным на другую роль, для которой и вызовется данное событие.
-		type:event
-		out:BasicMob^:Моб:Объект моба, для которого вызывалось данное событие.
-		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие. Может быть null ссылкой, если моб умер, когда за него не играл клиент.
-	
-def:m:ScriptedRole.onDeadBasic_0
+def:m:ScriptedRole._onDeadBasicWrapper_0
 
 		name:При смерти за роль
 		namelib:Событие при смерти за роль
 		desc:Вызывается когда персонаж заходил за эту роль и умер. Событие вызывается для той роли, за которую клиент заходил из лобби или за роль полного антагониста, если он его получил.
 		type:event
 		out:BasicMob^:Моб:Объект моба, для которого вызывалось данное событие.
-		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие. Может быть null ссылкой, если моб умер, когда за него не играл клиент.
-	
-def:m:ScriptedRole.onEndgame_0
-
-		name:При конце раунда
-		namelib:Событие при конце раунда на роли
-		desc:Вызывается для персонажа, который имеет эту роль в данный момент в момент конца раунда. Событие вызывается только для мобов, за которых играют клиенты в момент завершения раунда.
-		type:event
-		out:BasicMob^:Моб:Объект моба, для которого вызывалось данное событие.
-		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие.
+		out:ServerClient^:Клиент:Объект клиента (владельца моба), для которого вызвалось данное событие. Может быть null ссылкой, если моб умер, когда за него не играл клиент в момент смерти.
 	
 def:m:ScriptedRole.onEndgameBasic_0
 
@@ -2443,7 +2448,7 @@ $REGION:CLASSMETA
 }
 ,"ReNode_AbstractEnum": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":337},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":310},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -11733,9 +11738,9 @@ $REGION:CLASSMETA
     "baseClass" : "GMBase",
     "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":8},
    "fields": { "defined": {
-"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"finishResult":{"return": "int"},"__canStartRound":{"return": "bool"},"__cannotStartReason":{"return": "string"},"__roles_lobby":{"return": "null_array"},"__roles_late":{"return": "null_array"},"__initialized_roles_lobby":{"return": "bool"},"__initialized_roles_late":{"return": "bool"}}   },
+"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"_currentFinishResult":{"return": "null_array"},"finishResult":{"return": "int"},"__rtf_buf":{"return": "string"},"__startRoundStructure":{"return": "null_array"}}   },
    "methods": { "defined": {
-"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"setFinishResult":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"setCannotStartRoundReason":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"}
+"_getAntagRoleFullWrapper":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"_checkFinishWrapper":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"_conditionToStartWrapper":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"_getRolesWrapper":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"}
 }   }
 }
 ,"GMTemplate": {
@@ -13342,11 +13347,11 @@ $REGION:CLASSMETA
 }
 ,"ScriptedRole": {
     "baseClass" : "BasicRole",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":347},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":320},
    "fields": { "defined": {
-"name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "null"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
+"name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "string"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"_deadTimeout":{"return": "int"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
    "methods": { "defined": {
-"__allowedToGamemodes":{"return": "<undefined>"},"isMainRole":{"return": "<undefined>"},"canStoreNameAndFaceForValidate":{"return": "<undefined>"},"_getSkillsWrapper":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"_getOtherSkillsWrapper":{"return": "<undefined>"},"getOtherSkills":{"return": "<undefined>"},"canVisibleAfterStart":{"return": "<undefined>"},"canTakeInLobby":{"return": "<undefined>"},"needDiscordRoles":{"return": "<undefined>"},"roleAccess":{"return": "<undefined>"},"canBeFullAntag":{"return": "<undefined>"},"canBeHiddenAntag":{"return": "<undefined>"},"getBasicMobs":{"return": "<undefined>"},"getMobs":{"return": "<undefined>"},"_spawnLocationWrapper":{"return": "<undefined>"},"spawnLocation":{"return": "<undefined>"},"useRandomDirOnSpawn":{"return": "<undefined>"},"_connectedToWrapper":{"return": "<undefined>"},"connectedTo":{"return": "<undefined>"},"getEquipment":{"return": "<undefined>"},"onAssigned_impl":{"return": "<undefined>"},"onAssigned":{"return": "<undefined>"},"onDead":{"return": "<undefined>"},"onDeadBasic":{"return": "<undefined>"},"onEndgame":{"return": "<undefined>"},"onEndgameBasic":{"return": "<undefined>"}
+"isMainRole":{"return": "<undefined>"},"_getDeadTimeout":{"return": "<undefined>"},"canStoreNameAndFaceForValidate":{"return": "<undefined>"},"_getSkillsWrapper":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"_getOtherSkillsWrapper":{"return": "<undefined>"},"getOtherSkills":{"return": "<undefined>"},"canTakeInLobby":{"return": "<undefined>"},"canVisibleAfterStart":{"return": "<undefined>"},"needDiscordRoles":{"return": "<undefined>"},"roleAccess":{"return": "<undefined>"},"canBeFullAntag":{"return": "<undefined>"},"canBeHiddenAntag":{"return": "<undefined>"},"getBasicMobs":{"return": "<undefined>"},"_spawnLocationWrapper":{"return": "<undefined>"},"spawnLocation":{"return": "<undefined>"},"useRandomDirOnSpawn":{"return": "<undefined>"},"_connectedToWrapper":{"return": "<undefined>"},"connectedTo":{"return": "<undefined>"},"getEquipment":{"return": "<undefined>"},"_onAssignedWrapper":{"return": "<undefined>"},"onAssigned":{"return": "<undefined>"},"_onDeadBasicWrapper":{"return": "<undefined>"},"onDeadBasic":{"return": "<undefined>"},"onEndgameBasic":{"return": "<undefined>"}
 }   }
 }
 ,"GhostRole": {
