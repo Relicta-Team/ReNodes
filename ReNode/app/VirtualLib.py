@@ -93,8 +93,11 @@ class VirtualLib:
 				newclass = self.factory.classes[infoData['classname']]
 
 			className = infoData['classname']
-			if 'path' not in infoData:
+			redirectNeed = infoData.get('path','').startswith('.')
+			if 'path' not in infoData or redirectNeed:
 				basePath = "Пользовательские"
+				if redirectNeed:
+					basePath = infoData.get('path','')
 				baseObj = className
 				while baseObj:
 					baseObj = self.factory.getClassParent(baseObj)
@@ -102,10 +105,14 @@ class VirtualLib:
 
 					cdict = self.factory.getClassData(baseObj)
 					if cdict.get('path'):
-						basePath = cdict['path']
-						break
+						if redirectNeed:
+							basePath = cdict['path'] + basePath
+							if not basePath.startswith("."): break
+						else:
+							basePath = cdict['path']+'.'+infoData['name']
+							break
 
-				newclass['path'] = basePath+'.'+infoData['name']
+				newclass['path'] = basePath
 
 			self._regenerateUserLib(vars,className,newclass)
 	

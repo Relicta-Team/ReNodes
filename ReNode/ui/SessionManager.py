@@ -31,7 +31,6 @@ class TabData:
             self.graph.load_session(self.filePath,loadMouse=True)
             self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
             self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
-            self.onGraphOpened()
         if self.infoData.get('classname'):
             self.name = self.infoData.get('classname')
         
@@ -286,6 +285,8 @@ class SessionManager(QTabWidget):
         tabCtx = TabData(graphName,loader)
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
+
+        tabCtx.onGraphOpened()
         
         tabCtx.registerEvents()
         if switchTo:

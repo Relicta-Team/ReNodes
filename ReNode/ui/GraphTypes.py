@@ -617,6 +617,8 @@ class GamemodeGraph(ClassGraphType):
                 domain = nameText
             if not domain.startswith("."):
                 domain = "." + domain
+            if parentText == parentClassname:
+                domain = ".Пользовательские" + domain
             
             settings = wiz.setupDict
             settings['name'] = nameText
@@ -793,6 +795,8 @@ class RoleGraph(ClassGraphType):
                 domain = nameText
             if not domain.startswith("."):
                 domain = "." + domain
+            if parentText == parentClassname:
+                domain = ".Пользовательские" + domain
             
             settings = wiz.setupDict
             settings['name'] = nameText
