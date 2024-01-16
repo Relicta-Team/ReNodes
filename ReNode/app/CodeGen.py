@@ -281,6 +281,9 @@ class CodeGenerator:
                 self.warning("Граф не скомпилирован",True)
             self.log(f"Процедура завершена за {timeDiff} мс",True)
             self.log("================================",True)
+
+            if self._warnings or self._exceptions:
+                self.graphsys.log_dock.setVisible(True)
             
             self.isGenerating = False
 
