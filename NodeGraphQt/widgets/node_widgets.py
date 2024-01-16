@@ -565,15 +565,43 @@ class NodeTextEdit(NodeBaseWidget):
                 style += '  {}:{};\n'.format(elm_name, elm_val)
             style += '}\n'
             stylesheet += style
-        ledit = QtWidgets.QPlainTextEdit()
+        from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import AutoResizingTextEdit
+        ledit = AutoResizingTextEdit()#QtWidgets.QPlainTextEdit()
         ledit.setPlainText(text)
         ledit.setPlaceholderText("...")
         ledit.setStyleSheet(stylesheet)
         ledit.textChanged.connect(self.on_value_changed)
         ledit.clearFocus()
         self.set_custom_widget(ledit)
-        #self.widget().setMaximumSize(140,120)
-        self.widget().setFixedSize(200,120)
+
+        widget = self
+        def _redr():
+            ledit.update()
+            ledit.updateGeometry()
+            #widget.widget().setFixedSize(widget.get_custom_widget().sizeHint())
+            #widget.resize(QtCore.QSizeF(widget.get_custom_widget().sizeHint()))
+            
+            self.widget().resize(self.get_custom_widget().sizeHint())
+            self.get_custom_widget().setFixedSize(self.get_custom_widget().sizeHint())
+            
+            self.update()
+            self.node.draw_node()
+            self.widget().update()
+
+            self.widget().updateGeometry()
+            self.updateGeometry()
+            widget.get_custom_widget().updateGeometry()
+            
+            #self.view.update()
+            #self.view.draw_node()
+        self.get_custom_widget().textChanged.connect(lambda: _redr())
+        _redr()
+        
+        ledit.updateGeometry()
+        self.widget().resize(self.get_custom_widget().sizeHint())
+        self.get_custom_widget().setFixedSize(self.get_custom_widget().sizeHint())
+        self.update()
+        self.node.draw_node()
 
     @property
     def type_(self):
