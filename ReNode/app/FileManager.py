@@ -10,6 +10,10 @@ class FileManagerHelper:
 		return Config.get_str("workdir","main")
 	
 	@staticmethod
+	def getSDKSourceDir():
+		return Config.get_str("sdkdir","main")
+
+	@staticmethod
 	def getGraphPathRelative(path):
 		if os.path.isdir(path):
 			raise Exception(f"Path must be file: {path}")
@@ -21,7 +25,7 @@ class FileManagerHelper:
 	@staticmethod
 	def getFolderCompiledScripts():
 		"""Получает путь скомпилирвоанных скриптов"""
-		return os.path.join(FileManagerHelper.getWorkDir(),"compiled")
+		return os.path.join(FileManagerHelper.getSDKSourceDir(),"src\\host\\ReNode\\compiled")
 	
 	@staticmethod
 	def getCompiledScriptFilename(iData):

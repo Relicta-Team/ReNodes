@@ -44,7 +44,8 @@ class WizardScriptMaker(QWizard):
 		#self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlag(Qt.WindowContextHelpButtonHint,False)
 		self.setWizardStyle(QWizard.WizardStyle.ClassicStyle)
-		self.setWindowTitle("Создание скрипта")
+		self.setWindowModality(Qt.ApplicationModal)
+		self.setWindowTitle("Менеджер создания графов")
 		
 		#change background color
 		bluepalette = QPalette()
@@ -105,32 +106,25 @@ class WizardScriptMaker(QWizard):
 		self._lastLayout.addItem(item)
 		return item
 
-	def _addLineOption(self,text,optWidget,row=0,col=0):
+	def _addLineOption(self,text,optWidget,row=0,col=0,rowspan=1,colspan=1):
 		item = QGridLayout()
 		#item.setSpacing(20)
 		lab = QLabel(text)
-		lab.setFixedWidth(200)
-		item.addWidget(lab,0,0)
-		item.addWidget(optWidget,0,1)
+		#lab.setFixedWidth(200)
+		item.addWidget(lab,row,col,rowspan,colspan)
+		item.addWidget(optWidget,row,col+1,rowspan,colspan)
 		self._lastLayout.addLayout(item)
+		#item.setSizeConstraint(QGridLayout.SizeConstraint.SetMinimumSize)
 		
 		return lab,optWidget,item
 
 	def createIntro(self):
-		self._registerPage("Создание скриптов ReNode")
+		self._registerPage("Создание графов ReNode")
 		self._lastLayout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
-		self._addLabel("Добро пожаловать в менеджер создания скриптов ReNode!\n\n"+
-			"Сейчас вам будет предложено создать новый скрипт.")
+		self._addLabel("Добро пожаловать в менеджер создания графов ReNode!\n\n"+
+			"Сейчас вам будет предложено создать новый граф.")
 		
-		self._addLabel(f"Для продолжения нажмите кнопку \"{self.button(QWizard.NextButton).text()}\".")
-
-		
-		# test = SearchComboButton()
-		# vals = self.graphSystem.getFactory().getClassAllChildsTree("GMBase")
-
-		# test.loadContents(createTreeDataContent(vals))
-		# addTreeContent(test.dictTree,"string","Строка",QIcon("data\\icons\\ArrayPin.png"))
-		# self._addLineOption("Test",test)
+		self._addLabel(f"Для продолжения нажмите кнопку \"{self.button(QWizard.NextButton).text().replace('&','')}\".")
 	
 	def createSelectScriptType(self):
 		page = self._registerPage("Общие настройки")
@@ -146,7 +140,7 @@ class WizardScriptMaker(QWizard):
 			combo.setItemData(curIdx,o.systemName)
 			combo.setItemData(curIdx,o.description,Qt.ToolTipRole)
 
-		self._addLineOption("Тип скрипта:",combo)
+		self._addLineOption("Тип графа:",combo)
 		item = self._addLabel("",isRichText=True)
 		combo.setCurrentIndex(0)
 		def setDesc():
@@ -172,7 +166,7 @@ class WizardScriptMaker(QWizard):
 			data = combo.currentData()
 			gobj = gtf.getInstanceByType(data)
 			if not gobj.canCreateFromWizard:
-				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент создание скрипта \"{gobj.name}\" не реализовано.</span>")
+				postText.setText(f"<span style=\"color:red; font-size:18pt\">На данный момент создание типа \"{gobj.name}\" не реализовано.</span>")
 				return False
 			postText.setText("")
 			return True
@@ -287,6 +281,31 @@ class WizardScriptMaker(QWizard):
 
 		page.nextId = lambda: self.pageIds()[-1]
 
+
+	def createGraphTypeSetup(self,graphType):
+		gobj = gtf.getInstanceByType(graphType)
+
+		if gobj == None: return
+		
+		page = self._registerPage(gobj.scriptWizard_pageText,gobj.scriptWizard_pageSubtitle,graphType)
+		
+		self.setupDict = {}
+
+		def __init():
+			self.setupDict.clear()
+			self.setupDict['type'] = graphType
+
+		page.initializePage = __init
+
+		_validateAll = gobj.createPageWizard(self,page)
+
+		if _validateAll == None or not callable(_validateAll):
+			raise Exception("Validate method error for " + graphType)
+		
+		page.validatePage = _validateAll
+
+		page.nextId = lambda: self.pageIds()[-1]
+
 	def createFinalPage(self):
 		page = self._registerPage("Завершение")
 
@@ -326,135 +345,44 @@ class WizardScriptMaker(QWizard):
 		self.createIntro()
 		self.createSelectScriptType()
 
-		self.createBasicClassSetup(
-			"gamemode", 
-			params={
-				'header': "Создание режима",
-				"name": "Имя режима",
-				"classname": "Имя класса режима",
-				"pathData":{
-					"name": "Путь к файлу режима",
-					"base": ".\\src\\",
-				},
-				"parentData": {
-					"name": "Родительский режим",
-					"class": "ScriptedGamemode",
-				},
-			}
-		)
-		self.createBasicClassSetup(
-			"role", 
-			params={
-				'header': "Создание роли",
-				"name": "Имя роли",
-				"classname": "Имя класса роли",
-				"pathData":{
-					"name": "Путь к файлу роли",
-					"base": ".\\src\\",
-				},
-				"parentData": {
-					"name": "Родительская роль",
-					"class": "ScriptedRole",
-				},
-			}
-		)
+		options : list[GraphTypeBase] = gtf.getAllInstances()
+		for opt in options:
+			self.createGraphTypeSetup(opt.systemName)
+
+		# self.createBasicClassSetup(
+		# 	"gamemode", 
+		# 	params={
+		# 		'header': "Создание режима",
+		# 		"name": "Имя режима",
+		# 		"classname": "Имя класса режима",
+		# 		"pathData":{
+		# 			"name": "Путь к файлу режима",
+		# 			"base": ".\\src\\",
+		# 		},
+		# 		"parentData": {
+		# 			"name": "Родительский режим",
+		# 			"class": "ScriptedGamemode",
+		# 		},
+		# 	}
+		# )
+		# self.createBasicClassSetup(
+		# 	"role", 
+		# 	params={
+		# 		'header': "Создание роли",
+		# 		"name": "Имя роли",
+		# 		"classname": "Имя класса роли",
+		# 		"pathData":{
+		# 			"name": "Путь к файлу роли",
+		# 			"base": ".\\src\\",
+		# 		},
+		# 		"parentData": {
+		# 			"name": "Родительская роль",
+		# 			"class": "ScriptedRole",
+		# 		},
+		# 	}
+		# )
 
 		self.createFinalPage()
-
-
-		# self.setStartId(self.addPage(self.createIntroPage()))
-		# self.addPage(self.createRegistrationPage())
-		# self.addPage(self.createConclusionPage())
-
-
-
-		#Первая страница: выбор типа скрипта
-		# item = WizardScriptMakerPage(self.graphSystem)
-		# self.addPage(item)
-		# item.setTitle("Выбор типа скрипта")
-		# item.setSubTitle("Выберите тип создаваемого скрипта")
-
-		# itemGamemode = WizardScriptMakerPage(self.graphSystem)
-		# self.addPage(itemGamemode)
-		# itemGamemode.setTitle("Создание режима")
-		# itemGamemode.setSubTitle("Укажите базовые настройки создания режима")
-		
-		# vlay = QVBoxLayout()
-		# hlayname = QHBoxLayout()
-		# hlayparent = QHBoxLayout()
-		# vlay.addLayout(hlayname)
-		# vlay.addLayout(hlayparent)
-		# itemGamemode.setLayout(vlay)
-
-		# # add gmname (input)
-		# lable = QLabel("Название режима")
-		# hlayname.addWidget(lable)
-		# text = QLineEdit()
-		# text.setPlaceholderText("Название режима")
-		# itemGamemode.registerField("gmName",text)
-		# hlayname.addWidget(text)
-		
-		# # add gm parent type (combobox)
-		# label = QLabel("Родительский тип режима")
-		# hlayparent.addWidget(label)
-		# comboBox = QComboBox()
-		# # Add the parent types to the combobox
-		# parentTypes = ["Type 1", "Type 2", "Type 3"]
-		# comboBox.addItems(parentTypes)
-		# itemGamemode.registerField("gmParent", comboBox)
-		# hlayparent.addWidget(comboBox)
-
-	def createIntroPage(self):
-		page = QWizardPage()
-		
-		page.setTitle("Introduction")
-		#page.setSubTitle("This wizard will help you register your copy of Super Product Two.")
-
-		label = QLabel(
-				"This wizard will help you register your copy of Super Product "
-				"Two.")
-		label.setWordWrap(True)
-
-		layout = QVBoxLayout()
-		layout.addWidget(label)
-		page.setLayout(layout)
-
-		return page
-
-
-	def createRegistrationPage(self):
-		page = QWizardPage()
-		page.setTitle("Registration")
-		page.setSubTitle("Please fill both fields.")
-
-		nameLabel = QLabel("Name:")
-		nameLineEdit = QLineEdit()
-
-		emailLabel = QLabel("Email address:")
-		emailLineEdit = QLineEdit()
-
-		layout = QGridLayout()
-		layout.addWidget(nameLabel, 0, 0)
-		layout.addWidget(nameLineEdit, 0, 1)
-		layout.addWidget(emailLabel, 1, 0)
-		layout.addWidget(emailLineEdit, 1, 1)
-		page.setLayout(layout)
-
-		return page
-
-
-	def createConclusionPage(self):
-		page = QWizardPage()
-		page.setTitle("Conclusion")
-
-		label = QLabel("You are now successfully registered. Have a nice day!")
-		label.setWordWrap(True)
-
-		layout = QVBoxLayout()
-		layout.addWidget(label)
-		page.setLayout(layout)
-
-		return page
 
 
 class WizardScriptMakerPage(QWizardPage):

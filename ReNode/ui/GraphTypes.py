@@ -1,4 +1,21 @@
 from ReNode.app.CodeGenWarnings import *
+from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent
+from ReNode.app.utils import transliterate
+from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFileSavePath
+
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+import re
+import os
+
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.Shape.HLine)
+        self.setFrameShadow(QFrame.Shadow.Raised)
+        self.setLineWidth(2)
 
 class GraphTypeFactory:
     """
@@ -266,6 +283,40 @@ class GraphTypeBase:
                     if hasExec:
                         cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)
 
+
+    #region wizard helpers
+
+    def getGraphSystem(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
+    def getFactory(self): return self.getGraphSystem().getFactory()
+
+    def makeInheritancePath(self,classname):
+        fact = self.getFactory()
+        cls = fact.getClassData(classname)
+        if not cls: return ""
+        pathList = []
+        for curClass in fact.getClassAllParents(classname,True).reverse():
+            _cld = fact.getClassData(curClass)
+            pathList.append(_cld['name'] if _cld.get('name') else curClass)
+        
+        return ".".join(pathList)
+
+    scriptWizard_pageText = "Создание графа"
+    scriptWizard_pageSubtitle = "Дополнительная информация отсутствует"
+
+    def createPageWizard(self,wiz,page):
+        """Обработчик создания в визарде. Должен возвращать функцию валидации
+        Параметр wiz - WizardScriptMaker. Доступные методы:
+            _addLabel
+            _addSpacer
+            _addLineOption
+        Параметр page - WizardScriptMakerPage
+        """
+        return lambda:False
+
+    #endregion
+
 class ClassGraphType(GraphTypeBase):
 
     def createInfoDataProps(self, options: dict):
@@ -288,6 +339,8 @@ class ClassGraphType(GraphTypeBase):
         opts['name'] = name_
         opts['classname'] = classname_
         opts['parent'] = parCls_
+        opts['desc'] = options.get('desc',"")
+        opts['path'] = options.get('domain','Unknown domain')
         opts['props'] = {
             "fields": {},
             "methods": {}
@@ -429,7 +482,8 @@ class ClassGraphType(GraphTypeBase):
 
 class GamemodeGraph(ClassGraphType):
     name = "Режим"
-    description = "Игровой режим предназначен для реализации состояния игры."
+    description = "Игровой режим предназначен для реализации состояния игры. В режиме добавляются доступные роли, настраиваются условия старта и завершения, а так же загружаются" + \
+    " карта, бэкграунд лобби и настраиваются прочие специфические опции режима."
     systemName = "gamemode"
     
     create_headerText = "Создание режима"
@@ -451,6 +505,157 @@ class GamemodeGraph(ClassGraphType):
             "_checkFinishWrapper",
             "onFinish"
         ]
+    
+    scriptWizard_pageText = "Создание режима"
+    scriptWizard_pageSubtitle = ""
+
+    def createPageWizard(self,wiz,page):
+        
+        def _initDesc(grid,text,postLine = False):
+            lab = QLabel(text)
+            grid.addWidget(lab,0,0,2,0)
+            if postLine:
+                grid.addWidget(QHLine(),3,0,2,0)
+
+        isRoleGraph = self.systemName == "role"
+
+        # Создание режима. Опции: имя, класс, путь, префикс
+        name = QLineEdit()
+        name.setMaxLength(64)
+        name.setPlaceholderText("Введите имя графа")
+        lab,wid,grid = wiz._addLineOption(f"Имя графа:",name)
+        
+        desc = QLineEdit()
+        desc.setPlaceholderText("Введите описание графа")
+        lab,wid,grid = wiz._addLineOption("Описание:",desc,2)
+        _initDesc(grid,"Выводимое описание графа и класса",True)
+
+        clsname = QLineEdit()
+        clsname.setMaxLength(64)
+        clsname.setPlaceholderText("Введите имя класса")
+        lab,wid,grid = wiz._addLineOption("Имя класса:",clsname,2)
+        _initDesc(grid,"Системное имя класса создаваемого режима. Указывается в файле графа при создании")
+
+        parent = SearchComboButton()
+        parentClassname = self.parent_classnameText
+        parents = self.getFactory().getClassAllChilds(parentClassname)
+        if not parents: raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
+        vals = self.getFactory().getClassAllChildsTree(parentClassname)
+        parent.loadContents(createTreeDataContent(vals))
+        lab,wid,grid = wiz._addLineOption(f"Тип родителя:",parent,2)
+        _initDesc(grid,"Родительский класс, от которого будут унаследованы свойства и доступные функции",True)
+
+        filepath = PropFileSavePath()
+        filepath.set_file_ext("*.graph")
+        filepath._ledit.setPlaceholderText("Путь до файла графа")
+        lab,wid,grid = wiz._addLineOption(f"Расположение:",filepath)
+
+        pathDirBase = self.getFactory().getClassData(parentClassname).get('path','') + ".Пользовательские"
+        path = QLineEdit()
+        path.setPlaceholderText("Унаследовать от родителя")
+        lab,wid,grid = wiz._addLineOption("Домен класса (путь):",path,2)
+        _initDesc(grid,"Директория по которой будут доступны узлы созданного графа в библиотеке узлов.\nБазовая директория \"{}\"".format(pathDirBase),True)
+        
+        # subdomain
+        # subdir = SearchComboButton()
+        # parentClassname = self.parent_classnameText
+        # parents = self.getFactory().getClassAllChilds(parentClassname)
+        # if not parents: raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
+        # vals = self.getFactory().getClassAllChildsTree(parentClassname)
+        # tdata = createTreeDataContent(vals)
+        # addTreeContent(tdata,"","Без постфикса",QIcon())
+        # subdir.loadContents(tdata)
+        # lab,wid,grid = wiz._addLineOption(f"Постфикс:",subdir,2)
+        # _initDesc(grid,"Добавляемый постфикс для ассоциации с режимом",True)
+
+        wiz._addSpacer()
+        postfixLabel = wiz._addLabel("",isRichText=True) #вывод ошибок
+
+        def __on_name_changed():
+            enText = transliterate(name.text(),True)
+            
+            words = re.findall(r'[a-zA-Z0-9]+',enText)
+            normalized = "".join([x.capitalize() for x in words])
+            if not normalized.lower().startswith("gm"):
+                normalized = "GM" + normalized
+            else:
+                normalized = "GM" + normalized[2:]
+            clsname.setText(normalized)
+            path.setText(name.text())
+        name.textChanged.connect(__on_name_changed)
+
+        def __on_classname_changed():
+            text = clsname.text()
+            basePath = self.savePath
+            fullpath = os.path.join(basePath,f"{text}.graph")
+            filepath.set_value(fullpath)
+        clsname.textChanged.connect(__on_classname_changed)
+
+        def __on_path_changed():
+            inputedName = path.text()
+            
+            clearName = re.sub('\.+','.',inputedName)
+            if clearName.startswith("."):
+                clearName = clearName[1:]
+            if inputedName != clearName:
+                
+                path.blockSignals(True)
+                path.setText(clearName)
+                path.blockSignals(False)
+        path.textChanged.connect(__on_path_changed)
+
+        def commonValidate():
+            errList = []
+            
+            nameText = name.text()
+            clsText = clsname.text()
+            parentText = parent.get_value()
+            filePath = filepath.get_value()
+            domain = path.text()
+            
+            if not domain:
+                domain = nameText
+            if not domain.startswith("."):
+                domain = "." + domain
+            
+            settings = wiz.setupDict
+            settings['name'] = nameText
+            settings['classname'] = clsText
+            settings['parent'] = parentText
+            settings['path'] = filePath
+            settings['domain'] = domain
+
+            #namecheck
+            if not nameText:
+                errList.append("Имя графа не может быть пустым")
+            
+            #class check
+            if not clsText:
+                errList.append("Имя класса не может быть пустым")
+            else:
+                if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]+$',clsText):
+                    errList.append(f"Имя класса может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
+                if len(clsText) <= 4:
+                    errList.append(f"Имя класса должно содержать более 4 символов")
+                if self.getFactory().classNameExists(clsText):
+                    errList.append(f"Класс \"{clsText}\" уже существует")
+            
+            if os.path.exists(filePath):
+                errList.append(f"Файл \"{filePath}\" уже существует")
+            
+            if not self.getFactory().classNameExists(parentText):
+                errList.append(f"Родительский класс \"{parentText}\" не найден в библиотеке")
+
+            if len(domain) < 1:
+                errList.append("Домен должен быть больше 1 символа")
+
+            if errList:
+                postfixLabel.setText("<span style='color:red; font-size: 14pt'>Создание невозможно. Ошибки:<br/>" + \
+                     ('<br/>'.join(["    - "+e for e in errList])) + "</span>")
+
+            #check name
+            return len(errList) == 0
+        return commonValidate
 
 class RoleGraph(ClassGraphType):
     name = "Роль"
@@ -474,6 +679,159 @@ class RoleGraph(ClassGraphType):
             "onEndgameBasic",
             "_onDeadBasicWrapper"
         ]
+    
+    scriptWizard_pageText = "Создание роли"
+    scriptWizard_pageSubtitle = ""
+
+    #! TODO REFACTORING ----------------------------------------
+    #! Remove copypasted overload...
+    def createPageWizard(self,wiz,page):
+        
+        def _initDesc(grid,text,postLine = False):
+            lab = QLabel(text)
+            grid.addWidget(lab,0,0,2,0)
+            if postLine:
+                grid.addWidget(QHLine(),3,0,2,0)
+
+        isRoleGraph = self.systemName == "role"
+
+        # Создание режима. Опции: имя, класс, путь, префикс
+        name = QLineEdit()
+        name.setMaxLength(64)
+        name.setPlaceholderText("Введите имя графа")
+        lab,wid,grid = wiz._addLineOption(f"Имя графа:",name)
+        
+        desc = QLineEdit()
+        desc.setPlaceholderText("Введите описание графа")
+        lab,wid,grid = wiz._addLineOption("Описание:",desc,2)
+        _initDesc(grid,"Выводимое описание графа и класса",True)
+
+        clsname = QLineEdit()
+        clsname.setMaxLength(64)
+        clsname.setPlaceholderText("Введите имя класса")
+        lab,wid,grid = wiz._addLineOption("Имя класса:",clsname,2)
+        _initDesc(grid,"Системное имя класса создаваемого режима. Указывается в файле графа при создании")
+
+        parent = SearchComboButton()
+        parentClassname = self.parent_classnameText
+        parents = self.getFactory().getClassAllChilds(parentClassname)
+        if not parents: raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
+        vals = self.getFactory().getClassAllChildsTree(parentClassname)
+        parent.loadContents(createTreeDataContent(vals))
+        lab,wid,grid = wiz._addLineOption(f"Тип родителя:",parent,2)
+        _initDesc(grid,"Родительский класс, от которого будут унаследованы свойства и доступные функции",True)
+
+        filepath = PropFileSavePath()
+        filepath.set_file_ext("*.graph")
+        filepath._ledit.setPlaceholderText("Путь до файла графа")
+        lab,wid,grid = wiz._addLineOption(f"Расположение:",filepath)
+
+        pathDirBase = self.getFactory().getClassData(parentClassname).get('path','') + ".Пользовательские"
+        path = QLineEdit()
+        path.setPlaceholderText("Унаследовать от родителя")
+        lab,wid,grid = wiz._addLineOption("Домен класса (путь):",path,2)
+        _initDesc(grid,"Директория по которой будут доступны узлы созданного графа в библиотеке узлов.\nБазовая директория \"{}\"".format(pathDirBase),True)
+        
+        # subdomain
+        # subdir = SearchComboButton()
+        # parentClassname = self.parent_classnameText
+        # parents = self.getFactory().getClassAllChilds(parentClassname)
+        # if not parents: raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
+        # vals = self.getFactory().getClassAllChildsTree(parentClassname)
+        # tdata = createTreeDataContent(vals)
+        # addTreeContent(tdata,"","Без постфикса",QIcon())
+        # subdir.loadContents(tdata)
+        # lab,wid,grid = wiz._addLineOption(f"Постфикс:",subdir,2)
+        # _initDesc(grid,"Добавляемый постфикс для ассоциации с режимом",True)
+
+        wiz._addSpacer()
+        postfixLabel = wiz._addLabel("",isRichText=True) #вывод ошибок
+
+        def __on_name_changed():
+            enText = transliterate(name.text(),True)
+            
+            words = re.findall(r'[a-zA-Z0-9]+',enText)
+            normalized = "".join([x.capitalize() for x in words])
+            if not normalized.lower().startswith("R"):
+                normalized = "R" + normalized
+            else:
+                normalized = "R" + normalized[1:]
+            clsname.setText(normalized)
+            path.setText(name.text())
+        name.textChanged.connect(__on_name_changed)
+
+        def __on_classname_changed():
+            text = clsname.text()
+            basePath = self.savePath
+            fullpath = os.path.join(basePath,f"{text}.graph")
+            filepath.set_value(fullpath)
+        clsname.textChanged.connect(__on_classname_changed)
+
+        def __on_path_changed():
+            inputedName = path.text()
+            
+            clearName = re.sub('\.+','.',inputedName)
+            if clearName.startswith("."):
+                clearName = clearName[1:]
+            if inputedName != clearName:
+                
+                path.blockSignals(True)
+                path.setText(clearName)
+                path.blockSignals(False)
+        path.textChanged.connect(__on_path_changed)
+
+        def commonValidate():
+            errList = []
+            
+            nameText = name.text()
+            clsText = clsname.text()
+            parentText = parent.get_value()
+            filePath = filepath.get_value()
+            domain = path.text()
+            
+            if not domain:
+                domain = nameText
+            if not domain.startswith("."):
+                domain = "." + domain
+            
+            settings = wiz.setupDict
+            settings['name'] = nameText
+            settings['classname'] = clsText
+            settings['parent'] = parentText
+            settings['path'] = filePath
+            settings['domain'] = domain
+
+            #namecheck
+            if not nameText:
+                errList.append("Имя графа не может быть пустым")
+            
+            #class check
+            if not clsText:
+                errList.append("Имя класса не может быть пустым")
+            else:
+                if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]+$',clsText):
+                    errList.append(f"Имя класса может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
+                if len(clsText) <= 4:
+                    errList.append(f"Имя класса должно содержать более 4 символов")
+                if self.getFactory().classNameExists(clsText):
+                    errList.append(f"Класс \"{clsText}\" уже существует")
+            
+            if os.path.exists(filePath):
+                errList.append(f"Файл \"{filePath}\" уже существует")
+            
+            if not self.getFactory().classNameExists(parentText):
+                errList.append(f"Родительский класс \"{parentText}\" не найден в библиотеке")
+
+            if len(domain) < 1:
+                errList.append("Домен должен быть больше 1 символа")
+
+            if errList:
+                postfixLabel.setText("<span style='color:red; font-size: 14pt'>Создание невозможно. Ошибки:<br/>" + \
+                     ('<br/>'.join(["    - "+e for e in errList])) + "</span>")
+
+            #check name
+            return len(errList) == 0
+        return commonValidate
     
 class GameObjectGraph(ClassGraphType):
     name = "Игровой объект"

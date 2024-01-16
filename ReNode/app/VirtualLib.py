@@ -1,6 +1,5 @@
 from ReNode.app.FileManager import FileManagerHelper
 from ReNode.app.Logger import RegisterLogger
-from ReNode.app.utils import transliterate
 from ReNode.ui.VarMgrWidgetTypes.Widgets import VarMgrBaseWidgetType
 import time
 from watchdog.observers.polling import PollingObserver as Observer
@@ -83,25 +82,30 @@ class VirtualLib:
 					"name": infoData['name'],
 					#baseList, __childList, __inhChild
 				}
+				if infoData.get('path'):
+					newclass['path'] = infoData['path']
+				if infoData.get('desc'):
+					newclass['desc'] = infoData['desc']
 				self.factory.classes[infoData['classname']] = newclass
 				return
 			
 			if stage == 1:
 				newclass = self.factory.classes[infoData['classname']]
 
-			basePath = "Пользовательские"
 			className = infoData['classname']
-			baseObj = className
-			while baseObj:
-				baseObj = self.factory.getClassParent(baseObj)
-				if not baseObj: break
+			if 'path' not in infoData:
+				basePath = "Пользовательские"
+				baseObj = className
+				while baseObj:
+					baseObj = self.factory.getClassParent(baseObj)
+					if not baseObj: break
 
-				cdict = self.factory.getClassData(baseObj)
-				if cdict.get('path'):
-					basePath = cdict['path']
-					break
+					cdict = self.factory.getClassData(baseObj)
+					if cdict.get('path'):
+						basePath = cdict['path']
+						break
 
-			newclass['path'] = basePath+'.'+infoData['name']
+				newclass['path'] = basePath+'.'+infoData['name']
 
 			self._regenerateUserLib(vars,className,newclass)
 	
@@ -113,7 +117,7 @@ class VirtualLib:
 				gType = VarMgrBaseWidgetType.getInstanceByType(cat)
 				if gType:
 					for v,dat in varlist.items():
-						sysname = transliterate(dat['name'])
+						sysname = dat['systemname']
 						classDict = {
 							"className": className,
 							"memberName": sysname,
