@@ -12,9 +12,6 @@ configValues = {
         #"tempvalue": True
     },
     "internal": {
-        # geometry and state mainWindow
-        "winstate": None,
-        "winpos": None,
         "opened_sessions": "empty",
     },
     "visual": {
@@ -28,6 +25,7 @@ class Config:
     cfgPath : str = "config.ini"
     isLoaded : bool = False
     logger = logging.getLogger("main")
+    vSettings = None # хранилище для визуальных настроек. Пока сюда пишется только геометрия основного окна и его доков
     
     @staticmethod
     def getFileManager():
@@ -36,8 +34,12 @@ class Config:
 
     @staticmethod
     def init():
+        from PyQt5.QtCore import QSettings
         Config.logger.info("Initialize config reader")
         Config.parser = iniparser2.INI()
+
+        vsets = QSettings("visual.ini",QSettings.Format.IniFormat)
+        Config.vSettings = vsets
         
         #check if config file exists
         if exists(Config.cfgPath):
@@ -117,8 +119,25 @@ class Config:
         
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         obj = NodeGraphComponent.refObject
-        Config.set("winstate",obj.mainWindow.saveState(),"internal")
-        Config.set("winpos",obj.mainWindow.saveGeometry(),"internal")
+        # Config.set("winstate",obj.mainWindow.saveState(),"internal")
+        # Config.set("winpos",obj.mainWindow.saveGeometry(),"internal")
+        
+        #save all values
+
+        ng = obj.mainWindow.nodeGraph
+        dictDocks = {
+			"main":ng.mainWindow,
+			# "inspector":ng.inspector,
+			# "variable_manager":ng.variable_manager,
+			# "logger":ng.log_dock,
+			# "history":ng.undoView_dock,
+		}
+        for k,v in dictDocks.items():
+            Config.logger.debug("Saving widget " + k)
+            Config.vSettings.setValue("geometry_"+k,v.saveGeometry())
+            if hasattr(v,"saveState"):
+                Config.vSettings.setValue("state_"+k,v.saveState())
+
 
         Config.set("opened_sessions",obj.sessionManager.getOpenedSessionPathes(),"internal")
 

@@ -110,22 +110,49 @@ class NodeGraphComponent:
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application
 		
-		stateStr:str = Config.get("winstate","internal")
-		winposStr:str = Config.get("winpos","internal")
-		if stateStr:
-			#convert from str to bytes
-			stateBytes = QByteArray(eval(stateStr))
-			winposBytes = QByteArray(eval(winposStr))
+		# stateStr:str = Config.get("winstate","internal")
+		# winposStr:str = Config.get("winpos","internal")
+		# if stateStr:
+		# 	#convert from str to bytes
+		# 	stateBytes = QByteArray(eval(stateStr))
+		# 	winposBytes = QByteArray(eval(winposStr))
 
-			if not self.mainWindow.restoreGeometry(winposBytes):
-				Application.refObject.logger.error("Failed to restore window position")
-			else:
-				Application.refObject.logger.info("Loaded windows geometry")
-			if not self.mainWindow.restoreState(stateBytes):
-				Application.refObject.logger.error("Failed to restore window state")
-			else:
-				Application.refObject.logger.info("Loaded windows state")
+		# 	if not self.mainWindow.restoreGeometry(winposBytes):
+		# 		Application.refObject.logger.error("Failed to restore window position")
+		# 	else:
+		# 		Application.refObject.logger.info("Loaded windows geometry")
+		# 	if not self.mainWindow.restoreState(stateBytes):
+		# 		Application.refObject.logger.error("Failed to restore window state")
+		# 	else:
+		# 		Application.refObject.logger.info("Loaded windows state")
+		
+		ng = self
+		dictDocks = {
+			"main":ng.mainWindow,
+			# "inspector":ng.inspector,
+			# "variable_manager":ng.variable_manager,
+			# "logger":ng.log_dock,
+			# "history":ng.undoView_dock,
+		}
+		for k,v in dictDocks.items():
+			Config.logger.debug("Loading widget " + k)
+			geo = Config.vSettings.value("geometry_"+k)
+			if geo:
+				if v.restoreGeometry(geo):
+					Config.logger.info("Loaded geometry for " + k)
+					if k == 'main' and v.isMaximized():
+						v.setGeometry(Application.refObject.appInstance.desktop().availableGeometry())
+				else:
+					Config.logger.error("Failed to load geometry for " + k)
 			
+			state = Config.vSettings.value("state_"+k)
+			if state:
+				if hasattr(v,"saveState"):
+					if v.restoreState(state):
+						Config.logger.info("Loaded state for " + k)
+					else:
+						Config.logger.error("Failed to load state for " + k)
+
 		
 		# load opened sessions
 		sessions = Config.get_str("opened_sessions","internal")

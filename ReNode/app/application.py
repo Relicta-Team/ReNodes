@@ -190,6 +190,8 @@ def AppMain():
 
 	app = QApplication(arguments)
 	
+	QtCore.QSettings.setPath(QtCore.QSettings.Format.IniFormat, QtCore.QSettings.Scope.SystemScope, ".")
+
 	trans = QtCore.QTranslator()
 	trans.load('.\data\qtbase_ru.qm')
 	app.installTranslator(trans)
