@@ -6,8 +6,9 @@ import re
 
 configValues = {
     "main": {
-        "version": 2, #версия конфига. При добавлении новых атрибутов увеличить на 1
+        "version": 3, #версия конфига. При добавлении новых атрибутов увеличить на 1
         "workdir": ".", #рабочая директория. в рабочей директории лежат папки компиляции и графов
+        "sdkdir": "do_locate_dir", #директория в которой лежит SDK (исходники редактора, сервера и клиента)
         #"tempvalue": True
     },
     "internal": {
@@ -28,6 +29,10 @@ class Config:
     isLoaded : bool = False
     logger = logging.getLogger("main")
     
+    @staticmethod
+    def getFileManager():
+        from ReNode.app.FileManager import FileManagerHelper
+        return FileManagerHelper
 
     @staticmethod
     def init():
@@ -46,6 +51,10 @@ class Config:
             Config.logger.info(f"Version not actual; Old: {ver}; New: {configValues['main']['version']}")
             Config.updateConfig()
         
+        if Config.parser.get_str("sdkdir",'main') == "do_locate_dir":
+            Config.logger.info("Detect sdk source directory...")
+            Config.parser.set('sdkdir',Config.getFileManager().allocateSDKSourceDir(),'main')
+
         Config.logger.info(f"Config initialized (version {ver})")
         Config.isLoaded = True
     
