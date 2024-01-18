@@ -2017,7 +2017,7 @@ class NodeGraph(QtCore.QObject):
                 return list(obj)
             return obj
 
-        with open(file_path, 'w') as file_out:
+        with open(file_path, 'w',encoding='utf-8') as file_out:
             json.dump(
                 serialized_data,
                 file_out,
@@ -2058,7 +2058,7 @@ class NodeGraph(QtCore.QObject):
             raise IOError('file does not exist: {}'.format(file_path))
 
         try:
-            with open(file_path) as data_file:
+            with open(file_path,encoding='utf-8') as data_file:
                 layout_data = json.load(data_file)
         except Exception as e:
             layout_data = None
