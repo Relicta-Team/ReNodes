@@ -3,6 +3,7 @@ from NodeGraphQt.nodes.base_node import BaseNode
 from ReNode.app.Logger import *
 from NodeGraphQt import (NodeGraph, GroupNode, NodeGraphMenu)
 from ReNode.ui.NodePainter import getDrawPortFunction
+from ReNode.ui.LoadingScreen import LoadingScreen
 from ReNode.app.VirtualLib import VirtualLib
 from ReNode.app.Constants import NodeRenderType
 import logging
@@ -19,6 +20,10 @@ class NodeFactory:
 
 		self.graph = None
 
+		self.loading = None
+		self.stateLoadingName = ""
+		self.stateLoadingProgress = 0
+
 		self.version = 0
 		self.nodes = {}
 		self.classes = {}
@@ -26,10 +31,26 @@ class NodeFactory:
 		self.loadFactoryFromJson("lib.json")
 		pass
 
-	def loadFactoryFromJson(self,file_path):
+	def setLoading(self,precent=0,info=None):
+		self.stateLoadingProgress = precent
+		if info:
+			self.stateLoadingName = info
+		
+		if self.loading:
+			self.loading.setMessage(self.stateLoadingName)
+			self.loading.setProgress(self.stateLoadingProgress)
+			import time
+			#time.sleep(500 / 1000)
+
+	def loadFactoryFromJson(self,file_path,useLoading=False):
+		if useLoading:
+			self.loading = LoadingScreen()
+
 		self.logger.info(f"Loading factory from json file {file_path}")
 		self.nodes = {}
 		self.classes = {}
+
+		self.setLoading(0,"Загрузка библиотеки")
 
 		try:
 			with open(file_path,encoding='utf-8') as data_file:
@@ -52,6 +73,12 @@ class NodeFactory:
 			return obj
 		self.logger.info(f"version lib {self.version}")
 		
+		if useLoading:
+			ld = self.loading
+			self.loading = None
+			ld.done()
+			ld.deleteLater()
+
 		from ReNode.app.application import Application
 		if Application.isDebugMode() or Application.hasArgument('-outlib'):
 			with open("lib_output.json", 'w',encoding='utf-8') as file_out:
@@ -68,10 +95,18 @@ class NodeFactory:
 		sys = data["system"]
 		self.version = sys["version"]
 
+		self.setLoading(0,"Загрузка встроенных узлов")
+
 		#load nodes
-		for nodecat,nodelist in data.get('nodes', {}).items():
+		for i, (nodecat,nodelist) in enumerate(data.get('nodes', {}).items()):
+			
+			self.setLoading(100*i/len(data.get('nodes',{})),"Загрузка категории " + nodecat)
+
 			self.logger.info(f"Loading category: {nodecat}")
 			for node,dataNode in nodelist.items():
+
+				self.setLoading(100*i/len(data.get('nodes',{})),"Загрузка узла " + node)
+
 				self.logger.debug(f"	Loading node '{node}'")
 				self.registerNodeInLib(nodecat,node,dataNode)
 
@@ -83,6 +118,9 @@ class NodeFactory:
 
 		i = 1
 		for classname,classmembers in classDict.items():
+			
+			self.setLoading(100*i/len(classDict),"Загрузка классов")
+
 			if (i%100 == 0):
 				self.logger.info(f"Loading class {i}/{len(classDict)}")
 			classmembers['__childList'] = []
@@ -95,7 +133,12 @@ class NodeFactory:
 
 		#validate names
 		self.logger.info('Validating class names')
+		self.setLoading(0,"Валидация")
+		i = 0
 		for classname,classmembers in classDict.items():
+			i += 1
+			self.setLoading(100*i/len(self.classes))
+
 			bList = classmembers['baseList']
 			for bName in bList:
 				if not self.getClassAllParents(bName,False):
@@ -104,7 +147,12 @@ class NodeFactory:
 
 		# collect class child list
 		self.logger.info('Collecting class child list')
+		self.setLoading(0,"Построение зависимостей")
+		i = 0
 		for classname in classDict.keys():
+			i+=1
+			self.setLoading(100*i/len(self.classes))
+
 			curData = self.getClassData(classname)
 			bList = self.getClassAllParents(classname,False) #родительская иерархия
 			for b in bList:
@@ -113,7 +161,11 @@ class NodeFactory:
 		
 		# второй проход для проброса детей из родителей
 		self.logger.info("Passing children from parents")
+		i = 0
 		for classname,curData in classDict.items():
+			i+=1
+			self.setLoading(100*i/len(self.classes))
+			
 			if classname != "object":
 				parent = curData["baseClass"]
 				parData = self.getClassData(parent)

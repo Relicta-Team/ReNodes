@@ -1,11 +1,23 @@
 from ReNode.app.FileManager import FileManagerHelper
 from ReNode.app.Logger import RegisterLogger
 from ReNode.ui.VarMgrWidgetTypes.Widgets import VarMgrBaseWidgetType
+
 import time
 from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
+from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel,QProgressBar
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import *
 
-class VirtualLib:
+import threading
+
+
+class VirtualLib(QObject):
+	on_reload = pyqtSignal()
+
+	def reload_impl(self):
+		self.logger.debug("reload thread name: " + threading.currentThread().name)
+		self.factory.loadFactoryFromJson("lib.json",True)
 
 	class MyHandler(FileSystemEventHandler):
 		def __init__(self) -> None:
@@ -14,7 +26,8 @@ class VirtualLib:
 			self.logger = VirtualLib.refObject.logger
 
 		def reloadLibFull(self):
-			self.vlib.factory.loadFactoryFromJson("lib.json")
+			self.vlib.logger.debug("reload call from " + threading.currentThread().name)
+			self.vlib.on_reload.emit()
 
 		def on_modified(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
@@ -34,10 +47,12 @@ class VirtualLib:
 
 	refObject = None
 	def __init__(self,factory):
+		super().__init__()
 		from ReNode.app.NodeFactory import NodeFactory
 		
 		self.logger = RegisterLogger("VirtualLib")
 		VirtualLib.refObject = self
+		self.on_reload.connect(self.reload_impl)
 		self.factory : NodeFactory = factory
 
 		path = '.'  # Замените на путь к вашей директории

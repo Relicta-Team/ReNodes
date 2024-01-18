@@ -229,6 +229,7 @@ class LoggerConsole(QDockWidget):
         
         # call in next frame
         if self.isVisible():
+            if self.getGraphSystem().getFactory().loading: return
             QTimer.singleShot(0, self.update)
 
     def update(self):
@@ -308,6 +309,10 @@ class LoggerConsole(QDockWidget):
     def showStatusTipMessage(self,mes=""):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         NodeGraphComponent.refObject.mainWindow.statusBar().showMessage(mes)
+
+    def getGraphSystem(self):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
 
     def execute_command(self):
         
