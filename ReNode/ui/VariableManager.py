@@ -1035,7 +1035,11 @@ class VariableManager(QDockWidget):
         if fulltypename == "Exec": return "Выполнение"
         if fulltypename == "null": return "Ничего"
         
-        vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
+        try:
+            vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
+        except:
+            return f'<Неизвестный тип ({fulltypename})>'
+
         if not vRet or not dtObj: return "Неизвестно"
 
         if dtObj.dataType == 'value':
@@ -1060,7 +1064,10 @@ class VariableManager(QDockWidget):
         if fulltypename == "null": return QIcon()
 
         """Возвращает инстанс иконки для типа с нужными цветами"""
-        varInfo, dt = self.getVarDataByType(fulltypename,False)
+        try:
+            varInfo, dt = self.getVarDataByType(fulltypename,False)
+        except:
+            return QIcon()
 
         if isinstance(varInfo,list):
             pathes = dt.icon

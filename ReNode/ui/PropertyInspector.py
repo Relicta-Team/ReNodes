@@ -296,8 +296,12 @@ class Inspector(QDockWidget):
                         from ReNode.app.application import Application
                         if not Application.isDebugMode():
                             raise Exception(f"return type mismatch: {nodeData['returnType']} != {propContents['return']}")
+                    try:
+                        vObj,vType = vmgr.getVarDataByType(fRet)
+                    except:
+                        self.logger.error(f"Cannot get data for {baseName}::{cat}::{fName} by type {fRet}")
+                        continue
 
-                    vObj,vType = vmgr.getVarDataByType(fRet)
                     typeList = vmgr.decomposeType(fRet)
                     propObj = None
                     if vObj:
