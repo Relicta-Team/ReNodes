@@ -2,6 +2,7 @@
 
 import os
 import json
+from datetime import datetime
 from ReNode.app.config import Config
 
 class FileManagerHelper:
@@ -55,10 +56,45 @@ class FileManagerHelper:
 			files = FileManagerHelper.find_files(compiled_folder_path,"sqf")
 			doRemovePrefix = compiled_folder_path.startswith(".\\")
 			for filepath in files:
+				meta = FileManagerHelper.getCompiledScriptMetainfo(filepath)
+				if meta:
+					if not meta.get('valid',True):
+						os.remove(filepath)
+						Application.refObject.logger.info(f"Removed invalid compiled file: {filepath}")
+						continue
 				if doRemovePrefix:
 					filepath = filepath[2:]
 				file.write(f'\n{filepath}')
 		
+
+	@staticmethod
+	def getCompiledScriptMetainfo(path):
+		"""Возвращает None если граф не найден или структура не соответствует правилам
+		Иначе возвращает словарь с ключами: guid(str), path(str),valid(bool), date(datetime)
+		"""
+		if not os.path.exists(path): return None
+		dictRet = {}
+		timeformat = '%Y-%m-%d %H:%M:%S.%f' #strptime format
+		with open(path,"r",encoding='utf-8') as file:
+			#parse compile metainfo
+			sysDat = file.readline()
+			if not sysDat.startswith("//src:"): return None
+			sysDat = sysDat[:-1] #rem endl char
+			pats = sysDat.split(":")
+			if len(pats)!=3: return None
+			if pats[0]!="//src": return None
+			dictRet['guid'] = pats[1] #гуид компиляции
+			dictRet['path'] = pats[2] #путь графа
+			dictRet['valid'] = os.path.exists(os.path.join(FileManagerHelper.getWorkDir(),pats[2]))#актуальный ли файл
+
+			#parse compile date
+			cd = file.readline()
+			if not cd.startswith("//gdate:"): return None
+			cd = cd[:-1] #rem endl char
+			cdDate= cd[len("//gdate:"):]
+			dictRet['date'] = datetime.strptime(cdDate,timeformat)
+		return dictRet
+			
 
 	@staticmethod
 	def find_files(root_dir, extension):

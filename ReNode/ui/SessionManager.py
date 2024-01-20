@@ -74,6 +74,7 @@ class TabData:
     def createCompilerGUID(self):
         guid = SessionManager.CreateCompilerGUID()
         self.lastCompileGUID = guid
+        SessionManager.refObject.syncTabName(self.getIndex())
         return guid
 
     def __repr__(self) -> str:
@@ -98,7 +99,7 @@ class TabData:
         if not os.path.exists(file):
             return ""
         prefixLen = "//src:8c2a235c-9997-49f9-8b58-04694ce2ae20"
-        with open(file,'r') as f:
+        with open(file,'r',encoding='utf-8') as f:
             #read first bytes
             data = f.read(len(prefixLen))
             f.close()
@@ -246,7 +247,8 @@ class SessionManager(QTabWidget):
             unsafe = "*"
         self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
         ttp = f"Расположение: {tdata.filePath}\n"
-        ttp += f"Имя: {tdata.name}\n"
+        ttp += f"Имя: {tdata.infoData.get('name')}\n"
+        ttp += f"Описание: {tdata.infoData.get('desc') or 'Отсутствует'}\n"
         if tdata.infoData.get('type','') in ["gamemode","role"]:
             gTypeName = tdata.infoData.get('type')
             typeName = "НЕИЗВЕСТНО"
@@ -255,7 +257,7 @@ class SessionManager(QTabWidget):
             ttp += f"Тип графа: {typeName}\n\n"
             ttp += f'Класс: {tdata.infoData.get("classname")}\n'
             ttp += f"Родитель: {tdata.infoData.get('parent')}\n"
-            ttp += f'GUID сброки: {tdata.lastCompileGUID}'
+            ttp += f'GUID сброки: {tdata.lastCompileGUID or "не скомпилирован"}'
             
         self.tabBar().setTabToolTip(idx,ttp)
 
