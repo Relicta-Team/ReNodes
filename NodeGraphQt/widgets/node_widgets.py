@@ -566,7 +566,7 @@ class NodeTextEdit(NodeBaseWidget):
             style += '}\n'
             stylesheet += style
         from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import AutoResizingTextEdit
-        ledit = AutoResizingTextEdit()#QtWidgets.QPlainTextEdit()
+        ledit = AutoResizingTextEdit(createUpdateEvent=False)#QtWidgets.QPlainTextEdit()
         ledit.setPlainText(text)
         ledit.setPlaceholderText("...")
         ledit.setStyleSheet(stylesheet)
@@ -576,32 +576,54 @@ class NodeTextEdit(NodeBaseWidget):
 
         widget = self
         def _redr():
-            ledit.update()
-            ledit.updateGeometry()
+            #ledit.update()
+            #ledit.updateGeometry()
             #widget.widget().setFixedSize(widget.get_custom_widget().sizeHint())
             #widget.resize(QtCore.QSizeF(widget.get_custom_widget().sizeHint()))
-            
-            self.widget().resize(self.get_custom_widget().sizeHint())
-            self.get_custom_widget().setFixedSize(self.get_custom_widget().sizeHint())
-            
-            self.update()
-            self.node.draw_node()
-            self.widget().update()
+            curSize = self.get_custom_widget().rect() 
+            maxSize = self.get_custom_widget().sizeHint()
+            size = self.get_custom_widget().size()
+            v3 = (maxSize,curSize,size)
+            newsize = QtCore.QSize(maxSize.width(),max(maxSize.height(),curSize.bottom()))
+            self.get_custom_widget().setFixedSize(maxSize)
+            self.widget().resize(maxSize)
 
-            self.widget().updateGeometry()
+            ledit.blockSignals(True)
+            ledit.updateGeometry()
             self.updateGeometry()
-            widget.get_custom_widget().updateGeometry()
+            self.widget().updateGeometry()
+            ledit.blockSignals(False)
+            
+            #self.update()
+            #self.node.draw_node()
+            #self.widget().update()
+
+            #self.widget().updateGeometry()
+            #self.updateGeometry()
+            #widget.get_custom_widget().updateGeometry()
             
             #self.view.update()
             #self.view.draw_node()
-        self.get_custom_widget().textChanged.connect(lambda: _redr())
-        _redr()
+        #self.get_custom_widget().textChanged.connect(lambda: _redr())
+        #_redr()
+        ledit.on_geometry_updated.connect(_redr)
         
-        ledit.updateGeometry()
-        self.widget().resize(self.get_custom_widget().sizeHint())
-        self.get_custom_widget().setFixedSize(self.get_custom_widget().sizeHint())
-        self.update()
-        self.node.draw_node()
+        # ledit.updateGeometry()
+        # self.widget().resize(self.get_custom_widget().sizeHint())
+        # self.get_custom_widget().setFixedSize(self.get_custom_widget().sizeHint())
+        # self.update()
+        # self.node.draw_node()
+
+    def boundingRect(self) -> QtCore.QRectF:
+        baseRect = super().boundingRect()
+        curh = baseRect.height()
+        size = self.get_custom_widget()
+        if size:
+            geoh = size.geometry().y()
+            curh = size.sizeHint().height()#max(curh,size.sizeHint().height())
+            curh += geoh
+        
+        return QtCore.QRectF(baseRect.x(),baseRect.y(),baseRect.width(),curh)
 
     @property
     def type_(self):

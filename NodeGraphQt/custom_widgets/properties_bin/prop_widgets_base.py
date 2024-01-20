@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from Qt import QtWidgets, QtCore
+from Qt import QtWidgets, QtCore, QtGui
 
 
 class PropLabel(QtWidgets.QLabel):
@@ -97,8 +97,11 @@ class PropLineEdit(QtWidgets.QLineEdit):
 
 
 class AutoResizingTextEdit(QtWidgets.QTextEdit):
-    def __init__(self, parent = None):
+    on_geometry_updated = QtCore.Signal()
+    def __init__(self, parent = None,createUpdateEvent=True):
         super(AutoResizingTextEdit, self).__init__(parent)
+
+        self.setWordWrapMode(QtGui.QTextOption.WrapAnywhere) #custom wrap update
 
         # This seems to have no effect. I have expected that it will cause self.hasHeightForWidth()
         # to start returning True, but it hasn't - that's why I hardcoded it to True there anyway.
@@ -108,7 +111,12 @@ class AutoResizingTextEdit(QtWidgets.QTextEdit):
         size_policy.setVerticalPolicy(QtWidgets.QSizePolicy.Preferred)
         self.setSizePolicy(size_policy)
 
-        self.textChanged.connect(lambda: self.updateGeometry())
+        if createUpdateEvent:
+            self.textChanged.connect(lambda: self.updateGeometry())
+
+    def updateGeometry(self) -> None:
+        super().updateGeometry()
+        self.on_geometry_updated.emit()
 
     def setMinimumLines(self, num_lines):
         """ Sets minimum widget height to a value corresponding to specified number of lines
