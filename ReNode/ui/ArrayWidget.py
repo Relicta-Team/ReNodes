@@ -7,6 +7,35 @@ from Qt import QtCore
 
 from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent,addTreeContentItem
 
+class CustomResizeGripScroll(QFrame):
+    def __init__(self, resizer = None,canResizeWidth = False,parent=None):
+        super().__init__(parent)
+        #self.setFixedSize(16, 16)  # Set the size of the grip
+        self.setCursor(Qt.SizeFDiagCursor if canResizeWidth else Qt.SizeVerCursor)  # Set the cursor shape for resizing
+        self.setFrameShape(QFrame.Shape.HLine)
+        self.setFrameShadow(QFrame.Shadow.Raised)
+        self.setLineWidth(2)
+        self.resizer = resizer
+        self.canResizeWidth = canResizeWidth
+
+    def mousePressEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.resizing = True
+            self.last_pos = event.pos()
+        else:
+            self.resizing = False
+
+    def mouseMoveEvent(self, event):
+        if self.resizing:
+            delta = event.pos() - self.last_pos
+            self.last_pos = event.pos()
+            width = self.resizer.width() if not self.canResizeWidth else self.resizer.width() + delta.x()
+            height = self.resizer.height() + delta.y()
+            self.resizer.setFixedSize(width, height)
+
+    def mouseReleaseEvent(self, event):
+        self.resizing = False
+
 class ArrayWidget(QWidget):
 
     value_changed = QtCore.Signal(object)
@@ -55,6 +84,10 @@ class ArrayWidget(QWidget):
 
         self.layout.addWidget(self.scrollArea)
         self.setLayout(self.layout)
+        
+        #grip for resizing elements
+        self.grip = CustomResizeGripScroll(self.scrollArea)
+        self.layout.addWidget(self.grip)
 
         self.updateCountText()
 
@@ -258,6 +291,10 @@ class DictWidget(QWidget):
         self.layout.addWidget(self.scrollArea)
         self.setLayout(self.layout)
 
+        #grip for resizing elements
+        self.grip = CustomResizeGripScroll(self.scrollArea)
+        self.layout.addWidget(self.grip)
+
         self.updateCountText()
 
     def updateCountText(self):
@@ -420,6 +457,10 @@ class StructureWidget(QWidget):
 
         self.layout.addWidget(self.scrollArea)
         self.setLayout(self.layout)
+
+        #grip for resizing elements
+        self.grip = CustomResizeGripScroll(self.scrollArea)
+        self.layout.addWidget(self.grip)
 
     def get_value(self):
         return [element.itemAt(1).widget().get_value() for element in self.arrayElements]
