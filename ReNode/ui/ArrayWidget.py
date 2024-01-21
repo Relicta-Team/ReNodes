@@ -258,12 +258,13 @@ class DictWidget(QWidget):
             #     self.selectType.addItem(icn,txt)
 
             def __curIdxChanged(data,text,icon):
+                #data is real data
+                self.on_update_value_type(data)
+                
                 if len(self.arrayElements) > 0:
                     for item in self.arrayElements.copy():
                         self.removeArrayElement(item)
                     return
-                #data is real data
-                self.on_update_value_type(data)
             self.selectType.changed_event.connect(__curIdxChanged)
 
         # Создайте кнопку для добавления нового элемента
