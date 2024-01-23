@@ -1145,7 +1145,6 @@ class NodeItem(AbstractNodeItem):
                 cdat = self.getFactory().getClassData(data['class'])
                 desc = f'Узел класса <b>{cdat.get("name",data.get("class",self.nodeClass))}</b>'
         if desc:
-            nametext += f'<br/><font size=""4"><i>{desc}</i></font>'
             nametext += f'<br/><font size=""4">{desc}</font>'
         self._text_item.setHtml(nametext)
         if self.scene():

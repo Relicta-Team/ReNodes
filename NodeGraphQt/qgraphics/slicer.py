@@ -186,7 +186,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             dText = libInfo.get("desc").replace("\n","<br/>")
             text += f'<br/><b>Описание:</b> {dText or "отсутствует"}<br/>'
 
-            if libInfo.get("memtype"):
+            if libInfo.get("memtype") or className.startswith("func."):
                 valdesc = "Без описания"
                 valinfo = "Ничего"
                 retType = libInfo.get("returnType")

@@ -353,6 +353,8 @@ class NodeObjectHandler:
 			if mtype == "const":
 				self.execTypes = 'pure'
 				self.memberData['classProp'] = 1
+			if mtype == 'get': #for getters no override
+				self.execTypes = 'pure'
 		elif tokenType == 'exec':
 			execType = tokens[1]
 			self.execTypes = execType
@@ -804,7 +806,19 @@ class NodeObjectHandler:
 					codecall = f"private @genvar.out.{ldat[0]+1} = "+codecall
 				codecall += "; @out.1"
 			memberData['code'] = codecall
-
+		if 'color' not in memberData:
+			memberData['color'] = NodeColor.PureFunction.value if isPure else NodeColor.Function.value
+		if 'icon' not in memberData:
+			memberData['icon'] = "data\\icons\\icon_BluePrintEditor_Function_16px"
+		
+		#return type info
+		for pn,pdat in memberData['outputs']:
+			if pdat.get('type')!="Exec":
+				memberData['returnType'] = pdat.get("type","null")
+				if pdat.get('desc'):
+					memberData['returnDesc'] = pdat.get('desc')
+				break
+			
 	def _preregEnumNode(self):
 		"""
 			Подготовка свитча по перечислению
