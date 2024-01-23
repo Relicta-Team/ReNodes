@@ -288,7 +288,6 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_multiline_text_input(self,name,label='',text='',tab=None):
     def add_multiline_text_input(self,name,label='',text='',tab=None,fontSize=None):
         """Custom multiline text input"""
         self.create_property(
@@ -297,7 +296,6 @@ class BaseNode(NodeObject):
             widget_type=NodePropWidgetEnum.QTEXT_EDIT.value,
             tab=tab
         )
-        widget = NodeTextEdit(self.view, name, label, text)
         widget = NodeTextEdit(self.view, name, label, text,fontSize)
         def __changed(k,v):
             
