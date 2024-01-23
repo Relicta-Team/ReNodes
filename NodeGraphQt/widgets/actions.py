@@ -65,9 +65,13 @@ class BaseMenu(QtWidgets.QMenu):
             menu = action.menu()
             if not menu:
                 continue
-            if menu.title() == name:
+            mtitle = menu.title()
+            if mtitle == name:
                 return menu
-            if menu.title() == "all":
+            if "|" in mtitle:
+                if name in mtitle.split("|"):
+                    return menu
+            if mtitle == "all":
                 return menu
             if node_id and menu.node_class:
                 node = menu.graph.get_node_by_id(node_id)

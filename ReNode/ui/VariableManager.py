@@ -378,8 +378,25 @@ class VariableLibrary:
 
         classData = refClassDict.get(type)
         if not classData: return False
-        return "object" in classData.get('baseList',[])
+        #return "object" in classData.get('baseList',[])
+        return True
     
+    def decomposeType(self,fulltypename):
+        if re.findall('[\[\]\,]',fulltypename):
+            typeinfo = re.findall('[\w\.]+\^?',fulltypename)
+            return typeinfo
+        else:
+            return ['value',fulltypename]
+
+    def composeType(self,list):
+        if len(list) == 0:
+            raise Exception("Cant compose type {}".format(list))
+        datatype = list[0]
+        if datatype == 'value':
+            return list[1]
+        else:
+            return datatype + "[" + ','.join(list[1:]) + "]"
+
     def getVarDataByType(self,fullTypename,canCreateCopy=False) -> tuple[VariableTypedef | list[VariableTypedef] | None,VariableDataType|None]:
         """
             Возвращает tuple (VariableTypedef | list[VariableTypedef],VariableDataType) по полному имени типа

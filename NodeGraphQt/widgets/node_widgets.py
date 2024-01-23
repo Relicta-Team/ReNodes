@@ -541,7 +541,7 @@ class NodeLineEdit(NodeBaseWidget):
 
 class NodeTextEdit(NodeBaseWidget):
 
-    def __init__(self, parent=None, name='', label='', text=''):
+    def __init__(self, parent=None, name='', label='', text='',fontSize=None):
         super(NodeTextEdit, self).__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -567,6 +567,10 @@ class NodeTextEdit(NodeBaseWidget):
             stylesheet += style
         from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import AutoResizingTextEdit
         ledit = AutoResizingTextEdit(createUpdateEvent=False)#QtWidgets.QPlainTextEdit()
+        if fontSize and fontSize > 0:
+            f = ledit.font()
+            f.setPointSize(fontSize)
+            ledit.setFont(f)
         ledit.setPlainText(text)
         ledit.setPlaceholderText("...")
         ledit.setStyleSheet(stylesheet)

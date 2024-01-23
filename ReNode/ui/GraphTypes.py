@@ -227,6 +227,11 @@ class GraphTypeBase:
                 if not needReturn:
                     from ReNode.app.CodeGenExceptions import CGSuperVoidReturnException
                     cgObj.exception(CGSuperVoidReturnException,source=returnObject)
+            if 'classInfo' in entryObject.classLibData:
+                memname = entryObject.classLibData['classInfo'].get('name',"UNKNOWN_INFO")
+                if memname in ["constructor","destructor"]:
+                    from ReNode.app.CodeGenExceptions import CGCtorAndDtorSuperCallException
+                    cgObj.exception(CGCtorAndDtorSuperCallException,source=returnObject,entry=entryObject)
         pass
 
     def handleReadyNode(self,nodeObject,entryObj,metaObj):

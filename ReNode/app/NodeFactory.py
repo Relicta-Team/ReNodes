@@ -522,7 +522,7 @@ class NodeFactory:
 		if type=="input":
 			node.add_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
 		if type == "edit":
-			node.add_multiline_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""))
+			node.add_multiline_text_input(name=optname,label=optvals.get('text',''),text=optvals.get('default',""),fontSize=optvals.get('font_size'))
 		if type == "spin":
 			node.add_spinbox(name=optname,label=optvals.get('text',''),text=optvals.get('default',0),range=optvals.get('range'))
 		if type == "fspin":

@@ -56,6 +56,13 @@ class NodeItem(AbstractNodeItem):
         name (str): name displayed on the node.
         parent (QtWidgets.QGraphicsItem): parent item.
     """
+    constRefNodeGraph = None
+    @staticmethod
+    def loadConstRefNodeGraph():
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        NodeItem.constRefNodeGraph = NodeGraphComponent.refObject
+    @staticmethod
+    def getFactory(): return NodeItem.constRefNodeGraph.getFactory()
 
     def __init__(self, name='node', parent=None):
         super(NodeItem, self).__init__(name, parent)
@@ -77,6 +84,9 @@ class NodeItem(AbstractNodeItem):
         self._proxy_mode_threshold = 70
 
         self._error_item = XErrorItem(self,"ОШИБКА","")
+
+        if not NodeItem.constRefNodeGraph:
+            NodeItem.loadConstRefNodeGraph()
 
         # тип рендера узла
         self._node_render_type = NodeRenderType.Default
@@ -1128,8 +1138,15 @@ class NodeItem(AbstractNodeItem):
         if self._node_render_type in NodeRenderType.getNoHeaderTypes():
             name = f'<b>{name}</b>'    
         nametext = f'<span style=\'font-family: Arial; font-size: {self._default_font_size}pt;\'>{name}</span>'
+        if self.nodeClass:
+            data = self.getFactory().getNodeLibData(self.nodeClass)
+            if data and 'classInfo' in data:
+                data = data['classInfo']
+                cdat = self.getFactory().getClassData(data['class'])
+                desc = f'Узел класса <b>{cdat.get("name",data.get("class",self.nodeClass))}</b>'
         if desc:
             nametext += f'<br/><font size=""4"><i>{desc}</i></font>'
+            nametext += f'<br/><font size=""4">{desc}</font>'
         self._text_item.setHtml(nametext)
         if self.scene():
             self.align_label()

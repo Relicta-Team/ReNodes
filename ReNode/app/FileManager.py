@@ -117,7 +117,7 @@ class FileManagerHelper:
 		"""Загружает граф из json файла в словарь и возвращает его"""
 		layout_data = None
 		try:
-			with open(file_path) as data_file:
+			with open(file_path,encoding='utf-8') as data_file:
 				layout_data = json.load(data_file)
 		except Exception as e:
 			layout_data = None

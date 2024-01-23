@@ -634,6 +634,7 @@ class CodeGenerator:
 
                 isCustomVariable = False
                 isCustomFunction = False
+                isFunctionCall = node_className.startswith("func.")
 
                 #определяем является ли эта переменная кастомной
                 if obj_data.get('custom',{}).get('nameid'):
@@ -729,6 +730,20 @@ class CodeGenerator:
                         # первичная генерация
                         newcode = self.getFunctionData(node_className,nameid,obj)
                         node_code = newcode
+
+                if isFunctionCall and "@cfParams" in node_code:
+                    inputDict = obj.getConnectionInputs(True)
+                    paramList = []
+                    for _idxPort, (pname,pdat) in enumerate(inputs_fromLib):
+                        iInfo = inputDict.get(pname)
+                        _tpval = pdat['type']
+                        #needConn = pdat.get('require_connection',True)
+                        #_hasConnected = iInfo
+                        if _tpval!="Exec" and  _tpval!="":
+                            paramList.append(f"@in.{_idxPort+1}")
+                    
+                    replcode_ = "[" + ", ".join(paramList) + "]"
+                    node_code = re.sub(f'@cfParams',replcode_,node_code)
 
                 if "@genvar." in node_code:
                     #pat = r'@genvar\.(\w+\.\d+)(\.internal\((.*?)\))?'
@@ -1553,7 +1568,10 @@ class CodeGenerator:
                 if isBigString:
                     return "(["+strData.replace("\n","\",\"")+"]joinString ENDL)"
                 else:
-                    return "("+strData.replace("\n","\"+\"")+")"
+                    strData = "("+strData.replace("\n","\"+endl+\"")+")"
+                    #removing empty strings
+                    #todo implement for performance
+                    return strData
             else: 
                 return strData
         elif tname == "bool":

@@ -170,6 +170,13 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 idSearch = self._lastItem.id
                 findedNode = Application.refObject.mainWindow.nodeGraph.graph.get_node_by_id(idSearch)
                 if findedNode:
+                    hasAuto = "autoportdata" in findedNode.model.custom_properties
+                    pdel = findedNode.port_deletion_allowed()
+                    if hasAuto or pdel:
+                        text += f'<br/><b><span style="color:#ff0000">AUTOPORTS: {hasAuto}; RUNTIME PORTS: {pdel}</span></b>'
+                    else:
+                        text += "<br/><b>Статический узел</b>"
+
                     text += f'<br/><b>Уникальный номер: {findedNode.uid}</b><br/>'
 
             # if hasattr(self._lastItem,"_error_item"):
@@ -233,7 +240,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #todo replace reference
             #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
             from re import search
-            regexPattern = r'(\[([\w\\\/\.а-яА-Я]+)\s+([^\]]*)\])'
+            regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([^\]]*)\])'
             while True:
                 pats = search(regexPattern, text)
                 if not pats: break

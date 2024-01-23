@@ -289,6 +289,7 @@ class BaseNode(NodeObject):
         self.view.draw_node()
 
     def add_multiline_text_input(self,name,label='',text='',tab=None):
+    def add_multiline_text_input(self,name,label='',text='',tab=None,fontSize=None):
         """Custom multiline text input"""
         self.create_property(
             name,
@@ -297,6 +298,7 @@ class BaseNode(NodeObject):
             tab=tab
         )
         widget = NodeTextEdit(self.view, name, label, text)
+        widget = NodeTextEdit(self.view, name, label, text,fontSize)
         def __changed(k,v):
             
             widget.get_custom_widget().updateGeometry()

@@ -71,6 +71,7 @@ class NodeObjectHandler:
 		self.isSystem = self.objectType == 'node'
 		self.isEnum = self.objectType == 'enum'
 		self.isStruct = self.objectType == "struct"
+		self.isFunc = self.objectType == "func"
 
 		self.isClassMember = self.isField or self.isMethod
 
@@ -510,7 +511,7 @@ class NodeObjectHandler:
 			memberRegion = "fields"
 		elif self.isMethod:
 			memberRegion = "methods"
-		elif self.isSystem or self.isEnum or self.isStruct:
+		elif self.isSystem or self.isEnum or self.isStruct or self.isFunc:
 			memberRegion = self.objectType #internal,operators,etc
 		else:
 			raise Exception(f'Unknown member type: {self.objectType}')
@@ -788,6 +789,22 @@ class NodeObjectHandler:
 			if canAutoSetDisplayNames:
 				v['display_name'] = False
 
+	def _preregFunction(self):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+		functionName = self.objectNameFull
+		isPure = self.execTypes in ['none','pure']
+		if 'code' not in memberData:
+			codecall = f'@cfParams call {functionName}'
+			if not isPure:
+				ldat = [idx for idx,(pn,pdat) in enumerate(memberData['outputs']) if pdat['type']!="Exec"]
+				if len(ldat) > 1:
+					raise Exception(f'Error on generate output info for function {functionName}')
+				if len(ldat) == 1:
+					codecall = f"private @genvar.out.{ldat[0]+1} = "+codecall
+				codecall += "; @out.1"
+			memberData['code'] = codecall
+
 	def _preregEnumNode(self):
 		"""
 			Подготовка свитча по перечислению
@@ -890,8 +907,36 @@ class NodeObjectHandler:
 			if not isMake:
 				__preCode = "(@in.2)params " + __preCode + "; @out.1"
 			newobj['code'] = __preCode
+
+	def _portTypesPrepare(self):
+		memberData = self.memberData
+		classmeta = self.classMetadata
+		vlib = self.varLib
 		
-		
+		#ports check
+		for ptype in ['inputs','outputs']:
+			for pn,pv in memberData[ptype]:
+				if 'type' in pv:
+					tpval = pv['type']
+					pv['type'] = self.__portTypeValidate(tpval)
+					# if vlib.isObjectType(tpval,classmeta) and not tpval.endswith("^"):
+					# 	pv['type'] = tpval + "^"
+		#rtypecheck
+		if 'returnType' in memberData:
+			tpval = memberData['returnType']
+			memberData['returnType'] = self.__portTypeValidate(tpval)
+			# if vlib.isObjectType(tpval,classmeta) and not tpval.endswith("^"):
+			# 	memberData['returnType'] = tpval + "^"
+
+	def __portTypeValidate(self,fulltype):
+		classmeta = self.classMetadata
+		vlib = self.varLib
+		typelist = vlib.decomposeType(fulltype)
+		for idx, tname in enumerate(typelist):
+			if idx == 0: continue
+			if vlib.isObjectType(tname,classmeta) and not tname.endswith("^"):
+				typelist[idx] += "^"
+		return vlib.composeType(typelist)
 
 	def registerNode(self,memberRegion):
 		memberData = self.memberData
@@ -911,6 +956,9 @@ class NodeObjectHandler:
 						"style": "triangle"
 			}))
 		
+		#проход по портам и опциям
+		self._portTypesPrepare()
+
 		if self.isClassMember: self._preregClassMember()
 		if self.isField: self._preregField()
 		if self.isMethod: self._preregMethod()
@@ -919,8 +967,10 @@ class NodeObjectHandler:
 			self._preregEnumNode()
 		if self.isStruct:
 			self._preregStruct()
-		if self.isSystem:
+		if self.isSystem or self.isFunc:
 			self._preregSystemNode()
+		if self.isFunc:
+			self._preregFunction()
 
 		dataInputs = dict(self['inputs'])
 		dataOutputs = dict(self['outputs'])
