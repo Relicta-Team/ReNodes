@@ -102,7 +102,6 @@ class AutoResizingTextEdit(QtWidgets.QTextEdit):
         super(AutoResizingTextEdit, self).__init__(parent)
 
         self.setWordWrapMode(QtGui.QTextOption.WrapAnywhere) #custom wrap update
-
         # This seems to have no effect. I have expected that it will cause self.hasHeightForWidth()
         # to start returning True, but it hasn't - that's why I hardcoded it to True there anyway.
         # I still set it to True in size policy just in case - for consistency.
@@ -110,6 +109,7 @@ class AutoResizingTextEdit(QtWidgets.QTextEdit):
         size_policy.setHeightForWidth(True)
         size_policy.setVerticalPolicy(QtWidgets.QSizePolicy.Preferred)
         self.setSizePolicy(size_policy)
+        self.setAcceptRichText(False) #с включенным режимом будет вставляться текст с цветом. не нужно...
 
         if createUpdateEvent:
             self.textChanged.connect(lambda: self.updateGeometry())
