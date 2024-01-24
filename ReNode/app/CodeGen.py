@@ -979,11 +979,11 @@ class CodeGenerator:
                                 selfGraphClass = self.gObjMeta['classname']
                                 if memtype == 'field':
                                     if memname in self.getFactory().getClassAllFields(selfGraphClass) and \
-                                        selfGraphClass in self.getFactory().getClassAllParents(memparclass):
+                                        memparclass in self.getFactory().getClassAllParents(selfGraphClass):
                                         catchErrThis = False
                                 if memtype == 'method':
                                     if memname in self.getFactory().getClassAllMethods(selfGraphClass) and \
-                                        selfGraphClass in self.getFactory().getClassAllParents(memparclass):
+                                        memparclass in self.getFactory().getClassAllParents(selfGraphClass):
                                         catchErrThis = False
                             if catchErrThis:
                                 self.exception(CGMemberNotExistsException,source=obj,context=[memname,selfGraphClass,clsInfo['class']],portname=input_name)
