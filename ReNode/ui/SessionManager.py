@@ -265,17 +265,17 @@ class SessionManager(QTabWidget):
         #print(f"moved to {index}")
         pass
 
-    def newTab(self,switchTo=False,loader='',options=None):
+    def newTab(self,switchTo=False,loader='',optionsToCreate=None):
         idx = self.addTab(QWidget(),"tab")
         graphName = "Новый граф"
-        if options:
-            graphName = options.get("classname") or graphName
+        if optionsToCreate:
+            graphName = optionsToCreate.get("classname") or graphName
 
             
             defaultGraph = {
                 "graph": {
                     "variables": {},
-                    "info": options,
+                    "info": optionsToCreate,
                 },
                 "nodes": {},
                 "connections": []
@@ -283,6 +283,7 @@ class SessionManager(QTabWidget):
             
             os.makedirs(os.path.dirname(loader), exist_ok=True)
             self.graphSystem.graph.save_session(loader,defaultGraph)
+            self.graphSystem.getFactory().vlib.file_event_handler.reloadLibFull()
         
         tabCtx = TabData(graphName,loader)
         self.tabBar().setTabData(idx,tabCtx)

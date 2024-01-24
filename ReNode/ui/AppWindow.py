@@ -51,7 +51,7 @@ class MainWindow( QMainWindow ):
 	def createMenu(self):
 		from ReNode.ui.LoggerConsole import ConsoleCommand,ClearConsoleCommand
 		from ReNode.app.application import Application
-		self.newAction = QAction('&Новый скрипт', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Новый скрипт")
+		self.newAction = QAction('&Новый граф', self, triggered=self.onNewFile, shortcut="Ctrl+N", statusTip="Открывает менеджер создания нового графа")
 		self.openAction = QAction('&Открыть', self, triggered=self.onOpenFile, shortcut="Ctrl+O", statusTip="Открыть")
 		self.saveAction = QAction('&Сохранить', self, triggered=self.onSaveFile, shortcut="Ctrl+S", statusTip="Сохранить")
 		self.exitAction = QAction('&Выход', self, triggered=self.onExit, shortcut="Ctrl+Q", statusTip="Выход")

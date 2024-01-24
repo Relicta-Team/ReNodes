@@ -337,7 +337,7 @@ class WizardScriptMaker(QWizard):
 		
 		sets,msg = gobj.createInfoDataProps(settings)
 		if sets:
-			self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,options=sets)
+			self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,optionsToCreate=sets)
 		else:
 			logger.error(msg)
 

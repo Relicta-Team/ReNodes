@@ -37,7 +37,7 @@ class VirtualLib(QObject):
 		def on_created(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
 				self.logger.debug(f"File created: {event.src_path}")
-				self.reloadLibFull()
+				#self.reloadLibFull()
 
 		def on_deleted(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
@@ -56,10 +56,10 @@ class VirtualLib(QObject):
 		self.factory : NodeFactory = factory
 
 		path = '.'  # Замените на путь к вашей директории
-		event_handler = VirtualLib.MyHandler()
-		observer = Observer()
-		observer.schedule(event_handler, path, recursive=True)
-		observer.start()
+		self.file_event_handler = VirtualLib.MyHandler()
+		self.observer = Observer()
+		self.observer.schedule(self.file_event_handler, path, recursive=True)
+		self.observer.start()
 
 	def generateUserLib(self):
 		self.logger.info("Start searching graphs...")
