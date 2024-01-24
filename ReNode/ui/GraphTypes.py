@@ -614,6 +614,7 @@ class GamemodeGraph(ClassGraphType):
             
             nameText = name.text()
             clsText = clsname.text()
+            descText = desc.text()
             parentText = parent.get_value()
             filePath = filepath.get_value()
             domain = path.text()
@@ -629,6 +630,7 @@ class GamemodeGraph(ClassGraphType):
             settings['name'] = nameText
             settings['classname'] = clsText
             settings['parent'] = parentText
+            settings['desc'] = descText
             settings['path'] = filePath
             settings['domain'] = domain
 
@@ -792,6 +794,7 @@ class RoleGraph(ClassGraphType):
             
             nameText = name.text()
             clsText = clsname.text()
+            descText = desc.text()
             parentText = parent.get_value()
             filePath = filepath.get_value()
             domain = path.text()
@@ -807,6 +810,7 @@ class RoleGraph(ClassGraphType):
             settings['name'] = nameText
             settings['classname'] = clsText
             settings['parent'] = parentText
+            settings['desc'] = descText
             settings['path'] = filePath
             settings['domain'] = domain
 

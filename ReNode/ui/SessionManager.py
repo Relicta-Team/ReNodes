@@ -294,12 +294,12 @@ class SessionManager(QTabWidget):
         tabCtx = TabData(graphName,loader)
         self.tabBar().setTabData(idx,tabCtx)
         self.syncTabName(idx)
-
-        tabCtx.onGraphOpened()
         
         tabCtx.registerEvents()
         if switchTo:
             self.setActiveTab(idx)
+        
+        tabCtx.onGraphOpened()
         
         return tabCtx
 
