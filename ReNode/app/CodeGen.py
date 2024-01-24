@@ -1214,6 +1214,9 @@ class CodeGenerator:
         #     +"#define func(v) v = \n"\
         #     +enCode
 
+        #replace for debugger
+        enCode = enCode.replace("@IFDEF_DEBUG","").replace("@ENDIF","")
+
         pr = parse(enCode)
         resultAnalyze = analyze(pr)
 
@@ -1268,6 +1271,9 @@ class CodeGenerator:
                         self.exception(CGScopeLocalVariableException,source=codeInfo[defId],portname=defPort,target=probTargError)
                         break
         if hasFoundLvarExeptions: return False
+
+        # postprocess replace debug preprocessor
+        entryObj.code = entryObj.code.replace("@IFDEF_DEBUG","\n#ifdef DEBUG\n").replace("@ENDIF","\n#endif\n")
 
         return True
 

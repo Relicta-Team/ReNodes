@@ -296,7 +296,7 @@ class NodeObjectHandler:
 				if v['type'] != "Exec" and v['type'] == self.memberData.get('returnType'):
 					returnId = i+1
 					break
-		isPureCalling = self.memberData['memtype'] == 'const'
+		isPureCalling = self.memberData['memtype'] in ['const','get']
 		if returnId >= 0 and not isPureCalling:
 			code = f'private @genvar.out.{returnId} = {code}'
 		if not isPureCalling:
