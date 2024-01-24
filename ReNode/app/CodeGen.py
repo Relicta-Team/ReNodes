@@ -238,9 +238,13 @@ class CodeGenerator:
                 file.write(code)
 
             #regen loaderlist
-            FileManagerHelper.generateScriptLoader()
+            FileManagerHelper.generateScriptLoader(excludeGuid=guidCompile)
 
             self.successCompiled = True
+            
+            if self.successCompiled and not self._exceptions:
+                tDat.save() #saving on success compile
+            
         except CGCompileAbortException:
             pass
         except Exception as e:
