@@ -1145,6 +1145,13 @@ class CodeGenerator:
                     if noLoops:
                         if 'control.return' != srcObj.nodeClass:
                             self.exception(CGReturnNotAllBranchesException,source=srcObj,entry=entryObj,context=retTypenameExpect)
+                        else:
+                            #type checking
+                            realType = srcObj.getConnectionType('in',"Возвращаемое значение")
+                            if realType != retType:
+                                ctxType = f'{retTypenameExpect} ({retType})'
+                                rtName = self.getVariableManager().getTextTypename(realType)
+                                self.exception(CGReturnTypeMismatchException,source=srcObj,entry=entryObj,context=ctxType,portname=rtName)
                 else:
                     if 'control.return' == srcObj.nodeClass:
                         self.exception(CGReturnTypeUnexpectedException,source=srcObj,entry=entryObj)

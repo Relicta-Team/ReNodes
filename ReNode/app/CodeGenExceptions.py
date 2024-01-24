@@ -198,7 +198,7 @@ class CGReturnTypeUnexpectedException(CGBaseException):
 class CGReturnTypeMismatchException(CGBaseException):
     id = 306
     text = "Несоответствие возвращаемых значений для {entry}"
-    desc = "Тип допустимого возвращаемого значения для {entry} ({ctx}) не совпадает с типом возвращаемого значения в {src} ({portname}). Точка входа может принимать возвращаемый тип: {ctx}"
+    desc = "Тип допустимого возвращаемого значения для {entry} ({ctx}) не совпадает с типом возвращаемого значения в {src}: {portname}. Точка входа должна принимать возвращаемый тип: {ctx}"
 
 class CGReturnTypeNotFoundException(CGBaseException):
     id = 307
