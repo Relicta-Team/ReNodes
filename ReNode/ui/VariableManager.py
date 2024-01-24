@@ -328,6 +328,7 @@ class VariableLibrary:
                     typeinfo = re.findall('[\w\.]+\^?',portType)
                     portType = typeinfo[1]
 
+                if portType == "thisClassname": portType = 'object'
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
                 if portType.startswith("struct."): portType = "struct"
@@ -345,6 +346,7 @@ class VariableLibrary:
                     typeinfo = re.findall('[\w\.]+\^?',portType)
                     portType = typeinfo[1]
 
+                if portType == "thisClassname": portType = 'object'
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
                 if portType.startswith("struct."): portType = "struct"

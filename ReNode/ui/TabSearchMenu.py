@@ -269,7 +269,7 @@ class TabSearchMenu(QWidget):
             self.nodeGraphComponent.graph._viewer.setFocus()
     
     def onDragFromPipeContext(self,pipe: PipeItem):
-        self.nodeGraphComponent.toggleNodeSearch()
+        #self.nodeGraphComponent.toggleNodeSearch()
         print(f"TODO context drag logic {pipe}")
 
 

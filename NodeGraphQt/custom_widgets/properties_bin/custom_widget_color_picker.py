@@ -34,7 +34,15 @@ class PropColorPickerRGB(BaseProperty):
         self.value_changed.emit(self.toolTip(), value)
 
     def _on_select_color(self):
-        current_color = QtGui.QColor(*self.get_value())
+        rgb_a = self.get_value()
+        
+        #some converting...
+        if isinstance(rgb_a,tuple):
+            rgb_a = list(rgb_a)
+        for i,c in enumerate(rgb_a):
+            rgb_a[i] = int(c)
+        
+        current_color = QtGui.QColor(*rgb_a)
         color = None 
         if self.customizedColorbox > 0:
             #Yodes: seems locales dosen t work

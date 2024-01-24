@@ -47,8 +47,8 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
         return True
 
     # check selfports
+    fact = NodeGraphComponent.refObject.getFactory()
     if fromTypeName == "self" or toTypeName == "self":
-        fact = NodeGraphComponent.refObject.getFactory()
         if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
             return True
 
@@ -67,6 +67,14 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
     #if fromNode.has_property('autoportdata') and fromTypeName == '': return True
     #if toNode.has_property('autoportdata') and toTypeName == '': return True
     
+    # проверка объектов. Только даункастинг
+    if fact.isObjectType(fromTypeName) and fact.isObjectType(toTypeName):
+        realOutType = fact.getRealType(toTypeName if toPort._port_type == 'out' else fromTypeName)
+        realBaseType = fact.getRealType(fromTypeName if fromPort._port_type == 'in' else toTypeName)
+        if realBaseType != realOutType:
+            if fact.isTypeOf(realOutType,realBaseType):
+                return True
+
     return False
 
 class NodeViewer(QtWidgets.QGraphicsView):

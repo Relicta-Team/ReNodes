@@ -169,6 +169,8 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
         memberData.append('classprop:1')
         memberData.append(f'return:{varDict["type"]}') #todo desc for return type
         value = varDict['value']
+        if isinstance(value,tuple):
+            value = list(value)
         strValue = f'{value}'
         memberData.append(f'defval:{prepEscape(strValue)}')
 
@@ -514,8 +516,10 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
             if p.get("opt",False): #check require connection
                 optionParams.append("require=0")
                 #так как параметр опциональный то подклчение не требуется
-            
-            serVal = prepEscape(str(p['value'])) #serialized value
+            val_ = p['value']
+            if isinstance(val_,tuple):
+                val_ = list(val_)
+            serVal = prepEscape(str(val_)) #serialized value
             optionParams.append('def={}'.format(serVal))
             if optionParams:
                 memberData.append(f'opt:{":".join(optionParams)}')

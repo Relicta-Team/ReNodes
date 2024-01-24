@@ -471,11 +471,18 @@ class NodeFactory:
 
 		if cfg.get('runtime_ports'):
 			node.set_port_deletion_allowed(True)
-
+		idat = graphref.infoData
+		cls = idat['classname'] + "^"
 		for inputkey,inputvals in cfg['inputs'].items():
+			if inputvals['type'] == "thisClassname":
+				inputvals['type'] = cls
 			self.addInput(node,inputkey,inputvals)
 
 		for outputkey,outputvals in cfg['outputs'].items():
+			if outputvals['type'] == "thisClassname":
+				outputvals['type'] = cls
+			if outputkey == 'thisName':
+				outputkey = idat['name']
 			self.addOutput(node,outputkey,outputvals)
 		
 		#options
@@ -651,6 +658,11 @@ class NodeFactory:
 		parents = self.getClassAllParents(typecheck,False)
 		return baseClassName in parents
 	
+	def getRealType(self,type):
+		if type.endswith("^"):
+			return type[:-1]
+		return type
+
 	def isObjectType(self,type):
 		"""
 			Проверяет является ли тип типом объекта (унаследованного от object)
