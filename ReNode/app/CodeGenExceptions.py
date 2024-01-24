@@ -156,6 +156,13 @@ class CGPortTypeMissmatchException(CGBaseException):
     text = "Недопустимый тип для порта \"{portname}\" узла {src}"
     desc = "Узел {src} не может принять тип порта, полученный от {targ}. Требуется тип \'{ctx}\'"
     moreInfo = ""
+
+class CGPortTypeClassMissmatchException(CGBaseException):
+    id = 104
+    text = "Недопустимый тип для порта \"{portname}\" узла {src}"
+    desc = "Узел {src} не может принять тип порта, полученный от {targ}. Допустимые типы: {ctx}"
+    moreInfo = ""
+
 # ----------------------------------------
 #   301-600 - nodes exceptions
 # ----------------------------------------

@@ -26,6 +26,8 @@ class ScriptMakerManager(QWizard):
 	def openMaker(self):
 		# Страница выбора типа скрипта
 		wiz = WizardScriptMaker(self.graphSystem)
+		#wiz.button(QWizard.NextButton).click()
+		#wiz.button(QWizard.NextButton).click()
 
 
 class WizardScriptMaker(QWizard):

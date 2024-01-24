@@ -63,8 +63,8 @@ class CodeGenerator:
 
         self._addComments = False # Добавляет мета-информацию внутрь кодовой структуры
 
-        self._debug_info = True # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
-        self._debug_rename = not False #отладочная переименовка узлов
+        self._debug_info = False # Включать только для отладки: переименовывает комменты и имена узлов для проверки правильности генерации
+        self._debug_rename = False #отладочная переименовка узлов
 
         #TODO: need write
         self._optimizeCodeSize = False # включает оптимизацию кода. Меньше разрмер 
@@ -243,7 +243,8 @@ class CodeGenerator:
             self.successCompiled = True
             
             if self.successCompiled and not self._exceptions:
-                tDat.save() #saving on success compile
+                #tDat.save() #saving on success compile
+                self.logger.warning("Сохраните ваш граф после успешной компиляции")
             
         except CGCompileAbortException:
             pass
@@ -304,6 +305,9 @@ class CodeGenerator:
         uniIdx = 0
 
         nameCounter = {}
+        idat = self.gObjMeta['infoData']
+        thisName = idat['name']
+        thisClassname = idat['classname']
 
         for k,v in copy.copy(self.serialized_graph['nodes']).items():
             
@@ -457,12 +461,20 @@ class CodeGenerator:
     #region Dependency graph extension with relations
 
     def __initDPDConnectionTypes(self,nodename,ref):
+
+        idat = self.gObjMeta['infoData']
+        thisName = idat['name']
+        thisClassname = idat['classname']
+        #todo fix types and names for objects.thisObject
+
         inNodeInfo = self.getPortNames_Runtime(nodename,'in')
         for portName in inNodeInfo:
-            ref['typein'][portName] = self.getPortInputType(nodename,portName)
+            _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
+            ref['typein'][_realName] = self.getPortInputType(nodename,portName)
         outNodeInfo = self.getPortNames_Runtime(nodename,'out')
         for portName in outNodeInfo:
-            ref['typeout'][portName] = self.getPortOutputType(nodename,portName)
+            _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
+            ref['typeout'][_realName] = self.getPortOutputType(nodename,portName)
 
     def createDpdGraphExt(self):
         graph = {}
@@ -938,14 +950,16 @@ class CodeGenerator:
 
                         libOption = class_data['options'].get(input_name)
                         if libOption and libOption['type'] == "list":
-                            for optList in libOption['values']:
-                                if isinstance(optList,list):
-                                    if optList[0] == inlineValue:
-                                        inlineValue = optList[1]
-                                else:
-                                    if optList == inlineValue:
-                                        self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
-                                        break
+                            if not self.getFactory().isEnumType(obj.getConnectionType("in",input_name)):
+                                # валидация стандартных листов (не нумераторы)
+                                for optList in libOption['values']:
+                                    if isinstance(optList,list):
+                                        if optList[0] == inlineValue:
+                                            inlineValue = optList[1]
+                                    else:
+                                        if optList == inlineValue:
+                                            self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
+                                            break
                         if isOptionalPort:
                             inlineValue = 'NIL'
                         else:
@@ -983,13 +997,23 @@ class CodeGenerator:
                     # проверка типов self
                     if input_props['type'] == "self":
                         typeFrom = self.dpdGraphExt[inpId]['typeout'][portNameConn]
-                        checkedClass = self.gObjMeta['classname']
-                        if typeFrom != checkedClass:
-                            self.exception(CGPortTypeMissmatchException,
-                                           source=obj,
-                                           portname=input_name,
-                                           target=inpObj,
-                                           context=checkedClass)
+                        if "classInfo" in class_data:
+                            srcNodeType = class_data["classInfo"]['class']
+                            allowedTypes = self.getFactory().getClassAllParents(self.getFactory().getRealType(typeFrom))
+                            if srcNodeType not in allowedTypes:
+                                self.exception(CGPortTypeClassMissmatchException,
+                                    source=obj,
+                                    portname=input_name,
+                                    target=inpObj,
+                                    context=", ".join(self.getFactory().getClassAllParents(self.getFactory().getRealType(srcNodeType))))
+                        else:
+                            checkedClass = self.gObjMeta['classname']
+                            if typeFrom != checkedClass:
+                                self.exception(CGPortTypeMissmatchException,
+                                            source=obj,
+                                            portname=input_name,
+                                            target=inpObj,
+                                            context=checkedClass)
 
                     if inpObj.generatedVars.get(portNameConn):
 
