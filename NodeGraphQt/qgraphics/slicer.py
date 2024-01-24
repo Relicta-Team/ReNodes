@@ -155,19 +155,19 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
     def loadText(self):
         if not self._lastItem: return
         from ReNode.app.application import Application
-
-        className = self._lastItem.nodeClass
+        lastItem = self._lastItem
+        className = lastItem.nodeClass
         libInfo = self._refFactory.getNodeLibData(className)
         text = f"Ошибка [{className}] "
         if libInfo:
             classNamePostfix = ""
             if Application.isDebugMode():
                 classNamePostfix = f' ({className})'
-            text = f'<span style="font-size: 24pt">{self._lastItem.name}{classNamePostfix}</span>'
+            text = f'<span style="font-size: 24pt">{lastItem.name}{classNamePostfix}</span>'
 
             from ReNode.ui.VariableManager import VariableManager
             if Application.isDebugMode():
-                idSearch = self._lastItem.id
+                idSearch = lastItem.id
                 findedNode = Application.refObject.mainWindow.nodeGraph.graph.get_node_by_id(idSearch)
                 if findedNode:
                     hasAuto = "autoportdata" in findedNode.model.custom_properties
@@ -179,8 +179,8 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
                     text += f'<br/><b>Уникальный номер: {findedNode.uid}</b><br/>'
 
-            # if hasattr(self._lastItem,"_error_item"):
-            #     if self._lastItem._error_item.isVisible():
+            # if hasattr(lastItem,"_error_item"):
+            #     if lastItem._error_item.isVisible():
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/><b>Путь:</b> {libInfo.get("path") or "нет"}<br/>'
             dText = libInfo.get("desc").replace("\n","<br/>")
@@ -202,14 +202,14 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #VariableManager.refObject.getVariableDataById()
 
             iTxt = []
-            for o in self._lastItem.inputs:
+            for o in lastItem.inputs:
                 inpLib = libInfo['inputs'].get(o.name)
                 desc = ""
                 req = False
 
                 # для автопортов берем с первого элемента
                 if not inpLib and 'makeport_in' in libInfo['options']:
-                    inpLib = libInfo['inputs'].get(self._lastItem.inputs[0].name)
+                    inpLib = libInfo['inputs'].get(lastItem.inputs[0].name)
 
                 if inpLib:
                     desc = inpLib.get("desc",'')
@@ -225,7 +225,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'
             
             oTxt = []
-            for o in self._lastItem.outputs:
+            for o in lastItem.outputs:
                 desc = libInfo['outputs'].get(o.name)
                 if desc:
                     desc = desc.get("desc",'')
