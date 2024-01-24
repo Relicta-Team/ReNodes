@@ -470,11 +470,11 @@ class CodeGenerator:
         inNodeInfo = self.getPortNames_Runtime(nodename,'in')
         for portName in inNodeInfo:
             _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
-            ref['typein'][_realName] = self.getPortInputType(nodename,portName)
+            ref['typein'][_realName] = self.getPortInputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
         outNodeInfo = self.getPortNames_Runtime(nodename,'out')
         for portName in outNodeInfo:
             _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
-            ref['typeout'][_realName] = self.getPortOutputType(nodename,portName)
+            ref['typeout'][_realName] = self.getPortOutputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
 
     def createDpdGraphExt(self):
         graph = {}
