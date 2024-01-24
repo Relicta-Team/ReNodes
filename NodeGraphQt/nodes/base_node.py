@@ -223,8 +223,10 @@ class BaseNode(NodeObject):
                     itemList.append(itm[0])
                 else:
                     itemList.append(itm)
-            
-            currentItem = itemList[itemList.index(default)]
+            if default in itemList:
+                currentItem = itemList[itemList.index(default)]
+            else:
+                currentItem = itemList[0]
                 
         self.create_property(
             name,

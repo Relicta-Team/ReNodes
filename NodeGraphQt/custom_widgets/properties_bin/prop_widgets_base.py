@@ -256,8 +256,12 @@ class PropComboBox(QtWidgets.QComboBox):
 
     def set_value(self, value):
         if value != self.get_value():
-            idx = self.findText(value, QtCore.Qt.MatchExactly)
-            if value == '-1' and idx == -1: idx = 0 #set to first item
+            idx = 0
+            if isinstance(value,str):
+                idx = self.findText(value, QtCore.Qt.MatchExactly)
+                if value == '-1' and idx == -1: idx = 0 #set to first item
+            else:
+                idx = value
             self.setCurrentIndex(idx)
             if idx >= 0:
                 self.value_changed.emit(self.toolTip(), value)
