@@ -940,12 +940,13 @@ class CodeGenerator:
                         # нечего заменять в этом порте
                         if not re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
                             continue
+                        isOptionalPort = not input_props.get('require_connection',True)
                         if hasRuntimePorts:
-                            if not obj.getConnectionType("in",input_name):
+                            if not obj.getConnectionType("in",input_name) and not isOptionalPort:
                                 self.exception(CGInputPortTypeRequiredException,source=obj,portname=input_name)
                             
                         inlineValue = obj_data['custom'].get(input_name,'NULL')
-                        isOptionalPort = not input_props.get('require_connection',True)
+                        
                         if re.findall(f'@in\.{index+1}(?=\D|$)',node_code) and inlineValue == "NULL" and not isOptionalPort:
                             self.exception(CGPortRequiredConnectionException,source=obj,portname=input_name)
 
@@ -974,14 +975,18 @@ class CodeGenerator:
                                 clsInfo = class_data['classInfo']
                                 memtype = clsInfo['type']
                                 memname = clsInfo['name']
+                                memparclass = clsInfo['class']
+                                selfGraphClass = self.gObjMeta['classname']
                                 if memtype == 'field':
-                                    if memname in self.getFactory().getClassAllFields(self.gObjMeta['classname']):
+                                    if memname in self.getFactory().getClassAllFields(selfGraphClass) and \
+                                        selfGraphClass in self.getFactory().getClassAllParents(memparclass):
                                         catchErrThis = False
                                 if memtype == 'method':
-                                    if memname in self.getFactory().getClassAllMethods(self.gObjMeta['classname']):
+                                    if memname in self.getFactory().getClassAllMethods(selfGraphClass) and \
+                                        selfGraphClass in self.getFactory().getClassAllParents(memparclass):
                                         catchErrThis = False
                             if catchErrThis:
-                                self.exception(CGMemberNotExistsException,source=obj,context=[memname,self.gObjMeta['classname'],clsInfo['class']],portname=input_name)
+                                self.exception(CGMemberNotExistsException,source=obj,context=[memname,selfGraphClass,clsInfo['class']],portname=input_name)
 
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue

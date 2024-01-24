@@ -648,7 +648,7 @@ class NodeObjectHandler:
 					_setterLines = [
 						f"in:{newobj['returnType']}:Значение",
 						f'out:{newobj["returnType"]}:Новое значение',
-						"opt:mul=0"
+						"opt:mul=1"
 					]
 					if newobj.memberData.get('defval') != None:
 						dval__ = newobj.memberData.get('defval')

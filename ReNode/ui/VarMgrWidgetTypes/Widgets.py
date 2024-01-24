@@ -232,7 +232,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
                 #"color":[255,0,0,255],
                 "color": portColor,
                 "display_name":True,
-                "mutliconnect":False,
+                "mutliconnect":True,
                 "style":None,
             }
             fact.addOutput(nodeObj,"Значение",vardict)

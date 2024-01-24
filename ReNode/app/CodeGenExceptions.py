@@ -238,7 +238,7 @@ class CGSuperVoidReturnException(CGBaseException):
 
 class CGMemberNotExistsException(CGBaseException):
     id = 314
-    text = "Узел {src} не может быть использован"
+    text = "Узел {src} не относится к {ctx[1]}"
     desc = "Член \'{ctx[0]}\' не существует в классе \'{ctx[1]}\' (впервые определен в \'{ctx[2]}\'). Укажите явное подключение к порту \'{portname}\' типа \'{ctx[2]}\' или его дочерних типов."
 
 class CGLoopTimerException(CGBaseException):
