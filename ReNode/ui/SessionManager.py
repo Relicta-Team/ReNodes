@@ -28,9 +28,15 @@ class TabData:
         self.infoData = {}
 
         if self.filePath:
-            self.graph.load_session(self.filePath,loadMouse=True)
-            self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
-            self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
+            try:
+                self.graph.load_session(self.filePath,loadMouse=True)
+            except Exception as e:
+                import traceback
+                strex = traceback.format_exc()
+                SessionManager.refObject.logger.error(f"Ошибка при загрузке \"{self.filePath}\". Описание: {strex}")
+            finally:
+                self.variables = self.graph.variables #SessionManager.refObject.graphSystem.variable_manager.variables
+                self.infoData = self.graph.infoData #SessionManager.refObject.graphSystem.inspector.infoData
         if self.infoData.get('classname'):
             self.name = self.infoData.get('classname')
         
