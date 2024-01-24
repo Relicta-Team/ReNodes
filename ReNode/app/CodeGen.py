@@ -284,6 +284,7 @@ class CodeGenerator:
             timeDiff = int(time.time()*1000.0) - timestamp
             if not self.successCompiled or self._exceptions:
                 self.warning("Граф не скомпилирован",True)
+            self.log(f'Дата/время сборки: {datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")}')
             self.log(f"Процедура завершена за {timeDiff} мс",True)
             self.log("================================",True)
 

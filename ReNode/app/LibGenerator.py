@@ -711,7 +711,7 @@ class NodeObjectHandler:
 			# 	})
 			# self['options'].insert(0,instanceOption)
 			portColor = [*self.varLib.getVarTypedefByType("object").color.getRgb()]
-			self['inputs'].insert(1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события.","color": portColor}))
+			self['inputs'].insert(0 if self['memtype'] == "get" else 1,("Цель", {"type": "self", 'desc':"Инициатор вызова метода, функции или события.","color": portColor}))
 			instanceOption = ("Цель", {
 					"type":"objcaller",
 			})
@@ -721,7 +721,7 @@ class NodeObjectHandler:
 			if self['returnType'] not in ['null','void','Exec','']:
 				retTpDict = {
 					"type": self['returnType'],
-					'mutliconnect': False
+					'mutliconnect': True # мы можем использовать возвращаемое значение где угодно (мульти)
 				}
 				self['outputs'].insert(1,("Результат", retTpDict))
 				if 'returnDesc' in memberData:
