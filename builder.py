@@ -72,8 +72,10 @@ if deploySource:
 			raise Exception("Compiler error: Code " + str(return_))
 		
 		#cleanup deploy folder
-		if os.path.exists(deployProjectPath) and not deployExeOnly:
+		print(f'Exists data: {os.path.exists(deployProjectPath + "/data")}')
+		if os.path.exists(deployProjectPath + "/data") and not deployExeOnly:
 			shutil.rmtree(deployProjectPath + "/data")
+		print(f'Exists executable: {os.path.exists(deployProjectPath + "/ReNode.exe")}')
 		if os.path.exists(deployProjectPath + "/ReNode.exe"):
 			os.remove(deployProjectPath + "/ReNode.exe")
 
