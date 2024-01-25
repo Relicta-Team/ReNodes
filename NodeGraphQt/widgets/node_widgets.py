@@ -508,9 +508,15 @@ class NodeLineEdit(NodeBaseWidget):
         ledit.editingFinished.connect(self.on_value_changed)
         ledit.clearFocus()
         self.set_custom_widget(ledit)
-        self.widget().setMaximumWidth(140)
+        #self.widget().setMaximumWidth(140)
 
         self.isObjCaller = bool(isObjCaller)
+
+        if self.isObjCaller:
+            #auto resize
+            fm = ledit.fontMetrics()
+            #ledit.setFixedWidth(fm.boundingRect(text).width()+10)
+            self.widget().setFixedWidth(fm.boundingRect(text).width()+10)
 
     @property
     def type_(self):

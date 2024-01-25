@@ -552,7 +552,7 @@ class NodeFactory:
 			node.create_property(name=optname,value=optvals.get('default',None))
 		if type=="objcaller":
 			idat = node.graph.infoData
-			text__ = f'Этот {idat["classname"]}' #"Этот объект"
+			text__ = f'Этот {idat["name"]}' #"Этот объект"
 			node.add_text_input(name=optname,label=optvals.get('text',''),text=text__,isObjCaller=True)
 		if type=='makeport_in' or type=='makeport_out':
 			node.add_makeport(port_type='in' if type=='makeport_in' else 'out',name=optname,srcName=optvals.get('src',''),text_format=optvals.get('text_format'))

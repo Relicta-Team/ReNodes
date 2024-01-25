@@ -283,7 +283,8 @@ class BaseNode(NodeObject):
         )
         widget = NodeLineEdit(self.view, name, label, text,isObjCaller=isObjCaller)
         if isObjCaller:
-            widget.get_custom_widget().setReadOnly(True)
+            ledit = widget.get_custom_widget()
+            ledit.setReadOnly(True)
         else:
             widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
