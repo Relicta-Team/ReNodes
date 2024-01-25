@@ -1,5 +1,7 @@
 import sys
 import time
+import os
+import uuid
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -117,6 +119,12 @@ class Application:
 		
 		Application.initializeConfig()
 
+		# check objlib
+		if Application.requireLibUpdate(logger):
+			logger.info("Updating library...")
+			Application.updateLibrary(logger)
+			logger.info(f"Library updated. Hash {Config.get_str('lib_guid')}")
+
 		self.nodeFactory = NodeFactory()
 
 		self.mainWindow = MainWindow(self.nodeFactory)
@@ -142,6 +150,40 @@ class Application:
 	def _initExitEvents(self):
 		import atexit
 		atexit.register(Config.saveConfig)
+
+	@staticmethod
+	def requireLibUpdate(logger=None):
+		"""Если возвращает false, то будет выполнено обновление библиотеки"""
+		needUpdate = False
+		if not os.path.exists(".\\lib_guid"):
+			logger.warning("File \"lib_guid\" not found")
+			needUpdate = True
+		else:
+			with open(".\\lib_guid", "r") as f:
+				needUpdate = f.readline() != Config.get_str('lib_guid')
+		return needUpdate
+			
+
+	@staticmethod
+	def updateLibrary(logger=None,onlyCreateGuid=False):
+		"""Генератор библиотеки. Если указать onlyCreateGuid, то будет генерироваться гуид объектной библиотеки (без сборки)"""
+		from ReNode.app.LibGenerator import GenerateLibFromObj
+		with open(".\\lib.obj", "r",encoding="utf-8") as f:
+			objlibContent = f.read()
+			if logger: logger.debug("Content size ".format(len(objlibContent)))
+		
+		guid = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,name=objlibContent))
+		
+		if logger: logger.debug("Guid for library: {}".format(guid))
+		
+		with open(".\\lib_guid","w") as gf:
+			gf.write(guid)
+			if not onlyCreateGuid:
+				Config.set("lib_guid",guid)
+		
+		#regenerate library
+		if not onlyCreateGuid:
+			GenerateLibFromObj()
 
 class ExceptionHandler:
 	def __init__(self):
@@ -176,6 +218,10 @@ def AppMain():
 	from ReNode.app.LibGenerator import GenerateLibFromObj
 	global logger
 	arguments = sys.argv
+
+	if "-sign_lib" in arguments:
+		Application.updateLibrary(None,True)
+		sys.exit(0)
 
 	if "-genlib" in arguments:
 		sys.exit(GenerateLibFromObj())
@@ -219,5 +265,10 @@ def AppMain():
 		nodeSystem = Application.refObject.mainWindow.nodeGraph
 		from ReNode.app.FileManager import FileManagerHelper
 		FileManagerHelper.generateScriptLoader()
+	
+	#debug maker
+	#ng = application.mainWindow.nodeGraph.script_maker.openMaker()
+	#ng.next()
+	#ng.next()
 
 	sys.exit(app.exec_())

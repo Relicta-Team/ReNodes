@@ -57,6 +57,17 @@
 			"cwd": "${workspaceFolder}",
 			"console": "integratedTerminal",
 			"justMyCode": true,
+		},
+		{
+			"name": "Sign library",
+			"type": "python",
+			"request": "launch",
+			"args": ["-sign_lib"],
+			// uses main in rootdir
+			"program": "./main.py",
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": true,
 		}
 	]
 }
