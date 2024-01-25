@@ -125,22 +125,23 @@ class Config:
         
         #save all values
 
-        ng = obj.mainWindow.nodeGraph
-        dictDocks = {
-			"main":ng.mainWindow,
-			# "inspector":ng.inspector,
-			# "variable_manager":ng.variable_manager,
-			# "logger":ng.log_dock,
-			# "history":ng.undoView_dock,
-		}
-        for k,v in dictDocks.items():
-            Config.logger.debug("Saving widget " + k)
-            Config.vSettings.setValue("geometry_"+k,v.saveGeometry())
-            if hasattr(v,"saveState"):
-                Config.vSettings.setValue("state_"+k,v.saveState())
+        if obj and obj.mainWindow and obj.mainWindow.nodeGraph:
+            ng = obj.mainWindow.nodeGraph
+            dictDocks = {
+                "main":ng.mainWindow,
+                # "inspector":ng.inspector,
+                # "variable_manager":ng.variable_manager,
+                # "logger":ng.log_dock,
+                # "history":ng.undoView_dock,
+            }
+            for k,v in dictDocks.items():
+                Config.logger.debug("Saving widget " + k)
+                Config.vSettings.setValue("geometry_"+k,v.saveGeometry())
+                if hasattr(v,"saveState"):
+                    Config.vSettings.setValue("state_"+k,v.saveState())
 
 
-        Config.set("opened_sessions",obj.sessionManager.getOpenedSessionPathes(),"internal")
+            Config.set("opened_sessions",obj.sessionManager.getOpenedSessionPathes(),"internal")
 
         Config.parser.write(Config.cfgPath)
         Config.logger.info("Config saved")

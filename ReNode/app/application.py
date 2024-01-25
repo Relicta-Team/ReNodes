@@ -168,18 +168,48 @@ class Application:
 	def updateLibrary(logger=None,onlyCreateGuid=False):
 		"""Генератор библиотеки. Если указать onlyCreateGuid, то будет генерироваться гуид объектной библиотеки (без сборки)"""
 		from ReNode.app.LibGenerator import GenerateLibFromObj
-		with open(".\\lib.obj", "r",encoding="utf-8") as f:
-			objlibContent = f.read()
-			if logger: logger.debug("Content size ".format(len(objlibContent)))
 		
-		guid = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,name=objlibContent))
+		def _genGUID():
+			#mode for generating guid
+			with open(".\\lib.obj", "r",encoding="utf-8") as f:
+				objlibContent = f.read()
+				if logger: logger.debug("Content size ".format(len(objlibContent)))
+			guid = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,name=objlibContent))
 		
-		if logger: logger.debug("Guid for library: {}".format(guid))
+			if logger: logger.debug("Guid for library: {}".format(guid))
+
+			with open(".\\lib_guid","w") as gf:
+				gf.write(guid)
+			return guid
+
+		if onlyCreateGuid:
+			_genGUID()
+		else:
+			#mode for updating guid from guid file to config
+			#if not file exists do generate guid
+			guid = "UNDEFINED"
+			if not os.path.exists(".\\lib_guid"):
+				guid = _genGUID()
+			else:
+				with open(".\\lib_guid", "r") as f:
+					guid = f.readline()
+			
+			GenerateLibFromObj()
+
+			Config.set("lib_guid",guid)
+			Config.saveConfig()
+
+		return
+
 		
-		with open(".\\lib_guid","w") as gf:
-			gf.write(guid)
-			if not onlyCreateGuid:
-				Config.set("lib_guid",guid)
+		
+
+		
+		if onlyCreateGuid:
+			with open(".\\lib_guid","w") as gf:
+				gf.write(guid)
+		else:
+			Config.set("lib_guid",guid)
 		
 		#regenerate library
 		if not onlyCreateGuid:
