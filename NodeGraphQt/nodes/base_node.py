@@ -281,7 +281,7 @@ class BaseNode(NodeObject):
             widget_type=NodePropWidgetEnum.QLINE_EDIT.value,
             tab=tab
         )
-        widget = NodeLineEdit(self.view, name, label, text)
+        widget = NodeLineEdit(self.view, name, label, text,isObjCaller=isObjCaller)
         if isObjCaller:
             widget.get_custom_widget().setReadOnly(True)
         else:

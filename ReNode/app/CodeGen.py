@@ -1550,7 +1550,8 @@ class CodeGenerator:
         if value == "NULL": return value
         if value == "this": return value
         #for selfcall/selfset/get
-        if value == 'Этот объект' and tname == "self": return "this"
+        #! removed: value == 'Этот объект' and
+        if  tname == "self": return "this"
         if not tname: return value
 
         vObj,dtObj = self.getVariableManager().getVarDataByType(tname,True)

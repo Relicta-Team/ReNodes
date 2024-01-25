@@ -476,7 +476,7 @@ class NodeLineEdit(NodeBaseWidget):
         :meth:`NodeGraphQt.BaseNode.add_text_input`
     """
 
-    def __init__(self, parent=None, name='', label='', text=''):
+    def __init__(self, parent=None, name='', label='', text='',isObjCaller=None):
         super(NodeLineEdit, self).__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -510,6 +510,8 @@ class NodeLineEdit(NodeBaseWidget):
         self.set_custom_widget(ledit)
         self.widget().setMaximumWidth(140)
 
+        self.isObjCaller = bool(isObjCaller)
+
     @property
     def type_(self):
         return 'LineEditNodeWidget'
@@ -530,11 +532,15 @@ class NodeLineEdit(NodeBaseWidget):
         Args:
             text (str): new text.
         """
+        if self.isObjCaller: return
+
         if text != self.get_value():
             self.get_custom_widget().setText(text)
             self.on_value_changed()
     
     def on_value_changed(self, *args, **kwargs):
+        if self.isObjCaller: return
+        
         custom = self.get_custom_widget()
         custom.setToolTip(custom.text())
         return super().on_value_changed(*args, **kwargs)
