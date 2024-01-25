@@ -24,6 +24,9 @@ class NodeSyncronizer:
     def warn(self,msg): self.logger.warn(msg)
 
     def validateGraph(self,graphRef,graphDict):
+        
+        # это скопированные данные и они не должны быть проверены
+        if 'graph' not in graphDict: return
 
         self.refValidatedGraph = graphRef
         self.refDict = graphDict

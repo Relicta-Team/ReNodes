@@ -2093,6 +2093,55 @@ class NodeGraph(QtCore.QObject):
             if isinstance(obj, set):
                 return list(obj)
             return obj
+        #remove graph data
+        del serial_data['graph']
+        
+        #remove varnodes
+        dlist = []
+        checkedautoport = []
+        for k,curNodeData in serial_data['nodes'].items():
+            if curNodeData.get('class_','') in ['variable.set','variable.get']:
+                dlist.append(k)
+            #! проверка наличия автопорт даты выключена пока не пофиксится undo для автопортов.
+            if 'autoportdata' in curNodeData.get('custom',{}): #and curNodeData['custom']['autoportdata']:
+                checkedautoport.append(k)
+
+                #cleanup autoport
+                curNodeData['custom']['autoportdata'] = {}
+                data = self._factoryRef.getNodeLibData(curNodeData['class_'])
+                for portTypeCat in ['input','output']:
+                    newDataPort = []
+                    curNodeData[f'{portTypeCat}_ports'] = newDataPort
+                    for kData,vData in data[portTypeCat+"s"].items():
+                        itm = {
+                            "name": kData,
+                            "multi_connection":vData['mutliconnect'],
+                            "display_name":vData['display_name'],
+                            "color":vData['color'],
+                            "type":vData['type'],
+                        }
+                        if "locked" in vData:
+                            itm['locked'] = vData['locked']
+                        if "style" in vData:
+                            itm['style'] = vData['style']
+                                                
+                        newDataPort.append(itm)
+        for k in dlist:
+            del serial_data['nodes'][k]
+        
+        #removing connections for vars
+        for k in serial_data.get('connections',[]).copy():
+            kIn = k['in'][0]
+            kOut = k['out'][0]
+            if kIn in dlist or kOut in dlist:
+                serial_data['connections'].remove(k)
+                continue
+
+            #cleanup
+            if kIn in checkedautoport or kOut in checkedautoport:
+                serial_data['connections'].remove(k)
+                continue
+
         serial_str = json.dumps(serial_data,default=default,ensure_ascii=False)
         if serial_str:
             clipboard.setText(f"v{self._factoryRef.version}@" + serial_str)
@@ -2178,9 +2227,9 @@ class NodeGraph(QtCore.QObject):
                   '"{}"'.format(cb_text))
             return
 
-        if serial_data.get("graph",{}).get('info',{}).get('classname','') != self.infoData.get('classname',0):
-            p1 = serial_data.get("graph",{}).get('info',{}).get('classname','')
-            raise Exception(f'Incompatible clipboard data [{p1}:{self.infoData.get("classname")}]')
+        # if serial_data.get("graph",{}).get('info',{}).get('classname','') != self.infoData.get('classname',0):
+        #     p1 = serial_data.get("graph",{}).get('info',{}).get('classname','')
+        #     raise Exception(f'Incompatible clipboard data [{p1}:{self.infoData.get("classname")}]')
 
         self._undo_stack.beginMacro('pasted nodes')
         self.clear_selection()
