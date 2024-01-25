@@ -1011,7 +1011,8 @@ class CodeGenerator:
                                     source=obj,
                                     portname=input_name,
                                     target=inpObj,
-                                    context=", ".join(self.getFactory().getClassAllParents(self.getFactory().getRealType(srcNodeType))))
+                                    context=self.getFactory().getRealType(srcNodeType)
+                                )
                         else:
                             checkedClass = self.gObjMeta['classname']
                             if typeFrom != checkedClass:

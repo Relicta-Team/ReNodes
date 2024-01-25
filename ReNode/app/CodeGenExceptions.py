@@ -160,8 +160,8 @@ class CGPortTypeMissmatchException(CGBaseException):
 class CGPortTypeClassMissmatchException(CGBaseException):
     id = 104
     text = "Недопустимый тип для порта \"{portname}\" узла {src}"
-    desc = "Узел {src} не может принять тип порта, полученный от {targ}. Допустимые типы: {ctx}"
-    moreInfo = ""
+    desc = "Узел {src} не может принять тип порта, полученный от {targ}. Ожидался тип: {ctx}"
+    moreInfo = "Узел {src} не может быть вызыван из объекта, в котором он не определён."
 
 # ----------------------------------------
 #   301-600 - nodes exceptions
@@ -240,6 +240,7 @@ class CGMemberNotExistsException(CGBaseException):
     id = 314
     text = "Узел {src} не относится к {ctx[1]}"
     desc = "Член \'{ctx[0]}\' не существует в классе \'{ctx[1]}\' (впервые определен в \'{ctx[2]}\'). Укажите явное подключение к порту \'{portname}\' типа \'{ctx[2]}\' или его дочерних типов."
+    moreInfo = "Данная ошибка возникает, когда осуществляется попытка использования члена, не определенного и не унаследованного в указанном классе/графе. Необходимо указать явное подключение к порту \'{portname}\' узла {src} совместимого типа."
 
 class CGLoopTimerException(CGBaseException):
     id = 315
