@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from ReNode.app.utils import clamp
+import re
 
 def createTreeDataContent(baseChilds=None):
     if not baseChilds: 
@@ -58,6 +59,15 @@ def findVec3TreeItemByProperty(tree,name,pname='name'):
 
 class SearchComboButton(QPushButton):
 
+    @staticmethod
+    def getNodeGraphComponent():
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        return NodeGraphComponent.refObject
+    
+    @staticmethod
+    def getFactory():
+        return SearchComboButton.getNodeGraphComponent().getFactory()
+
     changed_event = pyqtSignal(str,str,QIcon)
     value_changed = pyqtSignal(str, object)
 
@@ -96,8 +106,13 @@ class SearchComboButton(QPushButton):
             defaultValueTemp = findVec3TreeItemByProperty(self.dictTree,firstValue)
             if defaultValueTemp:
                 defaultValue = defaultValueTemp
-        
+            
             self.defaultListValue = defaultValue
+
+        defData = self.defaultListValue[0]
+        defName = self.defaultListValue[1]
+        if defName:
+            self.defaultListValue[1] = defName + f' ({defData})'
 
         if not self.text():
             self.onSetItemData(*self.defaultListValue)
@@ -133,7 +148,8 @@ class SearchComboButton(QPushButton):
 
     def setItemData(self,data,text,optIcon=None):
         self.set_value(data)
-        self.set_text(text or data)
+        tEmpl = text or data
+        self.set_text(tEmpl)
         if optIcon:
             #icn = QIcon("data\\icons\\ArrayPin.png")
             siz = self.font().pixelSize()
@@ -272,7 +288,10 @@ class CustomMenu(QMenu):
 
     def buidSearchTree(self,search_text):
         #hideall = searcher != ""
-        search_words = search_text.lower().split()
+        if not search_text:
+            search_words = []
+        else:
+            search_words = re.split(";,",search_text.lower())
         self.delegate.set_search_words(search_words)
         self.tree.viewport().update()
         self.reset_visibility(self.tree.invisibleRootItem())
@@ -294,12 +313,35 @@ class CustomMenu(QMenu):
 
     def item_contains_words(self, item, search_words):
         item_text = item.text(0).lower()
-        contains = False
+        if isinstance(item,QModelIndex):
+            data = item.data(Qt.UserRole)
+        else:
+            data = item.data(0,Qt.UserRole)
+        
+        if not search_words: return True
+
+        typeName = data
+        data = data.lower()
+        needCount = len(search_words)
+        curCount = 0
+        fact = SearchComboButton.getFactory()
+        
         for word_group in search_words:
             if word_group in item_text:
-                contains = True
-                break
-        return contains
+                curCount += 1
+            if word_group in data:
+                curCount += 1
+            if fact.isObjectType(typeName):
+                if word_group.startswith(">"):
+                    word_group = word_group[1:]
+                    if word_group in '-'.join(fact.getClassAllParents(typeName,False)).lower():
+                        curCount += 1
+                # if word_group.startswith("<"):
+                #     word_group = word_group[1:]
+                #     if word_group in '-'.join(fact.getClassAllChilds(typeName,False)).lower():
+                #         curCount += 1
+
+        return curCount >= needCount
 
     def show_parents(self, item):
         parent = item.parent()
@@ -330,7 +372,11 @@ class SearchMenuTreeWidget(QTreeWidget):
             if 'rootFlag' in ref:
                 for refitem in ref['childs']:
                     item = QTreeWidgetItem()
-                    item.setText(0, refitem.get('vname') or refitem.get('name'))
+                    realName = refitem.get('name')
+                    visName = refitem.get('vname',realName)
+                    textInfo = realName or visName if visName == realName or not realName else f'{visName} ({realName})'
+                    item.setText(0, textInfo)
+
                     item.setData(0,Qt.UserRole, refitem["name"])
                     if "desc" in refitem:
                         item.setToolTip(0, refitem["desc"])
@@ -341,7 +387,12 @@ class SearchMenuTreeWidget(QTreeWidget):
         else:
             for refitem in ref:
                 item = QTreeWidgetItem()
-                item.setText(0, refitem.get('vname') or refitem.get('name'))
+                
+                realName = refitem.get('name')
+                visName = refitem.get('vname',realName)
+                textInfo = realName if visName == realName or not realName else f'{visName} ({realName})'
+                item.setText(0, textInfo)
+
                 item.setData(0,Qt.UserRole, refitem["name"])
                 if "desc" in refitem:
                     item.setToolTip(0, refitem["desc"])

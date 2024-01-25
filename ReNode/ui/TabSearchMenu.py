@@ -7,16 +7,30 @@ from PyQt5 import *
 from Qt.QtCore import Signal
 from PyQt5.QtWidgets import QWidget, QTreeWidget
 import asyncio
+import re
 from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
 from NodeGraphQt.qgraphics.pipe import PipeItem
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
 from ReNode.app.utils import generateIconParts
 
 class TabSearchMenu(QWidget):
+    NodeGraphRef = None
+
+    @staticmethod
+    def getNodeGraphComponent():
+        TabSearchMenu.NodeGraphRef
+    
+    @staticmethod
+    def getFactory():
+        return TabSearchMenu.getNodeGraphComponent().getFactory()
+
     def __init__(self,parent=None):
         super(TabSearchMenu, self).__init__(parent)
 
         self.nodeGraphComponent = None
+
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        TabSearchMenu.NodeGraphRef = NodeGraphComponent.refObject
 
         baseWidget = self
         #self.move(0,0)
@@ -129,7 +143,7 @@ class TabSearchMenu(QWidget):
 
     def buidSearchTree(self,search_text):
         #hideall = searcher != ""
-        search_words = search_text.lower().split()
+        search_words = search_text.lower()
         self.delegate.set_search_words(search_words)
         self.tree.viewport().update()
         self.reset_visibility(self.tree.invisibleRootItem())
@@ -149,22 +163,46 @@ class TabSearchMenu(QWidget):
                 child.setHidden(True)
                 self.hide_items(child, search_words)
 
-    def item_contains_words(self, item, search_words):
+    def item_contains_words(self, item, search_pattern):
         item_text = item.text(0).lower()
         item_classname = item.data(0,QtCore.Qt.UserRole)
         hasClassname = not (item_classname is None)
+        clsData = None
         if hasClassname:
             clsData = self.nodeGraphComponent.getFactory().getNodeLibData(item_classname)
             item_classname = item_classname.lower()
-        contains = False
-        for word_group in search_words:
-            if word_group in item_text:
-                contains = True
-                break
-            if hasClassname and word_group in item_classname:
-                contains = True
-                break
-        return contains
+        return TabSearchMenu.checkPattern(search_pattern,item_text,item_classname,clsData)
+        # contains = False
+        # for word_group in search_pattern:
+        #     if word_group in item_text:
+        #         contains = True
+        #         break
+        #     if hasClassname and word_group in item_classname:
+        #         contains = True
+        #         break
+        # return contains
+    
+    @staticmethod
+    def checkPattern(searchPattern,itmName,itmClass,clsData):
+        """
+            Поисковой обработчик видимости элемента в библиотеке
+        """
+        words = re.split('[;,]',searchPattern)#searchPattern.split(";,")
+        
+        needCount = len(words)
+        curCount = 0
+        for wordPart in words:
+            if wordPart in itmName:
+                curCount += 1
+            if itmClass and wordPart in itmClass:
+                curCount += 1
+            if clsData:
+                if wordPart in clsData['name'].lower():
+                    curCount += 1
+                if wordPart in clsData['path'].lower():
+                    curCount += 1
+
+        return curCount >= needCount
 
     def show_parents(self, item):
         parent = item.parent()
@@ -319,16 +357,16 @@ class TabSearchLineEdit(QtWidgets.QLineEdit):
 class HighlightingDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.search_words = []
+        self.search_pattern = ""
         self.editor : QLineEdit = None
 
-    def set_search_words(self, search_words):
-        self.search_words = search_words
+    def set_search_words(self, search_word):
+        self.search_pattern = search_word
 
     def paint(self, painter, option, index):
         if index.isValid():
             text = index.data(QtCore.Qt.DisplayRole)
-            for search_word in self.search_words:
+            for search_word in self.search_pattern:
                 start_pos = 0
                 while start_pos < len(text):
                     start_pos = text.lower().find(search_word, start_pos)
