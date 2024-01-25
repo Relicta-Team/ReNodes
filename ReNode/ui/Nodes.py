@@ -110,16 +110,19 @@ class RuntimeNode(BaseNode):
 
 		#check type
 		acceptedType = False
-		for checkedType in libCalculator.get('allowtypes',[sourceType]):
-			if checkedType == sourceType:
+		_typeValidator = sourceType
+		if dataType == "ANY" and typeinfo[0] == dataType:
+			_typeValidator = typeinfo[1]
+		for checkedType in libCalculator.get('allowtypes',[_typeValidator]):
+			if checkedType == _typeValidator:
 				acceptedType = True
 				break
 			if checkedType == "*enum":
-				if self.getFactory().isEnumType(sourceType):
+				if self.getFactory().isEnumType(_typeValidator):
 					acceptedType = True
 					break
 			if checkedType == "*struct":
-				if self.getFactory().isStructType(sourceType):
+				if self.getFactory().isStructType(_typeValidator):
 					acceptedType = True
 					break
 		if not acceptedType: return "!not_accepted_type"

@@ -763,6 +763,15 @@ class NodeObjectHandler:
 			memberData['icon'] = memberData['icon'].replace('\\\\','\\') #self.preparePath(memberData['icon'])
 
 		overrideRuntime = 'runtime_ports' in memberData
+
+		if overrideRuntime:
+			#register autoportdata if not exists
+			if 'autoportdata' not in dict(memberData['options']):
+				memberData['options'].append(('autoportdata', {
+					"type":"hidden",
+        			"default":{}
+				}))
+
 		# автоматическое выключение отображения имен портов если рендер тип подходит и пользователь не задал вручную режим отображения имени узлу
 		#? Логику можно улучшить, сделав проверку определения для каждого порта
 		canAutoSetDisplayNames = memberData.get('render_type',NodeRenderType.Default.name) in [n.name for n in NodeRenderType.getNoHeaderTypes()]
@@ -772,6 +781,7 @@ class NodeObjectHandler:
 				canAutoSetDisplayNames = False
 			if [vData[1] for vData in self['outputs'] if vData[1].get('display_name') != None]:
 				canAutoSetDisplayNames = False
+		
 		for k,v in self['inputs']:
 			if overrideRuntime and v['type'] == 'auto':
 				if not v.get('typeget'):
