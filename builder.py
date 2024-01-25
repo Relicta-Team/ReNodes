@@ -47,7 +47,8 @@ if updateVersionFileTask:
 		version[1] += 1
 
 	# write to version file
-	open(pathVersionFile, 'w').write("global_version = " + str(version))
+	with open(pathVersionFile, 'w') as f:
+		f.write("global_version = " + str(version))
 
 
 # write git short to revision file
@@ -55,7 +56,8 @@ print("Update revision file")
 # get git rev-parse
 revision = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('utf-8')
 revision = str(revision).replace('\\n', '').replace('\r','').replace('\n','')
-open(pathRevisionFile, 'w').write("global_revision = \"" + str(revision) + "\"")
+with open(pathRevisionFile, 'w') as f:
+	f.write("global_revision = \"" + str(revision) + "\"")
 
 if deploySource:
 	import os

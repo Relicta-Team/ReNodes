@@ -2,10 +2,12 @@ import typing
 from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
+from PyQt5.sip import isdeleted
 from Qt import QtWidgets, QtCore
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.FileManager import FileManagerHelper
 from ReNode.ui.GraphTypes import GraphTypeFactory
+from ReNode.ui.SessionManager_CompileStatus import CompileStatus
 import os
 import uuid
 
@@ -27,6 +29,11 @@ class TabData:
         self.variables = {}
         self.infoData = {}
 
+        self.undo_saved_index = self.getCurrentUndoStackIndex()
+        self.undo_compiled_index = self.getCurrentUndoStackIndex()
+        self.has_compile_warnings = False
+        self.has_compile_errors = False
+
         if self.filePath:
             try:
                 self.graph.load_session(self.filePath,loadMouse=True)
@@ -41,6 +48,8 @@ class TabData:
             self.name = self.infoData.get('classname')
         
         self.lastCompileGUID = self.getLastCompileGUID()
+        self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
+
 
     def onGraphOpened(self):
             info = self.infoData
@@ -97,7 +106,8 @@ class TabData:
             return
         self.infoData['compiledGUID'] = self.lastCompileGUID
         self.graph.save_session(self.filePath,saveMouse=True)
-        self.isUnsaved = False
+        self.undo_saved_index = self.getCurrentUndoStackIndex()
+        self._syncHistoryEvent()
         SessionManager.refObject.syncTabName(self.getIndex())
 
     def getLastCompileGUID(self):
@@ -122,7 +132,7 @@ class TabData:
         graphComponent.editorDock.setWidget(None)#!DONT DO THIS 
         
         self.graph.clear_undo_stack()
-        self.graph.undo_stack().indexChanged.disconnect(self._historyChangeEvent)
+        self.graph.undo_stack().indexChanged.disconnect(self._syncHistoryEvent)
         self.graph.clear_session()
         self.graph.close()
         self.graph.widget.deleteLater()
@@ -136,7 +146,7 @@ class TabData:
         graphComponent.tabSearch = None
 
     def loadTabLogic(self):
-        from PyQt5.sip import isdeleted
+        
         graphComponent = SessionManager.refObject.graphSystem
         #hide old graph
         if graphComponent.graph and graphComponent.graph.widget and not isdeleted(graphComponent.graph.widget):
@@ -167,20 +177,42 @@ class TabData:
 
         pass
     
+    def getCurrentUndoStackIndex(self): 
+        if self.graph and not isdeleted(self.graph):
+            return self.graph.undo_stack().index()
+        else:
+            return -1
+
     def registerEvents(self):
-        self.graph.undo_stack().indexChanged.connect(self._historyChangeEvent)
-        self.graph.node_selection_changed.connect(self._nodeSelectionChanged)
+        self.graph.undo_stack().indexChanged.connect(self._syncHistoryEvent)
+        #self.graph.node_selection_changed.connect(self._nodeSelectionChanged)
 
     def _nodeSelectionChanged(self):
         if self and not self.isUnsaved:
             self.isUnsaved = True
             SessionManager.refObject.syncTabName(self.getIndex())
 
-    def _historyChangeEvent(self):
-        if self and not self.isUnsaved:
-            self.isUnsaved = True
+    def _syncHistoryEvent(self):
+        if self:
+            curStackIdx = self.getCurrentUndoStackIndex()
+            self.isUnsaved = self.getCurrentUndoStackIndex() != self.undo_saved_index
+            isInStateCompiled = self.undo_compiled_index == curStackIdx
+            newState = CompileStatus.NotCompiled
+            if isInStateCompiled:
+                newState = CompileStatus.Compiled
+                if self.has_compile_warnings:
+                    newState = CompileStatus.Warnings
+                if self.has_compile_errors:
+                    newState = CompileStatus.Errors
+            self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
 
+    def setCompileState(self,isSuccess,hasErrors,hasWarnings):        
+        self.has_compile_errors = hasErrors
+        self.has_compile_warnings = hasWarnings
+        if isSuccess:
+            self.undo_compiled_index = self.getCurrentUndoStackIndex()
+        self._syncHistoryEvent()
 
 
 class SessionManager(QTabWidget):
@@ -252,7 +284,11 @@ class SessionManager(QTabWidget):
         if tdata.isUnsaved:
             unsafe = "*"
         self.tabBar().setTabText(idx,f'{tdata.name}{unsafe}')
+        compstat = tdata.lastCompileStatus
+        icnPath = CompileStatus.getCompileIconByStatus(compstat)
+        self.tabBar().setTabIcon(idx,QtGui.QIcon(icnPath))
         ttp = f"Расположение: {tdata.filePath}\n"
+        ttp += f'Icon <img src="{icnPath}"/>\n'
         ttp += f"Имя: {tdata.infoData.get('name')}\n"
         ttp += f"Описание: {tdata.infoData.get('desc') or 'Отсутствует'}\n"
         if tdata.infoData.get('type','') in ["gamemode","role"]:

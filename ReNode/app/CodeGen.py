@@ -225,6 +225,7 @@ class CodeGenerator:
                 guidCompile = tDat.createCompilerGUID()
                 code = f'//src:{guidCompile}:{tDat.filePath}\n' + code
             else:
+                raise Exception("Невозможно найти текущую открыую вкладку графа")
                 guidCompile = ssmgr.CreateCompilerGUID()
                 #TODO пробросить путь при скрытой компиляции
                 code = f'//src:{guidCompile}:UNRESOLVED_TAB_PATH\n' + code
@@ -241,7 +242,7 @@ class CodeGenerator:
             FileManagerHelper.generateScriptLoader(excludeGuid=guidCompile)
 
             self.successCompiled = True
-            
+
             if self.successCompiled and not self._exceptions:
                 #tDat.save() #saving on success compile
                 self.logger.warning("Сохраните ваш граф после успешной компиляции")
@@ -287,6 +288,11 @@ class CodeGenerator:
             self.log(f'Дата/время сборки: {datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")}')
             self.log(f"Процедура завершена за {timeDiff} мс",True)
             self.log("================================",True)
+
+            ssmgr = self.graphsys.sessionManager
+            tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
+            if tDat:
+                tDat.setCompileState(self.successCompiled,bool(self._exceptions),bool(self._warnings))
 
             if self._warnings or self._exceptions:
                 self.graphsys.log_dock.setVisible(True)
