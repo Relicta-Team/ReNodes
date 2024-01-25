@@ -1143,7 +1143,13 @@ class NodeItem(AbstractNodeItem):
             if data and 'classInfo' in data:
                 data = data['classInfo']
                 cdat = self.getFactory().getClassData(data['class'])
-                desc = f'Узел класса <b>{cdat.get("name",data.get("class",self.nodeClass))}</b> ({data.get("class",self.nodeClass)})'
+                origName = cdat.get("name",data.get("class",self.nodeClass))
+                info = f'<b>{origName}</b> ({data.get("class",self.nodeClass)})'
+                fm = QtGui.QFontMetrics(self._text_item.font())
+                if fm.width(origName) > fm.width(name):
+                    info = "<br/>" + info
+                
+                desc = f'Владелец ' + info
         if desc:
             nametext += f'<br/><font size=""4">{desc}</font>'
         self._text_item.setHtml(nametext)
