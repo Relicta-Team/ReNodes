@@ -278,10 +278,10 @@ class NodeGraphComponent:
 		
 		nmenu.add_command("Изменить цвет",func=change_color,node_type='internal.backdrop|internal.sticker')
 		
-		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all",shortcut="Ctrl+C")
-		nmenu.add_command("Вырезать",func=cut_nodes,node_type="all",shortcut="Ctrl+X")
-		nmenu.add_command("Вставить",func=paste_nodes,node_type="all",shortcut="Ctrl+V")
-		nmenu.add_command("Удалить",func=delete_nodes,node_type="all",shortcut="Del")
+		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all")
+		nmenu.add_command("Вырезать",func=cut_nodes,node_type="all")
+		nmenu.add_command("Вставить",func=paste_nodes,node_type="all")
+		nmenu.add_command("Удалить",func=delete_nodes,node_type="all")
 		nmenu.add_command("Извлечь",func=extract_nodes,node_type="all")
 		nmenu.add_command("Очистить подключения",func=clear_node_connections,node_type='all')
 		nmenu.add_command("Сбросить все свойства",func=reset_all_node_props,node_type='all')
@@ -354,6 +354,15 @@ class NodeGraphComponent:
 		scm.add_command("Выбрать все",func=select_all_nodes,shortcut="Ctrl+A")
 		scm.add_command("Снять выделение",func=clear_node_selection,shortcut=None)
 		scm.add_command("Инвертировать выделение",func=invert_node_selection,shortcut=None)
+		scm.add_separator()
+		scm.add_command("Скопировать",func=copy_nodes,shortcut="Ctrl+C")
+		scm.add_command("Вырезать",func=cut_nodes,shortcut="Ctrl+X")
+		scm.add_command("Вставить",func=paste_nodes,shortcut="Ctrl+V")
+		scm.add_command("Удалить",func=delete_nodes,shortcut="Del")
+		scm.add_command("Извлечь",func=extract_nodes)
+		scm.add_command("Очистить подключения",func=clear_node_connections)
+		scm.add_command("Сбросить все свойства",func=reset_all_node_props)
+
 
 		# ------------ context menu ------------
 		def __coyvar(actType,ctxDataMap,graph):

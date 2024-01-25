@@ -22,7 +22,7 @@ def copy_nodes(graph,node=None):
     graph.copy_nodes(node)
 
 
-def cut_nodes(graph,node):
+def cut_nodes(graph,node=None):
     """
     Cut nodes to the clip board.
     """
