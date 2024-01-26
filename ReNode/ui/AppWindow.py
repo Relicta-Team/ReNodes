@@ -1,4 +1,4 @@
-
+import os
 import uuid
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -75,16 +75,15 @@ class MainWindow( QMainWindow ):
 		self.fileMenu.addAction(self.openAction)
 		self.fileMenu.addAction(self.saveAction)
 		self.fileMenu.addSeparator()
+		self.fileMenu.addAction(QAction("Открыть папку графа",self,triggered=self.openCurrentGraphFolder))
+		self.fileMenu.addSeparator()
 		self.fileMenu.addAction(self.exitAction)
 		
 		if self.reloadStyle:
 			self.fileMenu.addSeparator()
 			self.fileMenu.addAction(self.reloadStyle)
 
-		self.editMenu = menubar.addMenu("&Правка")
-		self.editMenu.addAction(self.generateCode)
-
-		self.windows = menubar.addMenu("&Окна")
+		self.windows = menubar.addMenu("&Вид")
 		self.windows.addAction(self.switchInspectorAction)
 		self.windows.addAction(self.switchVariableViewerAction)
 		self.windows.addAction(self.switchLoggerAction)
@@ -92,6 +91,10 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(QAction("Скрыть все окна",self,triggered=self.hideAllWindows,shortcut="Alt+`"))
 		self.windows.addAction(QAction("Сбросить позиции окон",self,triggered=self.resetWindows))
 		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
+
+
+		self.editMenu = menubar.addMenu("&Правка")
+		self.editMenu.addAction(self.generateCode)
 		
 		
 		for act in menubar.actions() + self.fileMenu.actions() + self.editMenu.actions() + self.windows.actions():
@@ -158,3 +161,10 @@ class MainWindow( QMainWindow ):
 		self.nodeGraph.log_dock.setVisible(False)
 		self.nodeGraph.undoView_dock.setVisible(False)
 		self.nodeGraph.inspector.setVisible(False)
+
+	def openCurrentGraphFolder(self):
+		tDat = self.nodeGraph.sessionManager.getActiveTabData()
+		if tDat and tDat.filePath:
+			os.system(f'explorer /select,"{os.path.realpath(tDat.filePath)}"')
+		else:
+			logger.warn("Нет активной вкладки или отсутствует путь к графу")

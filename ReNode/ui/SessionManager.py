@@ -100,6 +100,9 @@ class TabData:
         for idx, it in enumerate(SessionManager.refObject.tabData):
             if it == self: return idx
         return -1
+    
+    def isActiveTab(self):
+        return SessionManager.refObject.getActiveTabData() == self
 
     def save(self):
         if not self.filePath:
@@ -490,7 +493,10 @@ class SessionManager(QTabWidget):
         pathes = []
         for tab in self.getAllTabs():
             if tab.filePath:
-                pathes.append(tab.filePath)
+                fp = tab.filePath
+                if tab.isActiveTab():
+                    fp = "active:"+fp
+                pathes.append(fp)
         ret = "|".join(pathes)
         if not ret:
             ret = "empty"
@@ -498,9 +504,15 @@ class SessionManager(QTabWidget):
     
     def loadSessionPathes(self,pathes):
         if pathes == "empty": return
+        hasActiveTab = len([x for x in pathes.split("|") if x.startswith("active:")]) > 0
+        defaultActive = not hasActiveTab
 
         for p in pathes.split("|"):
+            setActive = defaultActive
+            if p.startswith("active:"):
+                p = p[len("active:"):]
+                setActive = True
             if os.path.exists(p):
-                self.newTab(True,p)
+                self.newTab(setActive,p)
             else:
                 self.logger.warning(f"Загрузка сессии \"{p}\" невозможна - файл не существует")
