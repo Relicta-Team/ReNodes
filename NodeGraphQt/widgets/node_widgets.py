@@ -299,6 +299,7 @@ class NodeComboBox(NodeBaseWidget):
         self.typingList = typingList
 
         combo = QtWidgets.QComboBox()
+        combo.wheelEvent = lambda *event: None #fix mouse scroll
         combo.setView(combo_view)
         combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
         combo.view().setMinimumWidth(300)

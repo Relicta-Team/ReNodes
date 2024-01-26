@@ -223,6 +223,7 @@ class PropComboBox(QtWidgets.QComboBox):
 
     def __init__(self, parent=None):
         super(PropComboBox, self).__init__(parent)
+        self.wheelEvent = lambda *event: None
         self.currentIndexChanged.connect(self._on_index_changed)
 
     def __repr__(self):
