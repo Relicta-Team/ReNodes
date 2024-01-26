@@ -217,7 +217,12 @@ class CodeGenerator:
 
             iData = self.gObjMeta['infoData']
             graphName = FileManagerHelper.getCompiledScriptFilename(iData)
-            
+                        
+            import os
+            import msvcrt
+
+            file = open("src\\host\\ReNode\\compiled\\role.ScriptedRole.RTestroleDebug.sqf", "a+")
+            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 0)
             #getting graph tab
             ssmgr = self.graphsys.sessionManager
             tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
@@ -246,9 +251,14 @@ class CodeGenerator:
             if self.successCompiled and not self._exceptions:
                 #tDat.save() #saving on success compile
                 self.logger.warning("Сохраните ваш граф после успешной компиляции")
-            
+
         except CGCompileAbortException:
             pass
+        except PermissionError as pererr:
+            if pererr.errno == 13:
+                self.exception(CGFileLockedError,context=pererr.filename or file_path)
+            else:
+                raise
         except Exception as e:
             strFullException = traceback.format_exc()
 
