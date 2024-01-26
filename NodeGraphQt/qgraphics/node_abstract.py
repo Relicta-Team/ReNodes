@@ -204,7 +204,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @name.setter
     def name(self, name=''):
         self._properties['name'] = name
-        self.setToolTip('Узел: {}'.format(name))
+        #self.setToolTip('Узел: {}'.format(name)) #Yobas: disabled tooltip for backdrop node
 
     @property
     def properties(self):
