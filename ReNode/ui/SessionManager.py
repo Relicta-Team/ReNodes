@@ -31,6 +31,7 @@ class TabData:
 
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self.undo_compiled_index = self.getCurrentUndoStackIndex()
+        self.undo_success_compile_index = self.getCurrentUndoStackIndex()
         self.has_compile_warnings = False
         self.has_compile_errors = False
 
@@ -207,14 +208,21 @@ class TabData:
                     newState = CompileStatus.Warnings
                 if self.has_compile_errors:
                     newState = CompileStatus.Errors
+            if self.undo_success_compile_index == curStackIdx:
+                newState = CompileStatus.Compiled
+                if self.has_compile_warnings:
+                    newState = CompileStatus.Warnings
+            #TODO сделать записи (прим. self.graph.undo_stack().command(1))
+            # но надо перенаследовать все текущие команды от новой с кастом. логикой
             self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
 
     def setCompileState(self,isSuccess,hasErrors,hasWarnings):        
         self.has_compile_errors = hasErrors
         self.has_compile_warnings = hasWarnings
+        self.undo_compiled_index = self.getCurrentUndoStackIndex()
         if isSuccess:
-            self.undo_compiled_index = self.getCurrentUndoStackIndex()
+            self.undo_success_compile_index = self.undo_compiled_index
         self._syncHistoryEvent()
 
 
@@ -290,10 +298,12 @@ class SessionManager(QTabWidget):
         compstat = tdata.lastCompileStatus
         icnPath = CompileStatus.getCompileIconByStatus(compstat)
         self.tabBar().setTabIcon(idx,QtGui.QIcon(icnPath))
-        ttp = f"Расположение: {tdata.filePath}\n"
-        ttp += f'Icon <img src="{icnPath}"/>\n'
+        self.tabBar().setIconSize(QtCore.QSize(18, 18))
+        ttp = "<html><body>"
+        ttp += f"Расположение: {tdata.filePath}\n"
         ttp += f"Имя: {tdata.infoData.get('name')}\n"
         ttp += f"Описание: {tdata.infoData.get('desc') or 'Отсутствует'}\n"
+        ttp += f'Сборка: {CompileStatus.getCompileTextByStatus(compstat,withColor=True)}\n'
         if tdata.infoData.get('type','') in ["gamemode","role"]:
             gTypeName = tdata.infoData.get('type')
             typeName = "НЕИЗВЕСТНО"
@@ -303,7 +313,10 @@ class SessionManager(QTabWidget):
             ttp += f'Класс: {tdata.infoData.get("classname")}\n'
             ttp += f"Родитель: {tdata.infoData.get('parent')}\n"
             ttp += f'GUID сброки: {tdata.lastCompileGUID or "не скомпилирован"}'
-            
+        
+        ttp += "</body></html>"
+        ttp = ttp.replace("\n","<br/>")
+
         self.tabBar().setTabToolTip(idx,ttp)
 
     def handleMoved(self,index):
@@ -395,7 +408,6 @@ class SessionManager(QTabWidget):
         fs_watcher.addPath(os.path.abspath(path))
         #print fws files
         fs_watcher.fileChanged.connect(path)
-        fs_watcher.file
         return fs_watcher
 
     def handleTabChange(self, index):
