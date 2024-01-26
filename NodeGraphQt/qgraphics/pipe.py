@@ -2,6 +2,7 @@
 import math
 
 from Qt import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QTimer
 
 from NodeGraphQt.constants import (
     LayoutDirectionEnum,
@@ -51,6 +52,22 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self._dir_pointer.setFlag(self.ItemIsSelectable, False)
 
         self.reset()
+    
+    # !TESTS ANIMATION
+    #     self._animation_timer = QTimer()
+    #     self._animation_timer.timeout.connect(self._animateColor)
+    #     self._animation_color = QtGui.QColor(255, 0, 0)  # Начальный цвет анимации
+    #     self._animation_timer.start(1)  # Интервал в миллисекундах для анимации
+
+    # def _animateColor(self):
+    #     # Изменение цвета анимации
+    #     r = (self._animation_color.red() + 5) % 256
+    #     self._animation_color.setRed(r)
+    #     pen = QtGui.QPen(self._animation_color, 2)
+    #     pen.setWidthF(r * 0.02)
+    #     self.setPen(pen)
+        
+    #     self.update()
 
     def __repr__(self):
         in_name = self._input_port.name if self._input_port else ''
