@@ -71,12 +71,11 @@ class MainWindow( QMainWindow ):
 		self.fileMenu = menubar.addMenu('&ReNodes')
 		self.fileMenu.setStatusTip("Основной раздел управления редактором")
 		self.fileMenu.addAction(self.newAction)
-		self.fileMenu.addSeparator()
 		self.fileMenu.addAction(self.openAction)
 		self.fileMenu.addAction(self.saveAction)
-		self.fileMenu.addSeparator()
+		
 		self.fileMenu.addAction(QAction("Открыть папку графа",self,triggered=self.openCurrentGraphFolder))
-		self.fileMenu.addSeparator()
+		self.fileMenu.addAction(QAction("Настройки",self,triggered=self.openSettings))
 		self.fileMenu.addAction(self.exitAction)
 		
 		if self.reloadStyle:
@@ -168,3 +167,6 @@ class MainWindow( QMainWindow ):
 			os.system(f'explorer /select,"{os.path.realpath(tDat.filePath)}"')
 		else:
 			logger.warn("Нет активной вкладки или отсутствует путь к графу")
+
+	def openSettings(self):
+		pass

@@ -212,6 +212,7 @@ class TabData:
                 newState = CompileStatus.Compiled
                 if self.has_compile_warnings:
                     newState = CompileStatus.Warnings
+            #! С ИНДЕКСОМ ОНО НЕ ПРАВИЛЬНО РАБОТАЕТ
             #TODO сделать записи (прим. self.graph.undo_stack().command(1))
             # но надо перенаследовать все текущие команды от новой с кастом. логикой
             self.lastCompileStatus = newState

@@ -17,7 +17,12 @@ configValues = {
     },
     "visual": {
         #"testvalue": "test stringg"
-    }
+        # "font_size": 12,
+        # "font_weight": 0, #bold,normal, 100-900
+    },
+    # "logic": {
+    #     "deubg_logs"
+    # }
 }
 
 class Config:
