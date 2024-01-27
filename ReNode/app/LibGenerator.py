@@ -276,7 +276,6 @@ class NodeObjectHandler:
 		return code
 
 	def generateMethodCodeCall(self):
-		code = '['
 		addingParams = []
 		objCaller = '@in.2'
 		for i, (k,v) in enumerate(self['inputs'].items()):
@@ -286,8 +285,12 @@ class NodeObjectHandler:
 				objCaller = f'@in.{i+1}'
 		
 		paramString = ", ".join(addingParams)
+		if paramString == objCaller: #no params
+			paramString = f'({objCaller})'
+		else:
+			paramString = f'[{paramString}]'
 		#if paramString: paramString = ", " + paramString
-		code += paramString + f"] call (({objCaller}) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
+		code = f"{paramString} call (({objCaller}) getVariable PROTOTYPE_VAR_NAME getVariable \"@thisName\")"
 		
 		#TODO записываем возвращаемое значение в переменную только если нода возвращаемого значения мультивыход
 		returnId = -1
