@@ -1,1 +1,1 @@
-global_revision = "0270f4f"
+global_revision = "52bc2c0"
