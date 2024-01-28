@@ -973,7 +973,8 @@ class CodeGenerator:
                                         if optList == inlineValue:
                                             self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
                                             break
-                        if isOptionalPort:
+                                             
+                        if isOptionalPort and input_props.get("default_value",inlineValue) == inlineValue:
                             inlineValue = 'NIL'
                         else:
                             inlineValue = self.updateValueDataForType(inlineValue,input_props['type'],obj)
