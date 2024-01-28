@@ -1014,15 +1014,23 @@ class CodeGenerator:
                     # проверка типов self
                     if input_props['type'] == "self":
                         typeFrom = self.dpdGraphExt[inpId]['typeout'][portNameConn]
+                        typeRealFrom = self.getFactory().getRealType(typeFrom)
                         if "classInfo" in class_data:
                             srcNodeType = class_data["classInfo"]['class']
-                            allowedTypes = self.getFactory().getClassAllParents(self.getFactory().getRealType(typeFrom))
-                            if srcNodeType not in allowedTypes:
+                            allowedTypes = self.getFactory().getClassAllParents(typeRealFrom)
+                            #входной объект должен быть унаследован от источника
+                            # key -> item
+                            # key -> gameobject
+                            # Если входной тип выше типа источника проверяем есть ли член
+                            #if srcNodeType not in allowedTypes:
+                            #todo: проверка типов исправить. вниз проверка стандартна а вверх иная
+                            if not self.getFactory().isTypeOf(srcNodeType,typeRealFrom) and \
+                                srcNodeType not in allowedTypes: #проверка вниз
                                 self.exception(CGPortTypeClassMissmatchException,
                                     source=obj,
                                     portname=input_name,
                                     target=inpObj,
-                                    context=self.getFactory().getRealType(srcNodeType)
+                                    context=srcNodeType
                                 )
                         else:
                             checkedClass = self.gObjMeta['classname']
