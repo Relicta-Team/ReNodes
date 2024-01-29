@@ -107,6 +107,23 @@ class NodeGraphComponent:
 		
 		self.editorDock.setWidget(None)
 
+		#! test compilation
+		# import concurrent.futures
+		# with concurrent.futures.ThreadPoolExecutor() as executor:
+
+		# 	# result = CodeGenerator().generateProcess("Graphs\\Roles\\RTestroleDebug.graph",silentMode=True,compileParams={
+		# 	# 	"-skipgenloader",
+		# 	# 	"-showgenpath"
+		# 	# })
+		# 	#print(result)
+		# 	from ReNode.app.FileManager import FileManagerHelper
+		# 	allGraphs = FileManagerHelper.getAllGraphPathes()
+		# 	results = list(executor.map(lambda gp: CodeGenerator().generateProcess(
+		# 		gp, silentMode=True,compileParams={"-skipgenloader", "-showgenpath"}
+		# 	),allGraphs))
+		
+		# 	print(results)
+
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application
 		
