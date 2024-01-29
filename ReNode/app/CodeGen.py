@@ -37,6 +37,29 @@ class NodeDataType(enum.Enum):
         
         return NodeDataType.NODE
 
+class NodeGraphProxyObject:
+    def __init__(self,graphPath):
+        self.graph_path = graphPath
+
+        sergraph = FileManagerHelper.loadSessionJson(graphPath)
+
+        self.serialized_graph = sergraph
+        self.infoData = sergraph['graph']['info']
+        self.variables = sergraph['graph']['variables']
+
+    def get_nodes_by_class(self,cls):
+        idlist = []
+        for nid,ndat in self.serialized_graph['graph']['nodes'].items():
+            if ndat['class'] == cls:
+                idlist.append(nid)
+        return idlist
+    
+    def get_node_by_id(self,id):
+        for nid,ndat in self.serialized_graph['graph']['nodes'].items():
+            if nid == id:
+                return ndat
+        return None
+
 class GeneratedVariable:
     def __init__(self,locname,definedNodeId):
         self.localName = locname #+ f'/*NODE:{definedNodeId}*/' #postcommnet for old parser validator
@@ -51,15 +74,20 @@ class GeneratedVariable:
         return f"{self.definedNodeName}:{self.fromPort}({self.localName})"
 
 class CodeGenerator:
+    refLogger = None
     def __init__(self):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-        self.logger = RegisterLogger("CodeGen")
+        if not CodeGenerator.refLogger:
+            CodeGenerator.refLogger = RegisterLogger("CodeGen")
+        self.logger = CodeGenerator.refLogger
 
         self.generated_code = ""
         self.graphsys = NodeGraphComponent.refObject
         self.graph = None #ref to graph qt
 
         self.serialized_graph = None
+
+        self.compileParams = {}
 
         self._addComments = False # Добавляет мета-информацию внутрь кодовой структуры
 
@@ -97,12 +125,41 @@ class CodeGenerator:
     def getFactory(self) -> NodeFactory:
         return self.graphsys.nodeFactory
 
-    def generateProcess(self,graph=None,addComments=True,silentMode=False):
+    def hasCompileParam(self,paramName):
+        for kname,vdata in self.getAllCompileParams().items():
+            if paramName == vdata.get("alias"):
+                paramName = kname
+                break
+        return paramName in self.compileParams
+
+    @staticmethod
+    def getAllCompileParams():
+        return {
+            "-errbreak": {
+                "alias": "-ebr",
+                "desc": "Останавливает сборку при возникновении исключений во вермя генерации точек входа."
+            },
+            "-showgenpath": {
+                "alias": "-sgp",
+                "desc": "Показывает путь до графа при генерации."
+            },
+            "-failonwarn": {
+                "alias": "-fow",
+                "desc": "С этим флагом компиляция еденицы завершится провалом, если будет хотя бы одно предупреждение при генерации."
+            },
+            "-skipgenloader": {
+                "alias": "-sld",
+                "desc": "При указании этого флага пропускает генерацию загрузчика."
+            }
+        }
+
+    def generateProcess(self,graph=None,addComments=True,silentMode=False,compileParams={}):
         
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
         self.dpdGraphExt = {}
         self.gObjMeta = {}
+        self.compileParams = compileParams
         
         self._addComments = addComments
         self._silentMode = silentMode
@@ -110,14 +167,20 @@ class CodeGenerator:
         if not graph:
             self.graph = self.graphsys.graph
         else:
-            self.graph = graph
+            if isinstance(graph,str):
+                self.graph = NodeGraphProxyObject(graph)
+            else:
+                self.graph = graph
 
         self.successCompiled = False
 
         try:
             timestamp = int(time.time()*1000.0)
 
-            layout_data = self.graph._serialize(self.graph.all_nodes())
+            if isinstance(self.graph,NodeGraphProxyObject):
+                layout_data = self.graph.serialized_graph
+            else:
+                layout_data = self.graph._serialize(self.graph.all_nodes())
 
             if not layout_data:
                 self.exception(CGGraphSerializationError,context="Не найдена информация для генерации")
@@ -148,9 +211,14 @@ class CodeGenerator:
             
             self.isGenerating = True
             
-            self._resetNodesError()
+            if not self._silentMode: self._resetNodesError() 
+
             iData = self.graph.infoData
-            self.log(f"Старт генерации графа \"{iData['name']}\"",True)
+            if not self._silentMode: 
+                self.log(f"Старт генерации графа \"{iData['name']}\"",True)
+            else:
+                pref__ = f" \"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
+                self.log(f"Генерация {iData['name']}{pref__}",True)
             
             code = "// Code generated:\n"
             # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
@@ -208,11 +276,13 @@ class CodeGenerator:
             code = f'//gdate:{datetime.datetime.now()}\n' + \
                     f'#include ".\\resdk_graph.h"\n\n\n' + code
 
-            if self.isDebugMode():
+            if self.isDebugMode() and not self._silentMode:
                 from PyQt5.QtWidgets import QApplication
                 QApplication.clipboard().setText(code)
 
             if self._exceptions:
+                raise CGCompileAbortException()
+            if self.hasCompileParam("-failonwarn") and self._warnings:
                 raise CGCompileAbortException()
 
             iData = self.gObjMeta['infoData']
@@ -225,10 +295,13 @@ class CodeGenerator:
                 guidCompile = tDat.createCompilerGUID()
                 code = f'//src:{guidCompile}:{tDat.filePath}\n' + code
             else:
-                raise Exception("Невозможно найти текущую открыую вкладку графа")
+                if not self._silentMode:
+                    raise Exception("Cannot generate code in non-existen tab")
+                fp__ = self.graph.graph_path
                 guidCompile = ssmgr.CreateCompilerGUID()
-                #TODO пробросить путь при скрытой компиляции
-                code = f'//src:{guidCompile}:UNRESOLVED_TAB_PATH\n' + code
+                #save new graph with generated compile guid
+                #TODO implement
+                code = f'//src:{guidCompile}:{fp__}\n' + code
             
             #saving compiled code
             file_path = os.path.join(FileManagerHelper.getFolderCompiledScripts(),graphName)
@@ -239,13 +312,14 @@ class CodeGenerator:
                 file.write(code)
 
             #regen loaderlist
-            FileManagerHelper.generateScriptLoader(excludeGuid=guidCompile)
+            if not self.hasCompileParam("-skipgenloader"):
+                FileManagerHelper.generateScriptLoader(excludeGuid=guidCompile)
 
             self.successCompiled = True
 
             if self.successCompiled and not self._exceptions:
                 #tDat.save() #saving on success compile
-                self.logger.warning("Сохраните ваш граф после успешной компиляции")
+                self.warning("Сохраните ваш граф после успешной компиляции")
 
         except CGCompileAbortException:
             pass
@@ -289,10 +363,24 @@ class CodeGenerator:
             
             timeDiff = int(time.time()*1000.0) - timestamp
             if not self.successCompiled or self._exceptions:
-                self.warning("Граф не скомпилирован",True)
-            self.log(f'Дата/время сборки: {datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")}')
-            self.log(f"Процедура завершена за {timeDiff} мс",True)
-            self.log("================================",True)
+                self.warning("Граф не скомпилирован")
+            dtcomp = datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")
+            self.log(f'Дата/время сборки: {dtcomp}')
+            self.log(f"Процедура завершена за {timeDiff} мс")
+            self.log("================================")
+            self.isGenerating = False
+
+            if self._silentMode:
+
+                pref__ = f" PATH:\"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
+                notCompiled__ = not self.successCompiled or bool(self._exceptions)
+                pfunc_ = self.error if notCompiled__ else self.log
+                pfunc_(f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']} ({dtcomp}): {timeDiff}ms; ERR:{len(self._exceptions)};WRN:{len(self._warnings)};{pref__}",True)
+
+                hasErrors__ = bool(self._exceptions)
+                if self.hasCompileParam("-failonwarn"):
+                    hasErrors__ = hasErrors__ or bool(self._warnings)
+                return not hasErrors__ #is success compiled (true)
 
             ssmgr = self.graphsys.sessionManager
             tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
@@ -301,8 +389,6 @@ class CodeGenerator:
 
             if self._warnings or self._exceptions:
                 self.graphsys.log_dock.setVisible(True)
-            
-            self.isGenerating = False
 
             #cleanup data
             #self._exceptions.clear()
@@ -338,7 +424,7 @@ class CodeGenerator:
             self.serialized_graph['nodes'].pop(k)
             uniIdx += 1
 
-            if self._debug_rename:
+            if self._debug_rename and not self._silentMode:
                 #self.graphsys.graph.get_node_by_id(k).set_name(newname)
                 node = self.graph.get_node_by_id(k)
                 
@@ -413,6 +499,9 @@ class CodeGenerator:
             if self._addComments:
                 code += f"\n//p_entry: {entryObj['class_']}\n"
             code += self.generateFromTopology(topological_order,ent)
+
+            if self.hasCompileParam("-errbreak"):
+                break
 
         self.log("Форматирование")
 
@@ -1736,6 +1825,11 @@ class CodeGenerator:
                   target:NodeData | None=None, 
                   entry:NodeData | None=None,
                   context=None):
+        
+        if self._silentMode:
+            self._exceptions.append(exType())
+            return
+        
         sourceId = None
         targetId = None
         entryId = None
@@ -1803,7 +1897,9 @@ class CodeGenerator:
         """
         Предупреждающее сообщение для узлов
         """
-
+        if self._silentMode:
+            self._warnings.append(exType())
+            return
         sourceId = None
         targetId = None
         entryId = None
@@ -1852,9 +1948,15 @@ class CodeGenerator:
         node_id = self._sanitizeNodeName(node_id)
         obj = self.graph.get_node_by_id(node_id)
         if inout == "in":
-            return obj.inputs()[portname].view.port_typeName
+            if self._silentMode:
+                return self.getPortInputType(node_id,portname)
+            else:
+                return obj.inputs()[portname].view.port_typeName
         elif inout == "out":
-            return obj.outputs()[portname].view.port_typeName
+            if self._silentMode:
+                return self.getPortOutputType(node_id,portname)
+            else:
+                return obj.outputs()[portname].view.port_typeName
         else:
             raise Exception(f"Unknown connection type: {inout}")
 
