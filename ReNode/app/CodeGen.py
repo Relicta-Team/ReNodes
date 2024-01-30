@@ -161,7 +161,7 @@ class CodeGenerator:
             }
         }
 
-    def generateProcess(self,graph=None,addComments=True,silentMode=False,compileParams={}):
+    def generateProcess(self,graph=None,addComments=True,silentMode=False,compileParams={},prefixGen=""):
         
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
@@ -226,7 +226,7 @@ class CodeGenerator:
                 self.log(f"Старт генерации графа \"{iData['name']}\"",True)
             else:
                 pref__ = f" \"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
-                self.log(f"Генерация {iData['name']}{pref__}",True)
+                self.log(f"{prefixGen}Генерация {iData['name']}{pref__}",True)
             
             code = "// Code generated:\n"
             # Данные локальных переменных: type(int), alias(_lv1), portname(Enumval), category(class,local)
