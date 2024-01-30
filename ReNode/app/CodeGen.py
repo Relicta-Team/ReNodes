@@ -49,13 +49,13 @@ class NodeGraphProxyObject:
 
     def get_nodes_by_class(self,cls):
         idlist = []
-        for nid,ndat in self.serialized_graph['graph']['nodes'].items():
+        for nid,ndat in self.serialized_graph['nodes'].items():
             if ndat['class'] == cls:
                 idlist.append(nid)
         return idlist
     
     def get_node_by_id(self,id):
-        for nid,ndat in self.serialized_graph['graph']['nodes'].items():
+        for nid,ndat in self.serialized_graph['nodes'].items():
             if nid == id:
                 return ndat
         return None
@@ -150,6 +150,14 @@ class CodeGenerator:
             "-skipgenloader": {
                 "alias": "-sld",
                 "desc": "При указании этого флага пропускает генерацию загрузчика."
+            },
+            "-logexcept": {
+                "alias": "-lgex",
+                "desc": "Показывает исключения при генерации."
+            },
+            "-logwarn": {
+                "alias": "-lgwn",
+                "desc": "Показывает предупреждения при генерации."
             }
         }
 
@@ -371,11 +379,17 @@ class CodeGenerator:
             self.isGenerating = False
 
             if self._silentMode:
-
                 pref__ = f" PATH:\"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
                 notCompiled__ = not self.successCompiled or bool(self._exceptions)
                 pfunc_ = self.error if notCompiled__ else self.log
                 pfunc_(f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']} ({dtcomp}): {timeDiff}ms; ERR:{len(self._exceptions)};WRN:{len(self._warnings)};{pref__}",True)
+
+                if self.hasCompileParam("-logexcept") and self._exceptions:
+                    elst__ = ','.join(list(set([e.id.__str__() for e in self._exceptions])))
+                    self.log(f"\tИсключения для {iData['name']}: {elst__}",True)
+                if self.hasCompileParam("-logwarn") and self._warnings:
+                    elst__ = ','.join(list(set([e.id.__str__() for e in self._warnings])))
+                    self.log(f"\tПредупреждения для {iData['name']}: {elst__}",True)
 
                 hasErrors__ = bool(self._exceptions)
                 if self.hasCompileParam("-failonwarn"):
@@ -1945,16 +1959,17 @@ class CodeGenerator:
         return node_id
     
     def getNodeConnectionType(self,node_id,inout,portname):
+        origNodeId = node_id
         node_id = self._sanitizeNodeName(node_id)
         obj = self.graph.get_node_by_id(node_id)
         if inout == "in":
             if self._silentMode:
-                return self.getPortInputType(node_id,portname)
+                return self.getPortInputType(origNodeId,portname)
             else:
                 return obj.inputs()[portname].view.port_typeName
         elif inout == "out":
             if self._silentMode:
-                return self.getPortOutputType(node_id,portname)
+                return self.getPortOutputType(origNodeId,portname)
             else:
                 return obj.outputs()[portname].view.port_typeName
         else:
