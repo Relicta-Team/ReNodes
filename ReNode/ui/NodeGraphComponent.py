@@ -108,21 +108,31 @@ class NodeGraphComponent:
 		self.editorDock.setWidget(None)
 
 		#! test compilation
-		# import concurrent.futures
-		# with concurrent.futures.ThreadPoolExecutor() as executor:
+		#self.compileAllGraphs()
 
-		# 	# result = CodeGenerator().generateProcess("Graphs\\Roles\\RTestroleDebug.graph",silentMode=True,compileParams={
-		# 	# 	"-skipgenloader",
-		# 	# 	"-showgenpath"
-		# 	# })
-		# 	#print(result)
-		# 	from ReNode.app.FileManager import FileManagerHelper
-		# 	allGraphs = FileManagerHelper.getAllGraphPathes()
-		# 	results = list(executor.map(lambda gp: CodeGenerator().generateProcess(
-		# 		gp, silentMode=True,compileParams={"-skipgenloader", "-showgenpath"}
-		# 	),allGraphs))
+	def compileAllGraphs(self):
+		import concurrent.futures
+		from ReNode.app.FileManager import FileManagerHelper
+
+		allGraphsWithIndex = [(path,i+1) for i,path in enumerate(FileManagerHelper.getAllGraphPathes())]
+		def __compile(path_with_idx):
+			path, index = path_with_idx
+			
+			#remove root dir from path
+			if path.startswith(".\\"):
+				path = path[2:]
+			
+			cgObj = CodeGenerator()
+			rez = cgObj.generateProcess(path, silentMode=True,compileParams={
+				"-skipgenloader","-logexcept"
+			},prefixGen=f"({index}/{len(allGraphsWithIndex)}) ")
+			del cgObj
+			return rez
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			results = list(executor.map(__compile,allGraphsWithIndex))
 		
-		# 	print(results)
+		if all(results):
+			FileManagerHelper.generateScriptLoader()
 
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application
