@@ -3,8 +3,13 @@ from Qt import QtWidgets
 
 from NodeGraphQt.constants import PortTypeEnum
 
+class UndoCommand(QtWidgets.QUndoCommand):
+    def __init__(self):
+        QtWidgets.QUndoCommand.__init__(self)
+        self.compileInfo = None
+        """Информация о компиляции. Словарь, lastResult:CompileResult"""
 
-class PropertyChangedCmd(QtWidgets.QUndoCommand):
+class PropertyChangedCmd(UndoCommand):
     """
     Node property changed command.
 
@@ -15,7 +20,7 @@ class PropertyChangedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, node, name, value):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.setText('property "{}:{}"'.format(node.name(), name))
         self.node = node
         self.name = name
@@ -60,7 +65,7 @@ class PropertyChangedCmd(QtWidgets.QUndoCommand):
             self.set_node_property(self.name, self.new_val)
 
 
-class NodeVisibleCmd(QtWidgets.QUndoCommand):
+class NodeVisibleCmd(UndoCommand):
     """
     Node visibility changed command.
 
@@ -70,7 +75,7 @@ class NodeVisibleCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, node, visible):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.node = node
         self.visible = visible
         self.selected = self.node.selected()
@@ -103,7 +108,7 @@ class NodeVisibleCmd(QtWidgets.QUndoCommand):
         self.set_node_visible(self.visible)
 
 
-class NodeWidgetVisibleCmd(QtWidgets.QUndoCommand):
+class NodeWidgetVisibleCmd(UndoCommand):
     """
     Node widget visibility command.
 
@@ -114,7 +119,7 @@ class NodeWidgetVisibleCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, node, name, visible):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         label = 'show' if visible else 'hide'
         self.setText('{} node widget "{}"'.format(label, name))
         self.view = node.view
@@ -130,7 +135,7 @@ class NodeWidgetVisibleCmd(QtWidgets.QUndoCommand):
         self.view.draw_node()
 
 
-class NodeMovedCmd(QtWidgets.QUndoCommand):
+class NodeMovedCmd(UndoCommand):
     """
     Node moved command.
 
@@ -141,7 +146,7 @@ class NodeMovedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, node, pos, prev_pos):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.node = node
         self.pos = pos
         self.prev_pos = prev_pos
@@ -157,7 +162,7 @@ class NodeMovedCmd(QtWidgets.QUndoCommand):
         self.node.model.pos = self.pos
 
 
-class NodeAddedCmd(QtWidgets.QUndoCommand):
+class NodeAddedCmd(UndoCommand):
     """
     Node added command.
 
@@ -168,7 +173,7 @@ class NodeAddedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, graph, node, pos=None):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.setText('added node')
         self.viewer = graph.viewer()
         self.model = graph.model
@@ -190,7 +195,7 @@ class NodeAddedCmd(QtWidgets.QUndoCommand):
         self.node.model.height = self.node.view.height
 
 
-class NodeRemovedCmd(QtWidgets.QUndoCommand):
+class NodeRemovedCmd(UndoCommand):
     """
     Node deleted command.
 
@@ -200,7 +205,7 @@ class NodeRemovedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, graph, node):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.setText('deleted node')
         self.scene = graph.scene()
         self.model = graph.model
@@ -215,7 +220,7 @@ class NodeRemovedCmd(QtWidgets.QUndoCommand):
         self.node.view.delete()
 
 
-class NodeInputConnectedCmd(QtWidgets.QUndoCommand):
+class NodeInputConnectedCmd(UndoCommand):
     """
     "BaseNode.on_input_connected()" command.
 
@@ -225,7 +230,7 @@ class NodeInputConnectedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, src_port, trg_port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         if src_port.type_() == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
@@ -242,7 +247,7 @@ class NodeInputConnectedCmd(QtWidgets.QUndoCommand):
         node.on_input_connected(self.source, self.target)
 
 
-class NodeInputDisconnectedCmd(QtWidgets.QUndoCommand):
+class NodeInputDisconnectedCmd(UndoCommand):
     """
     Node "on_input_disconnected()" command.
 
@@ -252,7 +257,7 @@ class NodeInputDisconnectedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, src_port, trg_port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         if src_port.type_() == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
@@ -269,7 +274,7 @@ class NodeInputDisconnectedCmd(QtWidgets.QUndoCommand):
         node.on_input_disconnected(self.source, self.target)
 
 
-class PortConnectedCmd(QtWidgets.QUndoCommand):
+class PortConnectedCmd(UndoCommand):
     """
     Port connected command.
 
@@ -279,7 +284,7 @@ class PortConnectedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, src_port, trg_port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.source = src_port
         self.target = trg_port
 
@@ -315,7 +320,7 @@ class PortConnectedCmd(QtWidgets.QUndoCommand):
         self.source.view.connect_to(self.target.view)
 
 
-class PortDisconnectedCmd(QtWidgets.QUndoCommand):
+class PortDisconnectedCmd(UndoCommand):
     """
     Port disconnected command.
 
@@ -325,7 +330,7 @@ class PortDisconnectedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, src_port, trg_port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.source = src_port
         self.target = trg_port
 
@@ -361,7 +366,7 @@ class PortDisconnectedCmd(QtWidgets.QUndoCommand):
         self.source.view.disconnect_from(self.target.view)
 
 
-class PortLockedCmd(QtWidgets.QUndoCommand):
+class PortLockedCmd(UndoCommand):
     """
     Port locked command.
 
@@ -370,7 +375,7 @@ class PortLockedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.setText('lock port "{}"'.format(port.name()))
         self.port = port
 
@@ -383,7 +388,7 @@ class PortLockedCmd(QtWidgets.QUndoCommand):
         self.port.view.locked = True
 
 
-class PortUnlockedCmd(QtWidgets.QUndoCommand):
+class PortUnlockedCmd(UndoCommand):
     """
     Port unlocked command.
 
@@ -392,7 +397,7 @@ class PortUnlockedCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, port):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.setText('unlock port "{}"'.format(port.name()))
         self.port = port
 
@@ -405,7 +410,7 @@ class PortUnlockedCmd(QtWidgets.QUndoCommand):
         self.port.view.locked = False
 
 
-class PortVisibleCmd(QtWidgets.QUndoCommand):
+class PortVisibleCmd(UndoCommand):
     """
     Port visibility command.
 
@@ -414,7 +419,7 @@ class PortVisibleCmd(QtWidgets.QUndoCommand):
     """
 
     def __init__(self, port, visible):
-        QtWidgets.QUndoCommand.__init__(self)
+        UndoCommand.__init__(self)
         self.port = port
         self.visible = visible
         if visible:
@@ -450,7 +455,7 @@ class PortVisibleCmd(QtWidgets.QUndoCommand):
 
 # ========================= custom commands ===========================
 
-class VariableCreatedCommand(QtWidgets.QUndoCommand):
+class VariableCreatedCommand(UndoCommand):
     def __init__(self, varmgr, cat,variable,varId):
         super(VariableCreatedCommand, self).__init__()
         self.setText('Создание переменной "{}"'.format(variable['name']))
@@ -467,7 +472,7 @@ class VariableCreatedCommand(QtWidgets.QUndoCommand):
         self._varmgr.variables[self._category][self._varId] = self._variable
         self._varmgr.syncVariableManagerWidget()
 
-class VariableDeletedCommand(QtWidgets.QUndoCommand):
+class VariableDeletedCommand(UndoCommand):
     def __init__(self, varmgr, cat,varId):
         super(VariableDeletedCommand, self).__init__()
         variable = varmgr.variables[cat][varId]
@@ -485,7 +490,7 @@ class VariableDeletedCommand(QtWidgets.QUndoCommand):
         self._varmgr.variables[self._category].pop(self._varId)
         self._varmgr.syncVariableManagerWidget()
 
-class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
+class VariableChangePropertyCommand(UndoCommand):
 
     blockedProps = set(["systemname","reprType","reprDataType"])
 
@@ -510,7 +515,7 @@ class VariableChangePropertyCommand(QtWidgets.QUndoCommand):
         self._varStorage[self._name] = self._value
         self._varmgr.syncVariableManagerWidget()
 
-class ChangeGroupNameForVariables(QtWidgets.QUndoCommand):
+class ChangeGroupNameForVariables(UndoCommand):
     def __init__(self,varmgr,cat,oldgroup,newgroup):
         super(ChangeGroupNameForVariables, self).__init__()
         self.setText('Изменение имени группы переменных "{}" на "{}"'.format(oldgroup,newgroup))
@@ -539,7 +544,7 @@ class ChangeGroupNameForVariables(QtWidgets.QUndoCommand):
                     vardat.pop('group')
         self._varmgr.syncVariableManagerWidget()
 
-class DeleteGroupForVariables(QtWidgets.QUndoCommand):
+class DeleteGroupForVariables(UndoCommand):
     def __init__(self,varmgr,cat,group):
         super(DeleteGroupForVariables, self).__init__()
         self.setText('Удаление группы переменных "{}"'.format(group))
@@ -579,7 +584,7 @@ class DeleteGroupForVariables(QtWidgets.QUndoCommand):
 
 
 # для view модели
-class __PropertyCommand(QtWidgets.QUndoCommand):
+class __PropertyCommand(UndoCommand):
     def getPropertyTextName(self):
         pObj = self.propertyInspectorRef.getPropNameView(self.cat,self.sysname)
         if pObj:
