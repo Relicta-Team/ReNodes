@@ -1076,7 +1076,10 @@ class CodeGenerator:
                                         if optList == inlineValue:
                                             self.exception(CGLogicalOptionListEvalException,source=obj,portname=libOption.get('text',input_name),context=optList)
                                             break
-                                             
+                        #disable emplace nil's on 'emplace_value'
+                        if input_props.get('emplace_value',False):
+                            isOptionalPort = False 
+
                         if isOptionalPort and input_props.get("default_value",inlineValue) == inlineValue:
                             inlineValue = 'NIL'
                         else:

@@ -392,6 +392,8 @@ class NodeObjectHandler:
 					self.lastPortRef['display_name'] = intTryParse(tInside.split('=')[1]) > 0
 				elif tInside.startswith('allowtypes'):
 					self.lastPortRef['allowtypes'] = tInside.split('=')[1].split('|')
+				elif tInside.startswith("custom_type"):
+					self.lastPortRef['custom_type'] = tInside.split("=")[1]
 				elif tInside.startswith("custom"):
 					self.lastPortRef['use_custom'] = intTryParse(tInside.split('=')[1]) > 0
 				elif tInside.startswith("pathes"):
@@ -401,7 +403,9 @@ class NodeObjectHandler:
 				elif tInside.startswith("typeget"):
 					self.lastPortRef['typeget'] = tInside.split('=')[1]
 				elif tInside.startswith("require"):
-					self.lastPortRef['require_connection'] = intTryParse(tInside.split("=")[1]) > 0
+					ival__ = intTryParse(tInside.split("=")[1])
+					self.lastPortRef['require_connection'] = ival__ > 0
+					self.lastPortRef['emplace_value'] = ival__ <= -1
 				elif tInside.startswith("gen_param"):
 					self.lastPortRef['gen_param'] = intTryParse(tInside.split("=")[1]) > 0
 				elif tInside.startswith("def="):
@@ -1012,8 +1016,12 @@ class NodeObjectHandler:
 		# Добавляем опции
 		for k,v in dataInputs.items():				
 			if v.get('use_custom',False):
+				ctype = v.get('type')
+				if 'custom_type' in v:
+					ctype = v.get('custom_type')
+					del v['custom_type']
 				del v['use_custom']
-				opt = self.getVarlibOptionByType(v.get('type'),k)
+				opt = self.getVarlibOptionByType(ctype,k)
 				if opt:
 					self['options'][k] = opt
 

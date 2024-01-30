@@ -368,6 +368,7 @@ class NodeFactory:
 			valdata['typeget'] = val.get('typeget',"")
 			valdata['desc'] = val.get('desc','')
 			valdata['require_connection'] = val.get('require_connection',True)
+			valdata['emplace_value'] = val.get('emplace_value',False)
 			if not val.get("gen_param",True): #без генерации параметра
 				valdata['gen_param'] = False
 			if 'default_value' in val:
