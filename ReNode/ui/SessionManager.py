@@ -32,8 +32,6 @@ class TabData:
 
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self.undo_compiled_index = self.getCurrentUndoStackIndex()
-        
-        self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(name))
 
         # данные для успешной компиляции
         self.last_compile_undo_object = None
@@ -43,7 +41,7 @@ class TabData:
 
         if self.filePath:
             try:
-                self.graph.load_session(self.filePath,loadMouse=True)
+                self.graph.load_session(FileManagerHelper.graphPathGetReal(self.filePath),loadMouse=True)
             except Exception as e:
                 import traceback
                 strex = traceback.format_exc()
@@ -58,6 +56,7 @@ class TabData:
         self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
         self._onOpenLastCompileStatus = self.lastCompileStatus
 
+        self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(self.name))
         self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
 
     def onGraphOpened(self):
@@ -117,7 +116,7 @@ class TabData:
         if not self.filePath:
             return
         self.infoData['compiledGUID'] = self.lastCompileGUID
-        self.graph.save_session(self.filePath,saveMouse=True)
+        self.graph.save_session(FileManagerHelper.graphPathGetReal(self.filePath),saveMouse=True)
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self._syncHistoryEvent()
         SessionManager.refObject.syncTabName(self.getIndex())
@@ -230,7 +229,16 @@ class TabData:
                     if self.has_compile_errors or not self.last_compile_success:
                         newState = CompileStatus.Errors
             else:
-                newState = self._onOpenLastCompileStatus
+                if cobj == self.last_compile_undo_object:
+                    newState = CompileStatus.Compiled
+                    if self.has_compile_warnings:
+                        newState = CompileStatus.Warnings
+                    if self.has_compile_errors or not self.last_compile_success:
+                        newState = CompileStatus.Errors
+                    self._onOpenLastCompileStatus = newState
+                else:
+                    newState = self._onOpenLastCompileStatus
+
             self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
 
@@ -322,7 +330,7 @@ class SessionManager(QTabWidget):
         self.tabBar().setTabIcon(idx,QtGui.QIcon(icnPath))
         self.tabBar().setIconSize(QtCore.QSize(18, 18))
         ttp = "<html><body>"
-        ttp += f"Расположение: {tdata.filePath}\n"
+        ttp += f"Расположение (проект): {FileManagerHelper.graphPathGetReal(tdata.filePath,returnAbsolute=False)}\n"
         ttp += f"Имя: {tdata.infoData.get('name')}\n"
         ttp += f"Описание: {tdata.infoData.get('desc') or 'Отсутствует'}\n"
         ttp += f'Сборка: {CompileStatus.getCompileTextByStatus(compstat,withColor=True)}\n'
@@ -346,7 +354,7 @@ class SessionManager(QTabWidget):
         pass
 
     def newTab(self,switchTo=False,loader='',optionsToCreate=None):
-        idx = self.addTab(QWidget(),"tab")
+        idx = self.addTab(QWidget(),"Новая вкладка")
         graphName = "Новый граф"
         if optionsToCreate:
             graphName = optionsToCreate.get("classname") or graphName
@@ -360,7 +368,7 @@ class SessionManager(QTabWidget):
                 "nodes": {},
                 "connections": []
             }
-            
+            # здесь загрузчик не нужно очищать
             os.makedirs(os.path.dirname(loader), exist_ok=True)
             self.graphSystem.graph.save_session(loader,defaultGraph)
             self.graphSystem.getFactory().vlib.file_event_handler.reloadLibFull()
@@ -387,6 +395,7 @@ class SessionManager(QTabWidget):
         path = self.graphSystem.dummyGraph.load_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
         if not path: return
         path = FileManagerHelper.getGraphPathRelative(path)
+        path = FileManagerHelper.graphPathToRoot(path) #add root prefix
         allTabs = self.tabData
         if path in [tab.filePath for tab in allTabs]:
             self.setActiveTab([tab.filePath for tab in allTabs].index(path))
@@ -547,7 +556,7 @@ class SessionManager(QTabWidget):
             if p.startswith("active:"):
                 p = p[len("active:"):]
                 setActive = True
-            if os.path.exists(p):
+            if FileManagerHelper.graphPathExists(p):
                 self.newTab(setActive,p)
             else:
                 self.logger.warning(f"Загрузка сессии \"{p}\" невозможна - файл не существует")

@@ -37,6 +37,40 @@ class FileManagerHelper:
 		return ""
 
 
+	#region root prefix
+	@staticmethod
+	def graphPathToRoot(path):
+		if not FileManagerHelper.graphPathIsRoot(path):
+			path = "root:"+path
+		return path
+	@staticmethod
+	def graphPathToClear(path):
+		if FileManagerHelper.graphPathIsRoot(path):
+			path = path[len('root:'):]
+		if path.startswith("\\"):
+			path = path[1:]
+		return path
+	@staticmethod
+	def graphPathIsRoot(path):
+		return path.startswith("root:")
+	@staticmethod
+	def graphPathExists(path):
+		if FileManagerHelper.graphPathIsRoot(path):
+			return os.path.exists(FileManagerHelper.graphPathGetReal(path))
+		else:
+			return os.path.exists(path)
+	@staticmethod
+	def graphPathGetReal(path,returnAbsolute=False):
+		pts = os.path.join(
+				FileManagerHelper.getWorkDir(),
+				FileManagerHelper.graphPathToClear(path)
+			)
+		if returnAbsolute:
+			return os.path.abspath(pts)
+		else:
+			return pts
+	#endregion
+
 	@staticmethod
 	def getFolderCompiledScripts():
 		"""Получает путь скомпилирвоанных скриптов"""
@@ -82,7 +116,7 @@ class FileManagerHelper:
 	@staticmethod
 	def getCompiledScriptMetainfo(path):
 		"""Возвращает None если граф не найден или структура не соответствует правилам
-		Иначе возвращает словарь с ключами: guid(str), path(str),valid(bool), date(datetime)
+		Иначе возвращает словарь с ключами: guid(str), rooted_path(str),valid(bool), date(datetime)
 		"""
 		if not os.path.exists(path): return None
 		dictRet = {}
@@ -93,11 +127,13 @@ class FileManagerHelper:
 			if not sysDat.startswith("//src:"): return None
 			sysDat = sysDat[:-1] #rem endl char
 			pats = sysDat.split(":")
-			if len(pats)!=3: return None
+			if len(pats)!=4: return None
 			if pats[0]!="//src": return None
+			if pats[2]!="root": return None
+			_rootedPath = "root:" + pats[3]
 			dictRet['guid'] = pats[1] #гуид компиляции
-			dictRet['path'] = pats[2] #путь графа
-			dictRet['valid'] = os.path.exists(os.path.join(FileManagerHelper.getWorkDir(),pats[2]))#актуальный ли файл
+			dictRet['path'] = _rootedPath #путь графа (with root)
+			dictRet['valid'] = FileManagerHelper.graphPathExists(_rootedPath) #актуальный ли файл
 
 			#parse compile date
 			cd = file.readline()

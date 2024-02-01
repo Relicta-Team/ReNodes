@@ -39,13 +39,17 @@ class NodeDataType(enum.Enum):
 
 class NodeGraphProxyObject:
     def __init__(self,graphPath):
-        self.graph_path = graphPath
 
         sergraph = FileManagerHelper.loadSessionJson(graphPath)
 
         self.serialized_graph = sergraph
         self.infoData = sergraph['graph']['info']
         self.variables = sergraph['graph']['variables']
+        
+        if not FileManagerHelper.graphPathIsRoot(graphPath):
+            graphPath = FileManagerHelper.graphPathToRoot(graphPath)
+        
+        self.graph_path = graphPath
 
     def get_nodes_by_class(self,cls):
         idlist = []
@@ -308,7 +312,6 @@ class CodeGenerator:
                 fp__ = self.graph.graph_path
                 guidCompile = ssmgr.CreateCompilerGUID()
                 #save new graph with generated compile guid
-                #TODO implement
                 code = f'//src:{guidCompile}:{fp__}\n' + code
             
             #saving compiled code
@@ -372,6 +375,8 @@ class CodeGenerator:
             timeDiff = int(time.time()*1000.0) - timestamp
             if not self.successCompiled or self._exceptions:
                 self.warning("Граф не скомпилирован")
+            else:
+                self.log("Граф скомпилирован и сохранён")
             dtcomp = datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")
             self.log(f'Дата/время сборки: {dtcomp}')
             self.log(f"Процедура завершена за {timeDiff} мс")
