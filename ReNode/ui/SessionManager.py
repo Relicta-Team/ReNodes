@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.sip import isdeleted
 from Qt import QtWidgets, QtCore
+from NodeGraphQt.base.commands import UndoCommand
 from ReNode.app.Logger import RegisterLogger
 from ReNode.app.FileManager import FileManagerHelper
 from ReNode.ui.GraphTypes import GraphTypeFactory
@@ -31,9 +32,14 @@ class TabData:
 
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self.undo_compiled_index = self.getCurrentUndoStackIndex()
-        self.undo_success_compile_index = self.getCurrentUndoStackIndex()
+        
+        self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(name))
+
+        # данные для успешной компиляции
+        self.last_compile_undo_object = None
         self.has_compile_warnings = False
         self.has_compile_errors = False
+        self.last_compile_success = False
 
         if self.filePath:
             try:
@@ -51,6 +57,7 @@ class TabData:
         self.lastCompileGUID = self.getLastCompileGUID()
         self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
 
+        self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
 
     def onGraphOpened(self):
             info = self.infoData
@@ -186,6 +193,18 @@ class TabData:
             return self.graph.undo_stack().index()
         else:
             return -1
+    
+    def getCurrentUndoStackObject(self,optIdx=None):
+        if self.graph and not isdeleted(self.graph):
+            if optIdx == None:
+                optIdx = self.getCurrentUndoStackIndex() - 1 #zeroindex is empty command
+            else:
+                optIdx -= 1
+            cmdImpl = self.graph.undo_stack().command(optIdx)
+            if not cmdImpl: return None
+            return cmdImpl
+        else:
+            return None
 
     def registerEvents(self):
         self.graph.undo_stack().indexChanged.connect(self._syncHistoryEvent)
@@ -196,35 +215,35 @@ class TabData:
             self.isUnsaved = True
             SessionManager.refObject.syncTabName(self.getIndex())
 
-    def _syncHistoryEvent(self):
+    def _syncHistoryEvent(self,idx=None):
         if self:
-            curStackIdx = self.getCurrentUndoStackIndex()
+            cobj = self.getCurrentUndoStackObject(idx)
             self.isUnsaved = self.getCurrentUndoStackIndex() != self.undo_saved_index
-            isInStateCompiled = self.undo_compiled_index == curStackIdx
+            
             newState = CompileStatus.NotCompiled
-            if isInStateCompiled:
-                newState = CompileStatus.Compiled
-                if self.has_compile_warnings:
-                    newState = CompileStatus.Warnings
-                if self.has_compile_errors:
-                    newState = CompileStatus.Errors
-            if self.undo_success_compile_index == curStackIdx:
-                newState = CompileStatus.Compiled
-                if self.has_compile_warnings:
-                    newState = CompileStatus.Warnings
-            #! С ИНДЕКСОМ ОНО НЕ ПРАВИЛЬНО РАБОТАЕТ
-            #TODO сделать записи (прим. self.graph.undo_stack().command(1))
-            # но надо перенаследовать все текущие команды от новой с кастом. логикой
+            if cobj:
+                if cobj == self.last_compile_undo_object:
+                    newState = CompileStatus.Compiled
+                    if self.has_compile_warnings:
+                        newState = CompileStatus.Warnings
+                    if self.has_compile_errors or not self.last_compile_success:
+                        newState = CompileStatus.Errors
+
             self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
 
     def setCompileState(self,isSuccess,hasErrors,hasWarnings):        
+        cobj = self.getCurrentUndoStackObject()
         self.has_compile_errors = hasErrors
         self.has_compile_warnings = hasWarnings
-        self.undo_compiled_index = self.getCurrentUndoStackIndex()
-        if isSuccess:
-            self.undo_success_compile_index = self.undo_compiled_index
+        self.last_compile_success = isSuccess
+        self.last_compile_undo_object = cobj
+        
         self._syncHistoryEvent()
+
+        if isSuccess:
+            self.graph.undo_stack().setClean()
+            self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
 
 
 class SessionManager(QTabWidget):

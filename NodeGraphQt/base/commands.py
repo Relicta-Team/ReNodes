@@ -6,8 +6,6 @@ from NodeGraphQt.constants import PortTypeEnum
 class UndoCommand(QtWidgets.QUndoCommand):
     def __init__(self):
         QtWidgets.QUndoCommand.__init__(self)
-        self.compileInfo = None
-        """Информация о компиляции. Словарь, lastResult:CompileResult"""
 
 class PropertyChangedCmd(UndoCommand):
     """
