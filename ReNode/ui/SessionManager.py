@@ -436,7 +436,8 @@ class SessionManager(QTabWidget):
         if index < 0:
             print("Теперь нет активной вкладки")
             return
-        print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')  
+        if self.getTabData(index).graph.widget.isVisible(): return
+        print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')
         self.getTabData(index).loadTabLogic()
 
     def handleTabClose(self, index):
