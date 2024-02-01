@@ -56,6 +56,7 @@ class TabData:
         
         self.lastCompileGUID = self.getLastCompileGUID()
         self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
+        self._onOpenLastCompileStatus = self.lastCompileStatus
 
         self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
 
@@ -228,7 +229,8 @@ class TabData:
                         newState = CompileStatus.Warnings
                     if self.has_compile_errors or not self.last_compile_success:
                         newState = CompileStatus.Errors
-
+            else:
+                newState = self._onOpenLastCompileStatus
             self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
 
