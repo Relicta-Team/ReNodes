@@ -32,7 +32,7 @@ class VirtualLib(QObject):
 		def on_modified(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
 				self.logger.debug(f"File modified: {event.src_path}")
-				self.reloadLibFull()
+				#self.reloadLibFull()
 
 		def on_created(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
@@ -42,7 +42,7 @@ class VirtualLib(QObject):
 		def on_deleted(self, event):
 			if not event.is_directory and event.src_path.endswith('.graph'):
 				self.logger.debug(f"File deleted: {event.src_path}")
-				self.reloadLibFull()
+				#self.reloadLibFull()
 		
 
 	refObject = None

@@ -325,9 +325,9 @@ class CodeGenerator:
 
             self.successCompiled = True
 
-            if self.successCompiled and not self._exceptions:
-                #tDat.save() #saving on success compile
-                self.warning("Сохраните ваш граф после успешной компиляции")
+            if self.successCompiled and not self._exceptions and tDat:
+                tDat.save() #saving on success compile
+                #self.warning("Сохраните ваш граф после успешной компиляции")
 
         except CGCompileAbortException:
             pass
@@ -377,6 +377,7 @@ class CodeGenerator:
             self.log(f"Процедура завершена за {timeDiff} мс")
             self.log("================================")
             self.isGenerating = False
+            iData = self.graph.infoData
 
             if self._silentMode:
                 pref__ = f" PATH:\"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""

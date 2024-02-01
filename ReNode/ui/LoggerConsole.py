@@ -535,6 +535,35 @@ class JumpToNodeCommand(ConsoleCommand):
         except Exception as e:
             self.logger.error(f"Ошибка перехода:{e}")
 
+class DumpLib(ConsoleCommand):
+    name = "dump_lib"
+    desc = "Дамп библиотеки в json. Агрументы (могут быть комбинированы): classes, nodes"
+    def onCall(self,args):
+        import json
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        if not args:
+            args = ['classes','nodes']
+        def default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            if callable(obj):
+                return obj.__name__
+            return obj
+        
+        for arg in args:
+            if arg in ["classes","nodes"]:
+                with open("_dump_"+arg+".json", 'w',encoding='utf-8') as file_out:
+                    json.dump(
+                        getattr(NodeGraphComponent.refObject.getFactory(),arg),
+                        file_out,
+                        indent=2,
+                        separators=(',', ':'),
+                        default=default,
+                        ensure_ascii=False
+                    )
+            else:
+                self.logger.error("Неизвестный агрумент " + arg)
+                continue
 
 #region Memory helpers -  https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc
 class StartTracemalloc(ConsoleCommand):
