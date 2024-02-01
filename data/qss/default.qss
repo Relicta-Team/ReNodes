@@ -26,6 +26,7 @@
 	background: #191919;
 	color: #DDDDDD;
 	border: 1px solid #5A5A5A;
+	font-size: $CONST_FONT_SIZE_GLOBALpt
 	
 }
 

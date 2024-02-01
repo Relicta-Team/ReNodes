@@ -11,11 +11,15 @@ def loadStylesheet(filename: str):
     :type filename: str
     """
     print('LOADING STYLE:', filename)
+    from ReNode.app.config import Config
     file = QFile(filename)
     file.open(QFile.ReadOnly | QFile.Text)
     stylesheet = file.readAll()
-    QApplication.instance().setStyleSheet(str(stylesheet, encoding='utf-8'))
-    return str(stylesheet, encoding='utf-8')
+    stl = str(stylesheet, encoding='utf-8')
+    stl = stl.replace("$CONST_FONT_SIZE_GLOBAL",str(Config.get_int("font_size","visual")))
+    QApplication.instance().setStyleSheet(stl)
+    file.close()
+    return stl
 
 def intTryParse(value,default=0):
     try:

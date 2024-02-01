@@ -90,6 +90,7 @@ class MainWindow( QMainWindow ):
 		self.windows.addAction(QAction("Скрыть все окна",self,triggered=self.hideAllWindows,shortcut="Alt+`"))
 		self.windows.addAction(QAction("Сбросить позиции окон",self,triggered=self.resetWindows))
 		self.windows.addAction(QAction("Очистить консоль",self,triggered=ConsoleCommand.getCommandDelegate(ClearConsoleCommand)))
+		self.windows.addAction(QAction("Установить размер интерфейса",self,triggered=self.setBaseUISize))
 
 
 		self.editMenu = menubar.addMenu("&Правка")
@@ -121,6 +122,24 @@ class MainWindow( QMainWindow ):
 	def onReloadStyle(self,string):
 		logger.info("STYLE UPDATE")
 		self.setStyleSheet(loadStylesheet("./data/qss/default.qss"))
+	
+	def setBaseUISize(self):
+		dlg = QtWidgets.QInputDialog()
+		dlg.setWindowTitle("Размер интерфейса")
+		dlg.setWindowIcon(QtGui.QIcon("data\\icon.ico"))
+		dlg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
+		dlg.setLabelText("Введите число - новый размер интерфейса. Доступный диапазон от 6 до 30")
+		defval = Config.get_int("font_size","visual")
+		dlg.setIntValue(defval)
+		result = dlg.exec_()
+		if result == QtWidgets.QInputDialog.Accepted:
+			newival = dlg.intValue()
+			if newival < 6 or newival > 30:
+				logger.error("Недопустимый размер интерфейса: " + str(newival))
+			else:
+				Config.set("font_size",newival,"visual")
+				logger.warning("Перезапустите редактор для корректного отображения сцены графов")
+				self.setStyleSheet(loadStylesheet("./data/qss/default.qss"))
 
 	def createStatusBar(self):
 		self.statusBar().showMessage("")
