@@ -218,7 +218,6 @@ class CodeGenerator:
             entrys = self.getAllEntryPoints()
             if not entrys:
                 self.warning("Добавьте точки входа в граф (события, определения методов, и т.д.)")
-                raise CGCompileAbortException()
             self.entryIdList = entrys #лист для валидации точек входа
             
             self.isGenerating = True

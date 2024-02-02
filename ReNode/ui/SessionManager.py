@@ -134,8 +134,7 @@ class TabData:
                 self.graph.end_undo()
                 self.graph.clear_undo_stack()
 
-                cg = SessionManager.refObject.graphSystem.codegen
-                cg.generateProcess(graph=self.graph,addComments=True,silentMode=True)
+                self.save()
 
     def createCompilerGUID(self):
         guid = SessionManager.CreateCompilerGUID()
@@ -278,7 +277,7 @@ class TabData:
                     newState = CompileStatus.Compiled
                     if self.has_compile_warnings:
                         newState = CompileStatus.Warnings
-                    if self.has_compile_errors or not self.last_compile_success:
+                    if self.has_compile_errors:
                         newState = CompileStatus.Errors
                     self._onOpenLastCompileStatus = newState
                 else:
@@ -324,6 +323,8 @@ class SessionManager(QTabWidget):
         self.tabBar().setMinimumHeight(50)  # Измените значение по вашему усмотрению.
 
         self._initEvents()
+
+        self._lastOpenPath = FileManagerHelper.getWorkDir()
         
         self.fileObserver = Observer()
         self.fileObserver.start()
@@ -384,7 +385,7 @@ class SessionManager(QTabWidget):
     def getTabByPredicate(self,predicate,checkedValue) -> TabData|None:
         if predicate and callable(predicate):
             for tab in self.getAllTabs():
-                if predicate(tab) == checkedValue:
+                if tab and predicate(tab) == checkedValue:
                     return tab
         return None
     
@@ -406,7 +407,7 @@ class SessionManager(QTabWidget):
         self.tabBar().setTabIcon(idx,QtGui.QIcon(icnPath))
         self.tabBar().setIconSize(QtCore.QSize(18, 18))
         ttp = "<html><body>"
-        ttp += f"Расположение (проект): {FileManagerHelper.graphPathGetReal(tdata.filePath,returnAbsolute=False)}\n"
+        ttp += f"Расположение: {tdata.filePath}\n"
         ttp += f"Имя: {tdata.infoData.get('name')}\n"
         ttp += f"Описание: {tdata.infoData.get('desc') or 'Отсутствует'}\n"
         ttp += f'Сборка: {CompileStatus.getCompileTextByStatus(compstat,withColor=True)}\n'
@@ -430,7 +431,7 @@ class SessionManager(QTabWidget):
         pass
 
     def newTab(self,switchTo=False,loader='',optionsToCreate=None):
-        idx = self.addTab(QWidget(),"Новая вкладка")
+        
         graphName = "Новый граф"
         if optionsToCreate:
             graphName = optionsToCreate.get("classname") or graphName
@@ -448,7 +449,19 @@ class SessionManager(QTabWidget):
             os.makedirs(os.path.dirname(loader), exist_ok=True)
             self.graphSystem.graph.save_session(loader,defaultGraph)
             self.graphSystem.getFactory().vlib.file_event_handler.reloadLibFull()
+            
+            cgUnit = SessionManager.refObject.graphSystem.codegen.__class__()
+            crez = cgUnit.generateProcess(graph=loader,addComments=True,silentMode=True,compileParams={
+				"-logexcept"
+			})
+            self.logger.debug(f'New graph compile result {crez}')
+            del cgUnit
+
+            if not FileManagerHelper.graphPathIsRoot(loader):
+                loader = FileManagerHelper.graphPathToRoot(loader)
         
+        idx = self.addTab(QWidget(),"Новая вкладка")
+
         #lg = SessionManager.refObject.logger
         #t_ = time.time()
         
@@ -481,8 +494,9 @@ class SessionManager(QTabWidget):
         self.handleTabChange(index)
 
     def openFile(self):
-        path = self.graphSystem.dummyGraph.load_dialog(FileManagerHelper.getWorkDir(),kwargs={"ext":"graph","customSave":True})
+        path = self.graphSystem.dummyGraph.load_dialog(self._lastOpenPath,kwargs={"ext":"graph","customSave":True})
         if not path: return
+        self._lastOpenPath = os.path.dirname(path)
         path = FileManagerHelper.getGraphPathRelative(path)
         path = FileManagerHelper.graphPathToRoot(path) #add root prefix
         allTabs = self.tabData
