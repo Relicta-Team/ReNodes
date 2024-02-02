@@ -1125,9 +1125,10 @@ class VariableManager(QDockWidget):
                 prtInfo[prpName] = prpDat
         return prtInfo
 
-    def syncVariableManagerWidget(self):
+    def syncVariableManagerWidget(self,updateVlib=False):
         self.loadVariables(self.variables,False)
-        self.syncNodesVirtualLib()
+        if updateVlib:
+            self.syncNodesVirtualLib()
 
     def syncNodesVirtualLib(self):
         vlib = self.getVirtualLib()

@@ -464,11 +464,11 @@ class VariableCreatedCommand(UndoCommand):
 
     def undo(self):
         self._varmgr.variables[self._category].pop(self._varId)
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
     
     def redo(self):
         self._varmgr.variables[self._category][self._varId] = self._variable
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
 class VariableDeletedCommand(UndoCommand):
     def __init__(self, varmgr, cat,varId):
@@ -482,11 +482,11 @@ class VariableDeletedCommand(UndoCommand):
 
     def undo(self):
         self._varmgr.variables[self._category][self._varId] = self._variable
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
     
     def redo(self):
         self._varmgr.variables[self._category].pop(self._varId)
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
 class VariableChangePropertyCommand(UndoCommand):
 
@@ -507,11 +507,11 @@ class VariableChangePropertyCommand(UndoCommand):
     
     def undo(self):
         self._varStorage[self._name] = self._oldvaule
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
     def redo(self):
         self._varStorage[self._name] = self._value
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
 class ChangeGroupNameForVariables(UndoCommand):
     def __init__(self,varmgr,cat,oldgroup,newgroup):
@@ -571,14 +571,14 @@ class DeleteGroupForVariables(UndoCommand):
         for sysname,vardat in self._variableData.items():
                 varstorage[sysname] = vardat
 
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
     def redo(self):
         varstorage = self._varmgr.variables[self._category]
         for sysname,dat in self._variableData.items():
             del varstorage[sysname]
         
-        self._varmgr.syncVariableManagerWidget()
+        self._varmgr.syncVariableManagerWidget(updateVlib=True)
 
 
 # для view модели
