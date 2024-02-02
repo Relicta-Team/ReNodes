@@ -588,17 +588,19 @@ class SessionManager(QTabWidget):
                 else:
                     self.setActiveTab(0)
     def showContextMenu(self):
-            ctd = self.getActiveTabData()
-            if not ctd: return
-            menu = QMenu(self)
+            
+
+            
             curTabRect = self.tabBar().tabRect(self.currentIndex())
             cpos = self.mapFromGlobal(QtGui.QCursor.pos())
             insideCurrent = curTabRect.intersects(QRect(cpos,QSize(2,2)))
-
-            curIndex = ctd.getIndex()
+            idxClick = self.tabBar().tabAt(cpos)
+            ctd = self.getTabData(idxClick)
+            if not ctd: return
             
+            menu = QMenu(self)
             # Создайте действия для каждой вкладки
-            menu.addAction(f"Меню \"{ctd.name}\"").setEnabled(False)
+            menu.addAction(f"Меню \"{ctd.name}\"" + (" (текущий)" if insideCurrent else "")).setEnabled(False)
             menu.addAction("").setEnabled(False)
             menu.addSeparator()
             actSwitch = menu.addMenu("Закладки")
@@ -606,7 +608,7 @@ class SessionManager(QTabWidget):
             actOpts = menu.addMenu("Опции")
             
             for i in range(self.count()):
-                if curIndex == i:
+                if idxClick == i:
                     continue
                 action = QAction("Переключиться на " + self.tabText(i), self)
                 action.triggered.connect(lambda checked, index=i: self.setActiveTab(index))
