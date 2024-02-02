@@ -95,18 +95,19 @@ class NodeSyncronizer:
                 self.warn(f"Node {link} obsolete color. Updating...")
                 dictValues['color'] = color
 
-            # varcheck
-            if className.startswith('variable.'):
-                self.warn(f"Variable node {link} obsolete color. Updating...")
-                vmgr = self.getVarMgr()
-                nameid = dictValues['custom']['nameid']
-                typename = None
-                for cat,list in self.refDict['graph'].get('variables',{}).items():
-                    if nameid in list:
-                        typename = list[nameid]['type']
-                if typename:
-                    newcolor = vmgr.getColorByType(typename)
-                    dictValues['color'] = newcolor
+            # varcheck 
+            #!disabled spam message
+            # if className.startswith('variable.'):
+            #     self.warn(f"Variable node {link} obsolete color. Updating...")
+            #     vmgr = self.getVarMgr()
+            #     nameid = dictValues['custom']['nameid']
+            #     typename = None
+            #     for cat,list in self.refDict['graph'].get('variables',{}).items():
+            #         if nameid in list:
+            #             typename = list[nameid]['type']
+            #     if typename:
+            #         newcolor = vmgr.getColorByType(typename)
+            #         dictValues['color'] = newcolor
 
 
     def validateVarGetSetRtPorts(self,nodeId,dictValues,link):
