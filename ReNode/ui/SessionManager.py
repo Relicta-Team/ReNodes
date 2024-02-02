@@ -304,6 +304,17 @@ class SessionManager(QTabWidget):
     refObject = None
     on_update_file = pyqtSignal(str,str)
 
+    class TabBar(QTabBar):
+        def mousePressEvent(self, event):    
+            if event.button() == Qt.MouseButton.LeftButton:
+                super().mousePressEvent(event)
+                event.accept()
+            elif event.button() == Qt.MouseButton.RightButton:
+                SessionManager.refObject.showContextMenu()
+                event.ignore()
+        def wheelEvent(self,event):
+            pass
+
     def __init__(self,graph) -> None:
         super().__init__()
         self.setObjectName("SessionManagerWindow")
@@ -315,6 +326,10 @@ class SessionManager(QTabWidget):
 
         self.setMovable(True)  # Разрешите перетаскивание вкладок.
         self.setTabsClosable(True)
+
+        self.setTabBar(SessionManager.TabBar())
+        #self.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.customContextMenuRequested.connect(self.showContextMenu)
 
         # Устанавливаем политику размеров для растяжения в вертикальном направлении.
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -334,7 +349,7 @@ class SessionManager(QTabWidget):
     def _initEvents(self):
         #self.currentChanged.connect(self.handleTabChange)
         self.tabCloseRequested.connect(self.handleTabClose)
-        self.tabBarClicked.connect(self.handleTabChange)
+        self.tabBarClicked.connect(self.handleTabChange_click)
         self.tabBar().tabMoved.connect(self.handleMoved)
 
     def _session_fileChanged(self,path:str,event_type:str):
@@ -493,6 +508,10 @@ class SessionManager(QTabWidget):
         self.tabBar().setCurrentIndex(index)
         self.handleTabChange(index)
 
+    def handleTabChange_click(self,index):
+        
+        self.setActiveTab(index)
+
     def openFile(self):
         path = self.graphSystem.dummyGraph.load_dialog(self._lastOpenPath,kwargs={"ext":"graph","customSave":True})
         if not path: return
@@ -572,16 +591,22 @@ class SessionManager(QTabWidget):
             menu = QMenu(self)
 
             # Создайте действия для каждой вкладки
+            actSwitch = menu.addMenu("Закладки")
+            menu.addMenu("Опции")
+            menu.addMenu("Прочее")
             for i in range(self.count()):
-                action = QAction(self.tabText(i), self)
-                action.triggered.connect(lambda checked, index=i: self.switchToTab(index))
-                menu.addAction(action)
+                action = QAction("Переключиться на " + self.tabText(i), self)
+                action.triggered.connect(lambda checked, index=i: self.setActiveTab(index))
+                actSwitch.addAction(action)
+                
 
             # Отобразите контекстное меню рядом с кнопкой внутри док-зоны
-            self.dock.setWidget(self)
-            menu.exec_(self.context_menu_button.mapToGlobal(self.context_menu_button.rect().bottomRight()))
+            #self.dock.setWidget(self)
+            menu.exec_(QtGui.QCursor.pos())
     
     def switchToTab(self, index):
+        #DO NOT USE THIS
+        assert(False)
         self.setCurrentIndex(index)
         tabData = self.getTabData(index)
 

@@ -53,6 +53,10 @@ class LoadingScreen(QSplashScreen):
         NodeGraphComponent.refObject.log_dock.update()
         self.close()
 
+    def finalize(self):
+        self.done()
+        self.deleteLater()
+
 
 class LoadingScreenHandler(logging.Handler):
 	def __init__(self, loading, *args, **kwargs):

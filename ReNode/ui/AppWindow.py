@@ -60,7 +60,8 @@ class MainWindow( QMainWindow ):
 		if Application.isDebugMode():
 			self.reloadStyle = QAction('&Обновить стиль', self, triggered=self.onReloadStyle, shortcut="Ctrl+R")
 
-		self.generateCode = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
+		self.generateCodeAct = QAction("&Генерировать код",self,triggered=self.generateCode,shortcut="F5")
+		
 
 		self.switchInspectorAction = QAction("Переключить окно &инспектора",self,triggered=self.switchInspectorVisual,shortcut="Alt+1",statusTip="Переключает видимость окна инспектора")
 		self.switchVariableViewerAction = QAction("Переключить окно &пользовательских свойств",self,triggered=self.switchVariableViewer,shortcut="Alt+2",statusTip="Переключает видимость окна переменных")
@@ -94,7 +95,8 @@ class MainWindow( QMainWindow ):
 
 
 		self.editMenu = menubar.addMenu("&Правка")
-		self.editMenu.addAction(self.generateCode)
+		self.editMenu.addAction(self.generateCodeAct)
+		self.editMenu.addAction(QAction("Пересобрать &весь проект",self,triggered=self.generateAllCode,shortcut="Shift+F5"))
 		
 		
 		for act in menubar.actions() + self.fileMenu.actions() + self.editMenu.actions() + self.windows.actions():
@@ -157,6 +159,13 @@ class MainWindow( QMainWindow ):
 			self.nodeGraph.codegen.generateProcess()
 		else:
 			self.nodeGraph.codegen.logger.warning("Нет активной вкладки для генерации")
+
+	def generateAllCode(self):
+		ssmgr = self.nodeGraph.sessionManager
+		if any([td.isUnsaved for td in ssmgr.getAllTabs()]):
+			self.nodeGraph.codegen.logger.warning("Сохраните все открытые вкладки")
+			return
+		self.nodeGraph.compileAllGraphs(useLoadingScreen=True)
 
 	def switchVariableViewer(self):
 		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())

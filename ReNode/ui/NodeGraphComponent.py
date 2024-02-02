@@ -15,6 +15,7 @@ from ReNode.app.utils import *
 from ReNode.app.NodeFactory import NodeFactory
 from ReNode.app.CodeGen import CodeGenerator
 from ReNode.app.NodeSync import NodeSyncronizer
+from ReNode.ui.LoadingScreen import LoadingScreen
 
 from NodeGraphQt.nodes.base_node import *
 from ReNode.ui.TabSearchMenu import TabSearchMenu
@@ -110,11 +111,31 @@ class NodeGraphComponent:
 		#! test compilation
 		#self.compileAllGraphs()
 
-	def compileAllGraphs(self):
+	def compileAllGraphs(self,useLoadingScreen=False):
 		import concurrent.futures
+		import threading
+		import time
 		from ReNode.app.FileManager import FileManagerHelper
 
 		allGraphsWithIndex = [(path,i+1) for i,path in enumerate(FileManagerHelper.getAllGraphPathes())]
+		# allGraphsWithIndex = allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex
+		# apls = []
+		# i__ = 1
+		# for p,i in allGraphsWithIndex:
+		# 	apls.append((p,i__))
+		# 	i__ += 1
+		# allGraphsWithIndex = apls
+
+		timestamp = int(time.time()*1000.0)
+
+		self._compileGraphList_useLoadingScreen = useLoadingScreen
+		if useLoadingScreen:
+			self._compileGraphList_lockerObject = threading.Lock()
+			self._compileGraphList_loadingScreen = LoadingScreen()
+			self._compileGraphList_increment = 0
+			self._compileGraphList_oneItemLoad = len(allGraphsWithIndex)
+			self._compileGraphList_loadingScreen.setMessage("Сборка")
+		
 		def __compile(path_with_idx):
 			path, index = path_with_idx
 			
@@ -122,17 +143,36 @@ class NodeGraphComponent:
 			if path.startswith(".\\"):
 				path = path[2:]
 			
+			if self._compileGraphList_useLoadingScreen:
+				self._compileGraphList_loadingScreen.setMessage("Сборка " + path)
+			
 			cgObj = CodeGenerator()
 			rez = cgObj.generateProcess(path, silentMode=True,compileParams={
 				"-skipgenloader","-logexcept"
 			},prefixGen=f"({index}/{len(allGraphsWithIndex)}) ")
 			del cgObj
+
+			if self._compileGraphList_useLoadingScreen:
+				with self._compileGraphList_lockerObject:
+					self._compileGraphList_increment += 1
+					self._compileGraphList_loadingScreen.setProgress(
+						self._compileGraphList_increment * 100 / self._compileGraphList_oneItemLoad
+					)
+
+
 			return rez
 		with concurrent.futures.ThreadPoolExecutor() as executor:
+			executor._thread_name_prefix = "CGCompiler"
 			results = list(executor.map(__compile,allGraphsWithIndex))
 		
+		if useLoadingScreen:
+			self._compileGraphList_loadingScreen.finalize()
+
 		if all(results):
 			FileManagerHelper.generateScriptLoader()
+		
+		CodeGenerator.refLogger.info(f"Успешно собрано {len([x for x in results if x])} из {len(results)}")
+		CodeGenerator.refLogger.info(f'Время сборки {int(time.time()*1000.0) - timestamp} мс')
 
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application

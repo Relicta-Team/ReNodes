@@ -43,8 +43,12 @@ class NodeGraphProxyObject:
         sergraph = FileManagerHelper.loadSessionJson(graphPath)
 
         self.serialized_graph = sergraph
-        self.infoData = sergraph['graph']['info']
-        self.variables = sergraph['graph']['variables']
+        if sergraph != None:
+            self.infoData = sergraph['graph']['info']
+            self.variables = sergraph['graph']['variables']
+        else:
+            self.infoData = {}
+            self.variables = {}
         
         if not FileManagerHelper.graphPathIsRoot(graphPath):
             graphPath = FileManagerHelper.graphPathToRoot(graphPath)
@@ -387,7 +391,10 @@ class CodeGenerator:
                 pref__ = f" PATH:\"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
                 notCompiled__ = not self.successCompiled or bool(self._exceptions)
                 pfunc_ = self.error if notCompiled__ else self.log
-                pfunc_(f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']} ({dtcomp}): {timeDiff}ms; ERR:{len(self._exceptions)};WRN:{len(self._warnings)};{pref__}",True)
+                basetex_ = f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']} ({dtcomp})"
+                # multiply to 40
+                basetex_ += max(80-len(basetex_),0)*"-"
+                pfunc_(f"{basetex_}: {timeDiff}ms; ERR:{len(self._exceptions)};WRN:{len(self._warnings)};{pref__}",True)
 
                 if self.hasCompileParam("-logexcept") and self._exceptions:
                     elst__ = ','.join(list(set([e.id.__str__() for e in self._exceptions])))
