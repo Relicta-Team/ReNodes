@@ -588,16 +588,35 @@ class SessionManager(QTabWidget):
                 else:
                     self.setActiveTab(0)
     def showContextMenu(self):
+            ctd = self.getActiveTabData()
+            if not ctd: return
             menu = QMenu(self)
+            curTabRect = self.tabBar().tabRect(self.currentIndex())
+            cpos = self.mapFromGlobal(QtGui.QCursor.pos())
+            insideCurrent = curTabRect.intersects(QRect(cpos,QSize(2,2)))
 
+            curIndex = ctd.getIndex()
+            
             # Создайте действия для каждой вкладки
+            menu.addAction(f"Меню \"{ctd.name}\"").setEnabled(False)
+            menu.addAction("").setEnabled(False)
+            menu.addSeparator()
             actSwitch = menu.addMenu("Закладки")
-            menu.addMenu("Опции")
-            menu.addMenu("Прочее")
+            actsGraph = menu.addMenu("Граф")
+            actOpts = menu.addMenu("Опции")
+            
             for i in range(self.count()):
+                if curIndex == i:
+                    continue
                 action = QAction("Переключиться на " + self.tabText(i), self)
                 action.triggered.connect(lambda checked, index=i: self.setActiveTab(index))
                 actSwitch.addAction(action)
+
+            actsGraph.addAction(QAction("[ДОБАВИТЬ] Открыть расположение графа",self))
+            actsGraph.addAction(QAction("[ДОБАВИТЬ] Открыть расположение скомпилированного графа",self))
+
+            actOpts.addAction(QAction("[ДОБАВИТЬ] Закрыть все вкладки слева",self))
+            actOpts.addAction(QAction("[ДОБАВИТЬ] Закрыть все вкладки справа",self))
                 
 
             # Отобразите контекстное меню рядом с кнопкой внутри док-зоны
