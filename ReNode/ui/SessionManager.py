@@ -11,12 +11,43 @@ from ReNode.ui.GraphTypes import GraphTypeFactory
 from ReNode.ui.SessionManager_CompileStatus import CompileStatus
 import os
 import uuid
+import time
+from watchdog.observers.polling import PollingObserver as Observer
+from watchdog.events import FileSystemEvent, FileSystemEventHandler, EVENT_TYPE_DELETED,EVENT_TYPE_MODIFIED
+
+class SingleFileEventWatcher(FileSystemEventHandler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ssmgr:SessionManager = SessionManager.refObject
+
+    def callFileEvent(self,path,evtype):
+        self.ssmgr.on_update_file.emit(path,evtype)
+
+    def validate_event(self,event: FileSystemEvent):
+        return event.src_path.endswith('.graph')
+
+    def on_modified(self, event: FileSystemEvent):
+        if self.validate_event(event) and not event.is_directory:
+            self.callFileEvent(event.src_path,event.event_type)
+            pass
+
+    def on_created(self, event: FileSystemEvent):
+        if self.validate_event(event):
+            pass
+
+    def on_deleted(self, event: FileSystemEvent):
+        if self.validate_event(event):
+            self.ssmgr.on_update_file.emit(event.src_path,event.event_type)
+    
+    def on_moved(self, event: FileSystemEvent) -> None:
+        if self.validate_event(event):
+            pass
 
 class TabData:
     def __init__(self,name='',file='') -> None:
         """
             - name - имя (класс) графа
-            - file - относительный путь до файла
+            - file - относительный путь до файла (содержит root:)
         """
         self.filePath = file
         self.name = name
@@ -31,7 +62,6 @@ class TabData:
         self.infoData = {}
 
         self.undo_saved_index = self.getCurrentUndoStackIndex()
-        self.undo_compiled_index = self.getCurrentUndoStackIndex()
 
         # данные для успешной компиляции
         self.last_compile_undo_object = None
@@ -52,12 +82,25 @@ class TabData:
         if self.infoData.get('classname'):
             self.name = self.infoData.get('classname')
         
+        self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
+
         self.lastCompileGUID = self.getLastCompileGUID()
         self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
         self._onOpenLastCompileStatus = self.lastCompileStatus
 
         self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(self.name))
         self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
+
+        self._obsWatch = None
+        if self.filePath:
+            self._sessionFileHandler = SingleFileEventWatcher()
+            obs:Observer = SessionManager.refObject.fileObserver
+            self._obsWatch = obs.schedule(self._sessionFileHandler, FileManagerHelper.graphPathGetReal(self.filePath,returnAbsolute=True))
+    
+    def _session_unloadEvent_(self):
+        obs:Observer = SessionManager.refObject.fileObserver
+        if self._obsWatch:
+            obs.unschedule(self._obsWatch)
 
     def onGraphOpened(self):
             info = self.infoData
@@ -117,6 +160,7 @@ class TabData:
             return
         self.infoData['compiledGUID'] = self.lastCompileGUID
         self.graph.save_session(FileManagerHelper.graphPathGetReal(self.filePath),saveMouse=True)
+        self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self._syncHistoryEvent()
         SessionManager.refObject.syncTabName(self.getIndex())
@@ -139,6 +183,7 @@ class TabData:
 
     #выгрузка и очистка вкладки
     def unloadTabLogic(self):
+        self._session_unloadEvent_()
         graphComponent = SessionManager.refObject.graphSystem
         graphComponent.editorDock.setWidget(None)#!DONT DO THIS 
         
@@ -148,7 +193,7 @@ class TabData:
         self.graph.close()
         self.graph.widget.deleteLater()
         self.graph.deleteLater()
-        QApplication.processEvents()
+        #QApplication.processEvents() #!this is really need?
 
         graphComponent.variable_manager.clearVariables()
         graphComponent.inspector.cleanupPropsVisual()
@@ -258,6 +303,7 @@ class TabData:
 
 class SessionManager(QTabWidget):
     refObject = None
+    on_update_file = pyqtSignal(str,str)
 
     def __init__(self,graph) -> None:
         super().__init__()
@@ -276,18 +322,48 @@ class SessionManager(QTabWidget):
 
         # Изменяем минимальную высоту вкладки.
         self.tabBar().setMinimumHeight(50)  # Измените значение по вашему усмотрению.
-        
-        # Создайте и добавьте вкладки в верхнюю док-зону.
-        #for i in range(1,20):
-        #    self.addTab(QWidget(), 'Вкладка ' + str(i))
 
         self._initEvents()
+        
+        self.fileObserver = Observer()
+        self.fileObserver.start()
+        self.fileObserver.name = "SessionManager_Observer"
+        self.on_update_file.connect(self._session_fileChanged)
 
     def _initEvents(self):
         #self.currentChanged.connect(self.handleTabChange)
         self.tabCloseRequested.connect(self.handleTabClose)
         self.tabBarClicked.connect(self.handleTabChange)
         self.tabBar().tabMoved.connect(self.handleMoved)
+
+    def _session_fileChanged(self,path:str,event_type:str):
+        tdat = None
+        lpat = path.lower()
+        for t_ in self.getAllTabs():
+            if FileManagerHelper.graphPathGetReal(t_.filePath,True).lower() == lpat:
+                tdat = t_
+                break
+        
+        if not tdat and event_type == EVENT_TYPE_MODIFIED: 
+            self.logger.error(f'Не удалось перезагрузить \"{path}\" - вкладка не найдена')
+            return
+        if event_type == EVENT_TYPE_DELETED:
+            self.logger.info("Файл удалён \"{}\"".format(tdat.filePath))
+            self.handleTabClose(tdat.getIndex(),True)
+            return
+        if tdat.lastTimeSave == os.path.getmtime(FileManagerHelper.graphPathGetReal(tdat.filePath,True)):
+            self.logger.debug(f'File cahnged inside tab {tdat.name}')
+            return
+
+        self.logger.info("Файл изменён \"{}\"".format(tdat.filePath))
+        doReload = True
+        if tdat.isUnsaved:
+            rep = QMessageBox.warning(SessionManager.refObject, 'Обнаружено изменение', f'Вкладка \"{tdat.name}\" была изменена. Вы хотите обновить её? Все несохраненные данные будут утеряны.',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if rep != QMessageBox.Yes:
+                doReload = False
+        if doReload:
+            self.updateSession(tdat.getIndex())
 
     @property
     def tabData(self) -> list[TabData]:
@@ -373,11 +449,24 @@ class SessionManager(QTabWidget):
             self.graphSystem.graph.save_session(loader,defaultGraph)
             self.graphSystem.getFactory().vlib.file_event_handler.reloadLibFull()
         
-        tabCtx = TabData(graphName,loader)
-        self.tabBar().setTabData(idx,tabCtx)
-        self.syncTabName(idx)
+        #lg = SessionManager.refObject.logger
+        #t_ = time.time()
         
+        tabCtx = TabData(graphName,loader)
+        
+        #lg.debug(f"--- tab object create {time.time()-t_}")
+        #t_ = time.time()
+        
+        self.tabBar().setTabData(idx,tabCtx)
+        
+        #lg.debug(f"--- tab data load {time.time()-t_}")
+        #t_ = time.time()
+
+        self.syncTabName(idx)
         tabCtx.registerEvents()
+
+        #lg.debug(f'--- tab load other actions {time.time()-t_}')
+
         if switchTo:
             self.setActiveTab(idx)
         
@@ -433,14 +522,6 @@ class SessionManager(QTabWidget):
             return reply == QMessageBox.Yes
         return True
 
-    def registerFileWatch(self,path):
-        import os
-        fs_watcher = QtCore.QFileSystemWatcher()
-        fs_watcher.addPath(os.path.abspath(path))
-        #print fws files
-        fs_watcher.fileChanged.connect(path)
-        return fs_watcher
-
     def handleTabChange(self, index):
         if index < 0:
             print("Теперь нет активной вкладки")
@@ -449,10 +530,10 @@ class SessionManager(QTabWidget):
         print(f'Активная вкладка изменилась на {index} {self.getTabData(index)}')
         self.getTabData(index).loadTabLogic()
 
-    def handleTabClose(self, index):
+    def handleTabClose(self, index,forceClose=False):
         tabData = self.getTabData(index)
         condition = True
-        if tabData.isUnsaved:
+        if tabData.isUnsaved and not forceClose:
             # В этом методе вы можете запросить подтверждение пользователя перед закрытием вкладки
             reply = QMessageBox.question(self, 'Закрыть вкладку', 'Вы уверены, что хотите закрыть эту вкладку?\nВсе несохраненные данные будут утеряны.',
                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -460,10 +541,19 @@ class SessionManager(QTabWidget):
             condition = reply == QMessageBox.Yes
 
         if condition:
+            curIdx = self.currentIndex()
+            isLatestTab = self.count()-1 == index
+            isFirstTab = index == 0
             self.removeTab(index)
             tabData.unloadTabLogic()
             del tabData
-            self.setActiveTab(self.count()-1)
+            if isLatestTab:
+                self.setActiveTab(self.count()-1)
+            else:
+                if not isFirstTab:
+                    self.setActiveTab(curIdx - 1) #-1 because we removed tab
+                else:
+                    self.setActiveTab(0)
     def showContextMenu(self):
             menu = QMenu(self)
 
@@ -480,6 +570,24 @@ class SessionManager(QTabWidget):
     def switchToTab(self, index):
         self.setCurrentIndex(index)
         tabData = self.getTabData(index)
+
+    def updateSession(self,index):
+        tdata = self.getTabData(index)
+        if tdata:
+            curActive = self.currentIndex()
+            fp_ = tdata.filePath
+            needSwitch = self.currentIndex() == index
+            st1 = time.time()
+            self.handleTabClose(index,forceClose=True)
+            self.logger.debug(f'Tab closed at {time.time()-st1}')
+            st2 = time.time()
+            ntObj = self.newTab(needSwitch,fp_)
+            self.logger.debug(f'Tab opened at {time.time()-st2}')
+            self.tabBar().moveTab(ntObj.getIndex(),index)
+            #reset active tab
+            if not needSwitch:
+                self.setActiveTab(curActive)
+        
 
     def newInstanceGraph(self):
         """
