@@ -1872,7 +1872,7 @@ class NodeGraph(QtCore.QObject):
                 #nodeSystem.inspector.infoData = attr_value
                 self.infoData = attr_value
             elif attr_name == "variables":
-                nodeSystem.variable_manager.loadVariables(attr_value)
+                #nodeSystem.variable_manager.loadVariables(attr_value) #!WARNING! This will be corrupt varstorage
                 self.variables = attr_value
             elif attr_name == "mpos" and loadMousePos:
                 sceneRect = attr_value
@@ -1896,7 +1896,7 @@ class NodeGraph(QtCore.QObject):
                         node.model.set_property(prop, n_data[prop])
                 
                 if n_data.get('custom',{}).get('nameid'):
-                    nodeSystem.variable_manager._updateNodeSync(node,n_data.get('custom',{}).get('nameid'),nodeType)
+                    nodeSystem.variable_manager._updateNodeSync(node,n_data.get('custom',{}).get('nameid'),nodeType,self.variables)
 
                 # set custom properties.
                 for prop, val in n_data.get('custom', {}).items():

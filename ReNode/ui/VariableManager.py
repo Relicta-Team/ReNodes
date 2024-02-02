@@ -894,13 +894,13 @@ class VariableManager(QDockWidget):
 
             hstack.endMacro()
 
-    def _updateNodeSync(self,nodeObj:RuntimeNode,id,nodeClassname):
+    def _updateNodeSync(self,nodeObj:RuntimeNode,id,nodeClassname,refDict=None):
         from ReNode.app.NodeFactory import NodeFactory
-        lvdata = self.getVariableDataById(id)
+        lvdata = self.getVariableDataById(id,refVarDict=refDict)
         if not lvdata:
             raise Exception("Unknown variable id "+id)
         fact : NodeFactory = self.nodeGraphComponent.getFactory()
-        catObj = self.getVariableCategoryById(id,retObject=True)
+        catObj = self.getVariableCategoryById(id,retObject=True,refVarDict=refDict)
         if catObj:
             catObjInstancer:VarMgrBaseWidgetType = catObj.instancer
             instancerType = None
