@@ -673,7 +673,6 @@ class SessionManager(QTabWidget):
             #'factory': factory, #dont use it, factory get id's from model
         }
         graph = NodeGraph(**args)
-        graph.use_OpenGL()
         
         #here self is graphComponent
         graphComponent.graph = graph
