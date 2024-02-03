@@ -111,20 +111,22 @@ class NodeGraphComponent:
 		#! test compilation
 		#self.compileAllGraphs()
 
-	def compileAllGraphs(self,useLoadingScreen=False):
+	def compileAllGraphs(self,useLoadingScreen=False,onlyNotActual = False):
 		import concurrent.futures
 		import threading
 		import time
+		import datetime
 		from ReNode.app.FileManager import FileManagerHelper
+		graphList = []
+		if onlyNotActual:
+			graphList = FileManagerHelper.getBuildRequiredGraphs()
+		else:
+			graphList = FileManagerHelper.getAllGraphPathes()
+		allGraphsWithIndex = [(path,i+1) for i,path in enumerate(graphList)]
 
-		allGraphsWithIndex = [(path,i+1) for i,path in enumerate(FileManagerHelper.getAllGraphPathes())]
-		# allGraphsWithIndex = allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex + allGraphsWithIndex
-		# apls = []
-		# i__ = 1
-		# for p,i in allGraphsWithIndex:
-		# 	apls.append((p,i__))
-		# 	i__ += 1
-		# allGraphsWithIndex = apls
+		if onlyNotActual and not graphList:
+			CodeGenerator.refLogger.info("Все графы собраны. Сборка пропущена")
+			return True
 
 		timestamp = int(time.time()*1000.0)
 
@@ -171,8 +173,13 @@ class NodeGraphComponent:
 		if all(results):
 			FileManagerHelper.generateScriptLoader()
 		
+		compFinalDt = datetime.datetime.now().strftime("%d.%m.%y %H:%M:%S")
 		CodeGenerator.refLogger.info(f"Успешно собрано {len([x for x in results if x])} из {len(results)}")
-		CodeGenerator.refLogger.info(f'Время сборки {int(time.time()*1000.0) - timestamp} мс')
+		CodeGenerator.refLogger.info(f"Сборка от {compFinalDt}")
+		CodeGenerator.refLogger.info(f'Выполнено за {int(time.time()*1000.0) - timestamp} мс')
+		CodeGenerator.refLogger.info("-" * 30)
+
+		return all(results)
 
 	def _loadWinStateFromConfig(self): #TODO rename
 		from ReNode.app.application import Application

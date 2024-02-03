@@ -131,6 +131,9 @@ class Application:
 		debugText = " [DEBUG]" if Application.isDebugMode() else ""
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
 		
+		if not Application.hasArgument("-prep_code"):
+			self.mainWindow.generateAllCode(allUpdate=False,loadingScreen=False)
+
 		#if splashEnabled: time.sleep(3)		
 
 		self.mainWindow.show()
@@ -291,10 +294,9 @@ def AppMain():
 	logger.info("Application loaded.")
 
 	if Application.hasArgument('-prep_code'):
-		#TODO compile all graphs
-		nodeSystem = Application.refObject.mainWindow.nodeGraph
-		from ReNode.app.FileManager import FileManagerHelper
-		FileManagerHelper.generateScriptLoader()
+		obj = Application.refObject.mainWindow
+		obj.generateAllCode(allUpdate=True)
+		
 	
 	#debug maker
 	#ng = application.mainWindow.nodeGraph.script_maker.openMaker()

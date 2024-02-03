@@ -316,6 +316,11 @@ class CodeGenerator:
                     raise Exception("Cannot generate code in non-existen tab")
                 fp__ = self.graph.graph_path
                 guidCompile = ssmgr.CreateCompilerGUID()
+                def __updEv(sergraph):
+                    sergraph['graph']['info']['compiledGUID'] = guidCompile
+                    return True
+                if not FileManagerHelper.updateSessionJson(FileManagerHelper.graphPathToClear(fp__),__updEv):
+                    raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")
                 #save new graph with generated compile guid
                 code = f'//src:{guidCompile}:{fp__}\n' + code
             
@@ -333,8 +338,9 @@ class CodeGenerator:
 
             self.successCompiled = True
 
-            if self.successCompiled and not self._exceptions and tDat:
-                tDat.save() #saving on success compile
+            if self.successCompiled and not self._exceptions:
+                if tDat:
+                    tDat.save() #saving on success compile
                 #self.warning("Сохраните ваш граф после успешной компиляции")
 
         except CGCompileAbortException:
@@ -393,7 +399,7 @@ class CodeGenerator:
                 pref__ = f" PATH:\"{self.graph.graph_path}\"" if self.hasCompileParam("-showgenpath") else ""
                 notCompiled__ = not self.successCompiled or bool(self._exceptions)
                 pfunc_ = self.error if notCompiled__ else self.log
-                basetex_ = f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']} ({dtcomp})"
+                basetex_ = f"[{'ERR' if notCompiled__ else 'OK'}] Результат сборки {iData['name']}"
                 # multiply to 40
                 basetex_ += max(80-len(basetex_),0)*"-"
                 pfunc_(f"{basetex_}: {timeDiff}ms; ERR:{len(self._exceptions)};WRN:{len(self._warnings)};{pref__}",True)

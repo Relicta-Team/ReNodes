@@ -157,6 +157,7 @@ class FileManagerHelper:
 	# получить пути всех графов
 	@staticmethod
 	def getAllGraphPathes():
+		"""Возвращает пути графов относительно workdir. Все пути в чистом виде (graphPathIsRoot == False)"""
 		rootDir = FileManagerHelper.getWorkDir()
 		return FileManagerHelper.find_files(rootDir,"graph")
 	
@@ -171,5 +172,100 @@ class FileManagerHelper:
 			layout_data = None
 
 		return layout_data
+	
+	@staticmethod
+	def default_ser_(obj):
+		if isinstance(obj, set):
+			return list(obj)
+		return obj
+
+	@staticmethod
+	def updateSessionJson(file_path,action_):
+		try:
+			with open(file_path, 'r+',encoding='utf-8') as file_out:
+				lay = json.load(file_out)
+				if action_ == None or not callable(action_): raise Exception("Action for update session is empty or not callable")
+				if action_(lay):
+					file_out.seek(0)
+					file_out.truncate()
+
+					json.dump(
+						lay,
+						file_out,
+						indent=2,
+						separators=(',', ':'),
+						default=FileManagerHelper.default_ser_,
+						ensure_ascii=False
+					)
+
+			return True
+		except Exception as e:
+			print("Exception on update session. Reason: {}".format(e))
+			return False
+	
+	@staticmethod
+	def getCompareCompiledGraphsInfo():
+		"""
+			Массив словарей:
+				"guid_actual" - bool, if is graph compiled\n
+				"graph_path" - str, graph path from FileManagerHelper.getAllGraphPathes() (without rooted pref.)\n
+				"graph_guid" - str, located guid inside graph file\n
+				"compile_guid" - str, located guid inside header of compiled file\n
+				"compile_date" - str, datetime located inside compiled file\n
+				"exists_graph" - bool, validation from compiled to graph\n
+		"""
+		from ReNode.app.application import Application
+		logger = Application.refObject.logger
+
+		allgraphs = FileManagerHelper.getAllGraphPathes()
+		ret = []
+		# грузим граф
+		for graphPath in allgraphs:
+			sess = FileManagerHelper.loadSessionJson(graphPath)
+			idat = sess['graph']['info']
+			lastguid = idat.get("compiledGUID")
+			fname = FileManagerHelper.getCompiledScriptFilename(idat)
+			fnameComp = os.path.join(FileManagerHelper.getFolderCompiledScripts(),fname)
+			
+			compMeta = FileManagerHelper.getCompiledScriptMetainfo(fnameComp)
+			if compMeta == None: compMeta = {}
+
+			ret.append({
+				"guid_actual": lastguid == compMeta.get('guid'), 
+				"graph_path": graphPath,
+				"graph_guid": lastguid,
+				"compile_guid": compMeta.get("guid","none"),
+
+				"compile_date": compMeta.get("date","none"),
+				"exists_graph": compMeta.get("valid",False),
+			})
+
+		return ret
+	
+	@staticmethod
+	def getCompiledScriptMetainfoByInfoData(idat):
+		fname = FileManagerHelper.getCompiledScriptFilename(idat)
+		fnameComp = os.path.join(FileManagerHelper.getFolderCompiledScripts(),fname)
 		
+		compMeta = FileManagerHelper.getCompiledScriptMetainfo(fnameComp)
+		if compMeta == None: compMeta = {}
+		return compMeta
+
+	@staticmethod
+	def getBuildRequiredGraphs():
+		"""Возвращает список графов, которые необходимо пересобрать"""
+		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual')]
+
 		
+	# @staticmethod
+	# def openGraphHandle(file_path):
+	# 	"""Открывает файл и возвращает его дескриптор+json"""
+	# 	layout_data = None
+	# 	fhandle = None
+	# 	try:
+	# 		fhandle = open(file_path,mode="r+",encoding='utf-8')
+	# 		layout_data = json.load(fhandle)
+	# 	except Exception as e:
+	# 		layout_data = None
+
+	# 	return layout_data,fhandle

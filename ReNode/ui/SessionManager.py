@@ -85,7 +85,15 @@ class TabData:
         self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
 
         self.lastCompileGUID = self.getLastCompileGUID()
-        self.lastCompileStatus = CompileStatus.Compiled if self.lastCompileGUID else CompileStatus.NotCompiled
+        cst = CompileStatus.NotCompiled
+        if self.lastCompileGUID:
+            if FileManagerHelper.getCompiledScriptMetainfoByInfoData(self.infoData).get('valid'):
+                cst = CompileStatus.Compiled
+            else:
+                cst = CompileStatus.NotCompiled
+        else:
+            cst = CompileStatus.NotCompiled
+        self.lastCompileStatus = cst
         self._onOpenLastCompileStatus = self.lastCompileStatus
 
         self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(self.name))

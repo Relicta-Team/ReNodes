@@ -565,6 +565,26 @@ class DumpLib(ConsoleCommand):
                 self.logger.error("Неизвестный агрумент " + arg)
                 continue
 
+class GetGraphsCompileState(ConsoleCommand):
+    name = "compstate"
+    desc = "Отобразить статус скомпилированности всех графов в проекте.Укажите full чтобы вывести доп информацию."
+
+    def onCall(self,args):
+        from ReNode.app.FileManager import FileManagerHelper
+
+        for data in FileManagerHelper.getCompareCompiledGraphsInfo():
+            sline = f'{data["graph_path"]}: {data["guid_actual"]}'
+            self.logger.info(sline)
+            if "full" in args:
+                self.logger.info(f'src:{data["graph_guid"]}')
+                self.logger.info(f'bin:{data["compile_guid"]}')
+                
+                self.logger.info(f'date:{data["compile_date"]}')
+                self.logger.info(f'valid:{data["exists_graph"]}')
+                self.logger.info('-'*len(sline))
+
+
+
 #region Memory helpers -  https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc
 class StartTracemalloc(ConsoleCommand):
     name = "start_mem_info"
