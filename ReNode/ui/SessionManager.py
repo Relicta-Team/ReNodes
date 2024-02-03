@@ -327,9 +327,9 @@ class SessionManager(QTabWidget):
         self.setMovable(True)  # Разрешите перетаскивание вкладок.
         self.setTabsClosable(True)
 
-        self.setTabBar(SessionManager.TabBar())
-        #self.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.customContextMenuRequested.connect(self.showContextMenu)
+        #self.setTabBar(SessionManager.TabBar())
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
 
         # Устанавливаем политику размеров для растяжения в вертикальном направлении.
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
