@@ -131,15 +131,15 @@ class Application:
 		debugText = " [DEBUG]" if Application.isDebugMode() else ""
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
 		
-		#if splashEnabled: time.sleep(3)
-		splash.finish(self.mainWindow)
-		logger.removeHandler(handler)
-		
+		#if splashEnabled: time.sleep(3)		
 
 		self.mainWindow.show()
 		#self.mainWindow.showMaximized()
 
 		self.mainWindow.nodeGraph._loadWinStateFromConfig()
+
+		splash.finish(self.mainWindow)
+		logger.removeHandler(handler)
 	
 	def _initArguments(self):
 		args = self.appInstance.arguments()
