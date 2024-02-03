@@ -305,7 +305,9 @@ class CodeGenerator:
             
             #getting graph tab
             ssmgr = self.graphsys.sessionManager
-            tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
+            tDat = None
+            if not self._silentMode:
+                tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
             if tDat:
                 guidCompile = tDat.createCompilerGUID()
                 code = f'//src:{guidCompile}:{tDat.filePath}\n' + code

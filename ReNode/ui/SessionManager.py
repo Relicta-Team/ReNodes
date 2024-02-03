@@ -169,10 +169,10 @@ class TabData:
         if not os.path.exists(file):
             return ""
         prefixLen = "//src:8c2a235c-9997-49f9-8b58-04694ce2ae20"
-        with open(file,'r',encoding='utf-8') as f:
+        with open(file,encoding='utf-8') as f:
             #read first bytes
             data = f.read(len(prefixLen))
-            f.close()
+            #f.close()
         if len(data) < len(prefixLen):
             return ''
         dels = data.split(':')
