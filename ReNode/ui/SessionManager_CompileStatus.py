@@ -6,6 +6,15 @@ class CompileStatus(Enum):
     Warnings = 2
     NotCompiled = 3
 
+    @staticmethod
+    def statusToString(stat):
+        return stat.name
+    @staticmethod
+    def stringToStatus(str):
+        for n in CompileStatus:
+            if str == n.name:
+                return n
+        return CompileStatus.NotCompiled
 
     @staticmethod
     def getCompileIconByStatus(stat):
