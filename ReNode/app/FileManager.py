@@ -16,16 +16,20 @@ class FileManagerHelper:
 	
 	@staticmethod
 	def allocateSDKSourceDir():
+		from PyQt5.QtWidgets import QFileDialog
+
 		wd = FileManagerHelper.getWorkDir()
 		#up to tree
-		pcheck = os.path.join(wd,"..\\src")
+		pcheck = os.path.join(wd,"..\\..\\src")
 		if os.path.exists(pcheck): return pcheck
 
 		pcheck = os.path.join(wd,"src")
-		if os.path.exists(pcheck): 
-			return pcheck
-		else:
-			os.mkdir(pcheck)
+		if not os.path.exists(pcheck): 
+			dsel = ""
+			while dsel == "":
+				dsel = QFileDialog.getExistingDirectory(None,"Укажите путь до исходников ReSDK (SRC папки)",".\\..\\")
+			pcheck = dsel
+		return pcheck
 
 	@staticmethod
 	def getGraphPathRelative(path):
