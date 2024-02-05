@@ -72,6 +72,16 @@ class NodeSyncronizer:
         objOptions = dictValues.get('custom')
         if not classInfo:
             self.warn("Skipping unknown class: " + className)
+
+        if dictValues.get("port_deletion_allowed"):
+            if className.startswith("math."):
+                if classInfo['name'] != dictValues['name']:
+                    self.log(f'Obsoleted name for runtime node: {link}')
+                    dictValues['input_ports'] = []
+                    dictValues['output_ports'] = []
+                    dictValues['custom'] = {}
+                    dictValues['name'] = f'<span style="color:red">ОБНОВИТЕ:</span> {dictValues["name"]}'
+
         #rulesets
         # Проверка портов
         #   Даже если это автопорт то у нас должны соответствовать типы портов (рендер, цвет, тип и тд)
