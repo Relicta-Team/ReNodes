@@ -254,6 +254,11 @@ class FileManagerHelper:
 	
 	@staticmethod
 	def getCompiledScriptMetainfoByInfoData(idat):
+		"""
+			{
+			 	guid(str), rooted_path(str),valid(bool), date(datetime)
+			}
+		"""
 		fname = FileManagerHelper.getCompiledScriptFilename(idat)
 		fnameComp = os.path.join(FileManagerHelper.getFolderCompiledScripts(),fname)
 		

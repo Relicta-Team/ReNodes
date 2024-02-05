@@ -318,6 +318,7 @@ class CodeGenerator:
                 guidCompile = ssmgr.CreateCompilerGUID()
                 def __updEv(sergraph):
                     sergraph['graph']['info']['compiledGUID'] = guidCompile
+                    sergraph['graph']['info']['compileStatus'] = "Compiled"
                     return True
                 if not FileManagerHelper.updateSessionJson(FileManagerHelper.graphPathGetReal(fp__),__updEv):
                     raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")
@@ -337,11 +338,6 @@ class CodeGenerator:
                 FileManagerHelper.generateScriptLoader(excludeGuid=guidCompile)
 
             self.successCompiled = True
-
-            if self.successCompiled and not self._exceptions:
-                if tDat:
-                    tDat.save() #saving on success compile
-                #self.warning("Сохраните ваш граф после успешной компиляции")
 
         except CGCompileAbortException:
             pass
@@ -420,6 +416,11 @@ class CodeGenerator:
             tDat = ssmgr.getTabByPredicate(lambda tab:tab.infoData.get('classname'),iData['classname'])
             if tDat:
                 tDat.setCompileState(self.successCompiled,bool(self._exceptions),bool(self._warnings))
+
+            if self.successCompiled and not self._exceptions:
+                if tDat:
+                    tDat.save() #saving on success compile
+                #self.warning("Сохраните ваш граф после успешной компиляции")
 
             if self._warnings or self._exceptions:
                 self.graphsys.log_dock.setVisible(True)

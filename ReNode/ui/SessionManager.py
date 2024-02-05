@@ -88,10 +88,12 @@ class TabData:
         _graphCompGuid = self.infoData.get('compiledGUID','')
         _equalCompGuid = _fileCompGuid == _graphCompGuid
         self.lastCompileGUID = _graphCompGuid
-        self.lastCompileStatus = CompileStatus.Compiled if _equalCompGuid else CompileStatus.NotCompiled
-        #CompileStatus.stringToStatus(self.infoData.get('compileStatus'))
+        _status = CompileStatus.stringToStatus(self.infoData.get("compileStatus",'NotCompiled'))
+        if not _equalCompGuid:
+            _status = CompileStatus.NotCompiled
+        self.lastCompileStatus = _status
         
-        self._onOpenLastCompileStatus = self.lastCompileStatus
+        self._onOpenOrSaveLastCompileStatus = self.lastCompileStatus
 
         self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(self.name))
         self.graph.undo_view.setCleanIcon(QtGui.QIcon(CompileStatus.getCompileIconByStatus(self.lastCompileStatus)))
@@ -166,7 +168,12 @@ class TabData:
         if not self.filePath:
             return
         self.infoData['compiledGUID'] = self.lastCompileGUID
+        self.infoData['compileStatus'] = CompileStatus.statusToString(self.lastCompileStatus)
+        
+        self._onOpenOrSaveLastCompileStatus = self.lastCompileStatus
+
         self.graph.save_session(FileManagerHelper.graphPathGetReal(self.filePath),saveMouse=True)
+        
         self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
         self.undo_saved_index = self.getCurrentUndoStackIndex()
         self._syncHistoryEvent()
@@ -273,23 +280,17 @@ class TabData:
             self.isUnsaved = self.getCurrentUndoStackIndex() != self.undo_saved_index
             
             newState = CompileStatus.NotCompiled
-            if cobj:
-                if cobj == self.last_compile_undo_object:
+            
+            if cobj == self.last_compile_undo_object:
+                if cobj == None:
+                    newState = self._onOpenOrSaveLastCompileStatus
+                if self.last_compile_success:
                     newState = CompileStatus.Compiled
                     if self.has_compile_warnings:
                         newState = CompileStatus.Warnings
-                    if self.has_compile_errors or not self.last_compile_success:
-                        newState = CompileStatus.Errors
-            else:
-                if cobj == self.last_compile_undo_object:
-                    newState = CompileStatus.Compiled
-                    if self.has_compile_warnings:
-                        newState = CompileStatus.Warnings
-                    if self.has_compile_errors:
-                        newState = CompileStatus.Errors
-                    self._onOpenLastCompileStatus = newState
-                else:
-                    newState = self._onOpenLastCompileStatus
+                if self.has_compile_errors:
+                    newState = CompileStatus.Errors
+
 
             self.lastCompileStatus = newState
             SessionManager.refObject.syncTabName(self.getIndex())
