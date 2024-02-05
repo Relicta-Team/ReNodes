@@ -84,16 +84,13 @@ class TabData:
         
         self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
 
-        self.lastCompileGUID = self.getLastCompileGUID()
-        cst = CompileStatus.NotCompiled
-        if self.lastCompileGUID:
-            if FileManagerHelper.getCompiledScriptMetainfoByInfoData(self.infoData).get('valid'):
-                cst = CompileStatus.Compiled
-            else:
-                cst = CompileStatus.NotCompiled
-        else:
-            cst = CompileStatus.NotCompiled
-        self.lastCompileStatus = cst
+        _fileCompGuid = self.getLastCompileGUID()
+        _graphCompGuid = self.infoData.get('compiledGUID','')
+        _equalCompGuid = _fileCompGuid == _graphCompGuid
+        self.lastCompileGUID = _graphCompGuid
+        self.lastCompileStatus = CompileStatus.Compiled if _equalCompGuid else CompileStatus.NotCompiled
+        #CompileStatus.stringToStatus(self.infoData.get('compileStatus'))
+        
         self._onOpenLastCompileStatus = self.lastCompileStatus
 
         self.graph.undo_view.setEmptyLabel("<Открытие {}>".format(self.name))
@@ -143,6 +140,9 @@ class TabData:
                 self.graph.clear_undo_stack()
 
                 self.save()
+
+    def getRealPath(self):
+        return FileManagerHelper.graphPathGetReal(self.filePath)
 
     def createCompilerGUID(self):
         guid = SessionManager.CreateCompilerGUID()

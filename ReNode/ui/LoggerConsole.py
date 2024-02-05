@@ -573,7 +573,7 @@ class GetGraphsCompileState(ConsoleCommand):
         from ReNode.app.FileManager import FileManagerHelper
 
         for data in FileManagerHelper.getCompareCompiledGraphsInfo():
-            sline = f'{data["graph_path"]}: {data["guid_actual"]}'
+            sline = f'{data["graph_path"]}: actual={data["guid_actual"]}'
             self.logger.info(sline)
             if "full" in args:
                 self.logger.info(f'src:{data["graph_guid"]}')

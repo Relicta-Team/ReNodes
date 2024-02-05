@@ -41,6 +41,14 @@ class FileManagerHelper:
 	@staticmethod
 	def graphPathToRoot(path):
 		if not FileManagerHelper.graphPathIsRoot(path):
+			rp = os.path.relpath(path,FileManagerHelper.getWorkDir())
+			if rp.startswith("..\\"):
+				rp = rp.lstrip("..\\")
+				if path in rp:
+					path = rp
+			else:
+				if rp in path:
+					path = rp
 			path = "root:"+path
 		return path
 	@staticmethod
@@ -145,10 +153,12 @@ class FileManagerHelper:
 			
 
 	@staticmethod
-	def find_files(root_dir, extension):
+	def find_files(root_dir, extension,relToRootDir=False):
 		"""Поиск всех файлов с указанным расширенем, начиная от папки root_dir. Расширение указывается без точки"""
 		files = []
 		for dirpath, dirnames, filenames in os.walk(root_dir):
+			if relToRootDir:
+					dirpath = os.path.relpath(dirpath,root_dir)
 			for filename in filenames:
 				if filename.endswith(f".{extension}"):
 					files.append(os.path.join(dirpath, filename))
@@ -254,7 +264,7 @@ class FileManagerHelper:
 	@staticmethod
 	def getBuildRequiredGraphs():
 		"""Возвращает список графов, которые необходимо пересобрать"""
-		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual')]
+		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual') or not data.get('exists_graph')]
 
 		
 	# @staticmethod

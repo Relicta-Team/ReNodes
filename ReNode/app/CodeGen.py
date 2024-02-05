@@ -319,7 +319,7 @@ class CodeGenerator:
                 def __updEv(sergraph):
                     sergraph['graph']['info']['compiledGUID'] = guidCompile
                     return True
-                if not FileManagerHelper.updateSessionJson(FileManagerHelper.graphPathToClear(fp__),__updEv):
+                if not FileManagerHelper.updateSessionJson(FileManagerHelper.graphPathGetReal(fp__),__updEv):
                     raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")
                 #save new graph with generated compile guid
                 code = f'//src:{guidCompile}:{fp__}\n' + code

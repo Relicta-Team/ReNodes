@@ -192,7 +192,7 @@ class MainWindow( QMainWindow ):
 	def openCurrentGraphFolder(self):
 		tDat = self.nodeGraph.sessionManager.getActiveTabData()
 		if tDat and tDat.filePath:
-			os.system(f'explorer /select,"{os.path.realpath(tDat.filePath)}"')
+			os.system(f'explorer /select,"{os.path.realpath(tDat.getRealPath())}"')
 		else:
 			logger.warn("Нет активной вкладки или отсутствует путь к графу")
 
