@@ -11,6 +11,8 @@ import re
 
 class NodeFactory:
 	
+	graphVersion = 1 # Глобальная версия графа (пишется в секции ['graph']['info'] ['graphVersion'])
+
 	defaultColor = (13,18,23,255)
 
 	def __init__(self):
@@ -24,7 +26,7 @@ class NodeFactory:
 		self.stateLoadingName = ""
 		self.stateLoadingProgress = 0
 
-		self.version = 0
+		self.version = 0 #версия библиотеки. Можно использовать для актуализации отдельных узлов
 		self.nodes = {}
 		self.classes = {}
 		self.classNames = set() #all classnames in lowercase

@@ -55,11 +55,12 @@ class VirtualLib(QObject):
 		self.on_reload.connect(self.reload_impl)
 		self.factory : NodeFactory = factory
 
-		path = '.'  # Замените на путь к вашей директории
-		self.file_event_handler = VirtualLib.MyHandler()
-		self.observer = Observer()
-		self.observer.schedule(self.file_event_handler, path, recursive=True)
-		self.observer.start()
+		#! Пока глобальный обсервер выключен
+		# path = '.'  # Замените на путь к вашей директории
+		# self.file_event_handler = VirtualLib.MyHandler()
+		# self.observer = Observer()
+		# self.observer.schedule(self.file_event_handler, path, recursive=True)
+		# self.observer.start()
 
 	def generateUserLib(self):
 		self.logger.info("Start searching graphs...")

@@ -169,6 +169,7 @@ class TabData:
             return
         self.infoData['compiledGUID'] = self.lastCompileGUID
         self.infoData['compileStatus'] = CompileStatus.statusToString(self.lastCompileStatus)
+        self.infoData['graphVersion'] = SessionManager.refObject.graphSystem.getFactory().graphVersion
         
         self._onOpenOrSaveLastCompileStatus = self.lastCompileStatus
 

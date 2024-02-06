@@ -230,20 +230,21 @@ class FileManagerHelper:
 		"""
 		from ReNode.app.application import Application
 		logger = Application.refObject.logger
-
+		factory = Application.refObject.mainWindow.nodeFactory
 		allgraphs = FileManagerHelper.getAllGraphPathes()
 		ret = []
 		# грузим граф
 		for graphPath in allgraphs:
 			sess = FileManagerHelper.loadSessionJson(graphPath)
 			idat = sess['graph']['info']
+			graphVersion = idat.get('graphVersion',-1)
 			lastguid = idat.get("compiledGUID")
 			fname = FileManagerHelper.getCompiledScriptFilename(idat)
 			fnameComp = os.path.join(FileManagerHelper.getFolderCompiledScripts(),fname)
 			
 			compMeta = FileManagerHelper.getCompiledScriptMetainfo(fnameComp)
 			if compMeta == None: compMeta = {}
-
+			
 			ret.append({
 				"guid_actual": lastguid == compMeta.get('guid'), 
 				"graph_path": graphPath,
@@ -252,6 +253,9 @@ class FileManagerHelper:
 
 				"compile_date": compMeta.get("date","none"),
 				"exists_graph": compMeta.get("valid",False),
+
+				"gver": graphVersion,
+				"gver_actual": graphVersion == factory.graphVersion,
 			})
 
 		return ret
@@ -273,7 +277,7 @@ class FileManagerHelper:
 	@staticmethod
 	def getBuildRequiredGraphs():
 		"""Возвращает список графов, которые необходимо пересобрать"""
-		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual') or not data.get('exists_graph')]
+		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual') or not data.get('exists_graph') or not data.get("gver_actual")]
 
 		
 	# @staticmethod
