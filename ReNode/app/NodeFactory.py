@@ -74,6 +74,7 @@ class NodeFactory:
 				return obj.__name__
 			return obj
 		self.logger.info(f"version lib {self.version}")
+		self.logger.info(f"graph global version {self.graphVersion}")
 		
 		if useLoading:
 			ld = self.loading
@@ -560,7 +561,7 @@ class NodeFactory:
 		if type=='makeport_in' or type=='makeport_out':
 			node.add_makeport(port_type='in' if type=='makeport_in' else 'out',name=optname,srcName=optvals.get('src',''),text_format=optvals.get('text_format'))
 		if type=='typeselect':
-			node.add_typeselect(name=optname,label=optvals.get('text',''),value=optvals.get('default','object'))
+			node.add_typeselect(name=optname,label=optvals.get('text',''),value=optvals.get('default','object'),typeset_out=optvals.get('typeset_out'))
 
 	def _prepAccessPortTypes(self,node,port,inputvals,type='in'):
 		#todo: change algorithm multitypes check

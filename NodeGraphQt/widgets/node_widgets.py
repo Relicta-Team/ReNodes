@@ -7,6 +7,7 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import P
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
+from NodeGraphQt.widgets.viewer import validate_connections
 from ReNode.ui.SearchMenuWidget import SearchComboButtonAutoload
 
 class _NodeGroupBox(QtWidgets.QGroupBox):
@@ -415,11 +416,14 @@ class NodeComboBox(NodeBaseWidget):
 
 class NodeTypeSelect(NodeBaseWidget):
 
-    def __init__(self,parent=None,name='',label='',value=''):
+    def __init__(self,parent=None,name='',label='',value='',typeset_out=None):
         super(NodeTypeSelect,self).__init__(parent,name,label)
 
         search = SearchComboButtonAutoload()
 
+        #parent.constRefNodeGraph.getFactory().getNodeLibData(parent.nodeClass)
+        self.typeset_out = None
+        self.defineTypesetOut(typeset_out)
         
         retItem = search.getItemByData(value)
         if retItem:
@@ -429,6 +433,14 @@ class NodeTypeSelect(NodeBaseWidget):
         self.set_custom_widget(search)
         search.value_changed.connect(self.on_value_changed)
     
+    def defineTypesetOut(self,tso):
+        """Define port for custom allocate type"""
+        if not tso: return
+        for prt in self.node.outputs:
+            if prt.name == tso:
+                self.typeset_out = prt
+                break
+
     @property
     def type_(self):
         return 'TypeSelectNodeWidget'
@@ -463,6 +475,11 @@ class NodeTypeSelect(NodeBaseWidget):
     def on_value_changed(self, *args, **kwargs):
         custom = self.get_custom_widget()
         custom.setToolTip(custom.text())
+        if self.typeset_out:
+            port = self.typeset_out
+            port.port_typeName = self.get_value() + "^" #object type contains postfix ^
+            port.update()
+            port._syncTooltip()
         return super().on_value_changed(*args, **kwargs)
 
 class NodeLineEdit(NodeBaseWidget):
