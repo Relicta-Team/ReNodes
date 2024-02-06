@@ -96,7 +96,7 @@ class MainWindow( QMainWindow ):
 
 		self.editMenu = menubar.addMenu("&Правка")
 		self.editMenu.addAction(self.generateCodeAct)
-		self.editMenu.addAction(QAction("Пересобрать &весь проект",self,triggered=self.generateAllCode,shortcut="Shift+F5"))
+		self.editMenu.addAction(QAction("Пересобрать &весь проект",self,triggered=lambda: self.generateAllCode(allUpdate=True,loadingScreen=True),shortcut="Shift+F5"))
 		
 		
 		for act in menubar.actions() + self.fileMenu.actions() + self.editMenu.actions() + self.windows.actions():

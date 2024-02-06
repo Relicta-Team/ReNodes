@@ -172,11 +172,12 @@ class NodeGraphComponent:
 
 		if all(results):
 			FileManagerHelper.generateScriptLoader()
+		else:
+			CodeGenerator.refLogger.error("Обнаружены ошибки при сборке")
 		
-		compFinalDt = datetime.datetime.now().strftime("%d.%m.%y %H:%M:%S")
-		CodeGenerator.refLogger.info(f"Успешно собрано {len([x for x in results if x])} из {len(results)}")
-		CodeGenerator.refLogger.info(f"Сборка от {compFinalDt}")
-		CodeGenerator.refLogger.info(f'Выполнено за {int(time.time()*1000.0) - timestamp} мс')
+		compFinalDt = datetime.datetime.now().strftime("%H:%M:%S.%f")
+		CodeGenerator.refLogger.info(f"Скомпилировано {len([x for x in results if x])} из {len(results)}")
+		CodeGenerator.refLogger.info(f'Выполнено в {compFinalDt} за {int(time.time()*1000.0) - timestamp} мс')
 		CodeGenerator.refLogger.info("-" * 30)
 
 		return all(results)

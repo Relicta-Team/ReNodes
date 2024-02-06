@@ -384,9 +384,8 @@ class CodeGenerator:
                 self.warning("Граф не скомпилирован")
             else:
                 self.log("Граф скомпилирован и сохранён")
-            dtcomp = datetime.datetime.now().strftime("%d.%m.%y в %H:%M:%S")
-            self.log(f'Дата/время сборки: {dtcomp}')
-            self.log(f"Процедура завершена за {timeDiff} мс")
+            dtcomp = datetime.datetime.now().strftime("%H:%M:%S.%f")
+            self.log(f"Процедура завершена в {dtcomp} за {timeDiff} мс")
             self.log("================================")
             self.isGenerating = False
             iData = self.graph.infoData
