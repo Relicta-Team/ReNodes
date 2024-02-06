@@ -57,7 +57,7 @@ class CGBaseException:
             entry=self.entry
         )
     
-    def getExceptionText(self,addDesc = False):
+    def getExceptionText(self,addDesc = False,exRef=True):
         class_ = self.__class__
         postText = class_.desc if addDesc else ""
 
@@ -65,7 +65,7 @@ class CGBaseException:
             postText = "<span style='color:#FFF2B0;'>"+self.getExceptionDescription()+"</span>"
             postText = "\n- Подробнее: " + postText
             #postText = '<p title="tootip">some block of text</p>'
-        return f"<b>[{class_.__name__}:{self.exRef}]</b>: " + self.getExceptionTextBase() + postText
+        return f"<b>[{class_.__name__}:{self.exRef if exRef else self.getShortErrorInfo()}]</b>: " + self.getExceptionTextBase() + postText
     
     def getMoreExceptionInfo(self,headerSize=25,contentSize=23):
         ret = []

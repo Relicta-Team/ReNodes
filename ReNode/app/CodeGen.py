@@ -163,6 +163,10 @@ class CodeGenerator:
                 "alias": "-lgex",
                 "desc": "Показывает исключения при генерации."
             },
+            "-exceptinfo": {
+                "alias": "-exinfo",
+                "desc": "Выводит полные исключения при генерации."
+            },
             "-logwarn": {
                 "alias": "-lgwn",
                 "desc": "Показывает предупреждения при генерации."
@@ -440,7 +444,7 @@ class CodeGenerator:
         idat = self.gObjMeta['infoData']
         thisName = idat['name']
         thisClassname = idat['classname']
-
+        increment = -1
         for k,v in copy.copy(self.serialized_graph['nodes']).items():
             
             curName = v['name']
@@ -457,6 +461,9 @@ class CodeGenerator:
             self._originalReferenceNames[newname] = k
             self.serialized_graph['nodes'].pop(k)
             uniIdx += 1
+
+            increment += 1
+            v['increment_uid'] = increment
 
             if self._debug_rename and not self._silentMode:
                 #self.graphsys.graph.get_node_by_id(k).set_name(newname)
@@ -1863,10 +1870,6 @@ class CodeGenerator:
                   entry:NodeData | None=None,
                   context=None):
         
-        if self._silentMode:
-            self._exceptions.append(exType())
-            return
-        
         sourceId = None
         targetId = None
         entryId = None
@@ -1874,6 +1877,39 @@ class CodeGenerator:
         linkSourceId = None
         linkTargetId = None
         linkEntryId = None
+    
+        if self._silentMode:
+            if not self.hasCompileParam("-exceptinfo"):
+                self._exceptions.append(exType())
+            else:
+                if source: 
+                    sourceId = source.nodeId
+                    linkSourceId = LoggerConsole.createNodeGraphReference(self.graph.graph_path,self._getNodeIncrementId(sourceId),sourceId)
+                if target: 
+                    targetId = target.nodeId
+                    linkTargetId = LoggerConsole.createNodeGraphReference(self.graph.graph_path,self._getNodeIncrementId(targetId),targetId)
+                if entry: 
+                    entryId = entry.nodeId
+                    linkEntryId = LoggerConsole.createNodeGraphReference(self.graph.graph_path,self._getNodeIncrementId(entryId),entryId)
+
+                params = {
+                    "src": linkSourceId,
+                    "portname": portname,
+                    "targ": linkTargetId,
+                    "ctx": context,
+                    "entry": linkEntryId
+                }
+                ex : CGBaseException = exType(**params)
+
+                exText = ex.getExceptionText(addDesc=False,exRef=False) + f' ({LoggerConsole.createNodeGraphReference(self.graph.graph_path,text="открыть граф")})'
+                if exText in [regEx.getExceptionText(addDesc=False,exRef=False) for regEx in self._exceptions]:
+                    self.warning(f"<span style='font-size:8px;'>Подавление дубликата исключения ({ex.__class__.__name__})</span>")
+                    return
+                self.error(exText)
+
+                self._exceptions.append(ex)
+            
+            return
 
         if source: 
             sourceId = source.nodeId
@@ -1893,8 +1929,6 @@ class CodeGenerator:
             "entry": linkEntryId
         }
         ex : CGBaseException = exType(**params)
-
-        #exRef = LoggerConsole.createErrorDescriptionLink("err",ex)
 
         exText = ex.getExceptionText(addDesc=True)
         if exText in [regEx.getExceptionText(addDesc=True) for regEx in self._exceptions]:
@@ -1980,6 +2014,13 @@ class CodeGenerator:
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]
         return node_id
+    
+    def _getNodeIncrementId(self,node_id):
+        nodeobj = self.graph.get_node_by_id(node_id)
+        if self._silentMode:
+            return nodeobj['increment_uid'] if nodeobj else -2
+        else:
+            return nodeobj.uid if nodeobj else -2
     
     def getNodeConnectionType(self,node_id,inout,portname):
         origNodeId = node_id

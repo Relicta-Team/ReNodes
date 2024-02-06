@@ -527,12 +527,16 @@ class SessionManager(QTabWidget):
         self._lastOpenPath = os.path.dirname(path)
         path = FileManagerHelper.getGraphPathRelative(path)
         path = FileManagerHelper.graphPathToRoot(path) #add root prefix
+        return self.openFileInternal(path)
+
+    def openFileInternal(self,pathRoot):
         allTabs = self.tabData
-        if path in [tab.filePath for tab in allTabs]:
-            self.setActiveTab([tab.filePath for tab in allTabs].index(path))
-            self.logger.info(f"Граф {path} уже открыт. Переключение активной вкладки")
-            return
-        self.newTab(True,path)
+        if pathRoot in [tab.filePath for tab in allTabs]:
+            tInd = [tab.filePath for tab in allTabs].index(pathRoot)
+            self.setActiveTab(tInd)
+            self.logger.info(f"Граф {pathRoot} уже открыт. Переключение активной вкладки")
+            return allTabs[tInd]
+        return self.newTab(True,pathRoot)
 
     def saveFile(self,tabData:TabData=None):
         tdata = tabData or self.getActiveTabData()

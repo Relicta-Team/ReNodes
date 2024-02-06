@@ -4,6 +4,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QIcon, QPixmap,QColor, QPainter
 import logging
 import re
+from ReNode.app.utils import intTryParse
 from ReNode.app.Logger import RegisterLogger
 from PyQt5.sip import *
 from PyQt5.QtCore import QTimer
@@ -29,6 +30,9 @@ class ClickableTextBrowser(QTextBrowser):
             elif anchor.startswith("errinfo::"):
                 patterns = anchor.replace("errinfo::", "").split(":")
                 self.clicked.emit("errinfo",patterns)
+            elif anchor.startswith("graphref::"):
+                request = anchor.replace("graphref::","")
+                self.clicked.emit("graphref",request.split(":"))
         else:
             super().mousePressEvent(event)
 
@@ -164,6 +168,26 @@ class LoggerConsole(QDockWidget):
                 except Exception as e:
                     self.logger.error(f"Ошибка открытия окна описания {clickType}: {args}")
                     return
+            elif clickType == "graphref":
+                if len(args)!=3:return
+                if args[0]!="root": return
+                filePath = args[0]+":"+args[1]
+                incUid = args[2]
+
+                ssmgr = NodeGraphComponent.refObject.sessionManager
+                # root: path:nodeincrement
+                td = ssmgr.openFileInternal(filePath)
+                if td:
+                    incUid = intTryParse(incUid,-999)
+                    if incUid <= -999: return
+                    for nodeObj in td.graph.all_nodes():
+                        if nodeObj.uid == incUid:
+                            td.graph.clear_selection()
+                            nodeObj.set_selected(True)
+                            td.graph.viewer().center_selection([nodeObj.view])
+                            break
+
+                
 
 
         text_browser = self.log_text
@@ -253,6 +277,15 @@ class LoggerConsole(QDockWidget):
     def createNodeLink(graphRef,nodeid,text=None,color='#17E62C'):
         if not text: text = nodeid
         return f'<a href="gref::{hex(id(graphRef))}:{nodeid}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
+
+    @staticmethod
+    def createNodeGraphReference(graphPath,nodeIncrement='',text=None,color='#17E62C'):
+        if not text: text = f'Узел {nodeIncrement}'
+        if nodeIncrement == '':
+            if not text:
+                text = graphPath
+            nodeIncrement = 'null'
+        return f'<a href="graphref::{graphPath}:{nodeIncrement}" style="text-decoration: underline; white-space: pre-wrap; color: {color};">{text}</a>'
 
     @staticmethod
     def createErrorDescriptionLink(typesearch,errobj,text='Подробнее',color='#17E62C'):
