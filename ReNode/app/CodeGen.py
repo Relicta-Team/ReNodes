@@ -608,16 +608,21 @@ class CodeGenerator:
         idat = self.gObjMeta['infoData']
         thisName = idat['name']
         thisClassname = idat['classname']
+        classData = self.getNodeLibData(self.serialized_graph['nodes'][nodename]['class_'])
         #todo fix types and names for objects.thisObject
 
         inNodeInfo = self.getPortNames_Runtime(nodename,'in')
         for portName in inNodeInfo:
             _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
-            ref['typein'][_realName] = self.getPortInputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
+            _realType = self.getPortInputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
+            ref['typein'][_realName] = _realType
         outNodeInfo = self.getPortNames_Runtime(nodename,'out')
         for portName in outNodeInfo:
             _realName = portName.replace("thisName",thisName).replace("thisClassname",thisClassname)
-            ref['typeout'][_realName] = self.getPortOutputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
+            _realType = self.getPortOutputType(nodename,portName).replace("thisName",thisName).replace("thisClassname",thisClassname)
+            if _realType == "auto_object_type":
+                pass
+            ref['typeout'][_realName] = _realType
 
     def createDpdGraphExt(self):
         graph = {}
