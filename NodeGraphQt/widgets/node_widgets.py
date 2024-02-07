@@ -487,7 +487,7 @@ class NodeTypeSelect(NodeBaseWidget):
             port = self.typeset_out
             typename = self.get_value()
             
-            if self.port_rename and False: #!broken code
+            if self.port_rename:
                 newname = self.port_rename.format(typename)
                 port.setPortName(newname)
             port.setPortTypeName(typename + "^",True)
