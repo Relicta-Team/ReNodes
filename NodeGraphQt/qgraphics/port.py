@@ -259,6 +259,21 @@ class PortItem(QtWidgets.QGraphicsItem):
                 self.color=newcolor
                 self.border_color = [min([255, max([0, i + 80])]) for i in newcolor]
 
+    def setPortName(self,pname,onlyVisual=True):
+        portObj = self.refPort
+        rttNode = portObj.model.node
+        if not rttNode: return
+        if not onlyVisual:
+            portObj.model.name = pname
+            portObj.view.name = pname
+        itmDict = rttNode.view._input_items if self.port_type == 'in' else rttNode.view._output_items
+        itmDict[self].setPlainText(pname)
+        rttNode.view.draw_node()
+    
+    def validate_connection_to(self,pto):
+        from NodeGraphQt.widgets.viewer import validate_connections
+        return validate_connections(self,pto)
+        
 
     def _syncTooltip(self):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent, NodeFactory

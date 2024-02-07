@@ -7,7 +7,6 @@ from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import P
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import *
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_vectors import _PropVector
 from NodeGraphQt.errors import NodeWidgetError
-from NodeGraphQt.widgets.viewer import validate_connections
 from ReNode.ui.SearchMenuWidget import SearchComboButtonAutoload
 
 class _NodeGroupBox(QtWidgets.QGroupBox):
@@ -416,13 +415,16 @@ class NodeComboBox(NodeBaseWidget):
 
 class NodeTypeSelect(NodeBaseWidget):
 
-    def __init__(self,parent=None,name='',label='',value='',typeset_out=None):
+    def __init__(self,parent=None,name='',label='',value='',typeset_out=None,port_rename=None):
         super(NodeTypeSelect,self).__init__(parent,name,label)
 
         search = SearchComboButtonAutoload()
 
         #parent.constRefNodeGraph.getFactory().getNodeLibData(parent.nodeClass)
         self.typeset_out = None
+        self.port_rename = ""
+        if port_rename:
+            self.port_rename = port_rename
         self.defineTypesetOut(typeset_out)
         
         retItem = search.getItemByData(value)
@@ -432,6 +434,8 @@ class NodeTypeSelect(NodeBaseWidget):
             search.setItemData(value)
         self.set_custom_widget(search)
         search.value_changed.connect(self.on_value_changed)
+
+        self.typeset_process()
     
     def defineTypesetOut(self,tso):
         """Define port for custom allocate type"""
@@ -475,12 +479,26 @@ class NodeTypeSelect(NodeBaseWidget):
     def on_value_changed(self, *args, **kwargs):
         custom = self.get_custom_widget()
         custom.setToolTip(custom.text())
+        self.typeset_process()
+        return super().on_value_changed(*args, **kwargs)
+
+    def typeset_process(self):
         if self.typeset_out:
             port = self.typeset_out
-            port.port_typeName = self.get_value() + "^" #object type contains postfix ^
+            typename = self.get_value()
+            
+            if self.port_rename and False: #!broken code
+                newname = self.port_rename.format(typename)
+                port.setPortName(newname)
+            port.setPortTypeName(typename + "^",True)
             port.update()
-            port._syncTooltip()
-        return super().on_value_changed(*args, **kwargs)
+            port.node.update()
+            
+            #validate connections
+            for cp in port.connected_ports:
+                if not port.validate_connection_to(cp):
+                    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
+            
 
 class NodeLineEdit(NodeBaseWidget):
     """

@@ -557,10 +557,26 @@ class CodeGenerator:
             return self.getNodeLibData(ndata['class_']) ['inputs'][port].get("type")
     def getPortOutputType(self,node,port): 
         ndata = self.serialized_graph['nodes'][node]
+        prez = 'null_type_get_port_out'
         if ndata.get("port_deletion_allowed"):
-            return next((pinfo['type'] for pinfo in ndata['output_ports'] if pinfo['name'] == port),None)
+            prez = next((pinfo['type'] for pinfo in ndata['output_ports'] if pinfo['name'] == port),None)
         else:
-            return self.getNodeLibData(ndata['class_']) ['outputs'][port].get("type")
+            nld__ = self.getNodeLibData(ndata['class_']) 
+            prez =  nld__['outputs'][port].get("type")
+            
+            if prez == "auto_object_type":
+                for k,v in nld__.get('outputs',{}).items():
+                    if v['type'] == 'auto_object_type' and k == port:
+                        for o_name,o_vals in nld__.get("options").items():
+                            if o_vals.get("type") == "typeselect" and o_vals.get('typeset_out') == k:
+                                newptype = ndata.get('custom',{}).get(o_name,"")
+                                if newptype:
+                                    if not newptype.endswith("^"):
+                                        newptype += "^"
+                                    prez = newptype
+                                    break
+
+        return prez
 
     def getPortNames_Runtime(self,node,tps):
         ndata = self.serialized_graph['nodes'][node]
@@ -719,6 +735,18 @@ class CodeGenerator:
             self.nodeClass = node_data['class_']
             
             self.classLibData = deepcopy(self.refCodegen.getNodeLibData(self.nodeClass)) #копирвание потому что исходная дата может измениться при runtime_ports и т.д.
+
+            for k,v in self.classLibData.get('outputs',{}).items():
+                if v['type'] == 'auto_object_type':
+                    for o_name,o_vals in self.classLibData.get("options").items():
+                        if o_vals.get("type") == "typeselect" and o_vals.get('typeset_out') == k:
+                            newptype = node_data.get('custom',{}).get(o_name,"")
+                            if newptype:
+                                if not newptype.endswith("^"):
+                                    newptype += "^"
+                                v['type'] = newptype
+                                break
+
 
             self.code = self.classLibData['code']
 

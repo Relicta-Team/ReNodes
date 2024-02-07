@@ -179,7 +179,7 @@ class NodeModel(object):
         elif name in self._custom_prop.keys():
             self._custom_prop[name] = value
         else:
-            raise NodePropertyError('No property "{}"'.format(name))
+            raise NodePropertyError('No property "{}" for node {} ({})'.format(name,self.name,self.id))
 
     def get_property(self, name):
         """
