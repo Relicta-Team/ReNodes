@@ -508,7 +508,7 @@ class GamemodeGraph(ClassGraphType):
             "postSetup",
             "onTick",
             "_checkFinishWrapper",
-            "onFinish"
+            "_onFinishWrapper"
         ]
     
     scriptWizard_pageText = "Создание режима"
