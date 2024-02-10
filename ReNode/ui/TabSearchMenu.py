@@ -398,7 +398,8 @@ class TabSearchMenu(QWidget):
                 if arr_from and arr_from[0].view.port_typeName == "Exec" and \
                     arr and arr[0].view.port_typeName == "Exec" and \
                         arr[0] != toPort:
-                    arr_from[0].connect_to(arr[0])
+                    if arr_from[0].refPort.model.node != arr[0].refPort.model.node:
+                        arr_from[0].connect_to(arr[0])
 
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):
