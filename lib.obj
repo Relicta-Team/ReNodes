@@ -245,7 +245,7 @@ def:node:control
 		desc:Преобразует входной тип к другому указанному типу.
 		icon:data\\icons\\icon_Blueprint_Cast_16x
 		color:Operator
-		code:if !((tolower "@gettype.out.3.clear_type()") in ((@in.2) getvariable "proto" getvariable ("__inhlist_map"))) exitWith {@out.2}; private @genvar.out.3 = @in.2; @out.1
+		code:if !((tolower ("@gettype.out.3.clear_type()")) in ((@in.2) getvariable "proto" getvariable ("__inhlist_map"))) exitWith {@out.2}; private @genvar.out.3 = @in.2; @out.1
 		exec:in
 		in:object:Входной объект:Объект, который будет преобразован.
 			opt:typeget=value;@type
@@ -255,7 +255,7 @@ def:node:control
 			opt:mul=0
 		out:auto_object_type:Объект:Объект, преобразованный к новому типу.
 			opt:typeget=value;@type
-      option:"Преобразование"\: {"text"\:"Преобразование","type"\:"typeselect","default"\:"object","typeset_out"\:"Объект","port_rename"\:"Объект как {}"}
+		option:"Преобразование"\: {"text"\:"Преобразование","type"\:"typeselect","default"\:"object","typeset_out"\:"Объект","port_rename"\:"Объект как {}"}
 	
 
 def:node:control
@@ -1302,17 +1302,17 @@ def:node:math
 def:node:math
 
         node:add
-        name:Сложение
-        namelib:+ (Сложение)
+        name:+
+        namelib:Сложение (+)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сложение двух чисел
         code:(@in.1)+(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:auto:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1320,17 +1320,17 @@ def:node:math
 def:node:math
 
         node:sub
-        name:Вычитание
-        namelib:- (Вычитание)
+        name:-
+        namelib:Вычитание (-)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Вычитание двух чисел
         code:(@in.1)-(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:auto:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1338,17 +1338,17 @@ def:node:math
 def:node:math
 
         node:mul
-        name:Умножение
-        namelib:* (Умножение)
+        name:*
+        namelib:Умножение (*)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Умножение двух чисел
         code:(@in.1)*(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:float:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1356,17 +1356,17 @@ def:node:math
 def:node:math
 
         node:div
-        name:Деление
-        namelib:/ (Деление)
+        name:/
+        namelib:Деление (/)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Деление двух чисел
         code:(@in.1)/(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:float:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1374,17 +1374,17 @@ def:node:math
 def:node:math
 
         node:mod
-        name:Остаток от деления
-        namelib:% (Остаток от деления)
+        name:MOD
+        namelib:Остаток от деления (MOD)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
-        desc:Остаток от деления двух чисел
+        desc:Остаток от деления двух чисел. 5 % 2 равно 1 (2 * 2 + 1)
         code:(@in.1)%(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:int:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1392,8 +1392,8 @@ def:node:math
 def:node:math
 
         node:pow
-        name:Степень
-        namelib:^ (Степень)
+        name:POW
+        namelib:Степень (POW)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
@@ -1410,7 +1410,7 @@ def:node:math
 def:node:math
 
     node:absnum
-    name:Абсолютное значение
+    name:ABS
     desc:Абсолютное значение числа. -3 будет 3, -3.5 будет 3.5, 3 будет 3
     exec:pure
     rendertype:NoHeaderText
@@ -1424,17 +1424,17 @@ def:node:math
 def:node:math
 
         node:lessthannum
-        name:Меньше
-        namelib:< (Меньше)
+        name:&lt;
+        namelib:Меньше (<)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)<(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1442,17 +1442,17 @@ def:node:math
 def:node:math
 
         node:greaterthannum
-        name:Больше
-        namelib:> (Больше)
+        name:&gt;
+        namelib:Больше (>)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)>(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1460,17 +1460,17 @@ def:node:math
 def:node:math
 
         node:lessthanorequalnum
-        name:Меньше или равно
-        namelib:<= (Меньше или равно)
+        name:&lt;=
+        namelib:Меньше или равно (<=)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)<=(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1478,17 +1478,17 @@ def:node:math
 def:node:math
 
         node:greaterthanorequalnum
-        name:Больше или равно
-        namelib:>= (Больше или равно)
+        name:&gt;=
+        namelib:Больше или равно (>=)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)>=(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1496,17 +1496,17 @@ def:node:math
 def:node:math
 
         node:equalnum
-        name:Равно
-        namelib:== (Равно)
+        name:==
+        namelib:Равно (==)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)==(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1514,17 +1514,17 @@ def:node:math
 def:node:math
 
         node:notequalnum
-        name:Не равно
-        namelib:!= (Не равно)
+        name:!=
+        namelib:Не равно (!=)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Сравнение двух чисел
         code:(@in.1)!=(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float|*enum
+            opt:typeget=value;@type:allowtypes=int|float|*enum:custom=1:custom_type=float:require=-1
         out:bool:Результат
             opt:typeget=value;@type:allowtypes=int|float|*enum
     
@@ -1532,17 +1532,17 @@ def:node:math
 def:node:math
 
         node:min
-        name:Минимум
-        namelib:Min (Минимум)
+        name:MIN
+        namelib:Меньшее из двух (MIN)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Выбирает меньшее из двух чисел
         code:(@in.1)Min(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:auto:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1550,17 +1550,17 @@ def:node:math
 def:node:math
 
         node:max
-        name:Максимум
-        namelib:Max (Максимум)
+        name:MAX
+        namelib:Большее из двух (MAX)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Выбирает большее из двух чисел
         code:(@in.1)Max(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:auto:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1568,17 +1568,17 @@ def:node:math
 def:node:math
 
         node:random
-        name:Случайное число
-        namelib:Rand (Случайное число)
+        name:Rand
+        namelib:Случайное число (Rand)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Случайное число в диапазоне
         code:[@in.1,@in.2]call randomFloat
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:float:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1586,17 +1586,17 @@ def:node:math
 def:node:math
 
         node:randomInt
-        name:Случайное целое число
-        namelib:RandInt (Случайное целое число)
+        name:RandInt
+        namelib:Случайное целое число (RandInt)
         path:Математика
         rendertype:NoHeaderText
         exec:pure
         desc:Случайное целое число в диапазоне
         code:[@in.1,@in.2]call randomInt
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:int:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -1834,9 +1834,9 @@ def:node:math
         desc:a = atan (L1/L2) -> a = L1 atan2 L2. Подробнее [community.bistudio.com/wiki/atan2 по ссылке]
         code:(@in.1)atan2(@in.2)
         in:auto:Число 1
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         in:auto:Число 2
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:custom=1:custom_type=float:require=-1
         out:float:Результат
             opt:typeget=value;@type:allowtypes=int|float
     
@@ -2013,6 +2013,78 @@ exec:pure
 in:object^:Объект
 in:classname:Имя класса
 out:bool:Результат
+
+def:node:system
+node:tickTime
+name:Время работы Платформы
+path:Система.Время
+code:diag_tickTime
+desc:Получает время в секундах, прошедшее с момента запуска платформы
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
+
+def:node:system
+node:netTickTime
+name:Время симуляции
+path:Система.Время
+code:CBA_missionTime
+desc:Получает время в секундах, прошедшее с момента начала симуляции
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
+
+def:node:system
+node:deltaTime
+name:Время карда
+path:Система.Время
+code:diag_deltaTime
+desc:Возвращает длительность предыдущего кадра в секундах
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
+
+def:node:system
+node:frameNumber
+name:Номер кадра
+path:Система.Время
+code:diag_frameNo
+desc:Возвращает номер кадра, отображаемого в данный момент.
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
+
+def:node:system
+node:fps
+name:Средний FPS
+path:Система.Время
+code:diag_fps
+desc:Возвращает среднюю частоту кадров, рассчитанную за последние 16 кадров..
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
+
+def:node:system
+node:fpsMin
+name:Минимальный FPS
+path:Система.Время
+code:diag_fpsMin
+desc:Возвращает минимальную частоту кадров. Рассчитывается по самому длинному кадру за последние 16 кадров..
+icon:data\\icons\\icon_BluePrintEditor_Function_16px
+color:PureFunction
+exec:pure
+out:float:Значение
+    opt:dname=0:mul=1
 
 def:enum:enums
 node:SpawnPointType
@@ -2199,6 +2271,23 @@ eval:Средний свет:2
 eval:Большой свет:3
 eval:Полный свет:4
 
+def:enum:enums
+node:SideIndex
+path:Перечисления
+name:Сторона
+	desc:Данное перечисление содержит 2 значения\: левая сторона и правая. Перечисление может быть использовано например для определения частей тела с разных сторон.\nДля преобразования стороны в индекс используйте формулу\: ABS CEIL (side * 0.1)
+	
+eval:Левая сторона:-1
+eval:Правая сторона:1
+
+def:enum:enums
+node:HandType
+path:Перечисления
+name:Тип руки
+	desc:Перечисление типа руки.
+eval:Левая рука:6
+eval:Правая рука:8
+
 def:node:enumhelper
 node:enumGetNames
 name:Имена перечислений
@@ -2349,7 +2438,7 @@ def:func:native_functions
 	in:vector3:Позиция:Точка в которой будет производиться поиск
 	in:float:Радиус:Радиус поиска в метрах от позиции поиска
 		opt:def=3
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в указанной позиции.
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в указанной позиции.
 		opt:def=false
 	out:array[GameObject]:Массив:Массив найденных игровых объектов указанного типа
 
@@ -2362,7 +2451,7 @@ def:func:native_functions
 	desc:Возвращает все объекты в мире указанного типа. Данная операция требует много ресурсов и может занять время при большом количестве объектов в мире.
 	in:classname:Тип объекта:Тип искомых объектов
 		opt:def=GameObject
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[GameObject]:Массив:Массив всех игровых объектов указанного типа
 
@@ -2375,7 +2464,7 @@ def:func:native_functions
 	desc:Возвращает массив всех предметов определенного типа, найденные в мире, инвентарях персонажей и контейнерах. Данная операция требует много ресурсов и может занять время при большом количестве объектов в мире.
 	in:classname:Тип предмета:Тип искомых предметов
 		opt:def=Item
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[Item]:Массив:Массив всех найденных предметов указанного типа в мире, инвентарях и контейнерах.
 
@@ -2389,7 +2478,7 @@ def:func:native_functions
 	in:Mob:Сущность:Моб, у которого будет выполнен поиск и получение предметов
 	in:classname:Тип предмета:Тип искомых предметов
 		opt:def=Item
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[Item]:Массив:Массив всех итемов в инвентаре сущности указанного типа.
 
@@ -2405,7 +2494,7 @@ def:func:native_functions
 	in:vector3:Позиция:Точка поиска предметов.
 	in:float:Радиус:Радиус поиска
 		opt:def=3
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[Item]:Массив:Массив всех найденных предметов в мире, инвентарях и контейнерах в указанной точке и радиусе от этой точки.
 
@@ -2421,7 +2510,7 @@ def:func:native_functions
 	in:vector3:Позиция:Точка поиска мобов.
 	in:float:Радиус:Радиус поиска
 		opt:def=3
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[BasicMob]:Массив:Массив всех искомых мобов в мире в указанной точке и радиусе от этой точки.
 
@@ -2434,7 +2523,7 @@ def:func:native_functions
 	desc:Возвращает список всех мобов в мире.
 	in:classname:Тип моба:Тип искомых мобов
 		opt:def=BasicMob
-	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться родительские типы, найденные в мире. 
+	in:bool:Глубокий поиск:При включении этого параметра будет производиться глубокий поиск при котором искомыми объектами будут являться дочерние типы, найденные в мире. 
 		opt:def=false
 	out:array[BasicMob]:Массив:Массив всех искомых мобов в мире.
 
@@ -3083,6 +3172,72 @@ def:m:BasicMob.playSoundLocal_0
 		in:auto:Источник:Источник звука. Если не указан, то звук воспроизведется из позиции вызывающего моба.
 			opt:require=0:typeget=value;@type:allowtypes=GameObject
 	
+def:c:MobWoman
+
+		name:Игровой женский персонаж
+		desc:Игровая сущность, которым могут управлять клиенты.
+		path:Игровые объекты.Сущности
+	
+def:c:Mob
+
+		name:Игровой персонаж
+		desc:Игровая сущность, которым могут управлять клиенты.
+		path:Игровые объекты.Сущности
+	
+def:f:Mob.hunger_0
+
+	name:Голод
+	desc:Текущее значение голода персонажа. Начальное значение 100. Минимум - 0, максимум - 100+
+	prop:get
+	return:float
+	defval:100
+
+def:m:Mob.adjustHunger_0
+
+		name:Изменить голод
+		desc:Добавляет и отнимает указанное количество единиц голода из текущих. Положительное число для насыщения, а отрицательное для голодания.
+		type:method
+		lockoverride:1
+		in:float:Голод:Положительное число насыщает, отрицательное - добавляет голод
+	
+def:m:Mob.setHunger_0
+
+		name:Установить голод
+		desc:Перезаписывает и устанавливает новое значение голода.
+		type:method
+		lockoverride:1
+		in:float:Голод:Новое значение голода
+	
+def:f:Mob.activeHand_0
+
+		name:Активная рука
+		desc:Текущая активная рука, которой персонаж будет производить действия
+		prop:get
+		return:enum.HandType
+	
+def:f:Mob.mainHand_0
+
+		name:Основная рука
+		desc:Текущая основная рука персонажа (левша или правша).
+		prop:get
+		return:enum.HandType
+	
+def:m:Mob.isConnected_0
+
+		name:Привязан к объекту
+		desc:Возвращает ИСТИНУ, если сущность присоединена к объекту (сидит на стуле, лежит на кровати)
+		type:get
+		lockoverride:1
+		return:bool
+	
+def:m:Mob.isHandcuffed_0
+
+		name:Связан
+		desc:Возвращает ИСТИНУ, если руки сущности скованы веревкой, наручниками или подобным предметом.
+		type:get
+		lockoverride:1
+		return:bool
+	
 def:c:IRangedWeapon
 
 		name:Дистанционное оружие
@@ -3096,8 +3251,9 @@ def:m:IRangedWeapon.createAmmoInMagazine_0
 		type:method
 		lockoverride:1
 		in:classname:Тип патронов:Тип боеприпасов, создаваемых в оружии
+			opt:require=0:def=IAmmoBase
 		in:int:Количество:Сколько боеприпасов будет создано в магазине.
-			opt:require=0
+			opt:require=0:def=1
 	
 def:c:Stack
 
@@ -3148,7 +3304,7 @@ def:f:Key.keyOwner_0
 def:m:Key._setKeyOwnerWrapper_0
 
 		name:Задать типы ключа
-		desc:Устанавливает ключу типы, которые подходят к совместимым дверям (с учетом регистра). Типы указываются с разделителями, которые могут быть комбинированы: ';' '|' ',' ' '\nПример: 'замок_1;замок_2' или 'lockhouse lockbar lockbar2' или 'Парадный_вход,Задний_вход|Дверь_второй_этаж'
+		desc:Устанавливает ключу типы, которые подходят к совместимым дверям (с учетом регистра). Типы указываются с разделителями, которые могут быть комбинированы\: ';' '|' ',' ' '\nПример\: 'замок_1;замок_2' или 'lockhouse lockbar lockbar2' или 'Парадный_вход,Задний_вход|Дверь_второй_этаж'
 		type:method
 		lockoverride:1
 		in:string:Типы:Типы ключа с указанными разделителями.
@@ -3253,8 +3409,25 @@ def:m:ScriptedGamemode._checkFinishWrapper_0
 
 		name:Проверка конца раунда
 		namelib:Обработка конца раунда
-		desc:Данное событие срабатывает раз в секунду после начала раунда. Чтобы завершить раунд с нужным исходом, используйте узел 'Получить результат конца раунда'.\nДля установки нужного конца раунда используйте узел 'Установить результат конца раунда'.
+		desc:Данное событие срабатывает раз в секунду после начала раунда.\nДля установки нужного конца раунда используйте узел 'Завершить раунд'.
 		type:event
+	
+def:m:ScriptedGamemode.setEndgameScriptedMode_0
+
+		name:Завершить раунд
+		namelib:Установить результат конца раунда (завершить раунд)
+		desc:Устанавливает результат раунда и описание результата.
+		in:int:Исход:Число, отражающее один из концов раунда.
+		in:string:Описание:Текстовое описание, которое будет выведено при завершении раунда.
+	
+def:f:ScriptedGamemode.__stdCheckDuration_0
+
+		name:Автопроверка длительности режима
+		desc:При включении этой опции режим будет автоматически сверять текущее время игры с длительностью режима. Когда время игры превысит длительность режима - раунд будет завершен автоматически.Результат конца раунда при автоматическом завершении по таймеру будет -999.\nПри отключении данной опции вы должны реализовать проверку по длительности самостоятельно, иначе раунд никогда не завершится.
+		classprop:1
+		prop:get
+		return:bool
+		defval:false
 	
 def:m:ScriptedGamemode.onFinish_0
 
@@ -3333,6 +3506,22 @@ def:m:ScriptedGamemode._getRolesWrapper_0
 		type:const
 		return:array[classname]:Список ролей, доступных в режиме.
 		defval:[]
+	
+def:m:ScriptedGamemode._getDurationWrapper_0
+
+		name:Время игры
+		namelib:Текущее время игры
+		desc:Возвращает время, прошедшее с начала раунда в секундах. Если раунд ещё не начался возвращает 0
+		type:get
+		lockoverride:1
+		return:int:Текущая длительность игры
+	
+def:f:ScriptedGamemode.countDead_0
+
+		name:Умершие мобы
+		desc:Получает количество умерших сущностей с начала раунда
+		prop:get
+		return:int:Количество умерших мобов
 	
 def:c:ReNode_AbstractEnum
 
@@ -3934,7 +4123,7 @@ $REGION:CLASSMETA
 }
 ,"ReNode_AbstractEnum": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":313},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":364},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -5608,7 +5797,7 @@ $REGION:CLASSMETA
 }
 ,"TestPistol": {
     "baseClass" : "PistolPBM",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":803},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":805},
    "fields": { "defined": {
 "shootCount":{"return": "int"}}   },
    "methods": { "defined": {
@@ -5617,7 +5806,7 @@ $REGION:CLASSMETA
 }
 ,"TestRifle": {
     "baseClass" : "RifleAuto",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":817},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":819},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -5626,7 +5815,7 @@ $REGION:CLASSMETA
 }
 ,"TestShotgun": {
     "baseClass" : "Shotgun",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":829},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":831},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -5842,7 +6031,7 @@ $REGION:CLASSMETA
 }
 ,"TestFullmag": {
     "baseClass" : "IMagazineBase",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":798},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":800},
    "fields": { "defined": {
 "maxCount":{"return": "int"}}   },
    "methods": { "defined": {
@@ -6112,7 +6301,7 @@ $REGION:CLASSMETA
 }
 ,"IAmmoBase": {
     "baseClass" : "Stack",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":705},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":707},
    "fields": { "defined": {
 "name":{"return": "string"},"stackName":{"return": "string"},"stackCount":{"return": "int"},"stackMaxAmount":{"return": "int"},"size":{"return": "int"},"weight":{"return": "float"},"model":{"return": "string"},"isFlyingFromWeapon":{"return": "bool"},"additionalAccuracy":{"return": "int"},"additionalDamage":{"return": "int"},"shotedFrom":{"return": "object"},"shooter":{"return": "object"}}   },
    "methods": { "defined": {
@@ -6121,7 +6310,7 @@ $REGION:CLASSMETA
 }
 ,"BulletCase": {
     "baseClass" : "Stack",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":760},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":762},
    "fields": { "defined": {
 "name":{"return": "string"},"stackName":{"return": "string"},"model":{"return": "string"},"stackCount":{"return": "int"},"stackMaxAmount":{"return": "int"},"size":{"return": "int"},"weight":{"return": "float"},"shootedTime":{"return": "int"}}   },
    "methods": { "defined": {
@@ -7777,7 +7966,7 @@ $REGION:CLASSMETA
 }
 ,"IMagazineBase": {
     "baseClass" : "Item",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":491},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\RangedWeapons\\RangedWeapon.sqf","line":492},
    "fields": { "defined": {
 "name":{"return": "string"},"model":{"return": "string"},"maxCount":{"return": "int"},"weight":{"return": "int"},"size":{"return": "int"},"content":{"return": "null_array"}}   },
    "methods": { "defined": {
@@ -13051,7 +13240,7 @@ $REGION:CLASSMETA
 }
 ,"Mob": {
     "baseClass" : "BasicMob",
-    "defined" : {"file":"src\\host\\GameObjects\\Mobs\\Mob.sqf","line":67},
+    "defined" : {"file":"src\\host\\GameObjects\\Mobs\\Mob.sqf","line":73},
    "fields": { "defined": {
 "isCombatModeEnable":{"return": "bool"},"curAttackType":{"return": "string"},"curDefType":{"return": "string"},"curEncumbranceLevel":{"return": "int"},"encumbrance":{"return": "int"},"curTargZone":{"return": "int"},"curCombatStyle":{"return": "string"},"isReadyAttack":{"return": "bool"},"otherAttackType":{"return": "string"},"otherTargZone":{"return": "int"},"otherCombatStyle":{"return": "string"},"otherSpecialAction":{"return": "int"},"otherLastCombatActionTime":{"return": "int"},"penaltySupressFire":{"return": "int"},"__lasttime_message_unreadyweap__":{"return": "int"},"__eventClick":{"return": "null_array"},"lastInteractToBodyPart":{"return": "object"},"grabber":{"return": "object"},"specHandAct":{"return": "null"},"grabResistTimeout":{"return": "int"},"voiceTypeTembre":{"return": "string"},"isStealthEnabled":{"return": "bool"},"stealthLastCheck":{"return": "int"},"slots":{"return": "null_array"},"defaultUniform":{"return": "string"},"damageInfo":{"return": "null"},"isDead":{"return": "bool"},"hunger":{"return": "int"},"thirst":{"return": "int"},"oxygen":{"return": "int"},"toxin":{"return": "int"},"urine":{"return": "int"},"feces":{"return": "int"},"lastFartTime":{"return": "int"},"reagents":{"return": "null"},"vessel":{"return": "object"},"bloodLossValue":{"return": "int"},"bloodPoolLastCheck":{"return": "int"},"bodyParts":{"return": "null_hashmap"},"bodyArtery":{"return": "null_hashmap"},"painAmount":{"return": "int"},"painNextMoan":{"return": "int"},"internalPain":{"return": "int"},"stunned":{"return": "int"},"unconscious":{"return": "int"},"sleepiness":{"return": "int"},"sleepTimeStart":{"return": "int"},"sleepStrength":{"return": "int"},"sleepIsChangeState":{"return": "bool"},"isCloseEyes":{"return": "bool"},"lastDamageTime":{"return": "int"},"internalTimer":{"return": "int"},"timeBonus":{"return": "null_array"},"_shockHandle":{"return": "int"},"__isFirstUnsleep":{"return": "bool"},"_lastcheckunsleep":{"return": "int"},"internalReagentTimer":{"return": "int"},"__smellLastCheck":{"return": "int"},"isHoldedBreath":{"return": "bool"},"__tab_nextcheck":{"return": "int"},"__hungernextmes":{"return": "float"},"__thirstnextmes":{"return": "float"},"vomitAmount":{"return": "int"},"isOnGround":{"return": "bool"},"fallingStartPos":{"return": "null_array"},"__isfallsound":{"return": "bool"},"inAgony":{"return": "bool"},"agonyLastTime":{"return": "int"},"painSupress":{"return": "int"},"__brokenlegtimeout":{"return": "int"},"ST":{"return": "null_array"},"IQ":{"return": "null_array"},"DX":{"return": "null_array"},"HT":{"return": "null_array"},"fp":{"return": "null_array"},"will":{"return": "null_array"},"per":{"return": "null_array"},"hp":{"return": "null_array"},"bl":{"return": "null_array"},"bs":{"return": "null_array"},"move":{"return": "null_array"},"animCoef":{"return": "int"},"rta":{"return": "int"},"lastActionTime":{"return": "int"},"lastCombatActionTime":{"return": "int"},"height":{"return": "int"},"weight":{"return": "int"},"stamina":{"return": "int"},"staminaMax":{"return": "int"},"perks":{"return": "null_hashmap"},"fight":{"return": "int"},"shield":{"return": "int"},"fencing":{"return": "int"},"axe":{"return": "int"},"baton":{"return": "int"},"spear":{"return": "int"},"sword":{"return": "int"},"knife":{"return": "int"},"whip":{"return": "int"},"pistol":{"return": "int"},"rifle":{"return": "int"},"shotgun":{"return": "int"},"crossbow":{"return": "int"},"throw":{"return": "int"},"chemistry":{"return": "int"},"alchemy":{"return": "int"},"engineering":{"return": "int"},"traps":{"return": "int"},"repair":{"return": "int"},"blacksmithing":{"return": "int"},"craft":{"return": "int"},"theft":{"return": "int"},"stealth":{"return": "int"},"agility":{"return": "int"},"lockpicking":{"return": "int"},"healing":{"return": "int"},"surgery":{"return": "int"},"cavelore":{"return": "int"},"cooking":{"return": "int"},"farming":{"return": "int"},"__learnStatus":{"return": "null_hashmap"},"__allStatusEffects":{"return": "null_array"},"__gameinfo":{"return": "null_array"},"lastEmoteActionString":{"return": "string"},"__listactions":{"return": "null_array"},"face":{"return": "string"},"faceAnim":{"return": "string"},"specialAction":{"return": "int"},"activeHand":{"return": "int"},"mainHand":{"return": "int"},"connectedTo":{"return": "object"},"handcuffObject":{"return": "object"},"handleFallingUpdate":{"return": "int"},"openedContainer":{"return": "object"},"knownMobsList":{"return": "null_array"},"lastHandshakeTarget":{"return": "object"},"lastHandshakeTime":{"return": "int"},"_internalEquipmentND":{"return": "null"}}   },
    "methods": { "defined": {
@@ -13269,9 +13458,9 @@ $REGION:CLASSMETA
     "baseClass" : "GMBase",
     "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":9},
    "fields": { "defined": {
-"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"_currentFinishResult":{"return": "null_array"},"finishResult":{"return": "int"},"__rtf_buf":{"return": "string"},"__startRoundStructure":{"return": "null_array"}}   },
+"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"_currentFinishResult":{"return": "null_array"},"finishResult":{"return": "int"},"__stdCheckDuration":{"return": "bool"},"__rtf_buf":{"return": "string"},"countDead":{"return": "int"},"__startRoundStructure":{"return": "null_array"}}   },
    "methods": { "defined": {
-"_getAntagRoleFullWrapper":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"_checkFinishWrapper":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"_conditionToStartWrapper":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"_getRolesWrapper":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"}
+"_getAntagRoleFullWrapper":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"_checkFinishWrapper":{"return": "<undefined>"},"setEndgameScriptedMode":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"_conditionToStartWrapper":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"_getRolesWrapper":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"_getDurationWrapper":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"}
 }   }
 }
 ,"GMTemplate": {
@@ -14896,7 +15085,7 @@ $REGION:CLASSMETA
 }
 ,"ScriptedRole": {
     "baseClass" : "BasicRole",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":323},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":374},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "string"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"_deadTimeout":{"return": "int"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
    "methods": { "defined": {

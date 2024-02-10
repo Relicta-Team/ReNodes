@@ -117,6 +117,7 @@ class NodeGraphComponent:
 		import time
 		import datetime
 		from ReNode.app.FileManager import FileManagerHelper
+		from ReNode.ui.LoggerConsole import LoggerConsole
 		graphList = []
 		if onlyNotActual:
 			graphList = FileManagerHelper.getBuildRequiredGraphs()
@@ -161,6 +162,10 @@ class NodeGraphComponent:
 						self._compileGraphList_increment * 100 / self._compileGraphList_oneItemLoad
 					)
 
+			if not rez:
+				if not FileManagerHelper.graphPathIsRoot(path):
+					path = FileManagerHelper.graphPathToRoot(path)
+				CodeGenerator.refLogger.error(f'Граф \"{LoggerConsole.createNodeGraphReference(path)}\" не собран.')
 
 			return rez
 		with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -309,7 +314,10 @@ class NodeGraphComponent:
 			if custom_node and dest_port.view.port_typeName == "" and len(custom_node.get_property("autoportdata")) == 0:
 				custom_node.onAutoPortConnected(source_port)
 			pass
-
+		if out_node.has_property(port_out.name()):
+			odat = out_node.getFactoryData()['options'][port_out.name()]
+			if "typeset_out" in odat:
+				out_node.set_property(port_out.name(),"object")
 		
 		pass
 

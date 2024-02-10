@@ -415,8 +415,10 @@ class NodeObjectHandler:
 						typePort = self.lastPortRef['allowtypes'][0]
 					dval = self.varLib.parseGameValue(serVal,typePort,self.classMetadata)
 					self.lastPortRef['default_value'] = dval
-				elif tInside.startswith("_typeset_out"):
+				elif tInside.startswith("typeset_out"):
 					self.lastPortRef['typeset_out'] = tInside.split("=")[1]
+				elif tInside.startswith("port_rename"):
+					self.lastPortRef["port_rename"] = tInside.split("=")[1]
 				else:
 					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
@@ -1030,6 +1032,10 @@ class NodeObjectHandler:
 						tSetPort = v['typeset_out']
 						del v['typeset_out']
 						opt['typeset_out'] = tSetPort
+					if "port_rename" in v:
+						tSetPort = v['port_rename']
+						del v['port_rename']
+						opt['port_rename'] = tSetPort
 
 		if 'code' not in memberData and self.isMethod:
 			self['code'] = self.generateMethodCodeCall()
