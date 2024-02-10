@@ -473,7 +473,7 @@ class SessionManager(QTabWidget):
             # здесь загрузчик не нужно очищать
             os.makedirs(os.path.dirname(loader), exist_ok=True)
             self.graphSystem.graph.save_session(loader,defaultGraph)
-            #!!!self.graphSystem.getFactory().vlib.file_event_handler.reloadLibFull()
+            self.graphSystem.getFactory().vlib.reload_impl()
             
             cgUnit = SessionManager.refObject.graphSystem.codegen.__class__()
             crez = cgUnit.generateProcess(graph=loader,addComments=True,silentMode=True,compileParams={
