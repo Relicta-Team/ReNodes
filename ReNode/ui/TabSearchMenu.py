@@ -376,30 +376,33 @@ class TabSearchMenu(QWidget):
         #print(f"TODO context drag logic {port}")
 
     def onContextNodeCreated(self,node,ctx):
-        if node and ctx:
-            portFrom = ctx.get("port_ref")
-            portTypename = ctx.get("port_type")
-            sourceNode = ctx.get("src_node")
+        try:
+            if node and ctx:
+                portFrom = ctx.get("port_ref")
+                portTypename = ctx.get("port_type")
+                sourceNode = ctx.get("src_node")
 
-            srcNodeGetType = ctx.get("port_connType",'in')
-            nodeGetType = "out" if srcNodeGetType == "in" else "in"
-            arr_from = sourceNode.input_ports() if srcNodeGetType == "in" else node.output_ports()
-            arr = node.input_ports() if nodeGetType == "in" else node.output_ports()
-            toPort = None
-            for portIt in arr:
-                if portIt.view.port_typeName == portTypename:
-                    toPort = portIt
-                    break
-            
-            if toPort:
-                portFrom.refPort.connect_to(toPort)
+                srcNodeGetType = ctx.get("port_connType",'in')
+                nodeGetType = "out" if srcNodeGetType == "in" else "in"
+                arr_from = sourceNode.input_ports() if srcNodeGetType == "in" else node.output_ports()
+                arr = node.input_ports() if nodeGetType == "in" else node.output_ports()
+                toPort = None
+                for portIt in arr:
+                    if portIt.view.port_typeName == portTypename:
+                        toPort = portIt
+                        break
+                
+                if toPort:
+                    portFrom.refPort.connect_to(toPort)
 
-                #exec connect
-                if arr_from and arr_from[0].view.port_typeName == "Exec" and \
-                    arr and arr[0].view.port_typeName == "Exec" and \
-                        arr[0] != toPort:
-                    if arr_from[0].refPort.model.node != arr[0].refPort.model.node:
-                        arr_from[0].connect_to(arr[0])
+                    #exec connect
+                    if arr_from and arr_from[0].view.port_typeName == "Exec" and \
+                        arr and arr[0].view.port_typeName == "Exec" and \
+                            arr[0] != toPort:
+                        if arr_from[0].refPort.model.node != arr[0].refPort.model.node:
+                            arr_from[0].connect_to(arr[0])
+        except Exception as e:
+            self.getFactory().logger.error(f'Необработанная ошибка при создании узла из контекста: {e}')
 
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):

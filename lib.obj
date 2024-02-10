@@ -2755,7 +2755,7 @@ def:m:GameObject.getDistanceTo_0
 		desc:Получает расстояние до цели в метрах
 		type:get
 		lockoverride:1
-		in:GameObject:Цель:Объект, до которого расчитывается расстояние
+		in:GameObject:Объект-цель:Объект, до которого расчитывается расстояние
 		in:bool:2d расстояние:При включении данной опции расстояние будет вычислено только по двум координатам, т.е. высота не будет учитываться.
 		return:float:Расстояние до цели
 	
@@ -3662,35 +3662,35 @@ def:m:ScriptedRole._getOtherSkillsWrapper_0
 	
 def:m:ScriptedRole.canTakeInLobby_0
 
-		name:Видимость роли в лобби
-		desc:Будет ли видна эта роль в списке ролей до старта раунда из лобби. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
+		name:Доступность роли в лобби
+		desc:Будет ли доступна эта роль запрашиваемому клиенту из лобби до старта игры. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
 		type:event
 		out:ServerClient^:Клиент:Объект клиента, который запрашивает видимость роли.
 		out:bool:Вывод ошибок:Этот параметр принимает значение ИСТИНА, когда запрос осуществляется с возможностью вывода ошибки. Например, если настроить ограничение на пол для роли, то при включенном флаге можно отправить клиенту сообщение о том, что пол его персонажа не подходит.
-		return:bool:Видимость роли в лобби
+		return:bool:Доступность роли в лобби
 	
 def:m:ScriptedRole._canTakeInLobbyConst_0
 
-		name:Доступность в лобби
-		namelib:Можно ли взять в лобби (Доступность в лобби)
-		desc:Указывает можно ли взять роль из лобби. Эта переменная отвечает за то будет ли видна роль в списке лобби ролей.
+		name:Видимость в лобби
+		namelib:Видно ли роль в лобби (Видимость в лобби)
+		desc:Указывает будет ли отображаться эта роль в списке ролей до старта раунда.
 		type:const
-		return:bool:Возможность взятия роли в лобби
+		return:bool:Видимость роли в лобби
 		defval:true
 	
 def:m:ScriptedRole.canVisibleAfterStart_0
 
-		name:Видимость роли после старта
-		desc:Будет ли видна эта роль в списке ролей после старта. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
+		name:Доступность роли после старта
+		desc:Будет ли доступна эта роль запрашиваемому клиенту из лобби после старта раунда. С помощью выходного параметра "Клиент" можно настроить ограничения для конкретных клиентов.
 		type:event
 		out:ServerClient^:Клиент:Объект клиента, который запрашивает видимость роли.
 		return:bool:Видимость роли после старта
 	
 def:m:ScriptedRole._canVisibleAfterStartConst_0
 
-		name:Доступность в игре
-		namelib:Можно ли взять в игре (Доступность в игре)
-		desc:Указывает можно ли взять роль после старта раунда
+		name:Видимость в игре
+		namelib:Видно ли роль в игре (Видимость в игре)
+		desc:Указывает будет ли отображаться эта роль в списке ролей после старта раунда.
 		type:const
 		return:bool:Возможность взятия роли в игре
 		defval:true
@@ -4116,7 +4116,7 @@ $REGION:CLASSMETA
 }
 ,"ReNode_AbstractEnum": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":387},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":392},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -15078,7 +15078,7 @@ $REGION:CLASSMETA
 }
 ,"ScriptedRole": {
     "baseClass" : "BasicRole",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":397},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":402},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "string"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"_deadTimeout":{"return": "int"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
    "methods": { "defined": {
