@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QTreeWidget
 import asyncio
 import re
 from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
-from NodeGraphQt.qgraphics.pipe import PipeItem
+from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
 from ReNode.app.utils import generateIconParts
 
@@ -18,7 +18,7 @@ class TabSearchMenu(QWidget):
 
     @staticmethod
     def getNodeGraphComponent():
-        TabSearchMenu.NodeGraphRef
+        return TabSearchMenu.NodeGraphRef
     
     @staticmethod
     def getFactory():
@@ -101,6 +101,8 @@ class TabSearchMenu(QWidget):
         
         self.lastMousePos = None
 
+        self.contextInfo = None # для контекстного поиска. класс графа, порт и т.д.
+
         self.delegate = HighlightingDelegate(self.tree)
         self.delegate.editor = self.edit
         self.tree.setItemDelegate(self.delegate)
@@ -137,6 +139,10 @@ class TabSearchMenu(QWidget):
             ps = self.nodeGraphComponent.graph.viewer().scene_cursor_pos()
             ps = self.nodeGraphComponent.graph._viewer.mapToScene(ps)
             self.lastMousePos = [ps.x(),ps.y()]
+        else:
+            if self.contextInfo:
+                self.contextInfo = None #drop context
+                self.buidSearchTree("") #rebuild graph
 
     def generate_treeDict(self):
         self.dictTreeGen = self.nodeGraphComponent._generateSearchTreeDict()
@@ -148,7 +154,7 @@ class TabSearchMenu(QWidget):
         self.tree.viewport().update()
         self.reset_visibility(self.tree.invisibleRootItem())
         self.tree.collapseAll()
-        if search_words:
+        if search_words or self.contextInfo:
             self.hide_items(self.tree.invisibleRootItem(), search_words)
 
     def hide_items(self, item, search_words):
@@ -171,7 +177,7 @@ class TabSearchMenu(QWidget):
         if hasClassname:
             clsData = self.nodeGraphComponent.getFactory().getNodeLibData(item_classname)
             item_classname = item_classname.lower()
-        return TabSearchMenu.checkPattern(search_pattern,item_text,item_classname,clsData)
+        return TabSearchMenu.checkPattern(search_pattern,item_text,item_classname,clsData,self.contextInfo)
         # contains = False
         # for word_group in search_pattern:
         #     if word_group in item_text:
@@ -183,14 +189,31 @@ class TabSearchMenu(QWidget):
         # return contains
     
     @staticmethod
-    def checkPattern(searchPattern,itmName,itmClass,clsData):
+    def checkPattern(searchPattern,itmName,itmClass,clsData,contextDict=None):
         """
             Поисковой обработчик видимости элемента в библиотеке
         """
         words = re.split('[;,]',searchPattern)#searchPattern.split(";,")
-        
+        if searchPattern == "":
+            words = ["#CONTEXT_EMPTY#"]
         needCount = len(words)
         curCount = 0
+
+        if clsData and contextDict:
+            ptypeCheck = contextDict['port_type']
+            #check for self
+            if ptypeCheck == 'self':
+                curCls = contextDict['classname']
+                if "classInfo" in clsData:
+                    validatedClass = clsData.get('classInfo',{}).get("class","")
+                    if not TabSearchMenu.getFactory().isTypeOf(curCls,validatedClass) and \
+                        not TabSearchMenu.getFactory().isTypeOf(validatedClass,curCls):
+                        return False
+
+            #check port access
+            if ptypeCheck not in clsData[contextDict['port_key']]:
+                return False
+
         for wordPart in words:
             if wordPart in itmName:
                 curCount += 1
@@ -201,6 +224,13 @@ class TabSearchMenu(QWidget):
                     curCount += 1
                 if wordPart in clsData['path'].lower():
                     curCount += 1
+
+        #empty printer all
+        if clsData and contextDict and searchPattern == "":
+                if contextDict['port_type'] in clsData[contextDict['port_key']]:
+                    curCount += 1
+                else:
+                    curCount -= 1
 
         return curCount >= needCount
 
@@ -302,13 +332,73 @@ class TabSearchMenu(QWidget):
         name = item.text(0)
         data = item.data(0,QtCore.Qt.UserRole)
         if data:
-            self._close()
-            self.nodeGraphComponent.nodeFactory.instance(data,pos=self.lastMousePos,graphref=self.nodeGraphComponent.graph)
-            self.nodeGraphComponent.graph._viewer.setFocus()
+            #self._close()
+            self.onCreateNodeFromTree(data,self.lastMousePos)
     
-    def onDragFromPipeContext(self,pipe: PipeItem):
-        #self.nodeGraphComponent.toggleNodeSearch()
-        print(f"TODO context drag logic {pipe}")
+    def onCreateNodeFromTree(self,nodeName,positionvec):
+        gsys = self.nodeGraphComponent
+        ctx = self.contextInfo
+        self.onChangeVisible(False)
+        self.setVisible(False)
+        gsys.graph._viewer.setFocus()
+        
+        gsys.graph.undo_stack().beginMacro("Создание узла {}".format(nodeName))
+
+        node = gsys.nodeFactory.instance(nodeName,pos=positionvec,graphref=gsys.graph)
+
+        self.onContextNodeCreated(node,ctx)
+
+        gsys.graph.undo_stack().endMacro()
+
+    def onDragFromPipeContext(self,port: PortItem):
+        ptype = port.port_type
+        ptypename = port.port_typeName
+        srcNode = port.refPort.model.node
+        idat = self.nodeGraphComponent.graph.infoData
+        
+        
+        self.contextInfo = {
+            "port_key": "__input_types" if ptype == 'out' else "__output_types",
+            "port_type": ptypename,
+            "port_connType": ptype,
+            "port_ref": port,
+
+            "src_node": srcNode,
+
+            #classinfo
+            "classnameTypeName": idat.get('classname','') + "^",
+            "classname": idat.get('classname',''),#обязательный постфикс
+
+        }
+        
+        self.nodeGraphComponent.graph.toggle_node_search(True,self.nodeGraphComponent.nodeFactory)
+        self.buidSearchTree("")
+        #print(f"TODO context drag logic {port}")
+
+    def onContextNodeCreated(self,node,ctx):
+        if node and ctx:
+            portFrom = ctx.get("port_ref")
+            portTypename = ctx.get("port_type")
+            sourceNode = ctx.get("src_node")
+
+            srcNodeGetType = ctx.get("port_connType",'in')
+            nodeGetType = "out" if srcNodeGetType == "in" else "in"
+            arr_from = sourceNode.input_ports() if srcNodeGetType == "in" else node.output_ports()
+            arr = node.input_ports() if nodeGetType == "in" else node.output_ports()
+            toPort = None
+            for portIt in arr:
+                if portIt.view.port_typeName == portTypename:
+                    toPort = portIt
+                    break
+            
+            if toPort:
+                portFrom.refPort.connect_to(toPort)
+
+                #exec connect
+                if arr_from and arr_from[0].view.port_typeName == "Exec" and \
+                    arr and arr[0].view.port_typeName == "Exec" and \
+                        arr[0] != toPort:
+                    arr_from[0].connect_to(arr[0])
 
 
 class TabSearchLineEdit(QtWidgets.QLineEdit):

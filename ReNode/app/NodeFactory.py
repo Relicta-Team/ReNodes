@@ -349,6 +349,9 @@ class NodeFactory:
 		#custom node options
 		struct['options'] = self._deserializeOptions(data.get('options'),struct['inputs'])
 
+		struct["__input_types"] = [vdct['type'] for vdct in struct['inputs'].values()]
+		struct["__output_types"] = [vdct['type'] for vdct in struct['outputs'].values()]
+
 		self.nodes[typename] = struct
 
 	def _deserializeConnectors(self,cnts :dict,isInput = True):

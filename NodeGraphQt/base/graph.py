@@ -388,11 +388,8 @@ class NodeGraph(QtCore.QObject):
         #print(f"({nodeSystem})DATA DROP FROM {pos_x}:{pos_y} AS {text}")
 
         tabSearch = self._viewer._tabSearch
-        tabSearch._close()
-        self._factoryRef.instance(text,pos=[pos_x,pos_y],graphref=self)
-        self._viewer.setFocus()
-
-        pass
+        #tabSearch._close()
+        tabSearch.onCreateNodeFromTree(text,[pos_x,pos_y])
 
     def _on_node_data_dropped(self, data, pos):
         """
