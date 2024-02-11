@@ -132,7 +132,7 @@ class Application:
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
 		
 		if not Application.hasArgument("-prep_code"):
-			self.mainWindow.generateAllCode(allUpdate=False,loadingScreen=False)
+			self.mainWindow.generateAllCode(allUpdate=False,loadingScreen=False,compileFlags={"-noupdatecguid"})
 
 		#if splashEnabled: time.sleep(3)		
 

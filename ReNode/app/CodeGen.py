@@ -170,6 +170,10 @@ class CodeGenerator:
             "-logwarn": {
                 "alias": "-lgwn",
                 "desc": "Показывает предупреждения при генерации."
+            },
+            "-noupdatecguid": {
+                "alias": "-nucg",
+                "desc": "Отключает обновление гуида компиляции. Записывает текущий гуид в скомпилированный граф"
             }
         }
 
@@ -320,6 +324,10 @@ class CodeGenerator:
                     raise Exception("Cannot generate code in non-existen tab")
                 fp__ = self.graph.graph_path
                 guidCompile = ssmgr.CreateCompilerGUID()
+                if self.hasCompileParam("-noupdatecguid"):
+                    _oldcguid = self.graph.infoData.get("compileGUID","")
+                    if _oldcguid:
+                        guidCompile = _oldcguid
                 def __updEv(sergraph):
                     sergraph['graph']['info']['compiledGUID'] = guidCompile
                     sergraph['graph']['info']['compileStatus'] = "Compiled"

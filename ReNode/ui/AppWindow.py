@@ -160,12 +160,12 @@ class MainWindow( QMainWindow ):
 		else:
 			self.nodeGraph.codegen.logger.warning("Нет активной вкладки для генерации")
 
-	def generateAllCode(self,allUpdate=True,loadingScreen=True):
+	def generateAllCode(self,allUpdate=True,loadingScreen=True,compileFlags={}):
 		ssmgr = self.nodeGraph.sessionManager
 		if any([td.isUnsaved for td in ssmgr.getAllTabs()]):
 			self.nodeGraph.codegen.logger.warning("Сохраните все открытые вкладки")
 			return
-		self.nodeGraph.compileAllGraphs(useLoadingScreen=loadingScreen,onlyNotActual=not allUpdate)
+		self.nodeGraph.compileAllGraphs(useLoadingScreen=loadingScreen,onlyNotActual=not allUpdate,compileFlags=compileFlags)
 
 	def switchVariableViewer(self):
 		self.nodeGraph.variable_manager.setVisible(not self.nodeGraph.variable_manager.isVisible())

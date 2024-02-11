@@ -111,7 +111,7 @@ class NodeGraphComponent:
 		#! test compilation
 		#self.compileAllGraphs()
 
-	def compileAllGraphs(self,useLoadingScreen=False,onlyNotActual = False):
+	def compileAllGraphs(self,useLoadingScreen=False,onlyNotActual = False,compileFlags={}):
 		import concurrent.futures
 		import threading
 		import time
@@ -139,6 +139,9 @@ class NodeGraphComponent:
 			self._compileGraphList_oneItemLoad = len(allGraphsWithIndex)
 			self._compileGraphList_loadingScreen.setMessage("Сборка")
 		
+		cFlags = {"-skipgenloader","-logexcept"}
+		cFlags.update(compileFlags)
+
 		def __compile(path_with_idx):
 			path, index = path_with_idx
 			
@@ -150,9 +153,7 @@ class NodeGraphComponent:
 				self._compileGraphList_loadingScreen.setMessage("Сборка " + path)
 			
 			cgObj = CodeGenerator()
-			rez = cgObj.generateProcess(path, silentMode=True,compileParams={
-				"-skipgenloader","-logexcept"
-			},prefixGen=f"({index}/{len(allGraphsWithIndex)}) ")
+			rez = cgObj.generateProcess(path, silentMode=True,compileParams=cFlags,prefixGen=f"({index}/{len(allGraphsWithIndex)}) ")
 			del cgObj
 
 			if self._compileGraphList_useLoadingScreen:

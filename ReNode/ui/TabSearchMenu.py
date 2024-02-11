@@ -399,7 +399,7 @@ class TabSearchMenu(QWidget):
                     if arr_from and arr_from[0].view.port_typeName == "Exec" and \
                         arr and arr[0].view.port_typeName == "Exec" and \
                             arr[0] != toPort:
-                        if arr_from[0].refPort.model.node != arr[0].refPort.model.node:
+                        if arr_from[0].model.node != arr[0].model.node:
                             arr_from[0].connect_to(arr[0])
         except Exception as e:
             self.getFactory().logger.error(f'Необработанная ошибка при создании узла из контекста: {e}')
