@@ -90,7 +90,7 @@ class FileManagerHelper:
 	
 	@staticmethod
 	def getCompiledScriptFilename(iData):
-		return f'{iData["type"]}.{iData["parent"]}.{iData["classname"]}.sqf'
+		return f'{iData.get("type")}.{iData.get("parent")}.{iData.get("classname")}.sqf'
 
 	@staticmethod
 	def generateScriptLoader(excludeGuid=None):

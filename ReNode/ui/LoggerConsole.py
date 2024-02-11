@@ -617,6 +617,42 @@ class GetGraphsCompileState(ConsoleCommand):
                 self.logger.info('-'*len(sline))
 
 
+class DebugNodesCreate(ConsoleCommand):
+    name = "debug_nodes_create"
+    desc = "Отладочное создание узлов"
+    argsAsString = True
+    def onCall(self,args):
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        ngc = NodeGraphComponent.refObject
+        tab = ngc.sessionManager.newTab(True,"")
+
+        if tab:
+            tab.infoData['classname']= "DEBUG_CLASS"
+            tab.infoData['name'] = "DEBUG GRAPH"
+            tab.infoData['parent'] = "object"
+            if tab.infoData != tab.graph.infoData:
+                tab.graph.infoData = tab.infoData
+            fact = ngc.getFactory()
+            #snods = []
+            lastcat = "unknown"
+            pos = [0,0]
+            maxWidth = 0
+            for nodename in fact.nodes.keys():
+                if nodename.startswith("internal."):
+                    continue
+                
+                node = fact.instance(nodename,tab.graph,pos)
+                pos[1] += node.view.height + 5
+                maxWidth = max(maxWidth,node.view.width)
+
+                if not nodename.startswith(lastcat):
+                    lastcat = nodename.split(".")[0]
+                    #snods.append(node)
+                    pos[0] += maxWidth + 5
+                    pos[1] = 0
+            
+            #tab.graph.auto_layout_nodes(start_nodes=snods)
+
 
 #region Memory helpers -  https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc
 class StartTracemalloc(ConsoleCommand):

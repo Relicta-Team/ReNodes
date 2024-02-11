@@ -453,6 +453,30 @@ class NodeItem(AbstractNodeItem):
             for pipe in port.connected_pipes:
                 pipe.reset()
 
+    
+    def _calc_size_horizontal_temp(self):
+        # Считаем ширину шапки
+        tbr = self._text_item.boundingRect()
+        _headTextWidth, _headTextHeight = tbr.width(), tbr.height()
+        if self._node_render_type in NodeRenderType.getNoHeaderTypes():
+            _headTextHeight = 0
+        
+        # Считаем ширину входных и выходных портов
+        _portWidth = 0
+        _portInputTextMaxWidht = 0
+        _portInputHeight = 0
+        for port, text in self._input_items.items():
+            if not port.isVisible(): continue
+            if not _portWidth: portWidth = port.boundingRect().width()
+            _ptexWidth = text.boundingRect().width()
+            if text.isVisible() and _ptexWidth > _portInputTextMaxWidht:
+                _portInputTextMaxWidht = _ptexWidth
+            _portInputHeight += port.boundingRect().height()
+
+
+        return 10, 10
+
+
     def _calc_size_horizontal(self):
         # width, height from node name text.
         text_w = self._text_item.boundingRect().width()
@@ -516,11 +540,13 @@ class NodeItem(AbstractNodeItem):
                 accum += 1 # because exists _align_ports_horizontal -> spacing = 1
             p_amountHeightOpt += accum + sizeH
 
-        width = port_width + max([text_w, port_text_width]) + side_padding
+        width = port_width + max([text_w, widget_width]) + side_padding #!prev code: max([text_w, port_text_width])
         height = max([text_h, p_input_height, p_output_height, widget_height , p_amountHeightOpt])
         if widget_width:
             # add additional width for node widget.
-            width += widget_width
+            #width += widget_width - p_output_text_width #!old code
+            width += p_output_text_width
+            pass
         if widget_height:
             # add bottom margin for node widget.
             if self._node_render_type not in NodeRenderType.getNoHeaderTypes():
