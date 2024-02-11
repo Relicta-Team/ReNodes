@@ -32,6 +32,9 @@ class TabSearchMenu(QWidget):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         TabSearchMenu.NodeGraphRef = NodeGraphComponent.refObject
 
+        from NodeGraphQt.widgets.viewer import validate_connections
+        self.validate_connections: typing.Callable = validate_connections
+
         baseWidget = self
         #self.move(0,0)
         sizeXFull = 400
@@ -194,13 +197,14 @@ class TabSearchMenu(QWidget):
             Поисковой обработчик видимости элемента в библиотеке
         """
         words = re.split('[;,]',searchPattern)#searchPattern.split(";,")
-        if searchPattern == "":
-            words = ["#CONTEXT_EMPTY#"]
+        #if searchPattern == "":
+        #    words = ["#CONTEXT_EMPTY#"]
         needCount = len(words)
         curCount = 0
 
         if clsData and contextDict:
             ptypeCheck = contextDict['port_type']
+            srcNode = contextDict['src_node']
             #check for self
             if ptypeCheck == 'self':
                 curCls = contextDict['classname']
@@ -209,10 +213,23 @@ class TabSearchMenu(QWidget):
                     if not TabSearchMenu.getFactory().isTypeOf(curCls,validatedClass) and \
                         not TabSearchMenu.getFactory().isTypeOf(validatedClass,curCls):
                         return False
-
-            #check port access
-            if ptypeCheck not in clsData[contextDict['port_key']]:
-                return False
+            
+            #rtt ports check
+            if ptypeCheck == "":
+                failCheckT = True
+                pinfo = clsData["inputs" if contextDict['port_connType']=='in' else "outputs"]
+                for pk in clsData[contextDict['port_key']]:
+                    if pk in ["Exec",""]:
+                        continue
+                    else:
+                        failCheckT = False
+                        if srcNode._calculate_autoport_type(pk,pinfo.get(pk)) != pk:
+                            return False
+                if failCheckT: return False
+            else:
+                #check port access (!not auto!)
+                if ptypeCheck not in clsData[contextDict['port_key']]:
+                    return False
 
         for wordPart in words:
             if wordPart in itmName:
@@ -226,11 +243,11 @@ class TabSearchMenu(QWidget):
                     curCount += 1
 
         #empty printer all
-        if clsData and contextDict and searchPattern == "":
-                if contextDict['port_type'] in clsData[contextDict['port_key']]:
-                    curCount += 1
-                else:
-                    curCount -= 1
+        # if clsData and contextDict and searchPattern == "":
+        #         if contextDict['port_type'] in clsData[contextDict['port_key']]:
+        #             curCount += 1
+        #         else:
+        #             curCount -= 1
 
         return curCount >= needCount
 
@@ -387,8 +404,8 @@ class TabSearchMenu(QWidget):
                 arr_from = sourceNode.input_ports() if srcNodeGetType == "in" else node.output_ports()
                 arr = node.input_ports() if nodeGetType == "in" else node.output_ports()
                 toPort = None
-                for portIt in arr:
-                    if portIt.view.port_typeName == portTypename:
+                for portIt in arr:                 
+                    if self.validate_connections(portFrom, portIt.view):
                         toPort = portIt
                         break
                 
