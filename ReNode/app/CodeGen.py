@@ -294,10 +294,10 @@ class CodeGenerator:
             generated_code = self.generateOrderedCode(entrys)
             code += "\n" + generated_code
             
-            code = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
+            codeReal = self.gObjType.cgHandleWrapper(code,self.gObjMeta)
             #adding header
-            code = f'//gdate:{datetime.datetime.now()}\n' + \
-                    f'#include ".\\resdk_graph.h"\n\n\n' + code
+            code = f'//gdate:{datetime.datetime.now()}\n\n' + \
+                    f'#include ".\\resdk_graph.h"\n'
 
             if self.isDebugMode() and not self._silentMode:
                 from PyQt5.QtWidgets import QApplication
@@ -319,6 +319,7 @@ class CodeGenerator:
             if tDat:
                 guidCompile = tDat.createCompilerGUID()
                 code = f'//src:{guidCompile}:{tDat.filePath}\n' + code
+                code += f'#define __THIS_GRAPH__ "{tDat.filePath}"\n\n\n'
             else:
                 if not self._silentMode:
                     raise Exception("Cannot generate code in non-existen tab")
@@ -337,7 +338,10 @@ class CodeGenerator:
                     raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")
                 #save new graph with generated compile guid
                 code = f'//src:{guidCompile}:{fp__}\n' + code
+                code += f'#define __THIS_GRAPH__ "{fp__}"\n\n\n'
             
+            code = code + codeReal
+
             #saving compiled code
             file_path = os.path.join(FileManagerHelper.getFolderCompiledScripts(),graphName)
             directory = os.path.dirname(file_path)
@@ -817,6 +821,21 @@ class CodeGenerator:
                 if obj.getConnectionOutputs().get("Новое значение"):
                     oldCode = obj.code
                     obj.code = "private @genvar.out.2 = @in.3;" + re.sub(f'@in\.3(?=\D|$)', f"@locvar.out.2", oldCode)
+            isPure = True
+            if "Exec" in [t.get("type") for t in obj.classLibData['inputs'].values()] or \
+                "Exec" in [t.get("type") for t in obj.classLibData['outputs'].values()]:
+                isPure = False
+            nobj = obj.getNodeObject()
+            increment = -1
+            if isinstance(nobj,dict):
+                increment =  nobj.get('increment_uid',-2)
+            else:
+                increment = nobj.uid
+            
+            if isPure:
+                obj.code = f'\nBP_PS({increment}) {obj.code} BP_PE'
+            else:
+                obj.code = f'BP_EXEC({increment})\n {obj.code}'
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
@@ -1425,6 +1444,7 @@ class CodeGenerator:
 
         #replace for debugger
         enCode = enCode.replace("@IFDEF_DEBUG","").replace("@ENDIF","")
+        enCode = re.sub("(BP_EXEC\(\d+\)|BP_PS\(\d+\)|BP_PE)","",enCode)
 
         pr = parse(enCode)
         resultAnalyze = analyze(pr)
