@@ -16,6 +16,7 @@ from NodeGraphQt.constants import (
 )
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
+from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem
 from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.qgraphics.slicer import SlicerPipeItem, DescriptionItem
@@ -221,6 +222,26 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
         from NodeGraphQt.base.model import NodeGraphModel
         self.modelRef : NodeGraphModel = None
+
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.onTimer)
+        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+        self.timer.start(10)
+
+    def onTimer(self):
+        if not self.scene().hasFocus(): return
+
+        for n in self.all_nodes():
+            if isinstance(n,NodeItem):
+                # if n.selected:
+                #     n._blinkNode = False
+                #     n.update()
+                if n._blinkNode:
+                    n._blinkTimer += 1
+                    if n._blinkTimer > 10:
+                        n._blinkTimer = 0
+                    n.update()
+
 
     def __repr__(self):
         return '<{}() object at {}>'.format(

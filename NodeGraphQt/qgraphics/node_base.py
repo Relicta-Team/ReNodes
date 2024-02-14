@@ -95,6 +95,9 @@ class NodeItem(AbstractNodeItem):
         # Tuple of (port,widget, sizeH)
         self._tupleWidgetData : list[tuple] = None
 
+        self._blinkNode = False #true для мигания объекта
+        self._blinkTimer = 0
+
     def setErrorText(self,text="",header="ОШИБКА"):
         self._error_item.setVisible(True)
         if not header: header = "ОШИБКА"
@@ -153,6 +156,15 @@ class NodeItem(AbstractNodeItem):
         #painter.setBrush(QtGui.QColor(*self.color))
         painter.setBrush(QtGui.QColor(20, 20, 20, 240))
         painter.drawRoundedRect(rect, radius, radius)
+
+        if self._blinkNode:
+            btm = self._blinkTimer
+            allvals = 100+btm*30%250
+            painter.setBrush(QtGui.QColor(allvals,allvals,allvals,100))
+            rectBlink = QtCore.QRectF(rect)
+            blinkSize = btm * 20
+            rectBlink.adjust(-blinkSize*2,-blinkSize*2,blinkSize,blinkSize)
+            painter.drawRoundedRect(rectBlink,10,10)
 
         # light overlay on background when selected.
         # if self.selected:
