@@ -66,7 +66,9 @@ class RuntimeNode(BaseNode):
 	def canConnectAutoPort(self,fromPort : PortItem,toPort : PortItem):
 		if fromPort.port_typeName != "": return False
 		if toPort.port_typeName == "": return False
-		if "Exec" in [fromPort.port_typeName,toPort.port_typeName]: return False
+		if "Exec" in [fromPort.port_typeName,toPort.port_typeName]: 
+			if self.nodeClass != "internal.reroute":
+				return False
 
 		data = self.getFactoryData()
 		portDataName = "inputs" if fromPort.port_type == PortTypeEnum.IN.value else "outputs"

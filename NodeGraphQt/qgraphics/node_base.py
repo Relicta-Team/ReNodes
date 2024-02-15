@@ -423,6 +423,9 @@ class NodeItem(AbstractNodeItem):
             self._width = NodeEnum.WIDTH.value
         if self._height < NodeEnum.HEIGHT.value:
             self._height = NodeEnum.HEIGHT.value
+        if self._node_render_type == NodeRenderType.Reroute:
+            self._height = 10
+            self._width = 30
 
     def _set_text_color(self, color):
         """
@@ -798,6 +801,9 @@ class NodeItem(AbstractNodeItem):
         spacing = 1
 
         disabledPortText = []
+
+        if self._node_render_type == NodeRenderType.Reroute:
+            v_offset = -self._height/3
         
         # adjust input position
         inputs = [p for p in self.inputs if p.isVisible()]
@@ -1190,6 +1196,10 @@ class NodeItem(AbstractNodeItem):
                 desc = f'Владелец ' + info
         if desc:
             nametext += f'<br/><font size=""4">{desc}</font>'
+        
+        if self.nodeClass == "internal.reroute":
+            nametext = ""
+        
         self._text_item.setHtml(nametext)
         if self.scene():
             self.align_label()

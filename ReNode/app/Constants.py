@@ -19,9 +19,11 @@ class NodeRenderType(Enum):
     NoHeaderText = 2
     NoHeaderIcon = 3
 
+    Reroute = 4
+
     @staticmethod
     def getNoHeaderTypes():
-        return [NodeRenderType.NoHeaderIcon,NodeRenderType.NoHeaderText,NodeRenderType.NoHeader]
+        return [NodeRenderType.NoHeaderIcon,NodeRenderType.NoHeaderText,NodeRenderType.NoHeader,NodeRenderType.Reroute]
 
     @staticmethod
     def typeExists(value):
