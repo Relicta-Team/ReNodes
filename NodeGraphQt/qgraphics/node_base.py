@@ -103,6 +103,10 @@ class NodeItem(AbstractNodeItem):
         self._blinkNode = True
         self._blinkTimer = 0
         self._blinkTimeLeft = 1.5 * 1000
+        for pipe in self.get_input_pipes():
+            pipe._blinkNode = True
+            pipe._blinkTimer = 0
+            pipe._blinkTimeLeft = 1.5 * 1000
 
     def setErrorText(self,text="",header="ОШИБКА"):
         self._error_item.setVisible(True)
@@ -455,6 +459,14 @@ class NodeItem(AbstractNodeItem):
         for port in ports:
             for pipe in port.connected_pipes:
                 pipe.activate()
+
+    def get_input_pipes(self):
+        alldat = []
+        for port in self.inputs:
+            for pipe in port.connected_pipes:
+                alldat.append(pipe)
+        return alldat
+        
 
     def highlight_pipes(self):
         """

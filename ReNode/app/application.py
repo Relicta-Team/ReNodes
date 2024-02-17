@@ -152,7 +152,9 @@ class Application:
 
 	def _initExitEvents(self):
 		import atexit
+		from ReNode.app.DebuggerServer import DebuggerServer
 		atexit.register(Config.saveConfig)
+		atexit.register(lambda: self.mainWindow.nodeGraph.debuggerServer.stop())
 
 	@staticmethod
 	def requireLibUpdate(logger=None):

@@ -1,10 +1,110 @@
 import socket
 import threading
 import atexit
+import time
 from ReNode.app.utils import intTryParse
+from PyQt5.QtCore import QObject, QThread
 
-class DebuggerServer:
+
+import socket
+import time
+from ReNode.app.utils import intTryParse
+from PyQt5.QtCore import QThread, pyqtSignal
+
+class DebuggerServer(QObject):
+    started = pyqtSignal()
+    stopped = pyqtSignal()
+
+    def __init__(self, server_ip="127.0.0.1", server_port=9987, run_now=False, nodeGraphRef=None):
+        super().__init__()
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.server_socket = None
+        self.client_socket = None
+        self.active = False
+        self.nodeGraphComponent = nodeGraphRef
+
+        if run_now:
+            self.start()
+
+    def start(self):
+        self.thread = QThread()
+        self.moveToThread(self.thread)
+        self.thread.started.connect(self.start_internal)
+        self.started.connect(self.thread.start)
+        self.stopped.connect(self.thread.quit)
+        self.stopped.connect(self.thread.wait)
+
+        self.thread.finished.connect(self.handle_finished)
+
+        self.thread.start()
+
+    def handle_finished(self):
+        self.server_socket.close()
+        self.client_socket.close()
+        self.stopped.emit()
+
+    def start_internal(self):
+        self.active = True
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.server_ip, self.server_port))
+        self.server_socket.listen(1)
+
+        print(f"Python server listening on {self.server_ip}:{self.server_port}")
+
+        while self.active:
+            try:
+                self.client_socket, client_address = self.server_socket.accept()
+
+                print(f"Connection established with {client_address}")
+
+                self.handle_client()
+            except Exception as e:
+                
+                print(f"Exception: {e}")
+                # Handle exceptions as needed
+
+    def stop(self):
+        self.active = False
+        self.server_socket.close()
+
+    def handle_client(self):
+        self.client_socket.setblocking(False)
+        buffer = b''
+        while self.active:
+            try:
+                data = self.client_socket.recv(1024)
+                if not data:
+                    print("Client disconnected")
+                    break
+
+                buffer += data
+                while b"\0" in buffer:
+                    data, buffer = buffer.split(b"\0", 1)
+                    self.handle_client_message(data.decode('utf-8'))
+
+            except BlockingIOError:
+                pass
+
+        self.client_socket.close()
+
+    def handle_client_message(self, message):
+        parts = message.split("@")
+        if not parts:
+            return
+        msg_type = parts[0]
+        if msg_type == "nlink":
+            if len(parts) != 3:
+                return
+            for tab in self.nodeGraphComponent.sessionManager.getAllTabs():
+                if tab.graph.graphPath == parts[2]:
+                    tab.graph.on_node_linked.emit(intTryParse(parts[1], -1), parts[2])
+                    break
+
+class DebuggerServer_OLD(QObject):
+    refObject = None
     def __init__(self, server_ip="127.0.0.1", server_port=9987,run_now=False,nodeGraphRef=None):
+        DebuggerServer.refObject = self
         self.server_ip = server_ip
         self.server_port = server_port
         self.server_socket = None
@@ -32,21 +132,29 @@ class DebuggerServer:
         print(f"Python server listening on {self.server_ip}:{self.server_port}")
 
         while self.active:
-            self.client_socket, client_address = self.server_socket.accept()
+            if self.server_socket.getsockopt(socket.SOL_TCP,socket.SO_ACCEPTCONN) > 0:
+                self.client_socket, client_address = self.server_socket.accept()
             
-            print(f"Connection established with {client_address}")
+                print(f"Connection established with {client_address}")
 
-            self.handle_client()
+                self.handle_client()
+            else:
+                time.sleep(1)
 
     def stop(self):
         
         self.active = False
+
         if self.client_socket:
             self.client_socket.close()
             print("Connection closed")
         if self.server_socket:
             self.server_socket.close()
             print("Server stopped")
+
+    @staticmethod
+    def staticStop():
+        DebuggerServer.refObject.stop()
 
     def handle_client(self):
         

@@ -228,17 +228,20 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.onTimer)
-        self.timer.setTimerType(QtCore.Qt.PreciseTimer)
+        self.timer.setTimerType(QtCore.Qt.TimerType.VeryCoarseTimer)
         self.timer.start(10)
+
+        self.allNodes = {} #ссылка на все узлы
+        self.blinkedNodes = [] #NodeItem objects
 
     def onTimer(self):
         #if not self.scene().hasFocus(): return
-        t = self.nodeGraphComponent.sessionManager.getActiveTabData()
-        if not t: return
-        if t.graph._viewer != self: return
+        #t = self.nodeGraphComponent.sessionManager.getActiveTabData()
+        #if not t: return
+        #if t.graph._viewer != self: return
         
 
-        for n in self.all_nodes():
+        for n in self.blinkedNodes:
             if isinstance(n,NodeItem):
                 # if n.selected:
                 #     n._blinkNode = False
@@ -250,7 +253,23 @@ class NodeViewer(QtWidgets.QGraphicsView):
                         n._blinkTimer = 0
                     if n._blinkTimeLeft <= 0:
                         n._blinkNode = False
+                        self.blinkedNodes.remove(n)
                     n.update()
+                    #pipe work
+                    for p in n.get_input_pipes():
+                        p._blinkTimeLeft = n._blinkTimeLeft
+                        p._blinkTimer = n._blinkTimer
+                        p._blinkNode = n._blinkNode
+                        p.update()
+        # for p in self.all_pipes():
+        #     if p._blinkNode:
+        #         p._blinkTimeLeft -= 10
+        #         p._blinkTimer += 1
+        #         if p._blinkTimer > 10:
+        #             p._blinkTimer = 0
+        #         if p._blinkTimeLeft <= 0:
+        #             p._blinkNode = False
+        #         p.update()
 
 
     def __repr__(self):

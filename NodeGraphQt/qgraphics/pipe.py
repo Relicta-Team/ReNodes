@@ -52,6 +52,10 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self._dir_pointer.setFlag(self.ItemIsSelectable, False)
 
         self.reset()
+
+        self._blinkNode = False #true для мигания объекта
+        self._blinkTimer = 0
+        self._blinkTimeLeft = 0
     
     # !TESTS ANIMATION
     #     self._animation_timer = QTimer()
@@ -114,6 +118,17 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
                 pen.setColor(QtGui.QColor(*PipeEnum.DISABLED_COLOR.value))
                 pen.setStyle(PIPE_STYLES.get(PipeEnum.DRAW_TYPE_DOTTED.value))
                 pen.setWidthF(pen.width() * 1.25) # RESTORED / fic convert type error (not expected float)
+
+        if self._blinkNode:
+            btm = self._blinkTimer
+            allvals = 100+btm*30%250
+            pen.setColor(QtGui.QColor(40,100+btm*30%250,40,100))
+            pen.setWidthF(pen.width() * 1.25 * (1+btm % 15))
+            # rectBlink = QtCore.QRectF(rect)
+            # blinkSize = btm * 20
+            # rectBlink.adjust(-blinkSize*2,-blinkSize*2,blinkSize,blinkSize)
+            # painter.drawRoundedRect(rectBlink,10,10)
+            pass
 
         painter.setPen(pen)
         painter.setBrush(self.brush())

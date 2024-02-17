@@ -235,6 +235,8 @@ class NodeGraph(QtCore.QObject):
         print(f'Node linked {uid} {graphPath}')
         nodeobj = self.get_node_by_uid(uid)
         if nodeobj:
+            if nodeobj.view not in self._viewer.blinkedNodes:
+                self._viewer.blinkedNodes.append(nodeobj.view)
             nodeobj.view.doBlink()
 
     def __repr__(self):
@@ -1678,10 +1680,11 @@ class NodeGraph(QtCore.QObject):
                 return node
 
     def get_node_by_uid(self,uid):
-        for node_id, node in self._model.nodes.items():
-            if node.uid == uid:
-                return node
-        return None
+        return self._viewer.allNodes.get(uid,None)
+        # for node_id, node in self._model.nodes.items():
+        #     if node.uid == uid:
+        #         return node
+        # return None
 
     # Yobas: custom getter nodes
     def get_nodes_by_class(self,nodeClass):

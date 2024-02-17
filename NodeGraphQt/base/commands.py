@@ -182,10 +182,12 @@ class NodeAddedCmd(UndoCommand):
         self.pos = self.pos or self.node.pos()
         self.model.nodes.pop(self.node.id)
         self.node.view.delete()
+        self.viewer.allNodes.pop(self.node.uid)
 
     def redo(self):
         self.model.nodes[self.node.id] = self.node
         self.viewer.add_node(self.node.view, self.pos)
+        self.viewer.allNodes[self.node.uid] = self.node
 
         # node width & height is calculated when it's added to the scene,
         # so we have to update the node model here.
@@ -207,15 +209,18 @@ class NodeRemovedCmd(UndoCommand):
         self.setText('deleted node')
         self.scene = graph.scene()
         self.model = graph.model
+        self.viewer = graph.viewer()
         self.node = node
 
     def undo(self):
         self.model.nodes[self.node.id] = self.node
         self.scene.addItem(self.node.view)
+        self.viewer.allNodes[self.node.uid] = self.node
 
     def redo(self):
         self.model.nodes.pop(self.node.id)
         self.node.view.delete()
+        self.viewer.allNodes.pop(self.node.uid)
 
 
 class NodeInputConnectedCmd(UndoCommand):

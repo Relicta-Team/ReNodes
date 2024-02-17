@@ -37,8 +37,8 @@ class NodeGraphComponent:
 		NodeGraphComponent.refObject = self
 
 		#thread locker and debugger server init
-		self.lockDebugger = Lock()
-		self.debuggerServer = DebuggerServer(run_now=True,nodeGraphRef=self)
+		self.debuggerServer = DebuggerServer(nodeGraphRef=self)
+		self.debuggerServer.start()
 
 		#common props
 		self.variable_manager = None
