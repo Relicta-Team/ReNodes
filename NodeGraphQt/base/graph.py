@@ -136,7 +136,7 @@ class NodeGraph(QtCore.QObject):
     """
 
     """Вызывается при поступлении сигнала мигания (отладчик)"""
-    on_node_linked = QtCore.Signal(int,str)
+    on_node_linked = QtCore.Signal(int,int,str)
 
     def __init__(self, parent=None, **kwargs):
         """
@@ -231,13 +231,13 @@ class NodeGraph(QtCore.QObject):
             
             self.isDirty = False
 
-    def on_node_linked_event(self,uid,graphPath):
-        print(f'Node linked {uid} {graphPath}')
+    def on_node_linked_event(self,uid,indexOut,graphPath):
+        print(f'Node linked {uid} to index {indexOut} {graphPath}')
         nodeobj = self.get_node_by_uid(uid)
         if nodeobj:
             if nodeobj.view not in self._viewer.blinkedNodes:
                 self._viewer.blinkedNodes.append(nodeobj.view)
-            nodeobj.view.doBlink()
+            nodeobj.view.doBlink(indexOut)
 
     def __repr__(self):
         return '<{}("root") object at {}>'.format(

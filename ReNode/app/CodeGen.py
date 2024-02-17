@@ -109,6 +109,8 @@ class CodeGenerator:
         self.localVariablesUsed = set()
         # любые локальные данные пишутся в это хранилище
         self.contextVariablesUsed = set()
+        # ссылка на все созданные объекты локальных переменных в точке входа
+        self.allGeneratedVarsInEntry = []
 
         self.gObjType : GraphTypeBase = None
         self.gObjMeta :dict[str:object]= None
@@ -319,7 +321,7 @@ class CodeGenerator:
             if tDat:
                 guidCompile = tDat.createCompilerGUID()
                 code = f'//src:{guidCompile}:{tDat.filePath}\n' + code
-                code += f'#define __THIS_GRAPH__ "{tDat.filePath}"\n\n\n'
+                code += f'#define __THIS_GRAPH__ {tDat.filePath}\n\n\n'
             else:
                 if not self._silentMode:
                     raise Exception("Cannot generate code in non-existen tab")
@@ -338,7 +340,7 @@ class CodeGenerator:
                     raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")
                 #save new graph with generated compile guid
                 code = f'//src:{guidCompile}:{fp__}\n' + code
-                code += f'#define __THIS_GRAPH__ "{fp__}"\n\n\n'
+                code += f'#define __THIS_GRAPH__ {fp__}\n\n\n'
             
             code = code + codeReal
 
@@ -727,6 +729,10 @@ class CodeGenerator:
             #user nodes section
             self.userNodeType = None
 
+            #системные данные, генерируемые при сборке графа
+            self._uid = -1
+            self._pure = False
+
         def getUserNodeType(self):
             """Получает тип пользовательской переменной"""
             nameid = self.objectData.get("custom",{}).get("nameid")
@@ -803,6 +809,7 @@ class CodeGenerator:
         iteration = 0
 
         allGeneratedVars = [] #список всех сгенерированных локальных переменных
+        self.allGeneratedVarsInEntry = allGeneratedVars #refset
 
         # Проверка на присутствие использования одних точек входа в других
         for ent in self.entryIdList:
@@ -832,10 +839,13 @@ class CodeGenerator:
             else:
                 increment = nobj.uid
             
-            if isPure:
-                obj.code = f'\nBP_PS({increment}) {obj.code} BP_PE'
-            else:
-                obj.code = f'BP_EXEC({increment})\n {obj.code}'
+            # ! это вызовет ошибку для runtime nodes
+            obj._isPure = isPure
+            obj._uid = increment
+            #if isPure:
+            #    obj.code = f'\nBP_PS({increment}) {obj.code} BP_PE'
+            #else:
+            #    obj.code = f'BP_EXEC({increment})\n {obj.code}'
 
         while len(codeInfo) != readyCount and hasAnyChanges:
             hasAnyChanges = False #reset
@@ -1245,7 +1255,17 @@ class CodeGenerator:
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
 
                     if inpObj.isReady:
-                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)',inpObj.code,node_code) 
+                        #if re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
+                        codeIn = None
+                        realIndex = -1
+                        for index_real__, pname in enumerate(self.dpdGraphExt[obj.nodeId]['in'].keys()):
+                            if pname == input_name:
+                                realIndex = index_real__
+                        if inpObj._isPure:
+                            codeIn = f'\nBP_PS({inpObj._uid},{realIndex}) {inpObj.code} BP_PE'
+                        else:
+                            codeIn = f'BP_EXEC({inpObj._uid},{realIndex})\n /*bp-inp-exec*/ {inpObj.code}'
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)',codeIn,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
                 for index, (output_name, output_props) in enumerate(outputs_fromLib):
@@ -1270,8 +1290,12 @@ class CodeGenerator:
 
                     if outputObj.isReady:
                         self.gObjType.handleReturnNode(codeInfo[entryId],obj,outputObj,self.gObjMeta)
-                                         
-                        node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", outputObj.code, node_code) 
+                        codeOut = None
+                        if outputObj._isPure:
+                            codeOut = f"\nBP_PS({outputObj._uid}) {outputObj.code} BP_PE"  
+                        else:
+                            codeOut = f"BP_EXEC({obj._uid},{index})\n {outputObj.code}"
+                        node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", codeOut, node_code) 
 
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
@@ -1293,7 +1317,7 @@ class CodeGenerator:
                 if i.isReady:
                     readyCount += 1
         
-        self.gObjType.handlePostReadyEntry(codeInfo[entryId],self.gObjMeta)
+        self.gObjType.handlePostReadyEntry(codeInfo[entryId],self.gObjMeta,codeInfo)
 
         errList = []
         topoNodes = list(codeInfo.values())
@@ -1444,7 +1468,7 @@ class CodeGenerator:
 
         #replace for debugger
         enCode = enCode.replace("@IFDEF_DEBUG","").replace("@ENDIF","")
-        enCode = re.sub("(BP_EXEC\(\d+\)|BP_PS\(\d+\)|BP_PE)","",enCode)
+        enCode = re.sub("(BP_EXEC\([\d,-]+\)|BP_PS\([\d,-]+\)|BP_PE)","",enCode)
 
         pr = parse(enCode)
         resultAnalyze = analyze(pr)
@@ -1463,6 +1487,7 @@ class CodeGenerator:
             
             lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+|_foreachindex|_x|_y)\" is not from this scope \(not private\)",ex.args[1],re.IGNORECASE)
             if lvarNameAsList:
+                #TODO warning for: warning:Variable "_lvar_21_0" not used
                 lvarName = lvarNameAsList[0]
                 line_num, col_count = ex.position
 

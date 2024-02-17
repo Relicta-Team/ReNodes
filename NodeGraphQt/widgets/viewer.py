@@ -256,11 +256,12 @@ class NodeViewer(QtWidgets.QGraphicsView):
                         self.blinkedNodes.remove(n)
                     n.update()
                     #pipe work
-                    for p in n.get_input_pipes():
-                        p._blinkTimeLeft = n._blinkTimeLeft
-                        p._blinkTimer = n._blinkTimer
-                        p._blinkNode = n._blinkNode
-                        p.update()
+                    for p in n.get_outputs_pipes():
+                        if p._blinkNode:
+                            p._blinkTimeLeft = n._blinkTimeLeft
+                            p._blinkTimer = n._blinkTimer
+                            p._blinkNode = n._blinkNode
+                            p.update()
         # for p in self.all_pipes():
         #     if p._blinkNode:
         #         p._blinkTimeLeft -= 10

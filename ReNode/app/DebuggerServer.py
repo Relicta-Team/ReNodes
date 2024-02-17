@@ -94,11 +94,12 @@ class DebuggerServer(QObject):
             return
         msg_type = parts[0]
         if msg_type == "nlink":
-            if len(parts) != 3:
+            if len(parts) != 4:
                 return
+            # source id, toportid (output_index), graphpath
             for tab in self.nodeGraphComponent.sessionManager.getAllTabs():
-                if tab.graph.graphPath == parts[2]:
-                    tab.graph.on_node_linked.emit(intTryParse(parts[1], -1), parts[2])
+                if tab.graph.graphPath == parts[3]:
+                    tab.graph.on_node_linked.emit(intTryParse(parts[1], -1),intTryParse(parts[2],-1), parts[3])
                     break
 
 class DebuggerServer_OLD(QObject):

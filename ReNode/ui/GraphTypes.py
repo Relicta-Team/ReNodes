@@ -141,7 +141,7 @@ class GraphTypeBase:
         raise NotImplementedError("cgHandleInspectorProps is not implemented")
         return ""
     
-    def handlePostReadyEntry(self,nodeObject,metaObj):
+    def handlePostReadyEntry(self,nodeObject,metaObj,allCodeObjects):
         """Постобработчик готовой точки входа"""
         from ReNode.app.CodeGen import CodeGenerator
         nodeObject :CodeGenerator.NodeData = nodeObject
@@ -155,10 +155,16 @@ class GraphTypeBase:
         # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
         varlistalloc = ["'this'"]
         varlistpassed = ["this"]
+        gvarAssoc = {var_.localName: var_.definedNodeId for var_ in cgObj.allGeneratedVarsInEntry}
         #       adding lvars and params (all context local vars)
         for localName in cgObj.contextVariablesUsed:
             #do not pass iterator special vars
             if localName.lower() in ["_x","_foreachindex"]: continue
+            #do not pass var from for loop
+            if localName in gvarAssoc and allCodeObjects.get(gvarAssoc[localName]): 
+                if "operators.for_loop" == allCodeObjects.get(gvarAssoc[localName]).nodeClass:
+                    continue
+            
             varlistalloc.append(f"\"{localName}\"")
             varlistpassed.append(f"{localName}")
         

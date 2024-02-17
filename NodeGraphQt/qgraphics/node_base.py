@@ -99,11 +99,12 @@ class NodeItem(AbstractNodeItem):
         self._blinkTimer = 0
         self._blinkTimeLeft = 0
 
-    def doBlink(self):
+    def doBlink(self,outIndex=-1):
         self._blinkNode = True
         self._blinkTimer = 0
         self._blinkTimeLeft = 1.5 * 1000
-        for pipe in self.get_input_pipes():
+        pipe = self.get_output_pipe_to_node(outIndex)
+        if pipe:
             pipe._blinkNode = True
             pipe._blinkTimer = 0
             pipe._blinkTimeLeft = 1.5 * 1000
@@ -460,13 +461,21 @@ class NodeItem(AbstractNodeItem):
             for pipe in port.connected_pipes:
                 pipe.activate()
 
-    def get_input_pipes(self):
+    def get_outputs_pipes(self):
         alldat = []
-        for port in self.inputs:
+        for port in self.outputs:
             for pipe in port.connected_pipes:
                 alldat.append(pipe)
         return alldat
-        
+    
+    def get_output_pipe_to_node(self,_id):
+        if _id < 0: return None
+        if _id >= len(self.outputs): return None
+        srcPort = self.outputs[_id]
+        for pipe in srcPort.connected_pipes:
+            if pipe._output_port == srcPort:
+                return pipe
+        return None
 
     def highlight_pipes(self):
         """
