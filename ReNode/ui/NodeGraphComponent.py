@@ -22,6 +22,7 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.config import Config
+from ReNode.app.DebuggerServer import DebuggerServer
 
 class NodeGraphComponent:
 
@@ -30,9 +31,14 @@ class NodeGraphComponent:
 	def __init__(self,mainWindow) -> None:
 		from ReNode.ui.AppWindow import MainWindow
 		from ReNode.ui.ScriptMaker import ScriptMakerManager
+		from threading import Lock
 
 		# global reference to object instance		
 		NodeGraphComponent.refObject = self
+
+		#thread locker and debugger server init
+		self.lockDebugger = Lock()
+		self.debuggerServer = DebuggerServer(run_now=True,nodeGraphRef=self)
 
 		#common props
 		self.variable_manager = None

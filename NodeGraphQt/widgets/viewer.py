@@ -223,13 +223,20 @@ class NodeViewer(QtWidgets.QGraphicsView):
         from NodeGraphQt.base.model import NodeGraphModel
         self.modelRef : NodeGraphModel = None
 
+        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+        self.nodeGraphComponent = NodeGraphComponent.refObject
+
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.onTimer)
         self.timer.setTimerType(QtCore.Qt.PreciseTimer)
         self.timer.start(10)
 
     def onTimer(self):
-        if not self.scene().hasFocus(): return
+        #if not self.scene().hasFocus(): return
+        t = self.nodeGraphComponent.sessionManager.getActiveTabData()
+        if not t: return
+        if t.graph._viewer != self: return
+        
 
         for n in self.all_nodes():
             if isinstance(n,NodeItem):
@@ -237,9 +244,12 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 #     n._blinkNode = False
                 #     n.update()
                 if n._blinkNode:
+                    n._blinkTimeLeft -= 10
                     n._blinkTimer += 1
                     if n._blinkTimer > 10:
                         n._blinkTimer = 0
+                    if n._blinkTimeLeft <= 0:
+                        n._blinkNode = False
                     n.update()
 
 

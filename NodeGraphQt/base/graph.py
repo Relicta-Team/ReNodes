@@ -135,6 +135,9 @@ class NodeGraph(QtCore.QObject):
     :emits: triggered context menu, node object.
     """
 
+    """Вызывается при поступлении сигнала мигания (отладчик)"""
+    on_node_linked = QtCore.Signal(int,str)
+
     def __init__(self, parent=None, **kwargs):
         """
         Args:
@@ -151,6 +154,8 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack = (
             kwargs.get('undo_stack') or QtWidgets.QUndoStack(self)
         )
+
+        self.graphPath = kwargs.get("graph_path","")
 
         #adding reference to graph
         self.incrementId = -1 #преинкрементное
@@ -200,6 +205,8 @@ class NodeGraph(QtCore.QObject):
 
         self._context_menu = {}
 
+        self.on_node_linked.connect(self.on_node_linked_event)
+
         self._register_context_menu()
         self._register_builtin_nodes()
         self._wire_signals()
@@ -223,6 +230,12 @@ class NodeGraph(QtCore.QObject):
             tabSearch.tree.sortItems(0,QtCore.Qt.SortOrder.AscendingOrder)
             
             self.isDirty = False
+
+    def on_node_linked_event(self,uid,graphPath):
+        print(f'Node linked {uid} {graphPath}')
+        nodeobj = self.get_node_by_uid(uid)
+        if nodeobj:
+            nodeobj.view.doBlink()
 
     def __repr__(self):
         return '<{}("root") object at {}>'.format(
@@ -1663,6 +1676,12 @@ class NodeGraph(QtCore.QObject):
         for node_id, node in self._model.nodes.items():
             if node.name() == name:
                 return node
+
+    def get_node_by_uid(self,uid):
+        for node_id, node in self._model.nodes.items():
+            if node.uid == uid:
+                return node
+        return None
 
     # Yobas: custom getter nodes
     def get_nodes_by_class(self,nodeClass):

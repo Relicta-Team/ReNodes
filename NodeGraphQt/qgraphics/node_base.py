@@ -97,6 +97,12 @@ class NodeItem(AbstractNodeItem):
 
         self._blinkNode = False #true для мигания объекта
         self._blinkTimer = 0
+        self._blinkTimeLeft = 0
+
+    def doBlink(self):
+        self._blinkNode = True
+        self._blinkTimer = 0
+        self._blinkTimeLeft = 1.5 * 1000
 
     def setErrorText(self,text="",header="ОШИБКА"):
         self._error_item.setVisible(True)
@@ -160,7 +166,7 @@ class NodeItem(AbstractNodeItem):
         if self._blinkNode:
             btm = self._blinkTimer
             allvals = 100+btm*30%250
-            painter.setBrush(QtGui.QColor(allvals,allvals,allvals,100))
+            painter.setBrush(QtGui.QColor(40,100+btm*30%250,40,100))
             rectBlink = QtCore.QRectF(rect)
             blinkSize = btm * 20
             rectBlink.adjust(-blinkSize*2,-blinkSize*2,blinkSize,blinkSize)

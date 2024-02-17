@@ -71,6 +71,7 @@ class TabData:
 
         if self.filePath:
             try:
+                self.graph.graphPath = self.filePath
                 self.graph.load_session(FileManagerHelper.graphPathGetReal(self.filePath),loadMouse=True)
             except Exception as e:
                 import traceback
@@ -601,6 +602,11 @@ class SessionManager(QTabWidget):
                     self.setActiveTab(curIdx - 1) #-1 because we removed tab
                 else:
                     self.setActiveTab(0)
+    
+    def unregisterAllTabsThreads(self):
+        for tab in self.getAllTabs():
+            tab._session_unloadEvent_()
+
     def showContextMenu(self):
             
 
