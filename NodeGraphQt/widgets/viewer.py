@@ -239,7 +239,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         #t = self.nodeGraphComponent.sessionManager.getActiveTabData()
         #if not t: return
         #if t.graph._viewer != self: return
-        
+        updateList = []
 
         for n in self.blinkedNodes:
             if isinstance(n,NodeItem):
@@ -254,14 +254,20 @@ class NodeViewer(QtWidgets.QGraphicsView):
                     if n._blinkTimeLeft <= 0:
                         n._blinkNode = False
                         self.blinkedNodes.remove(n)
-                    n.update()
+                    #n.update()
+                    updateList.append(n)
                     #pipe work
                     for p in n.get_outputs_pipes():
                         if p._blinkNode:
                             p._blinkTimeLeft = n._blinkTimeLeft
                             p._blinkTimer = n._blinkTimer
                             p._blinkNode = n._blinkNode
-                            p.update()
+                            #p.update()
+                            updateList.append(p)
+        
+        for obj in updateList:
+            obj.update()
+
         # for p in self.all_pipes():
         #     if p._blinkNode:
         #         p._blinkTimeLeft -= 10
