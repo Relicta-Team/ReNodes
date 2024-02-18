@@ -295,14 +295,23 @@ def AppMain():
 
 	logger.info("Application loaded.")
 
+	std_exit_result = 0
 	if Application.hasArgument('-prep_code'):
 		obj = Application.refObject.mainWindow
-		obj.generateAllCode(allUpdate=True)
+		#obj.generateAllCode(allUpdate=True)
+		if not obj.nodeGraph.compileAllGraphs(useLoadingScreen=False,onlyNotActual=False,compileFlags={
+			"-showgenpath",
+			"-logexcept",
+			"-exceptinfo"
+		}):
+			std_exit_result = -20901
 		
 	
 	#debug maker
 	#ng = application.mainWindow.nodeGraph.script_maker.openMaker()
 	#ng.next()
 	#ng.next()
+	if Application.hasArgument("-noapp"):
+		sys.exit(std_exit_result)
 
 	sys.exit(app.exec_())

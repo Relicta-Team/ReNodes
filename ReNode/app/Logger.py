@@ -61,4 +61,12 @@ def RegisterLogger(logname="main"):
     logobject = logging.getLogger(logname)
     logobject.setLevel(logging.DEBUG if Application.isDebugMode() else logging.INFO)
     RegisterLoggerStdoutHandler(logobject)
+
+    if Application.hasArgument("-noapp"):
+        fh = logging.FileHandler('noapp.log',mode='w',encoding='utf-8')
+        fh.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s: %(funcName)s:%(lineno)d %(message)s')
+        fh.setFormatter(formatter)
+        logobject.addHandler(fh)
+
     return logobject

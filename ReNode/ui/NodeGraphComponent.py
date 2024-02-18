@@ -172,7 +172,7 @@ class NodeGraphComponent:
 			if not rez:
 				if not FileManagerHelper.graphPathIsRoot(path):
 					path = FileManagerHelper.graphPathToRoot(path)
-				CodeGenerator.refLogger.error(f'Граф \"{LoggerConsole.createNodeGraphReference(path)}\" не собран.')
+				CodeGenerator.refLogger.error(f'Граф \"{LoggerConsole.createNodeGraphReference(path,text=path)}\" не собран.')
 
 			return rez
 		with concurrent.futures.ThreadPoolExecutor() as executor:
