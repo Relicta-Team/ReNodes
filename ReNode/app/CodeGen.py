@@ -2098,6 +2098,8 @@ class CodeGenerator:
         self._warnings.append(wrnObj)
     
     def _sanitizeNodeName(self,node_id):
+        if self._silentMode:
+            return node_id #because all nodes in silent mode is dictreferences
         if node_id in self._originalReferenceNames:
             node_id = self._originalReferenceNames[node_id]
         return node_id
