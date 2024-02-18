@@ -63,7 +63,7 @@ def RegisterLogger(logname="main"):
     RegisterLoggerStdoutHandler(logobject)
 
     if Application.hasArgument("-noapp"):
-        fh = logging.FileHandler('noapp.log',mode='w',encoding='utf-8')
+        fh = logging.FileHandler('noapp.log',mode='w')
         fh.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s %(levelname)s: %(funcName)s:%(lineno)d %(message)s')
         fh.setFormatter(formatter)
