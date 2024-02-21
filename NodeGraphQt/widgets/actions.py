@@ -94,6 +94,7 @@ class GraphAction(QtWidgets.QAction):
 
     def __init__(self, *args, **kwargs):
         super(GraphAction, self).__init__(*args, **kwargs)
+        self.setAutoRepeat(False)
         self.graph = None
         self.triggered.connect(self._on_triggered)
 
@@ -111,6 +112,7 @@ class ContextAction(QtWidgets.QAction):
 
     def __init__(self, *args, **kwargs):
         super(ContextAction, self).__init__(*args, **kwargs)
+        self.setAutoRepeat(False)
         self.graph = None
         self.actionType = "UnknownAction"
         self.contextData = {}
@@ -139,6 +141,7 @@ class NodeAction(GraphAction):
 
     def __init__(self, *args, **kwargs):
         super(NodeAction, self).__init__(*args, **kwargs)
+        self.setAutoRepeat(False)
         self.node_id = None
 
     def _on_triggered(self):
