@@ -131,6 +131,9 @@ class BackdropNodeItem(AbstractNodeItem):
         #Yodes: todo:fix history backdrop
         #self.baseBackdrop = None
 
+    def doBlink(self,v1=None):
+        pass
+
     def _combined_rect(self, nodes):
         group = self.scene().createItemGroup(nodes)
         rect = group.boundingRect()
