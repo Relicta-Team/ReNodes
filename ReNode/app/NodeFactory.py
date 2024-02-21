@@ -438,7 +438,7 @@ class NodeFactory:
 	#region factory instances
 
 	def instance(self,nodename,graphref: NodeGraph = None,pos=None,isInstanceCreate=False,forwardDeserializeData=None):
-		graphref.incrementId += 1
+		#graphref.incrementId += 1
 		if not self.nodes.get(nodename): return None
 		if not graphref: return None
 		if not pos:
@@ -459,7 +459,7 @@ class NodeFactory:
 		node.nodeClass = nodename
 		node._view.nodeClass = nodename
 
-		node.uid = graphref.incrementId
+		#node.uid = graphref.incrementId
 
 		node._view._node_render_type = NodeRenderType[cfg['render_type']]
 		if node._view._node_render_type in [NodeRenderType.NoHeaderText,NodeRenderType.NoHeader]:

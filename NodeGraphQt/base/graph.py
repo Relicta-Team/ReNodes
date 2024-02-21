@@ -1329,6 +1329,9 @@ class NodeGraph(QtCore.QObject):
 
             node.update()
 
+            self.incrementId += 1
+            node.uid = self.incrementId
+
             undo_cmd = NodeAddedCmd(self, node, node.model.pos)
             if push_undo:
                 nm = node.NODE_NAME
@@ -1417,6 +1420,10 @@ class NodeGraph(QtCore.QObject):
 
         # initial node direction layout.
         node.model.layout_direction = self.layout_direction()
+
+        #register incrementid
+        self.incrementId += 1
+        node.uid = self.incrementId
 
         # update method must be called before it's been added to the viewer.
         node.update()

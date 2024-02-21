@@ -179,7 +179,7 @@ class NodeAddedCmd(UndoCommand):
         self.pos = pos
 
     def undo(self):
-        self.pos = self.pos or self.node.pos()
+        self.pos = self.node.model.pos #fixed: self.pos or self.node.pos()
         self.model.nodes.pop(self.node.id)
         self.node.view.delete()
         self.viewer.allNodes.pop(self.node.uid)
