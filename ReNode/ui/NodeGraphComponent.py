@@ -324,7 +324,7 @@ class NodeGraphComponent:
 		if out_node.has_property(port_out.name()):
 			odat = out_node.getFactoryData()['options'][port_out.name()]
 			if "typeset_out" in odat:
-				out_node.set_property(port_out.name(),"object")
+				out_node.set_property(port_out.name(),odat.get('default',"object"))
 		
 		pass
 
