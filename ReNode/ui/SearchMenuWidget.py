@@ -173,9 +173,14 @@ class SearchComboButton(QPushButton):
 class SearchComboButtonAutoload(SearchComboButton):
 
     def __init__(self,parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent=parent)            
+        self.restr_type = 'object'
         self.reloadContents()
     
+    def firstInitRestrType(self,restr_def,restr_type):
+        if restr_def:
+            self.restr_type = restr_type
+
     def showPopup(self):
         self.reloadContents()
         super().showPopup()
@@ -184,7 +189,7 @@ class SearchComboButtonAutoload(SearchComboButton):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         fact = NodeGraphComponent.refObject.getFactory()
         treeContent = createTreeDataContent()
-        addTreeContentItem(treeContent,fact.getClassAllChildsTree("object"))
+        addTreeContentItem(treeContent,fact.getClassAllChildsTree(self.restr_type))
         self.loadContents(treeContent)
 
     
