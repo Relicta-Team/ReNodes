@@ -321,10 +321,18 @@ class NodeGraphComponent:
 			if custom_node and dest_port.view.port_typeName == "" and len(custom_node.get_property("autoportdata")) == 0:
 				custom_node.onAutoPortConnected(source_port)
 			pass
-		if out_node.has_property(port_out.name()):
-			odat = out_node.getFactoryData()['options'][port_out.name()]
+		
+		if port_out.view.port_type == 'in':
+			outernode = out_node
+			outerport = port_out
+		else:
+			outernode = in_node
+			outerport = port_in
+		
+		if outernode.has_property(outerport.name()):
+			odat = outernode.getFactoryData()['options'][outerport.name()]
 			if "typeset_out" in odat:
-				out_node.set_property(port_out.name(),odat.get('default',"object"))
+				outernode.set_property(outerport.name(),odat.get('default',"object"))
 		
 		pass
 
