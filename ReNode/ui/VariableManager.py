@@ -210,7 +210,7 @@ class VariableLibrary:
                 # "text": "Число",
                 # "range": {"min":0,"max":999999}
                 # }}
-            ,color=QtGui.QColor("Sea green").lighter(50),
+            ,color=QtGui.QColor("Sea green").lighter(50), # #17452b
             defaultValue=-1,parseFunction=int),
             VariableTypedef("list","Абстрактный массив",PropAbstract
                 ,color=QtGui.QColor("#EBE01E"),
@@ -877,7 +877,7 @@ class VariableManager(QDockWidget):
                         graph.delete_node(node,True) #push undo for history
             
             catObj = self.getVariableCategoryById(varId,retObject=True)
-            if catObj:
+            if catObj and catObj.category != 'localvar':
                 varData = self.getVariableDataById(varId)
                 if varData:
                     catObjInstancer = catObj.instancer
