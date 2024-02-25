@@ -415,14 +415,15 @@ class NodeComboBox(NodeBaseWidget):
 
 class NodeTypeSelect(NodeBaseWidget):
 
-    def __init__(self,parent=None,name='',label='',value='',typeset_out=None,port_rename=None):
+    def __init__(self,parent=None,name='',label='',value='',typeset_out=None,port_rename=None,restrict_bydefault=False):
         super(NodeTypeSelect,self).__init__(parent,name,label)
 
         search = SearchComboButtonAutoload()
-
+        search.firstInitRestrType(restr_def=restrict_bydefault,restr_type=value)
         #parent.constRefNodeGraph.getFactory().getNodeLibData(parent.nodeClass)
         self.typeset_out = None
         self.port_rename = ""
+        self.tsOutName = typeset_out
         if port_rename:
             self.port_rename = port_rename
         self.defineTypesetOut(typeset_out)
@@ -484,6 +485,9 @@ class NodeTypeSelect(NodeBaseWidget):
 
     def typeset_process(self):
         if self.typeset_out:
+            #precheck typeset (catched on gameobject)
+            if not self.typeset_out.scene():
+                self.defineTypesetOut(self.tsOutName)
             port = self.typeset_out
             typename = self.get_value()
             

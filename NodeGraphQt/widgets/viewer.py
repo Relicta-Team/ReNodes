@@ -30,7 +30,7 @@ ZOOM_MIN = -0.95
 ZOOM_MAX = 2.0
 
 def validate_connections(fromPort : PortItem,toPort : PortItem):
-    
+    #! При изменении в этой функции сделать проброс в validate_connections_serialized
     from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 
     fromTypeName = fromPort.port_typeName
@@ -77,6 +77,67 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
                 return True
 
     return False
+
+def can_connect_auto_port_serialized(pf,pt):
+    #TODO implement
+    return True
+
+def validate_connections_serialized(portFromDict,portToDict):
+    """
+        Копия от validate_connections
+        port[From|To]Dict = {
+            "port_typeName":str
+            "isAutoPortNode" :bool
+            "isAutoPortPrepared":bool
+            "portType": in | out
+            'node':???
+
+        }
+    """
+    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+
+    fromTypeName = portFromDict['port_typeName']
+    toTypeName = portToDict['port_typeName']
+
+    #fromNode = fromPort.refPort.model.node
+    #toNode = toPort.refPort.model.node
+
+    #check empty typename ports
+    if not fromTypeName and fromTypeName == toTypeName:
+        return False
+
+    #check start
+    if fromTypeName == toTypeName:
+        return True
+
+    # check selfports
+    fact = NodeGraphComponent.refObject.getFactory()
+    if fromTypeName == "self" or toTypeName == "self":
+        if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
+            return True
+
+    #dynamic set
+    #if one port has data and was empty
+    """
+        Если один из портов автопорт и не подготовлен то
+        осуществляем проверку может ли быть подключен узел к автопорту
+    """
+    if portFromDict['isAutoPortNode'] and not portFromDict['isAutoPortPrepared']:
+        if can_connect_auto_port_serialized(portFromDict,portToDict): return True
+
+    if portToDict['isAutoPortNode'] and not portToDict['isAutoPortPrepared']:
+        if can_connect_auto_port_serialized(portToDict,portFromDict): return True
+    
+    # проверка объектов. Только даункастинг
+    if fact.isObjectType(fromTypeName) and fact.isObjectType(toTypeName):
+        realOutType = fact.getRealType(toTypeName if portToDict['portType'] == 'out' else fromTypeName)
+        realBaseType = fact.getRealType(fromTypeName if portFromDict['portType'] == 'in' else toTypeName)
+        if realBaseType != realOutType:
+            if fact.isTypeOf(realOutType,realBaseType):
+                return True
+
+    return False
+
 
 class NodeViewer(QtWidgets.QGraphicsView):
     """
