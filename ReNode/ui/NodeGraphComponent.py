@@ -330,7 +330,7 @@ class NodeGraphComponent:
 			outerport = port_in
 		
 		if outernode.has_property(outerport.name()):
-			odat = outernode.getFactoryData()['options'][outerport.name()]
+			odat = outernode.getFactoryData()['options'].get(outerport.name(),{})
 			if "typeset_out" in odat:
 				outernode.set_property(outerport.name(),odat.get('default',"object"))
 		

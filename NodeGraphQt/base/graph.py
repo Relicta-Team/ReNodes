@@ -2126,8 +2126,7 @@ class NodeGraph(QtCore.QObject):
         dlist = []
         checkedautoport = []
         for k,curNodeData in serial_data['nodes'].items():
-            if curNodeData.get('class_','') in ['variable.set','variable.get']:
-                dlist.append(k)
+            
             #! проверка наличия автопорт даты выключена пока не пофиксится undo для автопортов.
             if 'autoportdata' in curNodeData.get('custom',{}): #and curNodeData['custom']['autoportdata']:
                 checkedautoport.append(k)
@@ -2256,6 +2255,15 @@ class NodeGraph(QtCore.QObject):
         # if serial_data.get("graph",{}).get('info',{}).get('classname','') != self.infoData.get('classname',0):
         #     p1 = serial_data.get("graph",{}).get('info',{}).get('classname','')
         #     raise Exception(f'Incompatible clipboard data [{p1}:{self.infoData.get("classname")}]')
+
+        #removing lvars
+        allvars = set()
+        for vdat in self.variables.values():
+            allvars.update(vdat.keys())
+        for k,v in serial_data.get('nodes',{}).copy().items():
+            if 'nameid' in v.get('custom',{}):
+                if v['custom']['nameid'] not in allvars:
+                    serial_data['nodes'].pop(k)
 
         self._undo_stack.beginMacro('pasted nodes')
         self.clear_selection()
