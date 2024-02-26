@@ -64,6 +64,7 @@ class RuntimeNode(BaseNode):
 			return False
 
 	def canConnectAutoPort(self,fromPort : PortItem,toPort : PortItem):
+		#!TODO: remove obsoleted function
 		if fromPort.port_typeName != "": return False
 		if toPort.port_typeName == "": return False
 		if "Exec" in [fromPort.port_typeName,toPort.port_typeName]: 
@@ -89,6 +90,7 @@ class RuntimeNode(BaseNode):
 
 	#
 	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict,chechDatatype=False):
+		#!TODO: remove obsoleted function
 		if not libCalculator: return sourceType
 
 		#libCalculator['typeget'] -> @type(for all), @typeref(for typeref (array,dict etc)), @value.1, @value.2
@@ -142,7 +144,7 @@ class RuntimeNode(BaseNode):
 		else :
 			raise Exception(f"Invalid type getter {getter}; Source type info {typeinfo}")
 		
-	def onAutoPortConnected(self,src_port_info : Port):
+	def onAutoPortConnected(self,src_port_info : Port,globalConnect=False,portsGCList=None):
 		clr = src_port_info.view.color
 		brdclr = src_port_info.view.border_color
 		tp = src_port_info.view.port_typeName
@@ -153,8 +155,8 @@ class RuntimeNode(BaseNode):
 		anySet = False
 		needUpdateNode = False
 		for idx, (name, port) in enumerate(self.inputs().items()):
-			if port.view.port_typeName == '':
-				if not anySet:
+			if port.view.port_typeName == '' or globalConnect and port in portsGCList:
+				if not anySet and not globalConnect:
 					anySet = True
 					self.set_property("autoportdata",{
 						"color": port.view.color,
@@ -181,8 +183,8 @@ class RuntimeNode(BaseNode):
 
 
 		for name, port in self.outputs().items():
-			if port.view.port_typeName == '':
-				if not anySet:
+			if port.view.port_typeName == '' or globalConnect and port in portsGCList:
+				if not anySet and not globalConnect:
 					anySet = True
 					self.set_property("autoportdata",{
 						"color": port.view.color,
@@ -199,6 +201,56 @@ class RuntimeNode(BaseNode):
 				self.update_icon_part_color(0,QtGui.QColor(*clr),False)
 		
 		if needUpdateNode: self.update()
+
+	def onAutoPortSyncData(self,visitedRecDict=None):
+		if visitedRecDict != None:
+			if self in visitedRecDict: return
+			visitedRecDict.add(self)
+		if not self.has_property('autoportdata'): return
+		data = self.getFactoryData()
+		autoPortVarSetted = len(self.get_property('autoportdata')) > 0
+		autoPortDefaultColors = {"color": [255, 255, 255, 255], "border_color": [255, 255, 255, 255]}
+		hasConnectedAnyAutoPorts = False
+		portList = []
+
+		for idx, (name,port) in enumerate(self.inputs().items()):
+			srcName = ''
+			textName = ''
+			if 'makeport_in' in data['options']:
+				srcName = data['options']['makeport_in']['src']
+				textName = data['options']['makeport_in']['text_format'].format(value=idx+1,index=idx)
+
+			# Узнаем является порт автоматическим
+			if (data['inputs'].get(name) and data['inputs'].get(name).get("type") == "") or \
+			(textName == name and data['inputs'].get(srcName) and data['inputs'].get(srcName).get("type") == ""):
+				portList.append(port)
+				
+				
+		for name,port in self.outputs().items():
+			# Узнаем является порт автоматическим
+			if data['outputs'].get(name) and data['outputs'].get(name).get("type") == "":
+				portList.append(port)
+
+		self.set_property("autoportdata",autoPortDefaultColors,False)
+
+		if all([p.view.connected_ports == 0 for p in portList]):
+			#все автопорты не установлены
+			self.onAutoPortDisconnected(None)
+		else:
+			#port.model.node / port.connected_ports()
+			#sync auto ports
+			syncThis = False
+			for p in portList:
+				cpList = p.connected_ports()
+				if cpList and not syncThis:
+					conP = cpList[0]
+					self.onAutoPortConnected(conP,globalConnect=True,portsGCList=portList)
+					syncThis = True
+
+				for cp in cpList:
+					conNod = cp.model.node
+					conNod.onAutoPortSyncData(visitedRecDict)
+		pass
 
 	def onAutoPortDisconnected(self,src_port_info : Port):
 		# Задача: если все порты, указанные в библиотеке отключены - сбросить цвет и тип

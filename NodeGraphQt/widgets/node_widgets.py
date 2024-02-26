@@ -498,10 +498,20 @@ class NodeTypeSelect(NodeBaseWidget):
             port.update()
             port.node.update()
             
+            # nde = port.refPort.node()
+            # if nde.has_property("autoportdata"):
+            #     vis = set()
+            #     nde.onAutoPortSyncData(vis)
+
+            vis = set()
             #validate connections
             for cp in port.connected_ports:
-                if not port.validate_connection_to(cp):
-                    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
+                nde = cp.refPort.node()
+                if nde.has_property("autoportdata"):
+                    nde.onAutoPortSyncData(vis)
+                pass
+                #if not port.validate_connection_to(cp):
+                #    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
             
 
 class NodeLineEdit(NodeBaseWidget):

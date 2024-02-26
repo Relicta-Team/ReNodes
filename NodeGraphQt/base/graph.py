@@ -32,7 +32,7 @@ from NodeGraphQt.nodes.port_node import PortInputNode, PortOutputNode
 from NodeGraphQt.widgets.node_graph import NodeGraphWidget, SubGraphWidget
 from NodeGraphQt.widgets.viewer import NodeViewer
 from NodeGraphQt.widgets.viewer_nav import NodeNavigationWidget
-
+from ReNode.app.Types import (validate_connections_serialized,make_portvalidation_request)
 
 class NodeGraph(QtCore.QObject):
     """
@@ -1856,6 +1856,9 @@ class NodeGraph(QtCore.QObject):
 
         return serial_data
 
+    def getNodeGraphComponent(self):
+        return self._viewer._tabSearch.nodeGraphComponent
+
     def _deserialize(self, data, relative_pos=False, pos=None, loadMousePos=False):
         """
         deserialize node data.
@@ -2128,7 +2131,20 @@ class NodeGraph(QtCore.QObject):
         for k,curNodeData in serial_data['nodes'].items():
             
             #! проверка наличия автопорт даты выключена пока не пофиксится undo для автопортов.
-            if 'autoportdata' in curNodeData.get('custom',{}) and False: #and curNodeData['custom']['autoportdata']:
+            """
+                autoportdata:
+                    мы будем вынужены сбросить подключенные автопорты и хранилище если:
+                        1. к узлу есть подключение, не содержащееся в списке
+            """
+            if 'autoportdata' in curNodeData.get('custom',{}): #and curNodeData['custom']['autoportdata']:
+                if not curNodeData['port_deletion_allowed']:
+                    dlist.append(k)
+                    self.getNodeGraphComponent().nodeFactory.logger.error("Cant copy node {} ({}) - port deletion logic error".format(curNodeData['class_'],k))
+                    continue
+                
+                
+
+                continue
                 checkedautoport.append(k)
 
                 #cleanup autoport
@@ -2268,7 +2284,14 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack.beginMacro('pasted nodes')
         self.clear_selection()
         nodes = self._deserialize(serial_data, relative_pos=True)
-        [n.set_selected(True) for n in nodes]
+        visited=set()
+        
+        for n in nodes:
+            if n.has_property("autoportdata"):
+                if hasattr(n,'onAutoPortSyncData'):
+                    n.onAutoPortSyncData(visited)
+            n.set_selected(True)
+        
         self._undo_stack.endMacro()
         return nodes
 
