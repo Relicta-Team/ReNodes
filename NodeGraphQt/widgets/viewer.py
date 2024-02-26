@@ -1154,7 +1154,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             else:
                 # Yodes: smart selector CONTEXT tabsearch
                 pos = self.mapToScene(self._previous_pos)
-                items = self._items_near(pos,AbstractNodeItem,3,3)
+                items = self._items_near(pos,NodeItem,3,3)
                 if not items:
                     self._tabSearch.onDragFromPipeContext(self._start_port)
                 #return; TODO: return and stop live connection + connect to
