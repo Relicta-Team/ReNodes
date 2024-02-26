@@ -2128,7 +2128,7 @@ class NodeGraph(QtCore.QObject):
         for k,curNodeData in serial_data['nodes'].items():
             
             #! проверка наличия автопорт даты выключена пока не пофиксится undo для автопортов.
-            if 'autoportdata' in curNodeData.get('custom',{}): #and curNodeData['custom']['autoportdata']:
+            if 'autoportdata' in curNodeData.get('custom',{}) and False: #and curNodeData['custom']['autoportdata']:
                 checkedautoport.append(k)
 
                 #cleanup autoport
