@@ -524,12 +524,14 @@ class SessionManager(QTabWidget):
         self.setActiveTab(index)
 
     def openFile(self):
-        path = self.graphSystem.dummyGraph.load_dialog(self._lastOpenPath,kwargs={"ext":"graph","customSave":True})
-        if not path: return
-        self._lastOpenPath = os.path.dirname(path)
-        path = FileManagerHelper.getGraphPathRelative(path)
-        path = FileManagerHelper.graphPathToRoot(path) #add root prefix
-        return self.openFileInternal(path)
+        pathList = self.graphSystem.dummyGraph.load_dialog(self._lastOpenPath,kwargs={"ext":"graph","customSave":True,"multiSelect":True})
+        if not pathList: return
+        for path in pathList:
+            self._lastOpenPath = os.path.dirname(path)
+            path = FileManagerHelper.getGraphPathRelative(path)
+            path = FileManagerHelper.graphPathToRoot(path) #add root prefix
+            
+            self.openFileInternal(path)
 
     def openFileInternal(self,pathRoot):
         allTabs = self.tabData

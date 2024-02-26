@@ -29,15 +29,22 @@ class FileDialog(object):
 
     @staticmethod
     def getOpenFileName(parent=None, title='Open File', file_dir=None,
-                        ext_filter='*'):
+                        ext_filter='*',mulSelect=False):
         if not file_dir:
             file_dir = _current_user_directory
-        file_dlg = QtWidgets.QFileDialog.getOpenFileName(
-            parent, title, file_dir, ext_filter)
-        file = file_dlg[0] or None
-        if file:
-            set_dir(file)
-        return file_dlg
+        if not mulSelect:
+            file_dlg = QtWidgets.QFileDialog.getOpenFileName(
+                parent, title, file_dir, ext_filter)
+            file = file_dlg[0] or None
+            if file:
+                set_dir(file)
+            return file_dlg
+        else:
+            file_dlg = QtWidgets.QFileDialog.getOpenFileNames(parent, title, file_dir, ext_filter)
+            files = file_dlg[0] or []
+            if files:
+                set_dir(files[0])
+            return file_dlg
 
 
 class BaseDialog(object):
