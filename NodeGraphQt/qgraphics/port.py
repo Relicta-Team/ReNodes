@@ -271,7 +271,7 @@ class PortItem(QtWidgets.QGraphicsItem):
         rttNode.view.draw_node()
     
     def validate_connection_to(self,pto):
-        from NodeGraphQt.widgets.viewer import validate_connections
+        from ReNode.app.Types import validate_connections
         return validate_connections(self,pto)
         
 

@@ -25,118 +25,10 @@ from NodeGraphQt.widgets.scene import NodeScene
 from NodeGraphQt.widgets.tab_search import TabSearchMenuWidget
 from ReNode.app.utils import clamp
 from ReNode.ui.TabSearchMenu import TabSearchMenu
+from ReNode.app.Types import validate_connections
 
 ZOOM_MIN = -0.95
 ZOOM_MAX = 2.0
-
-def validate_connections(fromPort : PortItem,toPort : PortItem):
-    #! При изменении в этой функции сделать проброс в validate_connections_serialized
-    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-
-    fromTypeName = fromPort.port_typeName
-    toTypeName = toPort.port_typeName
-
-    fromNode = fromPort.refPort.model.node
-    toNode = toPort.refPort.model.node
-
-    #check empty typename ports
-    if not fromTypeName and fromTypeName == toTypeName:
-        return False
-
-    #check start
-    if fromTypeName == toTypeName:
-        return True
-
-    # check selfports
-    fact = NodeGraphComponent.refObject.getFactory()
-    if fromTypeName == "self" or toTypeName == "self":
-        if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
-            return True
-
-    #dynamic set
-    #if one port has data and was empty
-    """
-        Если один из портов автопорт и не подготовлен то
-        осуществляем проверку может ли быть подключен узел к автопорту
-    """
-    if fromNode.isAutoPortNode() and not fromNode.isAutoPortPrepared():
-        if fromNode.canConnectAutoPort(fromPort,toPort): return True
-
-    if toNode.isAutoPortNode() and not toNode.isAutoPortPrepared():
-        if toNode.canConnectAutoPort(toPort,fromPort): return True
-
-    #if fromNode.has_property('autoportdata') and fromTypeName == '': return True
-    #if toNode.has_property('autoportdata') and toTypeName == '': return True
-    
-    # проверка объектов. Только даункастинг
-    if fact.isObjectType(fromTypeName) and fact.isObjectType(toTypeName):
-        realOutType = fact.getRealType(toTypeName if toPort._port_type == 'out' else fromTypeName)
-        realBaseType = fact.getRealType(fromTypeName if fromPort._port_type == 'in' else toTypeName)
-        if realBaseType != realOutType:
-            if fact.isTypeOf(realOutType,realBaseType):
-                return True
-
-    return False
-
-def can_connect_auto_port_serialized(pf,pt):
-    #TODO implement
-    return True
-
-def validate_connections_serialized(portFromDict,portToDict):
-    """
-        Копия от validate_connections
-        port[From|To]Dict = {
-            "port_typeName":str
-            "isAutoPortNode" :bool
-            "isAutoPortPrepared":bool
-            "portType": in | out
-            'node':???
-
-        }
-    """
-    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-
-    fromTypeName = portFromDict['port_typeName']
-    toTypeName = portToDict['port_typeName']
-
-    #fromNode = fromPort.refPort.model.node
-    #toNode = toPort.refPort.model.node
-
-    #check empty typename ports
-    if not fromTypeName and fromTypeName == toTypeName:
-        return False
-
-    #check start
-    if fromTypeName == toTypeName:
-        return True
-
-    # check selfports
-    fact = NodeGraphComponent.refObject.getFactory()
-    if fromTypeName == "self" or toTypeName == "self":
-        if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
-            return True
-
-    #dynamic set
-    #if one port has data and was empty
-    """
-        Если один из портов автопорт и не подготовлен то
-        осуществляем проверку может ли быть подключен узел к автопорту
-    """
-    if portFromDict['isAutoPortNode'] and not portFromDict['isAutoPortPrepared']:
-        if can_connect_auto_port_serialized(portFromDict,portToDict): return True
-
-    if portToDict['isAutoPortNode'] and not portToDict['isAutoPortPrepared']:
-        if can_connect_auto_port_serialized(portToDict,portFromDict): return True
-    
-    # проверка объектов. Только даункастинг
-    if fact.isObjectType(fromTypeName) and fact.isObjectType(toTypeName):
-        realOutType = fact.getRealType(toTypeName if portToDict['portType'] == 'out' else fromTypeName)
-        realBaseType = fact.getRealType(fromTypeName if portFromDict['portType'] == 'in' else toTypeName)
-        if realBaseType != realOutType:
-            if fact.isTypeOf(realOutType,realBaseType):
-                return True
-
-    return False
 
 
 class NodeViewer(QtWidgets.QGraphicsView):
@@ -1261,7 +1153,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
                     self.connection_changed.emit(disconnected, connected)
             else:
                 # Yodes: smart selector CONTEXT tabsearch
-                self._tabSearch.onDragFromPipeContext(self._start_port)
+                pos = self.mapToScene(self._previous_pos)
+                items = self._items_near(pos,AbstractNodeItem,3,3)
+                if not items:
+                    self._tabSearch.onDragFromPipeContext(self._start_port)
                 #return; TODO: return and stop live connection + connect to
                 pass
             self._detached_port = None
@@ -1549,9 +1444,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 'Граф (*.{})'.format(ext), 'Все файлы (*)'
             ])
             file_dlg = FileDialog.getOpenFileName(
-                self, 'Открытие', current_dir, ext_filter)
+                self, 'Открытие', current_dir, ext_filter,mulSelect=kwargs.get("multiSelect",False))
             file = file_dlg[0] or None
         else:
+            raise NotImplementedError("Load_dialog in NodeViewer is not implemented with default logic...")
             ext = '*{} '.format(ext) if ext else ''
             ext_filter = ';;'.join([
                 'Node Graph ({}*json)'.format(ext), 'All Files (*)'

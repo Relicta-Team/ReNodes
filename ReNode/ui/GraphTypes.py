@@ -160,7 +160,7 @@ class GraphTypeBase:
         for localName in cgObj.contextVariablesUsed:
             #do not pass iterator special vars
             if localName.lower() in ["_x","_foreachindex"]: continue
-            #do not pass var from for loop
+            #do not pass var in context from forloop
             if localName in gvarAssoc and allCodeObjects.get(gvarAssoc[localName]): 
                 if "operators.for_loop" == allCodeObjects.get(gvarAssoc[localName]).nodeClass:
                     continue

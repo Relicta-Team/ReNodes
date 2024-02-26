@@ -32,7 +32,7 @@ class TabSearchMenu(QWidget):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
         TabSearchMenu.NodeGraphRef = NodeGraphComponent.refObject
 
-        from NodeGraphQt.widgets.viewer import validate_connections
+        from ReNode.app.Types import validate_connections
         self.validate_connections: typing.Callable = validate_connections
 
         baseWidget = self
