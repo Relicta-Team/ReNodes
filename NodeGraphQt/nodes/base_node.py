@@ -285,6 +285,10 @@ class BaseNode(NodeObject):
         if isObjCaller:
             ledit = widget.get_custom_widget()
             ledit.setReadOnly(True)
+            if ledit.text().startswith("Объект"):
+                shet = ledit.styleSheet()
+                shet = shet.replace("background:rgba(35,35,35,20)","background:rgba(255,0,0,80)")
+                ledit.setStyleSheet(shet)
         else:
             widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
