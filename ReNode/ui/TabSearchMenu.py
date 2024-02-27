@@ -58,7 +58,9 @@ class TabSearchMenu(QWidget):
         text.setMinimumSize(sizeXFull,25)
         text.setMaximumSize(sizeXFull,25)
         ofsY += 25 + 5
-        self.setText("Выберите тип узла из всех доступных")
+        self.defaultText = "Выберите тип узла из всех доступных"
+        self.defaultTextCtx = "Выберите тип узла из контекста портов"
+        self.setText(self.defaultText)
         #self.setStyleSheet("padding: 10px 50px 20px;")
 
         inputX = int(sizeXFull/100*80)
@@ -134,6 +136,11 @@ class TabSearchMenu(QWidget):
 
     def onChangeVisible(self,newMode,centerpos=None):
         if newMode:
+            if self.contextInfo:
+                self.setText(self.defaultTextCtx)
+            else:
+                self.setText(self.defaultText)
+
             #self.tree.collapseAll() #fix collapse all on load
             self.edit.setText("") #fix plain text
             if centerpos:
