@@ -336,7 +336,14 @@ class WizardScriptMaker(QWizard):
 		if not filePath:
 			logger.error(f'Ошибка пути: {filePath}')
 			return
+
+		if os.path.isabs(filePath):
+			filePath = os.path.relpath(filePath)
 		
+		if not filePath:
+			logger.error("Не удалось определить путь к графу")
+			return
+
 		sets,msg = gobj.createInfoDataProps(settings)
 		if sets:
 			self.graphSystem.sessionManager.newTab(switchTo=True,loader=filePath,optionsToCreate=sets)
