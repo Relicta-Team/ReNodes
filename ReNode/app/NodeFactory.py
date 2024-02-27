@@ -352,6 +352,8 @@ class NodeFactory:
 		struct["__input_types"] = [vdct['type'] for vdct in struct['inputs'].values()]
 		struct["__output_types"] = [vdct['type'] for vdct in struct['outputs'].values()]
 
+		struct['class_'] = typename
+
 		self.nodes[typename] = struct
 
 	def _deserializeConnectors(self,cnts :dict,isInput = True):
@@ -559,7 +561,15 @@ class NodeFactory:
 			node.create_property(name=optname,value=optvals.get('default',None))
 		if type=="objcaller":
 			idat = node.graph.infoData
-			text__ = f'Этот {idat["name"]}' #"Этот объект"
+			fdat = node.getFactoryData()
+			if 'classInfo' in fdat:
+				baseClass__ = fdat['classInfo']['class']
+				if self.isTypeOf(idat['classname'],baseClass__):
+					text__ = f'Этот {idat["name"]}'
+				else:
+					text__ = "Объект {}".format(baseClass__)
+			else:
+				text__ = f'? {idat["name"]}' #"Этот объект"
 			node.add_text_input(name=optname,label=optvals.get('text',''),text=text__,isObjCaller=True)
 		if type=='makeport_in' or type=='makeport_out':
 			node.add_makeport(port_type='in' if type=='makeport_in' else 'out',name=optname,srcName=optvals.get('src',''),text_format=optvals.get('text_format'))

@@ -9,12 +9,68 @@ def validate_connections(fromPort : PortItem,toPort : PortItem):
 
     return validate_connections_serialized(fp,tp)
 
+def generate_ONdata_fromNodeLibData(fdat):
+    """Генератор темплейт значений ноды по классу"""
+    port_deletion_allowed = fdat.get("runtime_ports",False)
+    
+    custom_values = {}
+    for optK, optDV in fdat.get("options",{}).items():
+        custom_values[optK] = optDV.get('default',None)
+
+    rdat = {
+      "type_":"runtime_domain.RuntimeNode",
+      "icon":None,
+      "name":fdat['name'],
+      "color":None,
+      "border_color":None,
+      "text_color":None,
+      "disabled":False,
+      "selected":False,
+      "visible":True,
+      "width":0,
+      "height":0,
+      "pos":None,
+      "layout_direction":0,
+      "port_deletion_allowed":port_deletion_allowed,
+      "subgraph_session":{},
+      "custom":custom_values,
+      "class_":fdat['class_']
+    }
+
+    if port_deletion_allowed:
+        iprts = []
+        oprts = []
+        for k,v in fdat.get("inputs",{}).items():
+            iprts.append({
+                "name":k,
+                "type":v['type'],
+                'multi_connection': v.get('mutliconnect',False),
+            })
+        for k,v in fdat.get("outputs",{}).items():
+            oprts.append({
+                "name":k,
+                "type":v['type'],
+                'multi_connection': v.get('mutliconnect',False),
+            })
+        rdat['input_ports'] = iprts
+        rdat['output_ports'] = oprts
+
+    return rdat
 
 def make_portvalidation_request(port:PortItem|dict,nodeCtxInp=None,ptypeCtx=None):
     isPobj = isinstance(port,PortItem)
+    
+    from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+    fact = NodeGraphComponent.refObject.getFactory()
+
     if isPobj:
         nodeCtx = port.refPort.model.node
     else:
+        if isinstance(nodeCtxInp,dict):
+            nodeCtxInp = generate_ONdata_fromNodeLibData(nodeCtxInp)
+        else:
+            raise Exception("Unhandled type of nodeCtxInp: {}".format(type(nodeCtxInp)))
+        
         nodeCtx = nodeCtxInp
     _isAPNode = nodeCtx.isAutoPortNode() if isPobj else "autoportdata" in nodeCtx.get("custom",{})
     pname = port.name if isPobj else port['name']
@@ -24,8 +80,6 @@ def make_portvalidation_request(port:PortItem|dict,nodeCtxInp=None,ptypeCtx=None
     if isPobj:
         _ldat = nodeCtx.getFactoryData()
     else:
-        from ReNode.ui.NodeGraphComponent import NodeGraphComponent
-        fact = NodeGraphComponent.refObject.getFactory()
         _ldat = fact.getNodeLibData(ncls)
 
     pall_dat = _ldat['inputs' if ptype == 'in' else 'outputs']
@@ -86,9 +140,19 @@ def validate_connections_serialized(portFromDict,portToDict):
 
     # check selfports
     fact = NodeGraphComponent.refObject.getFactory()
-    if fromTypeName == "self" or toTypeName == "self":
-        if fact.isObjectType(fromTypeName) or fact.isObjectType(toTypeName):
-            return True
+    if fromTypeName == "self" or toTypeName == "self":#todo refactor (typecheck from memdata)
+        # src - left, targ - right (self)
+        if portToDict["portType"]=='in' and toTypeName == "self":
+            src = portFromDict
+            targ = portToDict
+        elif portFromDict['portType']=='in' and fromTypeName == "self":
+            src = portToDict
+            targ = portFromDict
+        cls = fact.getNodeLibData(targ['nodeClass']).get('classInfo')
+        if cls:
+            baseName = cls['class']
+            checked = fact.getRealType(src['port_typeName'])
+            if fact.isTypeOf(checked,baseName): return True
 
     #dynamic set
     #if one port has data and was empty

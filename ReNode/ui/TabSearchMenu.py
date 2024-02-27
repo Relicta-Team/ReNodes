@@ -12,6 +12,7 @@ from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
 from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.widgets.tab_search import TabSearchLineEditWidget
 from ReNode.app.utils import generateIconParts
+from ReNode.app.Types import validate_connections_serialized, make_portvalidation_request
 
 class TabSearchMenu(QWidget):
     NodeGraphRef = None
@@ -146,6 +147,10 @@ class TabSearchMenu(QWidget):
             if self.contextInfo:
                 self.contextInfo = None #drop context
                 self.buidSearchTree("") #rebuild graph
+            
+            view = self.nodeGraphComponent.graph.viewer()
+            view._detached_port = None
+            view.end_live_connection()
 
     def generate_treeDict(self):
         self.dictTreeGen = self.nodeGraphComponent._generateSearchTreeDict()
@@ -205,31 +210,38 @@ class TabSearchMenu(QWidget):
         if clsData and contextDict:
             ptypeCheck = contextDict['port_type']
             srcNode = contextDict['src_node']
+            psearchDict,ptctx = ("outputs",'out') if contextDict['port_connType']=='in' else ("inputs",'in')
+            not_possible = []
+            for k,v in clsData[psearchDict].items():
+                clsObj = make_portvalidation_request({'name':k,'type':v['type']},clsData,ptctx)
+                not_possible.append(not validate_connections_serialized(contextDict['from_port_data'],clsObj))
+            if not not_possible or all(not_possible): return False
+                    
             #check for self
-            if ptypeCheck == 'self':
-                curCls = contextDict['classname']
-                if "classInfo" in clsData:
-                    validatedClass = clsData.get('classInfo',{}).get("class","")
-                    if not TabSearchMenu.getFactory().isTypeOf(curCls,validatedClass) and \
-                        not TabSearchMenu.getFactory().isTypeOf(validatedClass,curCls):
-                        return False
+            # if ptypeCheck == 'self':
+            #     curCls = contextDict['classname']
+            #     if "classInfo" in clsData:
+            #         validatedClass = clsData.get('classInfo',{}).get("class","")
+            #         if not TabSearchMenu.getFactory().isTypeOf(curCls,validatedClass) and \
+            #             not TabSearchMenu.getFactory().isTypeOf(validatedClass,curCls):
+            #             return False
             
-            #rtt ports check
-            if ptypeCheck == "":
-                failCheckT = True
-                pinfo = clsData["inputs" if contextDict['port_connType']=='in' else "outputs"]
-                for pk in clsData[contextDict['port_key']]:
-                    if pk in ["Exec",""]:
-                        continue
-                    else:
-                        failCheckT = False
-                        if srcNode._calculate_autoport_type(pk,pinfo.get(pk)) != pk:
-                            return False
-                if failCheckT: return False
-            else:
-                #check port access (!not auto!)
-                if ptypeCheck not in clsData[contextDict['port_key']]:
-                    return False
+            # #rtt ports check
+            # if ptypeCheck == "":
+            #     failCheckT = True
+            #     pinfo = clsData["inputs" if contextDict['port_connType']=='in' else "outputs"]
+            #     for pk in clsData[contextDict['port_key']]:
+            #         if pk in ["Exec",""]:
+            #             continue
+            #         else:
+            #             failCheckT = False
+            #             if srcNode._calculate_autoport_type(pk,pinfo.get(pk)) != pk:
+            #                 return False
+            #     if failCheckT: return False
+            # else:
+            #     #check port access (!not auto!)
+            #     if ptypeCheck not in clsData[contextDict['port_key']]:
+            #         return False
 
         for wordPart in words:
             if wordPart in itmName:
@@ -381,6 +393,7 @@ class TabSearchMenu(QWidget):
             "port_ref": port,
 
             "src_node": srcNode,
+            "from_port_data": make_portvalidation_request(port,port.port_typeName,ptype),
 
             #classinfo
             "classnameTypeName": idat.get('classname','') + "^",

@@ -480,10 +480,10 @@ class NodeTypeSelect(NodeBaseWidget):
     def on_value_changed(self, *args, **kwargs):
         custom = self.get_custom_widget()
         custom.setToolTip(custom.text())
-        self.typeset_process()
+        us_ = self.typeset_process(makeMacro=True)
         return super().on_value_changed(*args, **kwargs)
 
-    def typeset_process(self):
+    def typeset_process(self,makeMacro=False):
         if self.typeset_out:
             #precheck typeset (catched on gameobject)
             if not self.typeset_out.scene():
@@ -508,8 +508,8 @@ class NodeTypeSelect(NodeBaseWidget):
             for cp in port.connected_ports:
                 nde = cp.refPort.node()
                 if nde.has_property("autoportdata"):
-                    nde.onAutoPortSyncData(vis)
-                pass
+                    nde.onAutoPortSyncData(vis,pushUndo=False)
+                
                 #if not port.validate_connection_to(cp):
                 #    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
             

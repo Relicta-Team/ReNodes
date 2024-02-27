@@ -889,6 +889,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
         if not self._start_port:
             return
+        
+        if self._tabSearch.isVisible():
+            return
 
         pointer_color = None
         for item in self.scene().items(pos):
@@ -1157,10 +1160,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 items = self._items_near(pos,NodeItem,3,3)
                 if not items:
                     self._tabSearch.onDragFromPipeContext(self._start_port)
-                #return; TODO: return and stop live connection + connect to
-                pass
-            self._detached_port = None
-            self.end_live_connection()
+                else:
+                    self._detached_port = None
+                    self.end_live_connection()
             return
 
         else:

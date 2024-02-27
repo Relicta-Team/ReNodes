@@ -202,7 +202,7 @@ class RuntimeNode(BaseNode):
 		
 		if needUpdateNode: self.update()
 
-	def onAutoPortSyncData(self,visitedRecDict=None):
+	def onAutoPortSyncData(self,visitedRecDict=None,pushUndo=True):
 		if visitedRecDict != None:
 			if self in visitedRecDict: return
 			visitedRecDict.add(self)
@@ -249,7 +249,10 @@ class RuntimeNode(BaseNode):
 
 				for cp in cpList:
 					conNod = cp.model.node
-					conNod.onAutoPortSyncData(visitedRecDict)
+					conNod.onAutoPortSyncData(visitedRecDict,pushUndo=pushUndo)
+
+					if not p.view.validate_connection_to(cp.view):
+						p.disconnect_from(cp,pushUndo)
 		pass
 
 	def onAutoPortDisconnected(self,src_port_info : Port):
