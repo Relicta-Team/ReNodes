@@ -156,8 +156,9 @@ class TabSearchMenu(QWidget):
                 self.buidSearchTree("") #rebuild graph
             
             view = self.nodeGraphComponent.graph.viewer()
-            view._detached_port = None
-            view.end_live_connection()
+            if view._LIVE_PIPE.isVisible():
+                view._detached_port = None
+                view.end_live_connection()
 
     def generate_treeDict(self):
         self.dictTreeGen = self.nodeGraphComponent._generateSearchTreeDict()
