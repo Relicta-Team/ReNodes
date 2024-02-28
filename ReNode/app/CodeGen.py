@@ -1898,7 +1898,7 @@ class CodeGenerator:
             retVals = []
             for indexVal, sDict in enumerate(self.getFactory().getStructFields(tname)):
                 sDictType_ = sDict['type']
-                decType_ = self.getVariableManager().decomposeType(sDictType_)
+                decType_ = self.getFactory().decomposeType(sDictType_)
                 valParse = value[indexVal]
                 if decType_[0] != "value":
                     valParse = literal_eval(valParse)

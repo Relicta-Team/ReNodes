@@ -535,7 +535,7 @@ class StructureWidget(QWidget):
             from NodeGraphQt.custom_widgets.properties_bin.prop_widgets_base import PropAbstract
             elementValueWidget = PropAbstract()
         if hasattr(elementValueWidget,"init_enum_values"):
-            typeList = self.getVariableManager().decomposeType(typename)
+            typeList = self.getFactory().decomposeType(typename)
             elementValueWidget.init_enum_values(typeList[1])
         
         elementValueWidget.set_value(value)

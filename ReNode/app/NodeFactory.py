@@ -682,6 +682,23 @@ class NodeFactory:
 			return type[:-1]
 		return type
 
+	#TODO if changes in decomposeType,composeType -> forward decl in varmgr, varlib
+	def decomposeType(self,fulltypename):
+		if re.findall('[\[\]\,]',fulltypename):
+			typeinfo = re.findall('[\w\.]+\^?',fulltypename)
+			return typeinfo
+		else:
+			return ['value',fulltypename]
+
+	def composeType(self,list):
+		if len(list) == 0:
+			raise Exception("Cant compose type {}".format(list))
+		datatype = list[0]
+		if datatype == 'value':
+			return list[1]
+		else:
+			return datatype + "[" + ','.join(list[1:]) + "]"
+
 	def isObjectType(self,type):
 		"""
 			Проверяет является ли тип типом объекта (унаследованного от object)

@@ -303,7 +303,7 @@ class Inspector(QDockWidget):
                         self.logger.error(f"Cannot get data for {baseName}::{cat}::{fName} by type {fRet}")
                         continue
 
-                    typeList = vmgr.decomposeType(fRet)
+                    typeList = fact.decomposeType(fRet)
                     propObj = None
                     if vObj:
                         isValType = vType.dataType == 'value'

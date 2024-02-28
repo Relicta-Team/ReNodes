@@ -383,6 +383,7 @@ class VariableLibrary:
         #return "object" in classData.get('baseList',[])
         return True
     
+
     def decomposeType(self,fulltypename):
         if re.findall('[\[\]\,]',fulltypename):
             typeinfo = re.findall('[\w\.]+\^?',fulltypename)
