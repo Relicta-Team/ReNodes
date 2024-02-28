@@ -185,16 +185,23 @@ def can_connect_auto_port_serialized(factory,fromPort,toPort,nodeClassnameSrc,da
         if nodeClassnameSrc != "internal.reroute":
             return False
 
-    #portDataName = "inputs" if fromPort["portType"] == PortTypeEnum.IN.value else "outputs"
-    evalType = calculate_autoport_type_serialized(factory,toPort["port_typeName"],dataPort)
+    #prep self port
+    #TODO make smart convert from self to objecttype (array.selectMin -> self)
+    toPortTPN = toPort['port_typeName']
+    # if toPortTPN == 'self':
+    #     cinf = factory.getNodeLibData(toPort['nodeClass']).get('classInfo')
+    #     if cinf:
+    #         toPortTPN = cinf['class'] + "^"
+
+    evalType = calculate_autoport_type_serialized(factory,toPortTPN,dataPort)
     
     if evalType.startswith("ANY"):
-        evalType = toPort["port_typeName"]
-
-    if evalType != toPort["port_typeName"]:
+        evalType = toPortTPN
+    if evalType != toPortTPN:
         return False
+    if evalType == 'self': return False
 
-    equalDataTypes = calculate_autoport_type_serialized(factory,toPort["port_typeName"],dataPort,True)
+    equalDataTypes = calculate_autoport_type_serialized(factory,toPortTPN,dataPort,True)
 
     if not equalDataTypes:
         return False

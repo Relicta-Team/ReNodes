@@ -177,6 +177,20 @@ class SearchComboButtonAutoload(SearchComboButton):
         self.restr_type = 'object'
         self.reloadContents()
     
+    def init_restricted_types(self,rt):
+        if rt:
+            rtl = rt.split("|")
+            if rtl:
+                rval = rtl[0]
+                if rval.endswith("^"):
+                    rval = rval[:-1]
+                self.firstInitRestrType(True,rval)
+                
+                rt = self.restr_type
+                retItem = self.getItemByData(rt)
+                if retItem:
+                    self.setItemData(*retItem)
+
     def firstInitRestrType(self,restr_def,restr_type):
         if restr_def:
             self.restr_type = restr_type

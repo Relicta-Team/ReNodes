@@ -45,11 +45,16 @@ class ArrayWidget(QWidget):
         self.instancer = instancer
         self.valuetype = '' # это просто строчная репрезентация типа
         self.isEnum = False
+        self.restricted = ''
         self.initUI()
 
     def init_enum_values(self,valuetypes):
         self.valuetype = valuetypes
         self.isEnum = self.getFactory().isEnumType(valuetypes)
+
+    def init_restricted_types(self,restr):
+        if restr != None:
+            self.restricted = restr
 
     def getNodeGraphComponent(self):
         from ReNode.ui.NodeGraphComponent import NodeGraphComponent
@@ -129,6 +134,8 @@ class ArrayWidget(QWidget):
             elementValueWidget = self.instancer()
             if hasattr(elementValueWidget, 'init_enum_values'):
                 elementValueWidget.init_enum_values(self.valuetype)
+            if hasattr(elementValueWidget,'init_restricted_types'):
+                elementValueWidget.init_restricted_types(self.restricted)
             if val:
                 elementValueWidget.set_value(val)
 
@@ -211,6 +218,7 @@ class DictWidget(QWidget):
         self.keytype = '' #not used now
         self.valuetype = ''
         self.isEnum = False # for valuetype
+        self.restricted = ''
 
         if not widVarType: #autodef
             raise Exception("TODO FIX dict widget")
@@ -228,6 +236,10 @@ class DictWidget(QWidget):
 
     def init_enum_values(self,keytype):
         self.keytype = keytype
+
+    def init_restricted_types(self,rt):
+        pass
+
     def on_update_value_type(self,data):
         self.valuetype = data
         self.isEnum = self.getFactory().isEnumType(data)
@@ -363,6 +375,8 @@ class DictWidget(QWidget):
             instancerValue = typeObj.classInstance()
         if hasattr(instancerValue, 'init_enum_values'):
             instancerValue.init_enum_values(self.valuetype)
+        if hasattr(instancerValue,'init_restricted_types'):
+            instancerValue.init_restricted_types(self.restricted)
         if valItem:
             instancerValue.set_value(valItem)
         

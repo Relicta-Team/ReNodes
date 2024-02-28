@@ -291,6 +291,7 @@ class Inspector(QDockWidget):
                     fDesc = nodeData.get('desc',"")
                     fRet = propContents['return'] #для отладки типов можно брать из инспектора
                     fDefault = propContents.get('defval',"$NULL$")
+                    restricted = propContents.get("restr")
                     # отладочная проверка
                     if nodeData['returnType'] != propContents['return']:
                         from ReNode.app.application import Application
@@ -317,6 +318,8 @@ class Inspector(QDockWidget):
                             propObj = vObj.classInstance()
                         if hasattr(propObj,'init_enum_values'):
                             propObj.init_enum_values(typeList[1])
+                        if restricted and hasattr(propObj,"init_restricted_types"):
+                            propObj.init_restricted_types(restricted)
 
                     
                     nameObj = self.addProperty(baseName,cat,propName,fName,propObj,fDefault)

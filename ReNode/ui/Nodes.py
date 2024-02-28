@@ -62,87 +62,10 @@ class RuntimeNode(BaseNode):
 			return len(self.get_property('autoportdata')) > 0
 		else:
 			return False
-
-	def canConnectAutoPort(self,fromPort : PortItem,toPort : PortItem):
-		#!TODO: remove obsoleted function
-		if fromPort.port_typeName != "": return False
-		if toPort.port_typeName == "": return False
-		if "Exec" in [fromPort.port_typeName,toPort.port_typeName]: 
-			if self.nodeClass != "internal.reroute":
-				return False
-
-		data = self.getFactoryData()
-		portDataName = "inputs" if fromPort.port_type == PortTypeEnum.IN.value else "outputs"
-		evalType = self._calculate_autoport_type(toPort.port_typeName,data[portDataName].get(fromPort.name))
-		
-		if evalType.startswith("ANY"):
-			evalType = toPort.port_typeName
-
-		if evalType != toPort.port_typeName:
-			return False
-
-		equalDataTypes = self._calculate_autoport_type(toPort.port_typeName,data[portDataName].get(fromPort.name),True)
-
-		if not equalDataTypes:
-			return False
-
-		return True
-
-	#
+	
 	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict,chechDatatype=False):
-		#!TODO: remove obsoleted function
-		if not libCalculator: return sourceType
-
-		#libCalculator['typeget'] -> @type(for all), @typeref(for typeref (array,dict etc)), @value.1, @value.2
-
-		getterData = libCalculator['typeget']
-		dataType,getter = getterData.split(';')
-		isMultitype = re.findall('[\[\]\,]',sourceType)
-		if not isMultitype:
-			preSource = sourceType
-			sourceType = f'{dataType}[{sourceType}]'
-			if dataType == "value":
-				sourceType = preSource
-
-		typeinfo = re.findall('[\w\.]+\^?',sourceType)
-		
-		if chechDatatype:
-			if dataType == "ANY": return True
-			if not isMultitype and dataType == 'value': return True
-
-			return dataType == typeinfo[0]
-
-		#check type
-		acceptedType = False
-		_typeValidator = sourceType
-		if dataType == "ANY" and typeinfo[0] == dataType:
-			_typeValidator = typeinfo[1]
-		for checkedType in libCalculator.get('allowtypes',[_typeValidator]):
-			if checkedType == _typeValidator:
-				acceptedType = True
-				break
-			if checkedType == "*enum":
-				if self.getFactory().isEnumType(_typeValidator):
-					acceptedType = True
-					break
-			if checkedType == "*struct":
-				if self.getFactory().isStructType(_typeValidator):
-					acceptedType = True
-					break
-		if not acceptedType: return "!not_accepted_type"
-
-		if getter == '@type':
-			if dataType == "ANY" and typeinfo[0] == dataType:
-				return typeinfo[1] #тип значения редиректится в первый элемент типа
-			return sourceType
-		elif getter == '@typeref':
-			return typeinfo[0]
-		elif getter == '@value.1' and len(typeinfo) > 1:
-			return typeinfo[1]
-		elif getter == '@value.2' and len(typeinfo) > 2:
-			return typeinfo[2]
-		else :
-			raise Exception(f"Invalid type getter {getter}; Source type info {typeinfo}")
+		from ReNode.app.Types import calculate_autoport_type_serialized
+		return calculate_autoport_type_serialized(self.getFactory(),sourceType,libCalculator,chechDatatype)
 		
 	def onAutoPortConnected(self,src_port_info : Port,globalConnect=False,portsGCList=None):
 		clr = src_port_info.view.color
@@ -151,6 +74,11 @@ class RuntimeNode(BaseNode):
 		data = self.getFactoryData()
 		varMgr = self.getVariableManager()
 		fact = self.getFactory()
+
+		if tp == 'self':
+			fd_ = src_port_info.node().getFactoryData()
+			if fd_.get('classInfo'):
+				tp = fd_['classInfo']['class'] + "^"
 
 		anySet = False
 		needUpdateNode = False

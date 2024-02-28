@@ -345,6 +345,14 @@ class NodeObjectHandler:
 		#значение по умолчанию
 		elif tokenType == 'defval':
 			self.memberData['defval'] = unescape(tokens[1]).replace("\\:",":")
+		elif tokenType == 'restr':
+			restvals_ = [] 
+			for tres_ in tokens[1].split("|"):
+				if tres_ != "*":
+					if not tres_.endswith("^"):
+						tres_ += "^"
+				restvals_.append(tres_)
+			self.memberData['restr'] = "|".join(restvals_)
 		#method specific data
 
 		#method type: method,event,get,const
@@ -1067,6 +1075,10 @@ class NodeObjectHandler:
 				'return': rettype,
 				'defval': parsedValue
 			}
+			if 'restr' in memberData:
+				propData['restr'] = memberData['restr']
+				del memberData['restr']
+			
 			if self.isField:
 				prps__['inspectorProps']['fields'][self.memberName] = propData
 			elif self.isMethod:
