@@ -1154,6 +1154,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 else:
                     disconnected.append((self._start_port, self._detached_port))
                     self.connection_changed.emit(disconnected, connected)
+                
+                self._detached_port = None
+                self.end_live_connection()
             else:
                 # Yodes: smart selector CONTEXT tabsearch
                 pos = self.mapToScene(self._previous_pos)
