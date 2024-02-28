@@ -173,6 +173,25 @@ def validate_connections_serialized(portFromDict,portToDict):
         if realBaseType != realOutType:
             if fact.isTypeOf(realOutType,realBaseType):
                 return True
+    
+    # проверка декомпозиции типа (объектов)
+    fttFrom = toTypeName if portToDict['portType'] == 'out' else fromTypeName
+    tttTo = fromTypeName if portFromDict['portType'] == 'in' else toTypeName
+
+    ftDec = fact.decomposeType(fttFrom)
+    ttDec = fact.decomposeType(tttTo)
+    if ftDec[0]!=ttDec[0] or len(ftDec)!=len(ttDec): return False
+    allt_list = []
+    for ofs in range(1,len(ftDec)):
+        
+        realOutType = fact.getRealType(ftDec[ofs])
+        realBaseType = fact.getRealType(ttDec[ofs])
+        
+        if not fact.isObjectType(realOutType) or not fact.isObjectType(realBaseType):
+            allt_list.append(False)
+            continue
+        allt_list.append(fact.isTypeOf(realOutType,realBaseType))
+    if allt_list and all(allt_list): return True
 
     return False
 
