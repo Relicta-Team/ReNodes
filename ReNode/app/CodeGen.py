@@ -301,10 +301,6 @@ class CodeGenerator:
             code = f'//gdate:{datetime.datetime.now()}\n\n' + \
                     f'#include ".\\resdk_graph.h"\n'
 
-            if self.isDebugMode() and not self._silentMode:
-                from PyQt5.QtWidgets import QApplication
-                QApplication.clipboard().setText(code)
-
             if self._exceptions:
                 raise CGCompileAbortException()
             if self.hasCompileParam("-failonwarn") and self._warnings:
@@ -343,6 +339,10 @@ class CodeGenerator:
                 code += f'#define __THIS_GRAPH__ {fp__}\n\n\n'
             
             code = code + codeReal
+
+            if self.isDebugMode() and not self._silentMode:
+                from PyQt5.QtWidgets import QApplication
+                QApplication.clipboard().setText(code)
 
             #saving compiled code
             file_path = os.path.join(FileManagerHelper.getFolderCompiledScripts(),graphName)
@@ -1009,6 +1009,9 @@ class CodeGenerator:
                                 if paramName == 'internal':
                                     replacerInfo = ''
                                     lvar = paramValue
+                                elif paramName == 'iterator':
+                                    lvar = f"__it{paramValue}{index_stack}_{genCount}"
+                                    replacerInfo = f'private {lvar} = {paramValue};'
                                 else:
                                     self.exception(CGInternalCompilerError,source=obj,context=f'Unknown option {paramName} in pattern: {fullTextTemplate}')
                                     break
@@ -1485,7 +1488,7 @@ class CodeGenerator:
         clines : list[str] = enCode.splitlines()
         for ex in resultAnalyze.exceptions:
             
-            lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+|_foreachindex|_x|_y)\" is not from this scope \(not private\)",ex.args[1],re.IGNORECASE)
+            lvarNameAsList = re.findall("Local variable \"(_lvar_\d+_\d+|_LVAR\d+|_foreachindex|_x|_y|__it_\w+\d+_\d+)\" is not from this scope \(not private\)",ex.args[1],re.IGNORECASE)
             if lvarNameAsList:
                 #TODO warning for: warning:Variable "_lvar_21_0" not used
                 lvarName = lvarNameAsList[0]

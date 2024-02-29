@@ -159,10 +159,11 @@ class GraphTypeBase:
         #       adding lvars and params (all context local vars)
         for localName in cgObj.contextVariablesUsed:
             #do not pass iterator special vars
-            if localName.lower() in ["_x","_foreachindex"]: continue
+            #if localName.lower() in ["_x","_foreachindex"]: continue
             #do not pass var in context from forloop
             if localName in gvarAssoc and allCodeObjects.get(gvarAssoc[localName]): 
-                if "operators.for_loop" == allCodeObjects.get(gvarAssoc[localName]).nodeClass:
+                nodeClass = allCodeObjects.get(gvarAssoc[localName]).nodeClass
+                if nodeClass in ["operators.for_loop","operators.foreach_loop"]:
                     continue
             
             varlistalloc.append(f"\"{localName}\"")
