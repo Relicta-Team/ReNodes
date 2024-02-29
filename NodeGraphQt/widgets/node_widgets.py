@@ -423,6 +423,7 @@ class NodeTypeSelect(NodeBaseWidget):
         #parent.constRefNodeGraph.getFactory().getNodeLibData(parent.nodeClass)
         self.typeset_out = None
         self.port_rename = ""
+        self.replaceType = "{typename}"
         self.tsOutName = typeset_out
         if port_rename:
             self.port_rename = port_rename
@@ -441,6 +442,11 @@ class NodeTypeSelect(NodeBaseWidget):
     def defineTypesetOut(self,tso):
         """Define port for custom allocate type"""
         if not tso: return
+        if "|" in tso:
+            tparts = tso.split("|")
+            if len(tparts)!=2: return
+            tso = tparts[0]
+            self.replaceType = tparts[1]
         for prt in self.node.outputs:
             if prt.name == tso:
                 self.typeset_out = prt
@@ -494,7 +500,9 @@ class NodeTypeSelect(NodeBaseWidget):
             if self.port_rename:
                 newname = self.port_rename.format(typename)
                 port.setPortName(newname)
-            port.setPortTypeName(typename + "^",True)
+            ptn = typename + "^"
+            ptn = self.replaceType.format(typename=ptn)
+            port.setPortTypeName(ptn,True)
             port.update()
             port.node.update()
             
@@ -510,8 +518,8 @@ class NodeTypeSelect(NodeBaseWidget):
                 if nde.has_property("autoportdata"):
                     nde.onAutoPortSyncData(vis,pushUndo=False)
                 
-                #if not port.validate_connection_to(cp):
-                #    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
+                if not port.validate_connection_to(cp):
+                    port.refPort.disconnect_from(cp.refPort,False) #off pushundo
             
 
 class NodeLineEdit(NodeBaseWidget):

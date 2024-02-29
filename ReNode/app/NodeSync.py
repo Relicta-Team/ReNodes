@@ -1,6 +1,7 @@
 
 from ReNode.app.Constants import *
 from ReNode.app.Logger import RegisterLogger
+from ReNode.app.Types import validate_connections_serialized,make_portvalidation_request
 from copy import deepcopy
 
 class NodeSyncronizer:
@@ -31,6 +32,8 @@ class NodeSyncronizer:
         self.refValidatedGraph = graphRef
         self.refDict = graphDict
 
+        self.nodeLinkDict = {}
+
         for cat,vardata in graphDict['graph'].get('variables',{}).items():
             for varid,varprops in vardata.items():
                 self.validateVariable(cat,varid,varprops)
@@ -40,15 +43,53 @@ class NodeSyncronizer:
         for k,v in nodes.items():
             uniName = f'{v["name"]} ({startIndex})' #, {v["class_"]}
             link = self.createNodeLink(graphRef,startIndex,uniName)
+            self.nodeLinkDict[k] = link
             #self.log(f'Loaded {link}')
             self.validateNode(k,v,link)
             startIndex += 1
         
+        for conn in graphDict['connections'].copy():
+            self.validateConnection(conn)
+
         self.log(f"Validated {len(nodes)} nodes!")
 
         self.refValidatedGraph = None
         self.refDict = None
     
+    def validateConnection(self,conn):
+        fromNode,fromPort = conn['in']
+        toNode,toPort = conn['out']
+        fnObj = self.refDict['nodes'][fromNode]
+        tnObj = self.refDict['nodes'][toNode]
+        fcls = fnObj['class_']
+        tcls = tnObj['class_']
+
+        fdat = self.getFactory().getNodeLibData(fcls)
+        tdat = self.getFactory().getNodeLibData(tcls)
+
+        if tcls=='objects.thisObject' and toPort != "thisName":
+            #toPort = "thisName"
+            return #skip "this" node
+
+        if fnObj['port_deletion_allowed']:
+            fp = next((p for p in fnObj['input_ports'] if p['name'] == fromPort))
+        else:
+            fp = fdat['inputs'][fromPort]
+        if tnObj['port_deletion_allowed']:
+            tp = next((p for p in tnObj['output_ports'] if p['name'] == toPort))
+        else:
+            tp = tdat['outputs'][toPort]
+        
+        if tp.get('type')=="auto_object_type":
+            return #skip castto
+
+        fObj = make_portvalidation_request({'name':fromPort,'type':fp['type']},fdat,'in')
+        tObj = make_portvalidation_request({'name':toPort,'type':tp['type']},tdat,'out')
+        if not validate_connections_serialized(fObj,tObj):
+            sv = self.nodeLinkDict[fromNode]
+            tv = self.nodeLinkDict[toNode]
+            self.warn(f'Несоответствие подключений между {sv} ({fp["type"]}) и {tv} ({tp["type"]})')
+
     def unpackData(self,dictValues):
         className = dictValues['class_']
         classInfo = self.getFactory().getNodeLibData(className)

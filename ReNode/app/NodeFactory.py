@@ -236,8 +236,7 @@ class NodeFactory:
 		varMgr = NodeGraphComponent.refObject.variable_manager
 
 		if re.findall('[\[\]\,]',type_name):
-			portType = f'array[{type_name}]'
-			typeinfo = re.findall('[\w\.]+\^?',portType)
+			typeinfo = self.decomposeType(type_name)
 			type_name = typeinfo[1]
 
 		#temporary fix
