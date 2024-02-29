@@ -330,7 +330,7 @@ class CodeGenerator:
                 def __updEv(sergraph):
                     sergraph['graph']['info']['compiledGUID'] = guidCompile
                     sergraph['graph']['info']['compileStatus'] = "Compiled"
-                    sergraph['graph']['info']['graphVersion'] = self.graphsys.getFactory().graphVersion
+                    #! только при ручном обновлении sergraph['graph']['info']['graphVersion'] = self.graphsys.getFactory().graphVersion
                     return True
                 if not FileManagerHelper.updateSessionJson(FileManagerHelper.graphPathGetReal(fp__),__updEv):
                     raise self.exception(CGUnhandledException,context="Cant udpdate GUID inside graph")

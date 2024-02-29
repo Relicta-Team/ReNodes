@@ -14,6 +14,7 @@ class NodeSyncronizer:
         self.logger = RegisterLogger("NodeSync")
 
         self.refValidatedGraph = None
+        self.cleanupConnList = set()
     
     def getFactory(self): return self.graphRef.getFactory()
     def getVarMgr(self): return self.graphRef.variable_manager
@@ -33,6 +34,7 @@ class NodeSyncronizer:
         self.refDict = graphDict
 
         self.nodeLinkDict = {}
+        self.cleanupConnList = set()
 
         for cat,vardata in graphDict['graph'].get('variables',{}).items():
             for varid,varprops in vardata.items():
@@ -48,10 +50,19 @@ class NodeSyncronizer:
             self.validateNode(k,v,link)
             startIndex += 1
         
-        for conn in graphDict['connections'].copy():
-            self.validateConnection(conn)
+        if graphDict['graph']['info'].get('graphVersion',-1) != self.getFactory().graphVersion:
+            for conn in graphDict.get('connections',{}).copy():
+                self.validateConnection(conn)
 
-        self.log(f"Validated {len(nodes)} nodes!")
+        if self.cleanupConnList:
+            for conn in graphDict.get('connections',{}).copy():
+                fromNode,fromPort = conn['in']
+                toNode,toPort = conn['out']
+                if fromNode in self.cleanupConnList or toNode in self.cleanupConnList:
+                    graphDict['connections'].remove(conn)
+
+
+        #self.log(f"Validated {len(nodes)} nodes!")
 
         self.refValidatedGraph = None
         self.refDict = None
@@ -72,24 +83,44 @@ class NodeSyncronizer:
             return #skip "this" node
 
         if fnObj['port_deletion_allowed']:
-            fp = next((p for p in fnObj['input_ports'] if p['name'] == fromPort))
+            fp = next((p for p in fnObj['input_ports'] if p['name'] == fromPort),None)
         else:
             fp = fdat['inputs'][fromPort]
         if tnObj['port_deletion_allowed']:
-            tp = next((p for p in tnObj['output_ports'] if p['name'] == toPort))
+            tp = next((p for p in tnObj['output_ports'] if p['name'] == toPort),None)
         else:
             tp = tdat['outputs'][toPort]
         
+        if fp == None or tp == None:
+            if not fp: 
+                self.warn(f'Устарешвий узел {self.nodeLinkDict[fromNode]}')
+                self.removeAllConnectedPorts(fromNode)
+            if not tp: 
+                self.warn(f'Устарешвий узел {self.nodeLinkDict[toNode]}')
+                self.removeAllConnectedPorts(toNode)
+            
+            return
+
         if tp.get('type')=="auto_object_type":
             return #skip castto
 
+        tpType_ = tp['type']
+        
+        tscheck = [(k,f['typeset_out']) for k,f in tdat['options'].items() if 'typeset_out' in f]
+        if tscheck:
+            prtN,tpPortName_ = tscheck[0]
+            if tpPortName_ == toPort:
+                tpType_ = tnObj['custom'][prtN] + "^"
+
         fObj = make_portvalidation_request({'name':fromPort,'type':fp['type']},fdat,'in')
-        tObj = make_portvalidation_request({'name':toPort,'type':tp['type']},tdat,'out')
+        tObj = make_portvalidation_request({'name':toPort,'type':tpType_},tdat,'out')
         if not validate_connections_serialized(fObj,tObj):
             sv = self.nodeLinkDict[fromNode]
             tv = self.nodeLinkDict[toNode]
-            self.warn(f'Несоответствие подключений между {sv} ({fp["type"]}) и {tv} ({tp["type"]})')
-
+            self.warn(f'Несоответствие подключений между {sv} ({fp["type"]}) и {tv} ({tpType_}). Подключения между ними очищены')
+            
+            self.removeAllConnectedPorts(fromNode)
+            self.removeAllConnectedPorts(toNode)
     def unpackData(self,dictValues):
         className = dictValues['class_']
         classInfo = self.getFactory().getNodeLibData(className)
@@ -240,3 +271,6 @@ class NodeSyncronizer:
 
     def _disconnectPort(self,nodeId,inout,portName):
         pass
+
+    def removeAllConnectedPorts(self,nodeId):
+        self.cleanupConnList.add(nodeId)

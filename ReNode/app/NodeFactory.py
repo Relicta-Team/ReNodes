@@ -11,7 +11,7 @@ import re
 
 class NodeFactory:
 	
-	graphVersion = 1 # Глобальная версия графа (пишется в секции ['graph']['info'] ['graphVersion'])
+	graphVersion = 2 # Глобальная версия графа (пишется в секции ['graph']['info'] ['graphVersion'])
 
 	defaultColor = (13,18,23,255)
 

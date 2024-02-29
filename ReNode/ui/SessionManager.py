@@ -445,7 +445,8 @@ class SessionManager(QTabWidget):
             ttp += f"Тип графа: {typeName}\n\n"
             ttp += f'Класс: {tdata.infoData.get("classname")}\n'
             ttp += f"Родитель: {tdata.infoData.get('parent')}\n"
-            ttp += f'GUID сброки: {tdata.lastCompileGUID or "не скомпилирован"}'
+            ttp += f'GUID сброки: {tdata.lastCompileGUID or "не скомпилирован"}\n'
+            ttp += f"Версия графа: {tdata.infoData.get('graphVersion','НЕ ОПРЕДЕЛЕНА')} (последняя {self.graphSystem.getFactory().graphVersion})"
         
         ttp += "</body></html>"
         ttp = ttp.replace("\n","<br/>")
@@ -526,12 +527,24 @@ class SessionManager(QTabWidget):
     def openFile(self):
         pathList = self.graphSystem.dummyGraph.load_dialog(self._lastOpenPath,kwargs={"ext":"graph","customSave":True,"multiSelect":True})
         if not pathList: return
-        for path in pathList:
+        from ReNode.ui.LoadingScreen import LoadingScreen
+        loader = None
+        if len(pathList) > 1:
+            loader = LoadingScreen()
+            loader.setMessage("Открытие графов")
+        for idx, path in enumerate(pathList):
             self._lastOpenPath = os.path.dirname(path)
             path = FileManagerHelper.getGraphPathRelative(path)
             path = FileManagerHelper.graphPathToRoot(path) #add root prefix
             
+            if loader: loader.setMessage(f'Открытие {path}')
+            
             self.openFileInternal(path)
+
+            if loader: loader.setProgress(100*idx/len(pathList))
+        
+        if loader:
+            loader.finalize()
 
     def openFileInternal(self,pathRoot):
         allTabs = self.tabData
@@ -741,12 +754,27 @@ class SessionManager(QTabWidget):
         hasActiveTab = len([x for x in pathes.split("|") if x.startswith("active:")]) > 0
         defaultActive = not hasActiveTab
 
-        for p in pathes.split("|"):
+        from ReNode.ui.LoadingScreen import LoadingScreen
+        pathList = pathes.split("|")
+        loader = None
+        if len(pathList) > 1:
+            loader = LoadingScreen()
+            loader.setMessage("Загрузка графов")
+
+        for idx,p in enumerate(pathList):
             setActive = defaultActive
             if p.startswith("active:"):
                 p = p[len("active:"):]
                 setActive = True
+            
+            if loader:
+                loader.setMessage(f'Загрузка сессии {p}')
+
             if FileManagerHelper.graphPathExists(p):
                 self.newTab(setActive,p)
             else:
                 self.logger.warning(f"Загрузка сессии \"{p}\" невозможна - файл не существует")
+            
+            if loader: loader.setProgress(100*idx/len(pathList))
+        
+        if loader: loader.finalize()
