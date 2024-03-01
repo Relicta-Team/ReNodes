@@ -1053,12 +1053,14 @@ class NodeItem(AbstractNodeItem):
         """
         if ITEM_CACHE_MODE is QtWidgets.QGraphicsItem.ItemCoordinateCache:
             return
+        vwr = self.viewer()
+        if not vwr: return
 
         rect = self.sceneBoundingRect()
-        l = self.viewer().mapToGlobal(
-            self.viewer().mapFromScene(rect.topLeft()))
-        r = self.viewer().mapToGlobal(
-            self.viewer().mapFromScene(rect.topRight()))
+        l = vwr.mapToGlobal(
+            vwr.mapFromScene(rect.topLeft()))
+        r = vwr.mapToGlobal(
+            vwr.mapFromScene(rect.topRight()))
         # width is the node width in screen
         width = r.x() - l.x()
 

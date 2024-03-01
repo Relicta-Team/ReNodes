@@ -180,6 +180,11 @@ def validate_connections_serialized(portFromDict,portToDict):
 
     ftDec = fact.decomposeType(fttFrom)
     ttDec = fact.decomposeType(tttTo)
+
+    #функция к ссылке
+    if ftDec[0]=='function' and ttDec[1]=='function_ref' or \
+        ftDec[1]=='function_ref' and ttDec[0]=='function': return True
+
     if ftDec[0]!=ttDec[0] or len(ftDec)!=len(ttDec): return False
     allt_list = []
     for ofs in range(1,len(ftDec)):

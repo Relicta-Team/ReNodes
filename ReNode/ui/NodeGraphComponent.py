@@ -325,15 +325,21 @@ class NodeGraphComponent:
 		if port_out.view.port_type == 'in':
 			outernode = out_node
 			outerport = port_out
+			innerport = port_in
 		else:
 			outernode = in_node
 			outerport = port_in
+			innerport = port_out
 		
 		if outernode.has_property(outerport.name()):
 			odat = outernode.getFactoryData()['options'].get(outerport.name(),{})
 			if "typeset_out" in odat:
 				outernode.set_property(outerport.name(),odat.get('default',"object"))
 		
+		if outernode.nodeClass == 'operators.call_lambda' and outerport.view.port_typeName == "function_ref" and \
+			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) == 1:
+				self.onFunctionRefPorts(outernode,innerport.view.port_typeName)
+
 		pass
 
 	def onPortDisconnectedEvent(self,port_in : Port,port_out : Port):
@@ -356,6 +362,20 @@ class NodeGraphComponent:
 			if custom_node and len(custom_node.get_property("autoportdata")) > 0:
 				custom_node.onAutoPortDisconnected(source_port)
 			pass
+		
+		if port_out.view.port_type == 'in':
+			outernode = out_node
+			outerport = port_out
+			innerport = port_in
+		else:
+			outernode = in_node
+			outerport = port_in
+			innerport = port_out
+		
+		if outernode.nodeClass == 'operators.call_lambda' and outerport.view.port_typeName == "function_ref" and \
+			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) > 1:
+				self.onFunctionRefPorts(outernode,"",True)
+
 
 	def onNodeDoubleClickedEvent(self,node : BaseNode):
 		print("NODE DOUBLECLICK EVENT:"+node.type_)
@@ -610,15 +630,16 @@ class NodeGraphComponent:
 		def update_lambda_porttype(node,reloadNames=False):
 			port = node.outputs().get('lambda_ref')
 			if not port: return
-			signature = f'function[anon=null='
+			oldSIG = port.view.port_typeName.split("=")
+			if len(oldSIG) < 2: return
+			signature = f'function[anon={oldSIG[1]}='
 			parameters = []
 			parametersPacked = []
 			toDel = []
 			
-			locker = True
 			for ix, (p,v) in enumerate(node.outputs().items()):
 				if ix <= 1: continue
-				
+
 				pn = v.view.port_typeName
 				parameters.append(pn)
 				parametersPacked.append(pn.replace("[","(").replace("]",")"))
@@ -639,6 +660,15 @@ class NodeGraphComponent:
 						painter_func=None,
 						portType=pnew
 					)
+			
+			ccp = port.connected_ports()
+			if ccp:
+				for prtT in ccp:
+					if prtT.node().nodeClass == "operators.call_lambda":
+						self.onFunctionRefPorts(prtT.node(),signature)
+					else:
+						if not port.view.validate_connection_to(prtT.view):
+							port.disconnect_from(prtT,False) #donot push undo
 
 		def __type_eval_add_lam(node,proc):
 			globPos = QCursor.pos()
@@ -691,3 +721,73 @@ class NodeGraphComponent:
 
 			menu.exec_(QCursor.pos())
 		nmenu.add_command("Удалить порт",func=_remove_lambda_port,node_type='operators.lambda')
+
+		def _retval(graph,node):
+			globPos = QCursor.pos()
+			menu = CustomMenu(parent=self,isRuntime=True)
+			treeContent = self.variable_manager.getAllTypesTreeContent()
+			addTreeContent(treeContent,"null","Без возврата",QIcon(),0)
+			menu.tree.populate_tree(treeContent)
+			def _prov(data,text,icn):
+				port = node.outputs().get('lambda_ref')
+				if not port: return
+				oldTPN = port.view.port_typeName
+				pts = oldTPN.split("=")
+				if len(pts)>=2:
+					pts[1]=data
+				port.view.setPortTypeName("=".join(pts),True)
+				update_lambda_porttype(node)
+				node.view.draw_node()
+			menu.addOnClickEvent(_prov)
+			menu.exec_(globPos)
+		nmenu.add_command("Возвращаемое значение",func=_retval,node_type='operators.lambda')
+
+	def onFunctionRefPorts(self,node:RuntimeNode,signature:str='function[anon=null]',isDeleteAction=False):
+		if not signature: signature = 'function[anon=null]'
+		dataT, sign = self.getFactory().decomposeType(signature)
+		if dataT!="function": return
+		if isDeleteAction:
+			sign = 'anon=null'
+		#generate ports
+		sparts = sign.split('=')
+		ftok = sparts[0]
+		fret = sparts[1] if len(sparts)>1 else ''
+		fparams = sparts[2] if len(sparts)>2 else ''
+
+		outp = node.outputs().get('Результат')
+		if isDeleteAction:
+			if outp: node.delete_output(outp)
+		else:
+			if outp:
+				if fret=='null':
+					node.delete_output(outp)
+				else:
+					outp.view.setPortTypeName(fret,True)
+			else:
+				if fret!='null':
+					node.add_output('Результат',
+						color=self.getFactory().getColorByType(fret,False),
+						display_name=True,
+						multi_output=True,
+						painter_func=None,
+						portType=fret)
+
+		paramTypes = []
+		if fparams:
+			for p in fparams.split('@'):
+				paramTypes.append(p.replace("(","[").replace(")","]"))
+
+		for idx, (k,v) in enumerate(node.inputs().items()):
+			if (idx<=0): continue
+
+			node.delete_input(v)
+		
+		if not isDeleteAction:
+			for i,p in enumerate(paramTypes):
+				node.add_input('Параметр {}'.format(i+1),
+					color=self.getFactory().getColorByType(p,False),
+					display_name=True,
+					multi_input=True,
+					painter_func=None,
+					portType=p
+				)
