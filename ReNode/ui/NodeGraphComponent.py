@@ -612,19 +612,19 @@ class NodeGraphComponent:
 			if not port: return
 			signature = f'function[anon=null='
 			parameters = []
+			parametersPacked = []
 			toDel = []
 			
 			locker = True
-			for p,v in node.outputs().items():
-				if locker:
-					if v == port:
-						locker=False
-					continue
+			for ix, (p,v) in enumerate(node.outputs().items()):
+				if ix <= 1: continue
+				
 				pn = v.view.port_typeName
 				parameters.append(pn)
+				parametersPacked.append(pn.replace("[","(").replace("]",")"))
 				toDel.append(v)
-			if parameters:
-				signature += "@".join(parameters)
+			if parametersPacked:
+				signature += "@".join(parametersPacked)
 			signature += "]"
 			port.view.setPortTypeName(signature)
 
@@ -640,8 +640,7 @@ class NodeGraphComponent:
 						portType=pnew
 					)
 
-		def _add_lambda_port(graph,node):
-			
+		def __type_eval_add_lam(node,proc):
 			globPos = QCursor.pos()
 			#pos = self.sessionManager.mapFromGlobal(globPos)
 			menu = CustomMenu(parent=self,isRuntime=True)
@@ -651,6 +650,7 @@ class NodeGraphComponent:
 				#print(f'Clicked on {data} ({text})')
 
 				data = self.getFactory().getBinaryType(data) #add postfix if need
+				data = proc.format(data) #formatting
 
 				idx = len(node.outputs())-1
 				node.add_output(
@@ -666,7 +666,12 @@ class NodeGraphComponent:
 			menu.addOnClickEvent(_prov)
 			menu.exec_(globPos)
 
-		nmenu.add_command("Добавить порт",func=_add_lambda_port,node_type='operators.lambda')
+		#def _add_lambda_port(graph,node):
+		#	__type_eval_add_lam(node)
+
+		nmenu.add_command("Добавить порт",func=lambda gr,nod:__type_eval_add_lam(nod,"{}"),node_type='operators.lambda')
+		nmenu.add_command("Добавить порт (массив)",func=lambda gr,nod:__type_eval_add_lam(nod,"array[{}]"),node_type='operators.lambda')
+		nmenu.add_command("Добавить порт (сет)",func=lambda gr,nod:__type_eval_add_lam(nod,"set[{}]"),node_type='operators.lambda')
 
 		def _remove_lambda_port(graph,node:RuntimeNode):
 			menu = CustomMenu(parent=self,isRuntime=True)

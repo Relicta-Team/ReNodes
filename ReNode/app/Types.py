@@ -241,7 +241,7 @@ def calculate_autoport_type_serialized(fact,sourceType:str,libCalculator:dict,ch
         if dataType == "value":
             sourceType = preSource
 
-    typeinfo = findall('[\w\.]+\^?',sourceType)
+    typeinfo = findall('[\w\.\=\@\(\)\<\>]+\^?',sourceType)
     
     if chechDatatype:
         if dataType == "ANY": return True
