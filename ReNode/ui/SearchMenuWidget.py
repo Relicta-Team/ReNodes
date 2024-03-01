@@ -225,13 +225,18 @@ class SearchComboButtonAutoload(SearchComboButton):
             self.setIcon(QIcon())
 
 class CustomMenu(QMenu):
-    def __init__(self, parent=None):
+
+    def addOnClickEvent(self,func):
+        self.onClickEvent = func
+
+    def __init__(self, parent=None,isRuntime=False):
         super().__init__(parent=None)
         #menu can drop from down,up,left,right
         self.widget = parent
 
-        self.dictTree = self.widget.dictTree
-        self.defaultListValue = self.widget.defaultListValue
+        if not isRuntime:
+            self.dictTree = self.widget.dictTree
+            self.defaultListValue = self.widget.defaultListValue
 
         #setup deletion attribute
         self.setAttribute(Qt.WA_DeleteOnClose,True)
@@ -243,7 +248,11 @@ class CustomMenu(QMenu):
         self.edit = SeachMenuLineEditWidget()
         self.tree = SearchMenuTreeWidget()
         
-        self.tree.itemClicked.connect(self.onClickItem)
+        if not isRuntime:
+            self.tree.itemClicked.connect(self.onClickItem)
+        else:
+            self.onClickEvent:callable=None
+            self.tree.itemClicked.connect(self.onClickItemProvider)
         #self.tree.activated.connect(self.onClickItem)
 
         self.edit.textChanged.connect(self._on_text_changed)
@@ -298,6 +307,15 @@ class CustomMenu(QMenu):
         else:
             if item.data(0,Qt.UserRole) == '': return
             self.widget.onSetItemData(item.data(0,Qt.UserRole),item.data(0,Qt.DisplayRole),item.data(0,Qt.DecorationRole))
+        self.close()
+    
+    def onClickItemProvider(self,item:QModelIndex):
+        if isinstance(item,QModelIndex):
+            if item.data(Qt.UserRole) == '': return
+            self.onClickEvent(item.data(Qt.UserRole),item.data(Qt.DisplayRole),item.data(Qt.DecorationRole)) #item.text(0)
+        else:
+            if item.data(0,Qt.UserRole) == '': return
+            self.onClickEvent(item.data(0,Qt.UserRole),item.data(0,Qt.DisplayRole),item.data(0,Qt.DecorationRole))
         self.close()
 
     # internal

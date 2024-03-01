@@ -100,7 +100,7 @@ class VariableCategory:
         self.instancer = inst
 
 class VariableDataType:
-    def __init__(self,vartext='',vartype='',varicon='',instancer=None,defaultValue=None,parseFunction=None):
+    def __init__(self,vartext='',vartype='',varicon='',instancer=None,defaultValue=None,parseFunction=None,internal=False):
         self.text = vartext
         self.dataType = vartype
         self.icon = varicon #string or list of string
@@ -112,6 +112,8 @@ class VariableDataType:
             raise Exception("Default value must be set for datatype " + vartype)
         if parseFunction is None:
             raise Exception("Parse function must be set for datatype " + vartype)
+        
+        self.internal=internal
     
     def __repr__(self):
         return f"{self.dataType} ({self.text})"
@@ -219,7 +221,10 @@ class VariableLibrary:
             VariableTypedef("void","Абстрактное значение",PropAbstract
                 ,color=QtGui.QColor("#02D109"),
                 defaultValue='NIL',parseFunction=lambda x: x
-            )
+            ),
+            VariableTypedef('function_ref',"Абстрактная функция",PropAbstract,
+                color=QtGui.QColor("#E40045"),
+                defaultValue='\{\}',parseFunction=lambda x: x)
         ]
         
         #parseFunction(str,tuple[str]) -> parseFunction("[1,2,3]",["int"])
@@ -258,6 +263,9 @@ class VariableLibrary:
             VariableDataType("Сет","set","data\\icons\\pillset_40x.png",ArrayWidget,
                 defaultValue=[],
                 parseFunction=_parseDataVal),
+            VariableDataType("Функция","function","data\\icons\\icon_BluePrintEditor_Function_16px",ArrayWidget,
+                defaultValue=object(),parseFunction=lambda x: x,
+                internal=True),
         ]
 
     def parseGameValue(self,strval:str,returnType:str,refClassDict:dict):
@@ -345,6 +353,8 @@ class VariableLibrary:
                 if re.findall('[\[\]\,]',portType):
                     typeinfo = re.findall('[\w\.]+\^?',portType)
                     portType = typeinfo[1]
+                    if typeinfo[0]=='function':
+                        portType = 'function_ref'
 
                 if portType in ["thisClassname","self","auto_object_type"]: portType = 'object'
                 if portType.endswith("^"): portType = "object" #temp fix object colors
@@ -707,7 +717,10 @@ class VariableManager(QDockWidget):
         if variable_name == "nameid":
             self.showErrorMessageBox(f"Идентификатор не может быть '{variable_name}'")
             return
-        
+        if curCatObj.internal:
+            self.showErrorMessageBox("Создание лямбд не поддерживается в этой версии")
+            return
+
         res = curCat.createVariable(variable_name, variable_group)
         if res == True:
             self.widVarName.clear()

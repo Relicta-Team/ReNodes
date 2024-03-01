@@ -376,6 +376,8 @@ class NodeGraphComponent:
 		
 		nmenu.add_command("Изменить цвет",func=change_color,node_type='internal.backdrop|internal.sticker')
 		
+		self.registerLambdaContext(nmenu)
+		
 		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all")
 		nmenu.add_command("Вырезать",func=cut_nodes,node_type="all")
 		nmenu.add_command("Вставить",func=paste_nodes,node_type="all")
@@ -386,58 +388,6 @@ class NodeGraphComponent:
 		nmenu.add_separator()
 		nmenu.add_command("Снять выделение",func=clear_node_selection,node_type='all')
 
-		# def __debaddport(graph, node):
-		# 	import random
-		# 	rname = f"random name {random.randrange(1,100000)}"
-		# 	node.add_input(
-		# 		name=rname,
-		# 		color=None,
-		# 		display_name=True,
-		# 		multi_input=True,
-		# 		painter_func=None,
-		# 		portType=f'allof'
-		# 	)
-		# nmenu.add_command("DEBUG ADD PORT",func=__debaddport,node_type='all')
-		# def __debaddvalue(graph,node):
-		# 	import random
-		# 	rname = f"random name {random.randrange(1,100000)}"
-		# 	node.add_text_input(
-		# 		name=rname,
-		# 		label=rname,
-		# 		text=rname
-		# 	)
-		# nmenu.add_command("DEBUG ADD VALUE",func=__debaddvalue,node_type='all')
-
-		# def my_test(graph):
-		# 	ps = graph.viewer().scene_cursor_pos()
-		# 	pos = [ps.x(),ps.y()]
-		# 	self.nodeFactory.instance("operators.testnode",pos=pos,graphref=graph)
-		# 	"""node : RuntimeNode = graph.create_node('runtime_domain.RuntimeNode', pos=[ps.x(),ps.y()])
-		# 	node.add_input('Входные данные', color=(0, 80, 0))
-		# 	node.add_output('Выходные данные',False,False)
-		# 	node.add_text_input('text1',"testlable",'default',"displaytab")"""
-
-		# 	"""node.add_text_input('text2',"testlable")
-		# 	node.add_text_input('text3',"testlable")
-		# 	node.add_checkbox("cb",text="this is value a testing data")
-		# 	node.add_combo_menu("cm","combo",["фыфыфыфы","ЙЙЙЙ ","СЕСЕСЕС"])
-		# 	node.set_icon("data\\function_sim.png")
-		# 	node.set_property("name","<b>Действие</b><br/><font size=""4""><i>Дополнительные данные</i></font>",False)
-		# 	node.update()"""
-
-		# 	"""groupnode : GroupNode = graph.create_node("runtime_domain.RuntimeGroup")
-		# 	groupnode.add_input("input")
-		# 	groupnode.add_output("ouput")"""
-		
-		# gmenu.add_command('Create testobj', my_test, 'Shift+t')
-		# def sertest__(graph):
-		# 	graph.save_session(".\\session.json")
-		# 	print("SERIALIZED")
-		# gmenu.add_command("serializetest",sertest__)
-		# def desertest__(graph):
-		# 	graph.load_session(".\\session.json")
-		# 	print("LOADED")
-		# gmenu.add_command("DESER",desertest__)
 		def tsc__(graph: NodeGraph):
 			#pos = QtGui.QCursor.pos()
 			#print([(w.underMouse(),w) for w in self.widgets_at(pos)])
@@ -653,3 +603,86 @@ class NodeGraphComponent:
 		tab_widget = SessionManager(self)
 		self.sessionManager = tab_widget
 		dock.setTitleBarWidget(tab_widget)
+
+	def registerLambdaContext(self,nmenu:NodesMenu):
+		from ReNode.ui.SearchMenuWidget import SearchComboButton,CustomMenu,createTreeDataContent,addTreeContent
+
+		def update_lambda_porttype(node,reloadNames=False):
+			port = node.outputs().get('lambda_ref')
+			if not port: return
+			signature = f'function[anon=null='
+			parameters = []
+			toDel = []
+			
+			locker = True
+			for p,v in node.outputs().items():
+				if locker:
+					if v == port:
+						locker=False
+					continue
+				pn = v.view.port_typeName
+				parameters.append(pn)
+				toDel.append(v)
+			if parameters:
+				signature += "@".join(parameters)
+			signature += "]"
+			port.view.setPortTypeName(signature)
+
+			if reloadNames:
+				for pdl in toDel:
+					node.delete_output(pdl)
+				for i,pnew in enumerate(parameters):
+					node.add_output(f'Параметр {i+1}',
+						color=self.getFactory().getColorByType(pnew,False),
+						display_name=True,
+						multi_output=True,
+						painter_func=None,
+						portType=pnew
+					)
+
+		def _add_lambda_port(graph,node):
+			
+			globPos = QCursor.pos()
+			#pos = self.sessionManager.mapFromGlobal(globPos)
+			menu = CustomMenu(parent=self,isRuntime=True)
+			treeContent = self.variable_manager.getAllTypesTreeContent()
+			menu.tree.populate_tree(treeContent)
+			def _prov(data,text,icn):
+				#print(f'Clicked on {data} ({text})')
+
+				data = self.getFactory().getBinaryType(data) #add postfix if need
+
+				idx = len(node.outputs())-1
+				node.add_output(
+					name='Параметр {}'.format(idx),
+					color=self.getFactory().getColorByType(data,False),
+					display_name=True,
+					multi_output=True,
+					painter_func=None,
+					portType=data
+				)
+				update_lambda_porttype(node)
+				node.view.draw_node()
+			menu.addOnClickEvent(_prov)
+			menu.exec_(globPos)
+
+		nmenu.add_command("Добавить порт",func=_add_lambda_port,node_type='operators.lambda')
+
+		def _remove_lambda_port(graph,node:RuntimeNode):
+			menu = CustomMenu(parent=self,isRuntime=True)
+			treeContent = createTreeDataContent()
+			for i, (p,v) in enumerate(node.outputs().items()):
+				if i <= 1: continue
+				ftn = v.view.port_typeName
+				addTreeContent(treeContent,p,p + f': {self.variable_manager.getTextTypename(ftn)}',
+				   self.variable_manager.getIconFromTypename(ftn))
+			menu.tree.populate_tree(treeContent)
+
+			def _prov(data,text,icn):
+				node.delete_output(data)
+				update_lambda_porttype(node,reloadNames=True)
+				node.view.draw_node()
+			menu.addOnClickEvent(_prov)
+
+			menu.exec_(QCursor.pos())
+		nmenu.add_command("Удалить порт",func=_remove_lambda_port,node_type='operators.lambda')

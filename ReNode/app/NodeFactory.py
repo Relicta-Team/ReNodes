@@ -6,6 +6,7 @@ from ReNode.ui.NodePainter import getDrawPortFunction
 from ReNode.ui.LoadingScreen import LoadingScreen
 from ReNode.app.VirtualLib import VirtualLib
 from ReNode.app.Constants import NodeRenderType
+from PyQt5.QtGui import QColor
 import logging
 import re
 
@@ -234,14 +235,26 @@ class NodeFactory:
 	def getColorByType(self,type_name,retAsQColor=False):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 		varMgr = NodeGraphComponent.refObject.variable_manager
-
+		dtv = 'value'
 		if re.findall('[\[\]\,]',type_name):
 			typeinfo = self.decomposeType(type_name)
 			type_name = typeinfo[1]
+			dtv = typeinfo[0]
+
+		if dtv=='function':
+			clr = QColor('#E40045') #const color for function
+			if retAsQColor:
+				return clr
+			else:
+				return [clr.red(),clr.green(),clr.blue(),clr.alpha()]
 
 		#temporary fix
 		if type_name.endswith("^"):
 			type_name = "object"
+		if type_name.startswith('struct.'):
+			type_name = "struct"
+		if type_name.startswith("enum."):
+			type_name = "enum"
 
 		for objInfo in varMgr.variableTempateData:
 			if objInfo.variableType == type_name:
@@ -680,6 +693,24 @@ class NodeFactory:
 		if type.endswith("^"):
 			return type[:-1]
 		return type
+
+	def getBinaryType(self,type):
+		dct = self.decomposeType(type)
+		for ofs in range(1,len(dct)):
+			ct = dct[ofs]
+			if self.isObjectType(ct):
+				if not ct.endswith("^"):
+					dct[ofs] = ct + "^"
+				continue
+			if self.isEnumType(ct):
+				if not ct.startswith("enum."):
+					dct[ofs] = "enum." + ct
+				continue
+			if self.isStructType(ct):
+				if not ct.startswith("struct."):
+					dct[ofs] = "struct." + ct
+				continue
+		return self.composeType(dct)
 
 	#TODO if changes in decomposeType,composeType -> forward decl in varmgr, varlib
 	def decomposeType(self,fulltypename):
