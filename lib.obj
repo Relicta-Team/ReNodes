@@ -17,7 +17,25 @@ def:node:internal
 		icon:data\\icons\\icon_Blueprint_Comment_16x.png
 		path:Системные
 		option:"text"\: {"type"\: "edit", "font_size"\:15}
-	
+
+def:node:operators
+   node:lambda
+   name:make lambda
+   path:system
+   exec:pure
+   runtimeports:1
+   out:Exec:execution
+   out:function[anon=null]:lambda_ref
+   code:{@out.1}
+
+def:node:operators
+   node:call_lambda
+   name:call lambda
+   path:system
+   exec:pure
+   runtimeports:1
+   code:[@genport.in.3(,)]call(@in.1)
+   in:function_ref:Функция
 
 def:node:operators
 

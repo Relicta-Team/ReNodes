@@ -630,9 +630,10 @@ class NodeGraphComponent:
 		def update_lambda_porttype(node,reloadNames=False):
 			port = node.outputs().get('lambda_ref')
 			if not port: return
-			oldSIG = port.view.port_typeName.split("=")
+			dct = self.getFactory().decomposeType(port.view.port_typeName)
+			oldSIG = dct[1].split("=")
 			if len(oldSIG) < 2: return
-			signature = f'function[anon={oldSIG[1]}='
+			signature = f'function[anon={oldSIG[1]}'
 			parameters = []
 			parametersPacked = []
 			toDel = []
@@ -645,7 +646,7 @@ class NodeGraphComponent:
 				parametersPacked.append(pn.replace("[","(").replace("]",")"))
 				toDel.append(v)
 			if parametersPacked:
-				signature += "@".join(parametersPacked)
+				signature += "="+ "@".join(parametersPacked)
 			signature += "]"
 			port.view.setPortTypeName(signature)
 

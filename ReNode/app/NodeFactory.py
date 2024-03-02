@@ -289,7 +289,7 @@ class NodeFactory:
 
 					if re.findall('[\[\]\,]',portType):
 						portType = f'array[{portType}]'
-						typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',portType)
+						typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',portType)
 						portType = typeinfo[1]
 
 					if portType.endswith("^"): portType = "object" #temp fix object colors
@@ -304,7 +304,7 @@ class NodeFactory:
 					portType = v['type']
 
 					if re.findall('[\[\]\,]',portType):
-						typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',portType)
+						typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',portType)
 						portType = typeinfo[1]
 
 					if portType.endswith("^"): portType = "object" #temp fix object colors
@@ -715,7 +715,7 @@ class NodeFactory:
 	#TODO if changes in decomposeType,composeType -> forward decl in varmgr, varlib
 	def decomposeType(self,fulltypename):
 		if re.findall('[\[\]\,]',fulltypename):
-			typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fulltypename)
+			typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fulltypename)
 			return typeinfo
 		else:
 			return ['value',fulltypename]

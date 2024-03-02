@@ -294,7 +294,7 @@ class VariableLibrary:
         valueType = "value"
         compareType = typ
         if typ.startswith("array") or typ.startswith("set") or typ.startswith("dict"):
-            vdat = re.findall('[\w\.\=\@\(\)\<\>]+\^?',compareType)
+            vdat = re.findall('[\w\.\=\@\(\)\<\>\^]+',compareType)
             valueType = vdat[0]
             compareType = [vdat[1],vdat[2]]
         
@@ -333,7 +333,7 @@ class VariableLibrary:
 
                 if re.findall('[\[\]\,]',portType):
                     #portType = f'array[{portType}]'
-                    typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',portType)
+                    typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',portType)
                     portType = typeinfo[1]
 
                 if portType in ["thisClassname","self","auto_object_type"]: portType = 'object'
@@ -351,7 +351,7 @@ class VariableLibrary:
                 portType = v['type']
 
                 if re.findall('[\[\]\,]',portType):
-                    typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',portType)
+                    typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',portType)
                     portType = typeinfo[1]
                     if typeinfo[0]=='function':
                         portType = 'function_ref'
@@ -396,7 +396,7 @@ class VariableLibrary:
 
     def decomposeType(self,fulltypename):
         if re.findall('[\[\]\,]',fulltypename):
-            typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fulltypename)
+            typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fulltypename)
             return typeinfo
         else:
             return ['value',fulltypename]
@@ -417,7 +417,7 @@ class VariableLibrary:
         datatype = "value"
         values = [fullTypename]
         if re.findall('[\[\]\,]',fullTypename):
-            typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fullTypename)
+            typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fullTypename)
             datatype = typeinfo[0]
             values = typeinfo[1:]
         
@@ -989,7 +989,7 @@ class VariableManager(QDockWidget):
             if self.isObjectType(fulltypename) and not fulltypename.endswith("^"): fulltypename += '^'
             return fulltypename
         else:
-            typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fulltypename)
+            typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fulltypename)
             rval = typeinfo[0]+"["
             for i in range(1,len(typeinfo)):
                 tdat = typeinfo[i]
@@ -1035,7 +1035,7 @@ class VariableManager(QDockWidget):
         datatype = "value"
         values = [fullTypename]
         if re.findall('[\[\]\,]',fullTypename):
-            typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fullTypename)
+            typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fullTypename)
             datatype = typeinfo[0]
             values = typeinfo[1:]
         
@@ -1058,7 +1058,7 @@ class VariableManager(QDockWidget):
 
     def decomposeType(self,fulltypename):
         if re.findall('[\[\]\,]',fulltypename):
-            typeinfo = re.findall('[\w\.\=\@\(\)\<\>]+\^?',fulltypename)
+            typeinfo = re.findall('[\w\.\=\@\(\)\<\>\^]+',fulltypename)
             return typeinfo
         else:
             return ['value',fulltypename]
