@@ -31,7 +31,7 @@ def:node:operators
       opt:dname=1
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
       opt:dname=0
-   code:{@out.1}
+   code:{@genport.out.3(paramGen) @out.2}
 
 def:node:operators
    node:call_lambda

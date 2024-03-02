@@ -1028,33 +1028,6 @@ class CodeGenerator:
                         obj.generatedVars[gvObj.fromPort] = gvObj
                         
                         allGeneratedVars.append(gvObj)
-                    
-                    #!old algorithm
-                    #region Old genvar algorithm
-                    # genList = re.findall(r"@genvar\.(\w+\.\d+)", node_code)
-
-                    # dictKeys = [k for i,(k,v) in enumerate(outputs_fromLib)]
-                    # dictValues = [v for i,(k,v) in enumerate(outputs_fromLib)]
-                    # for _irepl, replClear in enumerate(genList):
-                    #     lvar = f'_lvar_{index_stack}_{_irepl}' #do not change
-                    #     wordpart = re.sub('\.\d+','',replClear)
-                    #     numpart = re.sub('\w+\.','',replClear)
-                    #     indexOf = int(numpart)-1
-
-                    #     node_code = re.sub(f'@genvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
-
-                    #     #replacing @locvar.out.1
-                    #     node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lvar,node_code)
-
-                    #     gvObj = GeneratedVariable(lvar,node_id)
-                    #     gvObj.fromPort = dictKeys[indexOf]
-                    #     gvObj.definedNodeName = node_id
-                    #     if gvObj.fromPort in obj.generatedVars:
-                    #         raise Exception(f'Unhandled case: node {obj.nodeClass} from port {gvObj.fromPort} in {obj.generatedVars}')
-                    #     obj.generatedVars[gvObj.fromPort] = gvObj
-                        
-                    #     allGeneratedVars.append(gvObj)
-                    #endregion
 
                 if "@genport." in node_code and hasRuntimePorts:
                     # обновление портов
@@ -1083,18 +1056,27 @@ class CodeGenerator:
                         fullPattern,portType, portNumber, delimConnector = rez.groups()
 
                         # prep ports
-                        mpInfo = class_data['options']['makeport_'+portType]
-                        formatter = mpInfo['text_format']
-                        sourcePort = mpInfo['src']
+                        mpInfo = class_data['options'].get('makeport_'+portType,{})
+                        formatter = mpInfo.get('text_format')
+                        sourcePort = mpInfo.get('src')
                         portNumber = int(portNumber)
+                        isParamMaker = delimConnector == 'paramGen'
+                        if isParamMaker: delimConnector = ", "
                         resultReplacerList = []
                         collectionPorts = class_data['inputs' if portType == 'in' else 'outputs'].keys()
                         for _iPort, _portColName in enumerate(collectionPorts):
-                            if formatter.format(value=_iPort+1,index=_iPort) == _portColName:
+                            if formatter == None or formatter.format(value=_iPort+1,index=_iPort) == _portColName:
                                 if _iPort+1 >= portNumber:
-                                    resultReplacerList.append(f'@{portType}.{_iPort+1}')
-
+                                    if isParamMaker:
+                                        if portType != "out":
+                                            self.exception(CGInternalCompilerError,source=obj,context=f'Code genport connection type error: {fullPattern}')
+                                            break
+                                        resultReplacerList.append(f'\'@genvar.{portType}.{_iPort+1}\'')
+                                    else:
+                                        resultReplacerList.append(f'@{portType}.{_iPort+1}')
+                        
                         replStr = delimConnector.join(resultReplacerList)
+                        if isParamMaker and replStr: replStr = f'/*gp-gen*/params[{replStr}];'
                         node_code = node_code.replace(fullPattern,replStr)
 
                     pass
@@ -1267,7 +1249,10 @@ class CodeGenerator:
                         if inpObj._isPure:
                             codeIn = f'\nBP_PS({inpObj._uid},{realIndex}) {inpObj.code} BP_PE'
                         else:
-                            codeIn = f'BP_EXEC({inpObj._uid},{realIndex})\n /*bp-inp-exec*/ {inpObj.code}'
+                            if inpObj.nodeClass=='operators.lambda': #function is not exec
+                                codeIn = inpObj.code
+                            else:
+                                codeIn = f'BP_EXEC({inpObj._uid},{realIndex})\n /*bp-inp-exec*/ {inpObj.code}'
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)',codeIn,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
@@ -1928,6 +1913,8 @@ class CodeGenerator:
                 if '.' in gval:
                     self.vtWarn(optObj,f'Неверное значение для {tname}: {value}')
             return gval
+        elif tname == 'function_ref' or '=' in tname: #anonfunc or funcsign
+            return f'{value}'
         else:
             if not self.isDebugMode(): 
                 raise Exception(f"Unknown type {tname} (value: {value} ({type(value)}))")
