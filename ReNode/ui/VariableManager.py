@@ -717,9 +717,6 @@ class VariableManager(QDockWidget):
         if variable_name == "nameid":
             self.showErrorMessageBox(f"Идентификатор не может быть '{variable_name}'")
             return
-        if curCatObj.internal:
-            self.showErrorMessageBox("Создание лямбд не поддерживается в этой версии")
-            return
 
         res = curCat.createVariable(variable_name, variable_group)
         if res == True:

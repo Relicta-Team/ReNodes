@@ -33,6 +33,7 @@ class DataTypeSelectorGroup(QWidget):
 
         self.widDataType = DataTypeSelectorGroup.ComboBoxNoWheel()
         for vobj in VariableManager.refObject.variableDataType:
+            if vobj.internal: continue
             icn = None
             if isinstance(vobj.icon,list):
                 for pat in vobj.icon:

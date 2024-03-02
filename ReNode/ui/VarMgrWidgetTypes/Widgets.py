@@ -270,6 +270,7 @@ class VarMgrVariableWidget(VarMgrBaseWidgetType):
 
         self.widDataType = QComboBox()
         for vobj in self.variableDataType:
+            if vobj.internal: continue
             icn = None
             if isinstance(vobj.icon,list):
                 for pat in vobj.icon:
@@ -656,6 +657,7 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
         #datatype return
         self.widReturnDataType = QComboBox()
         for vobj in self.variableManagerRef.variableDataType:
+            if vobj.internal: continue
             icn = None
             if isinstance(vobj.icon,list):
                 for pat in vobj.icon:
