@@ -20,17 +20,25 @@ def:node:internal
 
 def:node:operators
    node:lambda
-   name:make lambda
+   name:Создать функцию
+   color:Operator
+   icon:data\\icons\\icon_BluePrintEditor_Function_16px
+   desc:Создаёт анонимную функцию, которую можно вызывать из любого места в графе. Для создания параметров и установки возвращаемого значения нажмите ПКМ по функции.
    path:system
    exec:pure
    runtimeports:1
-   out:Exec:execution
-   out:function[anon=null]:lambda_ref
+   out:function[anon=null]:lambda_ref:Ссылка на функцию
+      opt:dname=1
+   out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
+      opt:dname=0
    code:{@out.1}
 
 def:node:operators
    node:call_lambda
-   name:call lambda
+   name:Вызвать функцию
+   desc:Вызывает анонимную функцию.
+   color:Operator
+   icon:data\\icons\\icon_BluePrintEditor_Function_16px
    path:system
    exec:pure
    runtimeports:1
