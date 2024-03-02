@@ -149,7 +149,7 @@ class GraphTypeBase:
         cgObj : CodeGenerator = metaObj.get('codegen')
         node_code = nodeObject.code
         classLibData = nodeObject.classLibData
-        
+        isLambda = nodeObject.nodeClass=="operators.lambda"
         if not nodeObject.isReady: return ""
 
         # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
@@ -187,7 +187,7 @@ class GraphTypeBase:
                 node_code = node_code.replace("@initvars",initVarsCode)
         else:
             
-            if hasConnections:
+            if hasConnections and not isLambda:
                 from ReNode.app.CodeGenExceptions import CGLocalVariableMetaKeywordNotFound
                 cgObj.exception(CGLocalVariableMetaKeywordNotFound,entry=nodeObject,source=nodeObject)
 
@@ -195,7 +195,7 @@ class GraphTypeBase:
         if not hasConnections:
             cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
 
-        if not node_code.rstrip(' ').endswith(";"):
+        if not node_code.rstrip(' ').endswith(";") and not isLambda:
             cgObj.nodeWarn(CGNodeEntryCodeMissingSemicolon,source=nodeObject)
             node_code += ";"
 

@@ -552,9 +552,12 @@ class CodeGenerator:
 
             #self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
             entryObj = self.serialized_graph['nodes'][ent]
+            generatedCode = ""
             if self._addComments:
-                code += f"\n//p_entry: {entryObj['class_']}\n"
-            code += self.generateFromTopology(topological_order,ent)
+                generatedCode += f"\n//p_entry: {entryObj['class_']}\n"
+            generatedCode += self.generateFromTopology(topological_order,ent)
+            if entryObj.get('class_')!="operators.lambda":
+                code += generatedCode
 
             if self.hasCompileParam("-errbreak"):
                 break
@@ -810,13 +813,31 @@ class CodeGenerator:
 
         allGeneratedVars = [] #список всех сгенерированных локальных переменных
         self.allGeneratedVarsInEntry = allGeneratedVars #refset
+        isLambdaEntry = codeInfo[entryId].nodeClass == "operators.lambda"
 
         # Проверка на присутствие использования одних точек входа в других
         for ent in self.entryIdList:
             if ent in topological_order[1:]:
-                self.exception(CGEntryCrossCompileException,source=codeInfo[ent],entry=codeInfo[entryId])
-                hasAnyChanges = False
-                break
+                if codeInfo[ent].nodeClass != "operators.lambda" and not isLambdaEntry:
+                    self.exception(CGEntryCrossCompileException,source=codeInfo[ent],entry=codeInfo[entryId])
+                    hasAnyChanges = False
+                    break
+        
+        #remove lambda_ref from entry
+        #! слишком много зависимостей
+        # if  codeInfo[entryId].nodeClass == "operators.lambda":
+        #     dlist = []
+        #     for it in self.dpdGraphExt[entryId]['out'].get('lambda_ref',[]):
+        #         dlist.extend(list(it))
+        #     for k,v in codeInfo.copy().items():
+        #         if k in dlist:
+        #             codeInfo.pop(k)
+        if isLambdaEntry:
+            #validate invalid node in anonfunc entry
+            for o in codeInfo.values():
+                ncl_ = o.nodeClass
+                if 'operators.flipflop' in ncl_ or "control.callafter" in ncl_:
+                    self.exception(CGEntryLocalFunctionInvalidNode,source=o,entry=codeInfo[entryId])
 
         self.gObjType.handlePreStartEntry(codeInfo[entryId],self.gObjMeta)
 
@@ -1351,6 +1372,11 @@ class CodeGenerator:
         dpdGraphExt = self.dpdGraphExt
         entryObj = codeInfo[entryId]
         retType = entryObj.classLibData['returnType']
+        if entryObj.nodeClass == 'operators.lambda':
+            fsign = entryObj.getConnectionType('out','lambda_ref')
+            if not self.getFactory().isFuncSignType(fsign):
+                self.exception(CGEntryFunctionSignatureException,source=entryObj,context=f"Тип \"{fsign}\" не является типом сигнатуры функции")
+            retType = self.getFactory().getFuncSignReturnType(fsign)
         needReturn = retType != "null"
         retTypenameExpect = self.getVariableManager().getTextTypename(retType)
 
@@ -1746,6 +1772,8 @@ class CodeGenerator:
                     if memType in ["def","event"]:
                         node_ids.append(node_id)
             if nodeClass == "function.def":
+                node_ids.append(node_id)
+            if nodeClass == "operators.lambda":
                 node_ids.append(node_id)
         
         for nclenup in cleanupList:
