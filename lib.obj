@@ -30,7 +30,7 @@ def:node:operators
    out:function[anon=null]:lambda_ref:Ссылка на функцию
       opt:dname=1
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
-      opt:dname=0
+      opt:dname=0:mul=0
    code:{@genport.out.3(paramGen) @out.2}
 
 def:node:operators
@@ -42,7 +42,7 @@ def:node:operators
    path:system
    exec:pure
    runtimeports:1
-   code:[@genport.in.3(,)]call(@in.1)
+   code:[@genport.in.2(,)]call(@in.1)
    in:function_ref:Функция
 
 def:node:operators

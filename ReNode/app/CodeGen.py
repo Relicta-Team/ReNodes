@@ -989,7 +989,7 @@ class CodeGenerator:
                         _tpval = pdat['type']
                         #needConn = pdat.get('require_connection',True)
                         #_hasConnected = iInfo
-                        if _tpval!="Exec" and  _tpval!="":
+                        if _tpval!="Exec": #and  _tpval!="":
                             paramList.append(f"@in.{_idxPort+1}")
                     
                     replcode_ = "[" + ", ".join(paramList) + "]"
