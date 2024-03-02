@@ -839,7 +839,7 @@ class NodeFactory:
 	#region function signature helpers
 	def isFuncSignType(self,ft):
 		dct = self.decomposeType(ft)
-		return dct=='function'
+		return dct[0]=='function'
 	
 	def parseFunctionSign(self,ft):
 		"""Возвращает массив: [logictype,returntype,paramlist]"""
