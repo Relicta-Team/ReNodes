@@ -834,3 +834,40 @@ class NodeFactory:
 		return self.getStructData(structName)['values']
 
 	#endregion
+
+
+	#region function signature helpers
+	def isFuncSignType(self,ft):
+		dct = self.decomposeType(ft)
+		return dct=='function'
+	
+	def parseFunctionSign(self,ft):
+		"""Возвращает массив: [logictype,returntype,paramlist]"""
+		dct = self.decomposeType(ft)
+		rStruct = ['anon','null',[]]
+		if dct[0]!="function": return
+		sign = dct[1]
+		sparts = sign.split('=')
+		rStruct[0] = sparts[0]
+		rStruct[1] = sparts[1] if len(sparts)>1 else 'null'
+		fparams = sparts[2] if len(sparts)>2 else ''
+
+		paramTypes = []
+		rStruct[2] = paramTypes
+		if fparams:
+			for p in fparams.split('@'):
+				paramTypes.append(p.replace("(","[").replace(")","]"))
+		return rStruct
+
+	def getFunctionLogicType(self,ft):
+		"""Возвращает anon, obj, event"""
+		return self.parseFunctionSign(ft)[0]
+	def getFuncSignReturnType(self,ft):
+		"""Возвращаемое значение (null, если без него)"""
+		return self.parseFunctionSign(ft)[1]
+	def getFunctionParamList(self,ft):
+		"""Список параметров в сигнатуре функции"""
+		return self.parseFunctionSign(ft)[2]
+
+
+	#endregion

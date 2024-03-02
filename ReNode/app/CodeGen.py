@@ -1913,7 +1913,7 @@ class CodeGenerator:
                 if '.' in gval:
                     self.vtWarn(optObj,f'Неверное значение для {tname}: {value}')
             return gval
-        elif tname == 'function_ref' or '=' in tname: #anonfunc or funcsign
+        elif tname == 'function_ref' or self.getFactory().isFuncSignType(tname): #anonfunc or funcsign
             return f'{value}'
         else:
             if not self.isDebugMode(): 
