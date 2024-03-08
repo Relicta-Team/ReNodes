@@ -699,10 +699,10 @@ class NodeGraphComponent:
 
 		#def _add_lambda_port(graph,node):
 		#	__type_eval_add_lam(node)
-
-		nmenu.add_command("Добавить порт",func=lambda gr,nod:__type_eval_add_lam(nod,"{}"),node_type='operators.lambda')
-		nmenu.add_command("Добавить порт (массив)",func=lambda gr,nod:__type_eval_add_lam(nod,"array[{}]"),node_type='operators.lambda')
-		nmenu.add_command("Добавить порт (сет)",func=lambda gr,nod:__type_eval_add_lam(nod,"set[{}]"),node_type='operators.lambda')
+		lport__ = "operators.lambda|operators.lambda_obj"
+		nmenu.add_command("Добавить порт",func=lambda gr,nod:__type_eval_add_lam(nod,"{}"),node_type=lport__)
+		nmenu.add_command("Добавить порт (массив)",func=lambda gr,nod:__type_eval_add_lam(nod,"array[{}]"),node_type=lport__)
+		nmenu.add_command("Добавить порт (сет)",func=lambda gr,nod:__type_eval_add_lam(nod,"set[{}]"),node_type=lport__)
 
 		def _remove_lambda_port(graph,node:RuntimeNode):
 			menu = CustomMenu(parent=self,isRuntime=True)
@@ -721,7 +721,7 @@ class NodeGraphComponent:
 			menu.addOnClickEvent(_prov)
 
 			menu.exec_(QCursor.pos())
-		nmenu.add_command("Удалить порт",func=_remove_lambda_port,node_type='operators.lambda')
+		nmenu.add_command("Удалить порт",func=_remove_lambda_port,node_type=lport__)
 
 		def _retval(graph,node):
 			globPos = QCursor.pos()
@@ -741,7 +741,7 @@ class NodeGraphComponent:
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)
 			menu.exec_(globPos)
-		nmenu.add_command("Возвращаемое значение",func=_retval,node_type='operators.lambda')
+		nmenu.add_command("Возвращаемое значение",func=_retval,node_type=lport__)
 
 	def onFunctionRefPorts(self,node:RuntimeNode,signature:str='function[anon=null]',isDeleteAction=False):
 		if not signature: signature = 'function[anon=null]'
