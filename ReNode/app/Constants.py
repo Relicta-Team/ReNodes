@@ -77,3 +77,26 @@ class NodeColor(Enum):
     def isConstantColor(nodeclass):
         """Узел с неизменяемым цветом"""
         return nodeclass.startswith("operators.")
+
+
+
+class NodeLambdaType(Enum):
+    """Типы (имена классов узлов) пользовательских функций времени выполнения"""
+
+    Lambda = 'operators.lambda'
+    LambdaObj = 'operators.lambda_obj'
+    LambdaEvent = 'operators.lambda_event'
+    LambdaEventList = 'operators.lambda_eventlist'
+
+    @staticmethod
+    def hasObjectCallerPort(typename):
+        """Допускается ли порт Цель для проверяемого имени класса узла"""
+        return typename in [NodeLambdaType.LambdaObj.value,NodeLambdaType.LambdaEvent.value,NodeLambdaType.LambdaEventList.value]
+    
+    @staticmethod
+    def isLambdaEntryNode(typename):
+        return typename in [v.value for v in NodeLambdaType.__members__.values()]
+    
+    @staticmethod
+    def isCallLambdaNode(typename):
+        return typename.startswith("operators.call_lambda")

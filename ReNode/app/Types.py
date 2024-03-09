@@ -271,6 +271,10 @@ def calculate_autoport_type_serialized(fact,sourceType:str,libCalculator:dict,ch
             if fact.isStructType(_typeValidator):
                 acceptedType = True
                 break
+        if fact.isObjectType(checkedType) and fact.isObjectType(_typeValidator):
+            if fact.isTypeOf(_typeValidator[:-1],checkedType[:-1]):
+                acceptedType = True
+                break
     if not acceptedType: return "!not_accepted_type"
 
     if getter == '@type':

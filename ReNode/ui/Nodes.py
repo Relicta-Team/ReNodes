@@ -9,6 +9,7 @@ from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.qgraphics.port import PortItem
 from ReNode.app.NodeFactory import *
+from ReNode.app.Constants import NodeLambdaType
 
 class RuntimeNode(BaseNode):
 
@@ -54,6 +55,10 @@ class RuntimeNode(BaseNode):
 		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
 		return NodeGraphComponent.refObject.getFactory()
 
+	def getNodeGraphComponent(self):
+		from ReNode.ui.NodeGraphComponent import NodeGraphComponent
+		return NodeGraphComponent.refObject
+
 	def isAutoPortNode(self):
 		return self.has_property('autoportdata')
 	
@@ -63,6 +68,13 @@ class RuntimeNode(BaseNode):
 		else:
 			return False
 	
+	def isLambdaEntryNode(self):
+		return NodeLambdaType.isLambdaEntryNode(self.nodeClass)
+	def isLambdaCallNode(self):
+		return NodeLambdaType.isCallLambdaNode(self.nodeClass)
+	def getLambdaEntrySignature(self):
+		return self.outputs()['lambda_ref'].view.port_typeName
+
 	def _calculate_autoport_type(self,sourceType:str,libCalculator:dict,chechDatatype=False):
 		from ReNode.app.Types import calculate_autoport_type_serialized
 		return calculate_autoport_type_serialized(self.getFactory(),sourceType,libCalculator,chechDatatype)
@@ -181,6 +193,8 @@ class RuntimeNode(BaseNode):
 
 					if not p.view.validate_connection_to(cp.view):
 						p.disconnect_from(cp,pushUndo)
+		if self.isLambdaEntryNode():
+			self.getNodeGraphComponent().update_lambda_porttype(self,reloadNames=False,onlySync=True)
 		pass
 
 	def onAutoPortDisconnected(self,src_port_info : Port):

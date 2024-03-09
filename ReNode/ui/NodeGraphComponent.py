@@ -23,6 +23,7 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.config import Config
 from ReNode.app.DebuggerServer import DebuggerServer
+from ReNode.app.Constants import NodeLambdaType
 
 class NodeGraphComponent:
 
@@ -624,52 +625,70 @@ class NodeGraphComponent:
 		self.sessionManager = tab_widget
 		dock.setTitleBarWidget(tab_widget)
 
+	def update_lambda_porttype(self,node,reloadNames=False,onlySync=False):
+		"""Генерирует выходные порты и синхронизирует их типы"""
+		port = node.outputs().get('lambda_ref')
+		if not port: return
+		ptp = port.view.port_typeName
+		if not self.getFactory().isFuncSignType(ptp): return
+		oldSIG = self.getFactory().parseFunctionSign(ptp)
+		if len(oldSIG) < 2: return
+		signature = f'function[{oldSIG[0]}={oldSIG[1]}'
+		parameters = []
+		parametersPacked = []
+		toDel = []
+
+		hasCallerPort = NodeLambdaType.hasObjectCallerPort(node.nodeClass)
+		if hasCallerPort:
+			p = node.outputs().get('Цель')
+			if p and p.view.port_typeName:
+				__tobjcall = p.view.port_typeName
+			else:
+				__tobjcall = "object^"
+			parametersPacked.append(__tobjcall)
+
+		canCollect = False
+		for ix, (p,v) in enumerate(node.outputs().items()):
+			if p.startswith("Параметр") and not canCollect:
+				canCollect = True
+			if not canCollect: continue
+
+			pn = v.view.port_typeName
+			parameters.append(pn)
+			parametersPacked.append(pn.replace("[","(").replace("]",")"))
+			if not onlySync:
+				toDel.append(v)
+		if parametersPacked:
+			signature += "="+ "@".join(parametersPacked)
+		signature += "]"
+		port.view.setPortTypeName(signature)
+
+		if onlySync: return
+
+		if reloadNames:
+			for pdl in toDel:
+				node.delete_output(pdl)
+			for i,pnew in enumerate(parameters):
+
+				node.add_output(f'Параметр {i+1}',
+					color=self.getFactory().getColorByType(pnew,False),
+					display_name=True,
+					multi_output=True,
+					painter_func=None,
+					portType=pnew
+				)
+		
+		ccp = port.connected_ports()
+		if ccp:
+			for prtT in ccp:
+				if prtT.node().nodeClass == "operators.call_lambda":
+					self.onFunctionRefPorts(prtT.node(),signature)
+				else:
+					if not port.view.validate_connection_to(prtT.view):
+						port.disconnect_from(prtT,False) #donot push undo
+
 	def registerLambdaContext(self,nmenu:NodesMenu):
 		from ReNode.ui.SearchMenuWidget import SearchComboButton,CustomMenu,createTreeDataContent,addTreeContent
-
-		def update_lambda_porttype(node,reloadNames=False):
-			port = node.outputs().get('lambda_ref')
-			if not port: return
-			dct = self.getFactory().decomposeType(port.view.port_typeName)
-			oldSIG = dct[1].split("=")
-			if len(oldSIG) < 2: return
-			signature = f'function[anon={oldSIG[1]}'
-			parameters = []
-			parametersPacked = []
-			toDel = []
-			
-			for ix, (p,v) in enumerate(node.outputs().items()):
-				if ix <= 1: continue
-
-				pn = v.view.port_typeName
-				parameters.append(pn)
-				parametersPacked.append(pn.replace("[","(").replace("]",")"))
-				toDel.append(v)
-			if parametersPacked:
-				signature += "="+ "@".join(parametersPacked)
-			signature += "]"
-			port.view.setPortTypeName(signature)
-
-			if reloadNames:
-				for pdl in toDel:
-					node.delete_output(pdl)
-				for i,pnew in enumerate(parameters):
-					node.add_output(f'Параметр {i+1}',
-						color=self.getFactory().getColorByType(pnew,False),
-						display_name=True,
-						multi_output=True,
-						painter_func=None,
-						portType=pnew
-					)
-			
-			ccp = port.connected_ports()
-			if ccp:
-				for prtT in ccp:
-					if prtT.node().nodeClass == "operators.call_lambda":
-						self.onFunctionRefPorts(prtT.node(),signature)
-					else:
-						if not port.view.validate_connection_to(prtT.view):
-							port.disconnect_from(prtT,False) #donot push undo
 
 		def __type_eval_add_lam(node,proc):
 			globPos = QCursor.pos()
@@ -683,7 +702,7 @@ class NodeGraphComponent:
 				data = self.getFactory().getBinaryType(data) #add postfix if need
 				data = proc.format(data) #formatting
 
-				idx = len(node.outputs())-1
+				idx = len([k for k in node.outputs().keys() if k.startswith('Параметр')])+1
 				node.add_output(
 					name='Параметр {}'.format(idx),
 					color=self.getFactory().getColorByType(data,False),
@@ -692,14 +711,17 @@ class NodeGraphComponent:
 					painter_func=None,
 					portType=data
 				)
-				update_lambda_porttype(node)
+				self.update_lambda_porttype(node)
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)
 			menu.exec_(globPos)
 
 		#def _add_lambda_port(graph,node):
 		#	__type_eval_add_lam(node)
-		lport__ = "operators.lambda|operators.lambda_obj"
+		lport__ = "operators.lambda|operators.lambda_obj|operators.lambda_event|operators.lambda_eventlist"
+		lport_setreturn__ = "operators.lambda|operators.lambda_obj|operators.lambda_event"
+		lport_setobject__ = "operators.lambda_event|operators.lambdaa_eventlist"
+
 		nmenu.add_command("Добавить порт",func=lambda gr,nod:__type_eval_add_lam(nod,"{}"),node_type=lport__)
 		nmenu.add_command("Добавить порт (массив)",func=lambda gr,nod:__type_eval_add_lam(nod,"array[{}]"),node_type=lport__)
 		nmenu.add_command("Добавить порт (сет)",func=lambda gr,nod:__type_eval_add_lam(nod,"set[{}]"),node_type=lport__)
@@ -707,16 +729,19 @@ class NodeGraphComponent:
 		def _remove_lambda_port(graph,node:RuntimeNode):
 			menu = CustomMenu(parent=self,isRuntime=True)
 			treeContent = createTreeDataContent()
+			canCollect = False
 			for i, (p,v) in enumerate(node.outputs().items()):
-				if i <= 1: continue
+				if p.startswith("Параметр") and not canCollect:
+					canCollect = True
+				if not canCollect: continue
 				ftn = v.view.port_typeName
 				addTreeContent(treeContent,p,p + f': {self.variable_manager.getTextTypename(ftn)}',
-				   self.variable_manager.getIconFromTypename(ftn))
+				self.variable_manager.getIconFromTypename(ftn))
 			menu.tree.populate_tree(treeContent)
 
 			def _prov(data,text,icn):
 				node.delete_output(data)
-				update_lambda_porttype(node,reloadNames=True)
+				self.update_lambda_porttype(node,reloadNames=True)
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)
 
@@ -737,45 +762,67 @@ class NodeGraphComponent:
 				if len(pts)>=2:
 					pts[1]=data
 				port.view.setPortTypeName("=".join(pts),True)
-				update_lambda_porttype(node)
+				self.update_lambda_porttype(node)
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)
 			menu.exec_(globPos)
-		nmenu.add_command("Возвращаемое значение",func=_retval,node_type=lport__)
+		nmenu.add_command("Возвращаемое значение",func=_retval,node_type=lport_setreturn__)
+
+
+		def _setobj(graph,node):
+			from ReNode.ui.SearchMenuWidget import createTreeDataContent,addTreeContentItem
+			globPos = QCursor.pos()
+			menu = CustomMenu(parent=self,isRuntime=True)
+			treeContent = createTreeDataContent()
+			for objTree in self.getFactory().getClassAllChildsTree("object")['childs']:
+				addTreeContentItem(treeContent,objTree)
+			menu.tree.populate_tree(treeContent)
+			def _prov(data,text,icn):
+				port = node.outputs().get('Цель')
+				if not port: return
+				oldTPN = port.view.port_typeName
+				pts = oldTPN.split("=")
+				if len(pts)>=2:
+					pts[1]=data
+				port.view.setPortTypeName("=".join(pts),True)
+				self.update_lambda_porttype(node)
+				node.view.draw_node()
+			menu.addOnClickEvent(_prov)
+			menu.exec_(globPos)
+		nmenu.add_command("Установить тип объекта",func=_setobj,node_type=lport_setobject__)
 
 	def onFunctionRefPorts(self,node:RuntimeNode,signature:str='function[anon=null]',isDeleteAction=False):
+		"""Синхронизирует порты и их типы по сигнатуре для вызывающей функции"""
 		if not signature: signature = 'function[anon=null]'
-		dataT, sign = self.getFactory().decomposeType(signature)
-		if dataT!="function": return
-		if isDeleteAction:
-			sign = 'anon=null'
-		#generate ports
-		sparts = sign.split('=')
-		ftok = sparts[0]
-		fret = sparts[1] if len(sparts)>1 else ''
-		fparams = sparts[2] if len(sparts)>2 else ''
+		sparts = self.getFactory().parseFunctionSign(signature)
+		
+		#if isDeleteAction:
+		#	sign = 'anon=null'
+		logicType = sparts[0]
+		ftyperet = sparts[1]
+		fparams = sparts[2]
 
 		outp = node.outputs().get('Результат')
 		if isDeleteAction:
 			if outp: node.delete_output(outp)
 		else:
 			if outp:
-				if fret=='null':
+				if ftyperet=='null':
 					node.delete_output(outp)
 				else:
-					outp.view.setPortTypeName(fret,True)
+					outp.view.setPortTypeName(ftyperet,True)
 			else:
-				if fret!='null':
+				if ftyperet!='null':
 					node.add_output('Результат',
-						color=self.getFactory().getColorByType(fret,False),
+						color=self.getFactory().getColorByType(ftyperet,False),
 						display_name=True,
 						multi_output=True,
 						painter_func=None,
-						portType=fret)
+						portType=ftyperet)
 
 		paramTypes = []
 		if fparams:
-			for p in fparams.split('@'):
+			for p in fparams:
 				paramTypes.append(p.replace("(","[").replace(")","]"))
 
 		for idx, (k,v) in enumerate(node.inputs().items()):

@@ -35,10 +35,29 @@ def:node:operators
 
 def:node:operators
    node:lambda_obj
-   name:Создать объектную функцию
+   name:Создать делегат
+   namelib:Создать объектную функцию (делегат)
    color:Operator
    icon:data\\icons\\icon_BluePrintEditor_Function_16px
-   desc:Создает объектную локальную функцию. Эта функция может использовать контекст из места определения. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
+   desc:Создает объектную функцию. Эта функция может использовать контекст из места определения. Для добавления параметров, установки возвращаемого значения и источника (цели) функции нажмите ПКМ по функции.
+   path:system
+   exec:pure
+   runtimeports:1
+   in:auto:Объект:Владелец вызываемой функции
+      opt:typeget=value;@type:allowtypes=object^
+   out:function[obj=null=object^]:lambda_ref:Ссылка на функцию
+     opt:dname=1
+   out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
+      opt:dname=0:mul=0
+   out:auto:Цель:Выполняющий владелец функции
+   code:[[@in.1,@context.get],{params["_p","_ct"];_p @genport.out.3(paramGen) _ct @context.alloc; @out.2}]
+
+def:node:operators
+   node:lambda_event
+   name:Создать функцию-событие
+   color:Operator
+   icon:data\\icons\\icon_BluePrintEditor_Function_16px
+   desc:Создает выполняемое событие. Эта функция может использовать контекст из места определения. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
    path:system
    exec:pure
    runtimeports:1
@@ -50,7 +69,7 @@ def:node:operators
    code:{@genport.out.3(paramGen) @out.2}
 
 def:node:operators
-   node:lambda_event
+   node:lambda_eventlist
    name:Создать функцию-событие
    color:Operator
    icon:data\\icons\\icon_BluePrintEditor_Function_16px
@@ -58,10 +77,11 @@ def:node:operators
    path:system
    exec:pure
    runtimeports:1
-   out:function[obj=null]:lambda_ref:Ссылка на функцию
+   out:function[obj=null=object^]:lambda_ref:Ссылка на функцию
      opt:dname=1
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
       opt:dname=0:mul=0
+   out:object^:Цель:Выполняющий владелец функции
    code:{@genport.out.3(paramGen) @out.2}
 
 def:node:operators
@@ -75,6 +95,18 @@ def:node:operators
    runtimeports:1
    code:[@genport.in.2(,)]call(@in.1)
    in:function_ref:Функция
+
+def:node:operators
+   node:call_lambda_delegate
+   name:Вызывать делегат
+   desc:Вызывает делегат и возвращает значение при наличии. Если объект-владелец делегата не существует - ничего не произойдёт. В случае если делегат должен возвращать значение и объект-владелец не существует - возвращается null-значение.
+   color:Operator
+   icon:data\\icons\\icon_BluePrintEditor_Function_16px
+   path:system
+   exec:pure
+   runtimeports:1
+   code:[@in.1,[@genport.in.2(,)]] call renode_invokeDelegate
+   in:function_ref:Делегат
 
 def:node:operators
 
