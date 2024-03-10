@@ -54,10 +54,10 @@ def:node:operators
 
 def:node:operators
    node:lambda_event
-   name:Создать функцию-событие
+   name:Создать функцию-действие
    color:Operator
    icon:data\\icons\\icon_BluePrintEditor_Function_16px
-   desc:Создает выполняемое событие. Эта функция может использовать контекст из места определения. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
+   desc:Создает выполняемое действие над объектом. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
    path:system
    exec:pure
    runtimeports:1
@@ -70,10 +70,10 @@ def:node:operators
 
 def:node:operators
    node:lambda_eventlist
-   name:Создать функцию-событие
+   name:Создать событие
    color:Operator
    icon:data\\icons\\icon_BluePrintEditor_Function_16px
-   desc:Создает выполняемое событие. Эта функция может использовать контекст из места определения. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
+   desc:Создает выполняемое событие. Для добавления параметров и установки возвращаемого значения нажмите ПКМ по функции.
    path:system
    exec:pure
    runtimeports:1

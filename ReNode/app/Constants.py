@@ -95,8 +95,13 @@ class NodeLambdaType(Enum):
     
     @staticmethod
     def isLambdaEntryNode(typename):
+        """Перечисление всех типов узлов: локальные функции, делегаты, события"""
         return typename in [v.value for v in NodeLambdaType.__members__.values()]
     
     @staticmethod
     def isCallLambdaNode(typename):
         return typename.startswith("operators.call_lambda")
+    
+    @staticmethod
+    def hasContextInLambdaType(typename):
+        return typename == NodeLambdaType.LambdaObj.value

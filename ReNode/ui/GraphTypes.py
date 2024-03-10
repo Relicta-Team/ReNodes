@@ -1,6 +1,7 @@
 from ReNode.app.CodeGenWarnings import *
 from ReNode.ui.SearchMenuWidget import SearchComboButton,addTreeContent,createTreeDataContent
 from ReNode.app.utils import transliterate
+from ReNode.app.Constants import NodeLambdaType
 from NodeGraphQt.custom_widgets.properties_bin.custom_widget_file_paths import PropFileSavePath
 
 from PyQt5 import QtGui
@@ -149,7 +150,7 @@ class GraphTypeBase:
         cgObj : CodeGenerator = metaObj.get('codegen')
         node_code = nodeObject.code
         classLibData = nodeObject.classLibData
-        isLambda = nodeObject.nodeClass=="operators.lambda"
+        isLambda = NodeLambdaType.isLambdaEntryNode(nodeObject.nodeClass)
         if not nodeObject.isReady: return ""
 
         # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
@@ -165,6 +166,7 @@ class GraphTypeBase:
                 nodeClass = allCodeObjects.get(gvarAssoc[localName]).nodeClass
                 if nodeClass in ["operators.for_loop","operators.foreach_loop"]:
                     continue
+                if NodeLambdaType.isLambdaEntryNode(nodeClass): continue
             
             varlistalloc.append(f"\"{localName}\"")
             varlistpassed.append(f"{localName}")
@@ -289,8 +291,10 @@ class GraphTypeBase:
                         break
             if not usedExec:
                 if nodeObject == entryObj:
-                    cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
-                    raise Exception("Unsupported rule: Entry node not overriden")
+                    #skip for delegates
+                    if not NodeLambdaType.isLambdaEntryNode(nodeObject.nodeClass):
+                        cgObj.nodeWarn(CGEntryNodeNotOverridenWarning,source=nodeObject)
+                        raise Exception("Unsupported rule: Entry node not overriden")
                 else:
                     if hasExec:
                         cgObj.nodeWarn(CGNodeNotUsedWarning,source=nodeObject,portname=lastExec)

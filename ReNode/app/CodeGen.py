@@ -13,6 +13,7 @@ from ReNode.ui.GraphTypes import *
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.NodeFactory import NodeFactory
 from ReNode.app.FileManager import FileManagerHelper
+from ReNode.app.Constants import NodeLambdaType
 import traceback
 import time
 import datetime
@@ -556,7 +557,7 @@ class CodeGenerator:
             if self._addComments:
                 generatedCode += f"\n//p_entry: {entryObj['class_']}\n"
             generatedCode += self.generateFromTopology(topological_order,ent)
-            if entryObj.get('class_')!="operators.lambda":
+            if not NodeLambdaType.isLambdaEntryNode(entryObj.get('class_')):
                 code += generatedCode
 
             if self.hasCompileParam("-errbreak"):
@@ -813,19 +814,19 @@ class CodeGenerator:
 
         allGeneratedVars = [] #список всех сгенерированных локальных переменных
         self.allGeneratedVarsInEntry = allGeneratedVars #refset
-        isLambdaEntry = codeInfo[entryId].nodeClass == "operators.lambda"
+        isLambdaEntry = NodeLambdaType.isLambdaEntryNode(codeInfo[entryId].nodeClass)
 
         # Проверка на присутствие использования одних точек входа в других
         for ent in self.entryIdList:
             if ent in topological_order[1:]:
-                if codeInfo[ent].nodeClass != "operators.lambda" and not isLambdaEntry:
+                if not NodeLambdaType.isLambdaEntryNode(codeInfo[ent].nodeClass) and not isLambdaEntry:
                     self.exception(CGEntryCrossCompileException,source=codeInfo[ent],entry=codeInfo[entryId])
                     hasAnyChanges = False
                     break
         
         #remove lambda_ref from entry
         #! слишком много зависимостей
-        # if  codeInfo[entryId].nodeClass == "operators.lambda":
+        # if  codeInfo[entryId].nodeClass == "NODELAMBDATYPE":
         #     dlist = []
         #     for it in self.dpdGraphExt[entryId]['out'].get('lambda_ref',[]):
         #         dlist.extend(list(it))
@@ -836,7 +837,10 @@ class CodeGenerator:
             #validate invalid node in anonfunc entry
             for o in codeInfo.values():
                 ncl_ = o.nodeClass
-                if 'operators.flipflop' in ncl_ or "control.callafter" in ncl_:
+                
+                if "control.callafter" in ncl_:
+                    self.exception(CGEntryLocalFunctionInvalidNode,source=o,entry=codeInfo[entryId])
+                if 'operators.flipflop' in ncl_ and not NodeLambdaType.hasContextInLambdaType(ncl_):
                     self.exception(CGEntryLocalFunctionInvalidNode,source=o,entry=codeInfo[entryId])
 
         self.gObjType.handlePreStartEntry(codeInfo[entryId],self.gObjMeta)
@@ -912,12 +916,16 @@ class CodeGenerator:
                                 self.localVariablesUsed.add(nameid)
                                 self.localVariableData[nameid]['usedin'] = entryObj
                             else:
-                                self.exception(CGLocalVariableDuplicateUseException,source=obj,context=self.localVariableData[nameid]['varname'],entry=entryObj,target=usedIn)
+                                if not NodeLambdaType.hasContextInLambdaType(entryObj.nodeClass):
+                                    self.exception(CGLocalVariableDuplicateUseException,source=obj,context=self.localVariableData[nameid]['varname'],entry=entryObj,target=usedIn)
                         lvar_alias = self.localVariableData[nameid]['alias']
                         node_code = generated_code.replace(nameid,lvar_alias)
                         if isGet:
                             self.contextVariablesUsed.add(lvar_alias)
                         if isSet:
+                            #for pass local variables
+                            self.contextVariablesUsed.add(lvar_alias)
+                            
                             #generate variable out
                             gvObj = GeneratedVariable(lvar_alias,node_id)
                             gvObj.fromPort = outName
@@ -1270,7 +1278,7 @@ class CodeGenerator:
                         if inpObj._isPure:
                             codeIn = f'\nBP_PS({inpObj._uid},{realIndex}) {inpObj.code} BP_PE'
                         else:
-                            if inpObj.nodeClass=='operators.lambda': #function is not exec
+                            if NodeLambdaType.isLambdaEntryNode(inpObj.nodeClass): #function is not exec
                                 codeIn = inpObj.code
                             else:
                                 codeIn = f'BP_EXEC({inpObj._uid},{realIndex})\n /*bp-inp-exec*/ {inpObj.code}'
@@ -1372,7 +1380,7 @@ class CodeGenerator:
         dpdGraphExt = self.dpdGraphExt
         entryObj = codeInfo[entryId]
         retType = entryObj.classLibData['returnType']
-        if entryObj.nodeClass == 'operators.lambda':
+        if NodeLambdaType.isLambdaEntryNode(entryObj.nodeClass):
             fsign = entryObj.getConnectionType('out','lambda_ref')
             if not self.getFactory().isFuncSignType(fsign):
                 self.exception(CGEntryFunctionSignatureException,source=entryObj,context=f"Тип \"{fsign}\" не является типом сигнатуры функции")
@@ -1773,7 +1781,7 @@ class CodeGenerator:
                         node_ids.append(node_id)
             if nodeClass == "function.def":
                 node_ids.append(node_id)
-            if nodeClass == "operators.lambda":
+            if NodeLambdaType.isLambdaEntryNode(nodeClass): #and not NodeLambdaType.hasContextInLambdaType(nodeClass):
                 node_ids.append(node_id)
         
         for nclenup in cleanupList:
