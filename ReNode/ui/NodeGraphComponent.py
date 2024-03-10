@@ -686,6 +686,12 @@ class NodeGraphComponent:
 				else:
 					if not port.view.validate_connection_to(prtT.view):
 						port.disconnect_from(prtT,False) #donot push undo
+		#if hasport target
+		targ = node.outputs().get('Цель')
+		if targ and targ.connected_ports():
+			for prtT in targ.connected_ports():
+				if not targ.view.validate_connection_to(prtT.view):
+					targ.disconnect_from(prtT,False) #donot push undo
 
 	def registerLambdaContext(self,nmenu:NodesMenu):
 		from ReNode.ui.SearchMenuWidget import SearchComboButton,CustomMenu,createTreeDataContent,addTreeContent
@@ -720,7 +726,7 @@ class NodeGraphComponent:
 		#	__type_eval_add_lam(node)
 		lport__ = "operators.lambda|operators.lambda_obj|operators.lambda_event|operators.lambda_eventlist"
 		lport_setreturn__ = "operators.lambda|operators.lambda_obj|operators.lambda_event"
-		lport_setobject__ = "operators.lambda_event|operators.lambdaa_eventlist"
+		lport_setobject__ = "operators.lambda_event|operators.lambda_eventlist"
 
 		nmenu.add_command("Добавить порт",func=lambda gr,nod:__type_eval_add_lam(nod,"{}"),node_type=lport__)
 		nmenu.add_command("Добавить порт (массив)",func=lambda gr,nod:__type_eval_add_lam(nod,"array[{}]"),node_type=lport__)
@@ -781,10 +787,11 @@ class NodeGraphComponent:
 				port = node.outputs().get('Цель')
 				if not port: return
 				oldTPN = port.view.port_typeName
-				pts = oldTPN.split("=")
-				if len(pts)>=2:
-					pts[1]=data
-				port.view.setPortTypeName("=".join(pts),True)
+				# pts = oldTPN.split("=")
+				# if len(pts)>=2:
+				# 	pts[1]=data
+				newType = data + "^"
+				port.view.setPortTypeName(newType)
 				self.update_lambda_porttype(node)
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)

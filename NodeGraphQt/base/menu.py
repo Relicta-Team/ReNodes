@@ -237,6 +237,13 @@ class NodesMenu(NodeGraphMenu):
     """
 
     def add_command(self, name, func=None, node_type=None, node_class=None, shortcut=None):
+        if "|" in node_type:
+            for node in node_type.split("|"):
+                self.add_command_internal(name, func, node, node_class, shortcut)
+        else:
+            self.add_command_internal(name, func, node_type, node_class, shortcut)
+
+    def add_command_internal(self, name, func=None, node_type=None, node_class=None, shortcut=None):
         """
         Re-implemented to add a command to the specified node type menu.
 
@@ -285,6 +292,11 @@ class NodesMenu(NodeGraphMenu):
                 node_menus.remove(node_menu)
             for menu in node_menus:
                 menu.addAction(action)
+        if node_type=='all':
+            nm = self.qmenu.get_menusReNode()
+            for menu in nm:
+                if menu:
+                    menu.addAction(action)
 
         node_menu.addAction(action) #fix origin/main pr#298
         command = NodeGraphCommand(self._graph, action, func)

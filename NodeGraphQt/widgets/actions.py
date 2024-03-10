@@ -87,6 +87,12 @@ class BaseMenu(QtWidgets.QMenu):
                     menus.append(menu)
         return menus
 
+    def get_menusReNode(self,node_type=''):
+        mens = []
+        for act in self.actions():
+            men = act.menu()
+            mens.append(men)
+        return mens
 
 class GraphAction(QtWidgets.QAction):
 
