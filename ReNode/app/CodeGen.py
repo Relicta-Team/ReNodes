@@ -185,6 +185,7 @@ class CodeGenerator:
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
         self.dpdGraphExt = {}
+        self.dependencyGraph = {} #обычные зависимости
         self.gObjMeta = {}
         self.compileParams = compileParams
         
@@ -538,6 +539,7 @@ class CodeGenerator:
         self.log("    Создание зависимостей")
         # Создание графа зависимостей
         graph = self.createDependencyGraph(collectOnlyExecutePins=True)
+        self.dependencyGraph = graph
 
         code = ""
 
@@ -801,20 +803,50 @@ class CodeGenerator:
             nodeid = cg._sanitizeNodeName(nodeid)
             return cg.graph.get_node_by_id(nodeid)
 
+    def getAllNodesFromPort(self,fromNodeId,ptype,portname):
+        """Получает все узлы, подключенные прямо или косвенно к порту portname узла fromNodeId. ptype - in/out"""
+        baseConnList = self.dpdGraphExt[fromNodeId][ptype].get(portname,[])#list of dicts {nodeId:portconn}
+        listref = []
+        visitedNodes = {node: False for node in self.dpdGraphExt.keys()}
+        visitedNodes[fromNodeId] = True
+
+        def __recNodeGet(nodeId):
+            ndeplist = self.dependencyGraph[nodeId]
+            if not visitedNodes[nodeId]:
+                visitedNodes[nodeId] = True
+                listref.append(nodeId)
+                for cnid in ndeplist:
+                    __recNodeGet(cnid)
+        
+        for connElem in baseConnList:
+            for nod in connElem.keys():
+                __recNodeGet(nod)
+
+        return listref
+
     def generateFromTopology(self, topological_order, entryId):
 
         curExceptions = len(self._exceptions)
         curWarnings = len(self._warnings)
 
         codeInfo = {nodeid:CodeGenerator.NodeData(nodeid,self) for nodeid in topological_order}
+        entryObj = codeInfo[entryId]
 
         readyCount = 0
         hasAnyChanges = True # true for enter
         iteration = 0
+        
 
         allGeneratedVars = [] #список всех сгенерированных локальных переменных
         self.allGeneratedVarsInEntry = allGeneratedVars #refset
         isLambdaEntry = NodeLambdaType.isLambdaEntryNode(codeInfo[entryId].nodeClass)
+        isContextLambdaEntry = NodeLambdaType.hasContextInLambdaType(codeInfo[entryId].nodeClass)
+
+        #check selfobject
+        if isLambdaEntry and not isContextLambdaEntry:
+            for nObj in codeInfo.values():
+                if nObj.nodeClass == "objects.thisObject":
+                    self.exception(CGEntrySelfObjectRefUnsupported,source=nObj,entry=codeInfo[entryId])
 
         # Проверка на присутствие использования одних точек входа в других
         for ent in self.entryIdList:
@@ -824,16 +856,11 @@ class CodeGenerator:
                     hasAnyChanges = False
                     break
         
-        #remove lambda_ref from entry
-        #! слишком много зависимостей
-        # if  codeInfo[entryId].nodeClass == "NODELAMBDATYPE":
-        #     dlist = []
-        #     for it in self.dpdGraphExt[entryId]['out'].get('lambda_ref',[]):
-        #         dlist.extend(list(it))
-        #     for k,v in codeInfo.copy().items():
-        #         if k in dlist:
-        #             codeInfo.pop(k)
+        refLambdaNodes = [] #то что подключено к lambda_ref
         if isLambdaEntry:
+            #remove lambda_ref from entry
+            refLambdaNodes = self.getAllNodesFromPort(entryId,"out","lambda_ref")
+
             #validate invalid node in anonfunc entry
             for o in codeInfo.values():
                 ncl_ = o.nodeClass
@@ -1003,6 +1030,58 @@ class CodeGenerator:
                     replcode_ = "[" + ", ".join(paramList) + "]"
                     node_code = re.sub(f'@cfParams',replcode_,node_code)
 
+                if "@genport." in node_code and hasRuntimePorts:
+                    # обновление портов
+                    #TODO вынести в функцию с проверками
+                    newInputs = {}
+                    newOutputs = {}
+                    
+                    for portDict in obj_data['input_ports']:
+                        newInputs[portDict['name']] = {
+                            'type': portDict['type']
+                        }
+                    for portDict in obj_data['output_ports']:
+                        newOutputs[portDict['name']] = {
+                            'type': portDict['type']
+                        }
+                    class_data['inputs'] = newInputs
+                    class_data['outputs'] = newOutputs
+                    #update types
+                    inputs_fromLib = newInputs.items()
+                    outputs_fromLib = newOutputs.items()
+                    
+                    #------------- genvar ports process ---------------
+                    while True:
+                        rez = re.search(r'(@genport\.(in|out)\.(\d+)\((.*?)\))',node_code)
+                        if not rez: break
+                        fullPattern,portType, portNumber, delimConnector = rez.groups()
+
+                        # prep ports
+                        mpInfo = class_data['options'].get('makeport_'+portType,{})
+                        formatter = mpInfo.get('text_format')
+                        sourcePort = mpInfo.get('src')
+                        portNumber = int(portNumber)
+                        isParamMaker = delimConnector == 'paramGen'
+                        if isParamMaker: delimConnector = ", "
+                        resultReplacerList = []
+                        collectionPorts = class_data['inputs' if portType == 'in' else 'outputs'].keys()
+                        for _iPort, _portColName in enumerate(collectionPorts):
+                            if formatter == None or formatter.format(value=_iPort+1,index=_iPort) == _portColName:
+                                if _iPort+1 >= portNumber:
+                                    if isParamMaker:
+                                        if portType != "out":
+                                            self.exception(CGInternalCompilerError,source=obj,context=f'Code genport connection type error: {fullPattern}')
+                                            break
+                                        resultReplacerList.append(f'\'@genvar.{portType}.{_iPort+1}\'')
+                                    else:
+                                        resultReplacerList.append(f'@{portType}.{_iPort+1}')
+                        
+                        replStr = delimConnector.join(resultReplacerList)
+                        if isParamMaker and replStr: replStr = f'/*gp-gen*/params[{replStr}];'
+                        node_code = node_code.replace(fullPattern,replStr)
+
+                    pass
+
                 if "@genvar." in node_code:
                     #pat = r'@genvar\.(\w+\.\d+)(\.internal\((.*?)\))?'
                     pat = r'(@genvar\.(\w+\.\d+)((?:\.\w+\([^()]*\))*))'
@@ -1057,58 +1136,6 @@ class CodeGenerator:
                         obj.generatedVars[gvObj.fromPort] = gvObj
                         
                         allGeneratedVars.append(gvObj)
-
-                if "@genport." in node_code and hasRuntimePorts:
-                    # обновление портов
-                    #TODO вынести в функцию с проверками
-                    newInputs = {}
-                    newOutputs = {}
-                    
-                    for portDict in obj_data['input_ports']:
-                        newInputs[portDict['name']] = {
-                            'type': portDict['type']
-                        }
-                    for portDict in obj_data['output_ports']:
-                        newOutputs[portDict['name']] = {
-                            'type': portDict['type']
-                        }
-                    class_data['inputs'] = newInputs
-                    class_data['outputs'] = newOutputs
-                    #update types
-                    inputs_fromLib = newInputs.items()
-                    outputs_fromLib = newOutputs.items()
-                    
-                    #------------- genvar ports process ---------------
-                    while True:
-                        rez = re.search(r'(@genport\.(in|out)\.(\d+)\((.*?)\))',node_code)
-                        if not rez: break
-                        fullPattern,portType, portNumber, delimConnector = rez.groups()
-
-                        # prep ports
-                        mpInfo = class_data['options'].get('makeport_'+portType,{})
-                        formatter = mpInfo.get('text_format')
-                        sourcePort = mpInfo.get('src')
-                        portNumber = int(portNumber)
-                        isParamMaker = delimConnector == 'paramGen'
-                        if isParamMaker: delimConnector = ", "
-                        resultReplacerList = []
-                        collectionPorts = class_data['inputs' if portType == 'in' else 'outputs'].keys()
-                        for _iPort, _portColName in enumerate(collectionPorts):
-                            if formatter == None or formatter.format(value=_iPort+1,index=_iPort) == _portColName:
-                                if _iPort+1 >= portNumber:
-                                    if isParamMaker:
-                                        if portType != "out":
-                                            self.exception(CGInternalCompilerError,source=obj,context=f'Code genport connection type error: {fullPattern}')
-                                            break
-                                        resultReplacerList.append(f'\'@genvar.{portType}.{_iPort+1}\'')
-                                    else:
-                                        resultReplacerList.append(f'@{portType}.{_iPort+1}')
-                        
-                        replStr = delimConnector.join(resultReplacerList)
-                        if isParamMaker and replStr: replStr = f'/*gp-gen*/params[{replStr}];'
-                        node_code = node_code.replace(fullPattern,replStr)
-
-                    pass
 
                 if "@gettype." in node_code:
                     pat = r'(@gettype\.(\w+\.\d+)((?:\.\w+\([^()]*\))*))'
@@ -1217,6 +1244,9 @@ class CodeGenerator:
                                         catchErrThis = False
                             if catchErrThis:
                                 self.exception(CGMemberNotExistsException,source=obj,context=[memname,selfGraphClass,clsInfo['class']],portname=input_name)
+                            if isLambdaEntry and not isContextLambdaEntry:
+                                if obj.nodeId not in refLambdaNodes:
+                                    self.exception(CGEntrySelfObjectPortUnsupported,source=obj,portname=input_name,entry=entryObj)
 
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue

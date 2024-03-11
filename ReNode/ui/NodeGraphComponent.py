@@ -764,10 +764,9 @@ class NodeGraphComponent:
 				port = node.outputs().get('lambda_ref')
 				if not port: return
 				oldTPN = port.view.port_typeName
-				pts = oldTPN.split("=")
-				if len(pts)>=2:
-					pts[1]=data
-				port.view.setPortTypeName("=".join(pts),True)
+				ptp = self.getFactory().getBinaryType(data)
+				newType = self.getFactory().updateFunctionSignature(oldTPN,1,ptp)
+				port.view.setPortTypeName(newType,True)
 				self.update_lambda_porttype(node)
 				node.view.draw_node()
 			menu.addOnClickEvent(_prov)

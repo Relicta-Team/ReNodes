@@ -868,6 +868,27 @@ class NodeFactory:
 	def getFunctionParamList(self,ft):
 		"""Список параметров в сигнатуре функции"""
 		return self.parseFunctionSign(ft)[2]
-
+	
+	def updateFunctionSignature(self,funcSignStr,idx,param):
+		"""Обновляет сигнатуру функции; [ftype:str,return:str,param:list]"""
+		fsign = self.parseFunctionSign(funcSignStr)
+		if idx < 0 or idx > 2:
+			raise IndexError(f"Invalid index: {idx} for function signature: {funcSignStr}")
+		if idx == 2:
+			if not isinstance(param,list):
+				raise TypeError(f"Invalid params type: {type(param)} (need list) for function signature: {funcSignStr}")
+		
+		fsign[idx] = param
+		
+		if len(fsign[2]) == 0:
+			fsign.pop(2)
+		else:
+			paramTypes = []
+			for p in param:
+				paramTypes.append(p.replace("[","(").replace("]",")"))
+			fsign[2] = '@'.join(paramTypes)
+		
+		fs = '='.join(fsign)
+		return self.composeType(['function',fs])
 
 	#endregion

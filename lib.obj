@@ -50,7 +50,7 @@ def:node:operators
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
       opt:dname=0:mul=0
    out:auto:Цель:Выполняющий владелец функции
-   code:[[@in.1,@context.get],{params["_p","_ct"];_p @genport.out.3(paramGen) _ct @context.alloc; @out.2}]
+   code:[[@in.1,@context.get],{params["_p","_ct"];_p @genport.out.4(paramGen) _ct @context.alloc; @out.2}]
 
 def:node:operators
    node:lambda_event
@@ -61,7 +61,7 @@ def:node:operators
    path:system
    exec:pure
    runtimeports:1
-   out:function[obj=null=object^]:lambda_ref:Ссылка на функцию
+   out:function[event=null=object^]:lambda_ref:Ссылка на функцию
      opt:dname=1
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
       opt:dname=0:mul=0
@@ -77,7 +77,7 @@ def:node:operators
    path:system
    exec:pure
    runtimeports:1
-   out:function[obj=null=object^]:lambda_ref:Ссылка на функцию
+   out:function[eventlist=null=object^]:lambda_ref:Ссылка на функцию
      opt:dname=1
    out:Exec:Выполнение:Действия, выполняемые создаваемой функцией
       opt:dname=0:mul=0
