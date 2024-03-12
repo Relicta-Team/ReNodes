@@ -97,6 +97,18 @@ def:node:operators
    in:function_ref:Функция
 
 def:node:operators
+   node:call_lambda_list
+   name:Вызвать событие
+   desc:Вызывает пользовательское событие.
+   color:Operator
+   icon:data\\icons\\icon_BluePrintEditor_Function_16px
+   path:system
+   exec:all
+   runtimeports:1
+   code:_pcl__=[@genport.in.3(,)];{_pcl__ call _x} foreach (@in.2); @out.1
+   in:function_ref:Функция
+
+def:node:operators
    node:call_lambda_delegate
    name:Вызывать делегат
    desc:Вызывает делегат и возвращает значение при наличии. Если объект-владелец делегата не существует - ничего не произойдёт. В случае если делегат должен возвращать значение и объект-владелец не существует - возвращается null-значение.

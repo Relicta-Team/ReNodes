@@ -859,7 +859,13 @@ class CodeGenerator:
         refLambdaNodes = [] #то что подключено к lambda_ref
         if isLambdaEntry:
             #remove lambda_ref from entry
-            refLambdaNodes = self.getAllNodesFromPort(entryId,"out","lambda_ref")
+            lambdaRefPortname = "lambda_ref"
+            refLambdaNodes = self.getAllNodesFromPort(entryId,"out",lambdaRefPortname)
+            lr__ = self.dpdGraphExt[entryId]['out']['lambda_ref']
+            if lr__:
+                lambdaSource = list(self.dpdGraphExt[entryId]['out']['Цель'][0].keys())[0]
+            else:
+                self.nodeWarn(CGLambdaRefNotUsedWarning,source=entryObj,portname=lambdaRefPortname)
 
             #validate invalid node in anonfunc entry
             for o in codeInfo.values():
@@ -1245,8 +1251,7 @@ class CodeGenerator:
                             if catchErrThis:
                                 self.exception(CGMemberNotExistsException,source=obj,context=[memname,selfGraphClass,clsInfo['class']],portname=input_name)
                             if isLambdaEntry and not isContextLambdaEntry:
-                                if obj.nodeId not in refLambdaNodes:
-                                    self.exception(CGEntrySelfObjectPortUnsupported,source=obj,portname=input_name,entry=entryObj)
+                                self.exception(CGEntrySelfObjectPortUnsupported,source=obj,portname=input_name,entry=entryObj)
 
                         node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
                         continue
