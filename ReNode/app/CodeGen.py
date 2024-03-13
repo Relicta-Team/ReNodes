@@ -185,7 +185,7 @@ class CodeGenerator:
         self._exceptions : list[CGBaseException] = [] #список исключений
         self._warnings : list[CGBaseWarning] = [] #список предупреждений
         self.dpdGraphExt = {}
-        self.dependencyGraph = {} #обычные зависимости
+        self.dependencyGraph = {} #обычные зависимости. Реальная ссылка
         self.gObjMeta = {}
         self.compileParams = compileParams
         
@@ -521,6 +521,10 @@ class CodeGenerator:
         for ent in entrys:
             entData = self.serialized_graph['nodes'][ent]
             checkedKey = entData['class_']
+
+            #skip check for lambda entry's
+            if NodeLambdaType.isLambdaEntryNode(checkedKey): continue
+
             #userfunc validate
             nodeObj = entNodeData[ent]
             if nodeObj.getUserNodeId():
@@ -544,26 +548,51 @@ class CodeGenerator:
         code = ""
 
         for i,ent in enumerate(entrys):
-            self.log(f"    -------- Генерация точки входа {i+1}/{len(entrys)}")
+            self.log(f"    -------- Генерация точки входа \"{ent}\" {i+1}/{len(entrys)}")
 
             self.localVariablesUsed = set()
             self.contextVariablesUsed = set()
             
-            # Топологическая сортировка узлов
-            #self.log("    -- Сортировка")
-            topological_order = self.topologicalSort(ent, graph)
+            graph = self.dependencyGraph #get original reference
 
-            #self.log(f"    -- Генерация {ent} (узлов: {len(topological_order)})")
             entryObj = self.serialized_graph['nodes'][ent]
+            entryClass = entryObj['class_']
+            
+            isLambdaEntry = NodeLambdaType.isLambdaEntryNode(entryClass)
+            restoredConnections = []
+
+            if isLambdaEntry:
+                #remove connections and regenerate dependency graph
+                _connectionsList :list[dict] = self.serialized_graph.get('connections',[])
+                for connDict in _connectionsList:
+                    if connDict['out'][0] == ent and connDict['out'][1] == 'lambda_ref':
+                        restoredConnections.append(connDict)
+                    elif connDict['in'][0] == ent and connDict['in'][1] == 'lambda_ref':
+                        restoredConnections.append(connDict)
+                #second pass: removing connections
+                for cdel in restoredConnections:
+                    _connectionsList.remove(cdel)
+                #generate new graph
+                graph = self.createDependencyGraph(collectOnlyExecutePins=True)
+
+            topological_order = self.topologicalSort(ent, graph)
+            
             generatedCode = ""
             if self._addComments:
-                generatedCode += f"\n//p_entry: {entryObj['class_']}\n"
+                generatedCode += f"\n//p_entry: {entryClass}\n"
             generatedCode += self.generateFromTopology(topological_order,ent)
-            if not NodeLambdaType.isLambdaEntryNode(entryObj.get('class_')):
+            if not isLambdaEntry:
                 code += generatedCode
 
             if self.hasCompileParam("-errbreak"):
                 break
+
+            #restore connection
+            if restoredConnections:
+                if not isLambdaEntry:
+                    raise Exception("Restore connection error logic - entry is not lambda")
+                for c in restoredConnections:
+                    self.serialized_graph['connections'].append(c)
 
         self.log("Форматирование")
 
@@ -863,7 +892,8 @@ class CodeGenerator:
             refLambdaNodes = self.getAllNodesFromPort(entryId,"out",lambdaRefPortname)
             lr__ = self.dpdGraphExt[entryId]['out']['lambda_ref']
             if lr__:
-                lambdaSource = list(self.dpdGraphExt[entryId]['out']['Цель'][0].keys())[0]
+                #lambdaSource = list(self.dpdGraphExt[entryId]['out']['Цель'][0].keys())[0]
+                pass 
             else:
                 self.nodeWarn(CGLambdaRefNotUsedWarning,source=entryObj,portname=lambdaRefPortname)
 

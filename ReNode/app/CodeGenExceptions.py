@@ -285,8 +285,8 @@ class CGEntryLocalFunctionInvalidNode(CGBaseException):
 
 class CGEntrySelfObjectPortUnsupported(CGBaseException):
     id = 321
-    text = "Невозможное использование порта {portname} узла {src} в контексте {entry}"
-    desc = "В {entry} не содержится контекст графа. Требуется явное подключение к порту {portname}."
+    text = "Невозможное использование порта \"{portname}\" узла {src} в контексте {entry}"
+    desc = "В {entry} не содержится контекст графа. Требуется явное подключение к порту \"{portname}\"."
     moreInfo = "Локальные функции, лямбды и события не содержат ссылку на объект графа и локальные переменные, так как контекст выполнения не передается в них неявно."
 
 class CGEntrySelfObjectRefUnsupported(CGBaseException):
