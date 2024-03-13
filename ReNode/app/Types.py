@@ -178,12 +178,30 @@ def validate_connections_serialized(portFromDict,portToDict):
     fttFrom = toTypeName if portToDict['portType'] == 'out' else fromTypeName
     tttTo = fromTypeName if portFromDict['portType'] == 'in' else toTypeName
 
+    ftClass = portToDict['nodeClass'] if portToDict['portType'] == 'out' else portFromDict['nodeClass']
+    ttClass = portFromDict['nodeClass'] if portFromDict['portType'] == 'in' else portToDict['nodeClass']
+
     ftDec = fact.decomposeType(fttFrom)
     ttDec = fact.decomposeType(tttTo)
 
     #функция к ссылке
     if ftDec[0]=='function' and ttDec[1]=='function_ref' or \
-        ftDec[1]=='function_ref' and ttDec[0]=='function': return True
+        ftDec[1]=='function_ref' and ttDec[0]=='function': 
+        defFuncType = ''
+        callFuncClass = ''
+        if ftDec[0]=='function' and ttDec[1]=='function_ref':
+            defFuncType = fttFrom
+            callFuncClass = ttClass
+        elif ftDec[1]=='function_ref' and ttDec[0]=='function':
+            defFuncType = tttTo
+            callFuncClass = ftClass
+        else:
+            raise Exception("Unknown condition for typechecking: function to funcref")
+        logt = fact.getFunctionLogicType(defFuncType)
+        # только определенные лямбды можно вызывать с определенными сингатурами
+        if callFuncClass == "operators.call_lambda_list" and logt == 'eventlist': return True
+        if callFuncClass == 'operators.call_lambda' and logt in ['anon','event']: return True
+        if 'operators.call_lambda' not in callFuncClass: return True
 
     if ftDec[0]!=ttDec[0] or len(ftDec)!=len(ttDec): return False
     allt_list = []
