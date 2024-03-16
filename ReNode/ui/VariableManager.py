@@ -379,6 +379,9 @@ class VariableLibrary:
             type = "enum"
         if type.startswith("struct."):
             type = "struct"
+        if "=" in type:
+            type = "function_ref"
+        # проверки включаются все из-за природы комбинирования в function_ref
         
         for t in self.typeList:
             if t.variableType == type:
