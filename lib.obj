@@ -4276,7 +4276,7 @@ def:c:TaskRoleDead
 
 		name:Убийство ролей
 		desc:Задача на убийство ролей
-		path:Игровая логика.Задачи
+		path:Игровая логика.Задачи.Ролевые
 	
 def:f:TaskRoleDead.countDeadNeed_0
 
@@ -4332,7 +4332,7 @@ def:f:TaskBase._taskDescDelegate_0
 		name:Обработчик описания задачи
 		desc:Вызываемая функция вывода описания задачи. Обычно в этой функции вычисляются форматируемые значения (например, список объектов). Чтобы посмотреть исходную строку выведите в консоли 'Ролевое описание задачи'.
 		prop:all
-		return:function[event=string=BasicTask^]:Описание задачи
+		return:function[event=string=TaskBase^]:Описание задачи
 	
 def:f:TaskBase.isTaskSingleCheck_0
 
@@ -4379,7 +4379,7 @@ def:f:TaskBase._customCondition_0
 		name:Дополнительные условия
 		desc:Дополнительные условия, которые должны быть выполнены для проверки задачи. Первый параметр - вызывающий событие объект (Задача), второй параметр - владелец задачи (Моб).
 		prop:all
-		return:function[event=bool=BasicTask^@Mob^]:Условие проверки задачи
+		return:function[event=bool=TaskBase^@Mob^]:Условие проверки задачи
 	
 def:m:TaskBase.setTaskResult_0
 
@@ -4401,14 +4401,14 @@ def:f:TaskBase._taskOnSuccessDeletage_0
 		name:Обработчик успешного выполнения задачи
 		desc:Вызывается при успешном выполнении задачи для каждого владцельца.
 		prop:all
-		return:function[event=null=BasicTask^@Mob^@int]:Обработчик успешного выполнения задачи
+		return:function[event=null=TaskBase^@Mob^@int]:Обработчик успешного выполнения задачи
 	
 def:f:TaskBase._taskOnFailDeletage_0
 
 		name:Обработчик провала задачи
 		desc:Вызывается при провале задачи для каждого владельца.
 		prop:all
-		return:function[event=null=BasicTask^@Mob^@int]:Обработчик провала задачи
+		return:function[event=null=TaskBase^@Mob^@int]:Обработчик провала задачи
 	
 def:m:TaskBase.copyTask_0
 
@@ -4416,7 +4416,7 @@ def:m:TaskBase.copyTask_0
 		desc:Создает копию задачи. Тэг и владельцы задачи не копируются.
 		type:method
 		lockoverride:1
-		return:BasicTask:Копия задачи
+		return:TaskBase:Копия задачи
 	
 def:c:ServerClient
 
@@ -14784,7 +14784,7 @@ $REGION:CLASSMETA
 }
 ,"TaskBase": {
     "baseClass" : "IGameEvent",
-    "defined" : {"file":"src\\host\\GameModes\\BasicTask.sqf","line":56},
+    "defined" : {"file":"src\\host\\GameModes\\TaskBase.sqf","line":56},
    "fields": { "defined": {
 "tag":{"return": "string"},"name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"},"_taskDescDelegate":{"return": "unknown_type"},"isTaskSingleCheck":{"return": "bool"},"owners":{"return": "null_array"},"isDone":{"return": "bool"},"checkDelay":{"return": "int"},"result":{"return": "int"},"taskRegistered":{"return": "bool"},"_taskHandle__":{"return": "int"},"_customCondition":{"return": "unknown_type"},"failTaskOnDeadOwner":{"return": "bool"},"_taskOnSuccessDeletage":{"return": "unknown_type"},"_taskOnFailDeletage":{"return": "unknown_type"}}   },
    "methods": { "defined": {

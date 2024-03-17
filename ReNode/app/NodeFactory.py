@@ -839,14 +839,19 @@ class NodeFactory:
 	#region function signature helpers
 	def isFuncSignType(self,ft):
 		dct = self.decomposeType(ft)
-		return dct[0]=='function'
+		return dct[0]=='function' or dct[0]=='value' and "=" in dct[1]
 	
 	def parseFunctionSign(self,ft):
 		"""Возвращает массив: [logictype,returntype,paramlist]"""
 		dct = self.decomposeType(ft)
-		rStruct = ['anon','null',[]]
+		
 		if dct[0]!="function": return
 		sign = dct[1]
+		return self.getFunctionSignatureInfo(sign)
+
+	def getFunctionSignatureInfo(self,sign):
+		"""Возвращает vec3: functionType,ReturnType,Params"""
+		rStruct = ['anon','null',[]]
 		sparts = sign.split('=')
 		rStruct[0] = sparts[0]
 		rStruct[1] = sparts[1] if len(sparts)>1 else 'null'

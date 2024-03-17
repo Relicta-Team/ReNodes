@@ -337,6 +337,7 @@ class VariableLibrary:
                     portType = typeinfo[1]
 
                 if portType in ["thisClassname","self","auto_object_type"]: portType = 'object'
+                if '=' in portType: portType = "function_ref"
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
                 if portType.startswith("struct."): portType = "struct"
@@ -357,6 +358,7 @@ class VariableLibrary:
                         portType = 'function_ref'
 
                 if portType in ["thisClassname","self","auto_object_type"]: portType = 'object'
+                if '=' in portType: portType = "function_ref"
                 if portType.endswith("^"): portType = "object" #temp fix object colors
                 if portType.startswith('enum.'): portType = 'enum'
                 if portType.startswith("struct."): portType = "struct"
@@ -373,15 +375,16 @@ class VariableLibrary:
         return None
 
     def getVarTypedefByType(self,type)->VariableTypedef|None:
+        if "=" in type:
+            type = "function_ref"
+        # проверки включаются все из-за природы комбинирования в function_ref
+        
         if type.endswith("^"): 
             type = "object"
         if type.startswith("enum."):
             type = "enum"
         if type.startswith("struct."):
             type = "struct"
-        if "=" in type:
-            type = "function_ref"
-        # проверки включаются все из-за природы комбинирования в function_ref
         
         for t in self.typeList:
             if t.variableType == type:
@@ -971,6 +974,9 @@ class VariableManager(QDockWidget):
     def isStructType(self,type):
         return self.getFactory().isStructType(type)
 
+    def isFunctionType(self,type):
+        return self.getFactory().isFuncSignType(type)
+
     def getFactory(self):
         return self.nodeGraphComponent.getFactory()
 
@@ -1001,7 +1007,9 @@ class VariableManager(QDockWidget):
 
     def getVariableTypedefByType(self,type,canCreateCopy=False) -> None | VariableTypedef:
         sourceType = type
-        if self.isObjectType(type):
+        if self.isFunctionType(type):
+            type = "function_ref"
+        if self.isObjectType(type) or type=='self':
             type = "object"
         if self.isEnumType(type):
             type = "enum"
@@ -1067,7 +1075,26 @@ class VariableManager(QDockWidget):
         """Возвращает репрезентацию типа в русском названии"""
         if fulltypename == "Exec": return "Выполнение"
         if fulltypename == "null": return "Ничего"
+        if fulltypename == "self": return "Тип вызывающего объекта"
         
+        if self.isFunctionType(fulltypename):
+            lt,rett,params = self.getFactory().parseFunctionSign(fulltypename)
+            lttext = "НЕИЗВЕСТНЫЙ_ТИП_ФУНКЦИИ"
+            if lt == 'event':
+                lttext = "Функция-действие"
+            elif lt == "eventlist":
+                lttext = "Собыие"
+            elif lt == "anon":
+                lttext = "Анонимная функция"
+            try:
+                rettext = self.getTextTypename(rett)
+                args = []
+                for p in params:
+                    args.append(self.getTextTypename(p))
+                return f'{lttext} (Вход={"нет" if not args else ", ".join(args)}; Выход={rettext})'
+            except:
+                return f'<Неизвестный тип функции ({fulltypename})>'
+
         try:
             vRet,dtObj = self.getVarDataByType(fulltypename,canCreateCopy=True)
         except:

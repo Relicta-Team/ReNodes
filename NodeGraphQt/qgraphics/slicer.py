@@ -201,6 +201,34 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
             #VariableManager.refObject.getVariableDataById()
 
+            def __autoport_gettext(inpLib):
+                dtt = "что угодно?!"
+                tg = inpLib.get('typeget',"ANY;@type")
+                if tg == "ANY;@type":
+                    dtt = "любые данные"
+                else:
+                    dt,mask = tg.split(";")
+                    dtt = VariableManager.refObject._typeData.getVarDatatypeByType(dt)
+                    if dtt:
+                        dtt = dtt.text.lower()
+                    else:
+                        dtt = f"НЕИЗВЕСТНЫЙ_ТИП_ДАННЫХ({dt})"
+                restr = ""
+                if inpLib.get("allowtypes"):
+                    restr = " с разрешением на "
+                    prestr = []
+                    for trestr in inpLib['allowtypes']:
+                        if trestr == "*enum":
+                            trestr = "enum"
+                        if trestr == "*struct":
+                            trestr = "struct"
+                        restrtpn = VariableManager.refObject.getTextTypename(trestr)
+                        restrclr = VariableManager.refObject.getColorByType(trestr)
+                        prestr.append(f'<span style="color: rgba({",".join([str(ci) for ci in restrclr])})"><b>{restrtpn}</b></span>')
+                    restr += '; '.join(prestr)
+                clrProp = f"допускает {dtt}{restr}"
+                return clrProp
+
             iTxt = []
             for o in lastItem.inputs:
                 inpLib = libInfo['inputs'].get(o.name)
@@ -218,11 +246,19 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 if desc:
                     desc = ": " + desc
                 if not req:
-                    desc = f' <i>(Необязательый)</i>{desc}'
+                    desc = f' <i>(Необязательный)</i>{desc}'
                 
-                iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
-            iTxt = "<br/>".join(iTxt)
-            text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'
+                clrProp = o.port_typeName
+                if clrProp:
+                    valinfo = VariableManager.refObject.getTextTypename(clrProp)
+                    clr = VariableManager.refObject.getColorByType(clrProp)
+                    clrProp = f'<span style="color: rgba({",".join([str(ci) for ci in clr])})"><b>{valinfo}</b></span>'
+                else:
+                    clrProp = __autoport_gettext(inpLib)
+                iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> ({clrProp}){desc}')
+            iTxt = '<br/>'.join(iTxt)
+            text += '<hr style="height:4pt; visibility:hidden;"/>'
+            text += f'<span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'
             
             oTxt = []
             for o in lastItem.outputs:
@@ -233,9 +269,19 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                     desc = ": " + desc
                 else:
                     desc = ""
-                oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i>{desc}')
-            oTxt = "<br/>".join(oTxt)
-            text += f'<br/><span style="font-size: 10pt; marign-bottom: 8pt">Выходные порты: {"<br/>" + oTxt if oTxt else "отсутствуют"}</span>'
+                
+                clrProp = o.port_typeName
+                if clrProp:
+                    valinfo = VariableManager.refObject.getTextTypename(clrProp)
+                    clr = VariableManager.refObject.getColorByType(clrProp)
+                    clrProp = f'<span style="color: rgba({",".join([str(ci) for ci in clr])})"><b>{valinfo}</b></span>'
+                else:
+                    clrProp = __autoport_gettext(inpLib)
+                oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> ({clrProp}){desc}')
+            oTxt = '<br/>'.join(oTxt)
+            
+            text += '<hr style="height:4pt; visibility:hidden;"/>'
+            text += f'<span style="font-size: 10pt; marign-bottom: 8pt">Выходные порты: {"<br/>" + oTxt if oTxt else "отсутствуют"}</span>'
 
             #todo replace reference
             #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
@@ -267,6 +313,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
         padding = 5, 5
         background_rect = QtCore.QRectF(text_rect.x() - padding[0], text_rect.y() - padding[1], text_rect.width() + padding[0] * 2, text_rect.height() + padding[1] * 2)
         
+        self._width = background_rect.width()
+        self._height = background_rect.height()
+
         painter.setBrush(QtGui.QBrush(QtGui.QColor(20, 20, 20, 140)))
         painter.drawRoundedRect(background_rect, 5, 5)
 
