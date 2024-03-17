@@ -519,8 +519,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                     continue
                 nodes.append(itm)
 
-        if nodes:
-            self.MMB_state = False
+        #do not drop middle mouse button if near nodes exists
+        #if nodes:
+        #    self.MMB_state = False
 
         # record the node selection as "self.selected_nodes()" is not updated
         # here on the mouse press event.

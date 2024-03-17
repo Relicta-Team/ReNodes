@@ -151,6 +151,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
 
     def boundingRect(self):
         return QtCore.QRectF(0.0, 0.0, self._width, self._height)
+    
+    def wheelEvent(self,event):
+        pass
 
     def loadText(self):
         if not self._lastItem: return
@@ -183,7 +186,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #     if lastItem._error_item.isVisible():
             #         text = '<span style="color: red; font-size:30pt">Ошибка при компиляции</span><br/>' + text
             text += f'<br/><b>Путь:</b> {libInfo.get("path") or "нет"}<br/>'
-            dText = libInfo.get("desc").replace("\n","<br/>")
+            dText = libInfo.get("desc").replace("\n","<br/>").replace("\:",":")
             text += f'<br/><b>Описание:</b> {dText or "отсутствует"}<br/>'
 
             if libInfo.get("memtype") or className.startswith("func."):
@@ -207,7 +210,8 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 if tg == "ANY;@type":
                     dtt = "любые данные"
                 else:
-                    dt,mask = tg.split(";")
+                    dt = tg.split(";")
+                    dt = dt[0]
                     dtt = VariableManager.refObject._typeData.getVarDatatypeByType(dt)
                     if dtt:
                         dtt = dtt.text.lower()
@@ -255,14 +259,15 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                     clrProp = f'<span style="color: rgba({",".join([str(ci) for ci in clr])})"><b>{valinfo}</b></span>'
                 else:
                     clrProp = __autoport_gettext(inpLib)
-                iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> ({clrProp}){desc}')
+                iTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> &#91;{clrProp}&#93;{desc}')
             iTxt = '<br/>'.join(iTxt)
             text += '<hr style="height:4pt; visibility:hidden;"/>'
             text += f'<span style="font-size: 10pt; marign-bottom: 8pt">Входные порты: {"<br/>" + iTxt if iTxt else "отсутствуют"}</span>'
             
             oTxt = []
             for o in lastItem.outputs:
-                desc = libInfo['outputs'].get(o.name)
+                inpLib = libInfo['outputs'].get(o.name)
+                desc = ""
                 if desc:
                     desc = desc.get("desc",'')
                 if desc:
@@ -277,7 +282,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                     clrProp = f'<span style="color: rgba({",".join([str(ci) for ci in clr])})"><b>{valinfo}</b></span>'
                 else:
                     clrProp = __autoport_gettext(inpLib)
-                oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> ({clrProp}){desc}')
+                oTxt.append(f'&nbsp;&nbsp;&nbsp;&nbsp;- <i><b>{o.name}</b></i> &#91;{clrProp}&#93;{desc}')
             oTxt = '<br/>'.join(oTxt)
             
             text += '<hr style="height:4pt; visibility:hidden;"/>'
@@ -286,7 +291,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #todo replace reference
             #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
             from re import search
-            regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([^\]]*)\])'
+            regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([а-яА-Я\w\d]*)\])'
             while True:
                 pats = search(regexPattern, text)
                 if not pats: break
@@ -296,6 +301,9 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                 text = text.replace(fullMacro, f'<a  style=\"color: green;\"href=\"{ref}\">{name}</a>')
 
             pass
+
+            #replace []
+            text = text.replace("[","&#91;").replace("]","&#93;")
             
 
         self.text_item.setHtml('<span style="font-family: Arial; font-size: 12pt;">' + text + '</span>')
