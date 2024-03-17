@@ -562,6 +562,12 @@ class CodeGenerator:
             restoredConnections = []
 
             if isLambdaEntry:
+                #Если в лямбде нет подключений - пропускаем её компиляцию
+                if not self.getConnectionsMap(CodeGenerator.ConnectionType.Input,ent) and \
+                    not self.getConnectionsMap(CodeGenerator.ConnectionType.Output,ent):
+                    self.nodeWarn(CGLocalFunctionNotUsed,source=ent)
+                    continue
+                
                 #remove connections and regenerate dependency graph
                 _connectionsList :list[dict] = self.serialized_graph.get('connections',[])
                 for connDict in _connectionsList:
