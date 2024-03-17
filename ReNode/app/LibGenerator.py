@@ -1010,7 +1010,7 @@ class NodeObjectHandler:
 			self._preregEnumNode()
 		if self.isStruct:
 			self._preregStruct()
-		if self.isSystem or self.isFunc:
+		if self.isSystem or self.isFunc or self.isMethod: #method for autoports work
 			self._preregSystemNode()
 		if self.isFunc:
 			self._preregFunction()
