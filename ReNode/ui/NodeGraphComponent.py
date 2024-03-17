@@ -337,8 +337,8 @@ class NodeGraphComponent:
 			if "typeset_out" in odat:
 				outernode.set_property(outerport.name(),odat.get('default',"object"))
 		
-		if outernode.nodeClass == 'operators.call_lambda' and outerport.view.port_typeName == "function_ref" and \
-			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) == 1:
+		if 'operators.call_lambda' in outernode.nodeClass and outerport.view.port_typeName == "function_ref" and \
+			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) == len(outernode.getFactoryData().get('inputs',[])):
 				self.onFunctionRefPorts(outernode,innerport.view.port_typeName)
 
 		pass
@@ -373,8 +373,8 @@ class NodeGraphComponent:
 			outerport = port_in
 			innerport = port_out
 		
-		if outernode.nodeClass == 'operators.call_lambda' and outerport.view.port_typeName == "function_ref" and \
-			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) > 1:
+		if 'operators.call_lambda' in outernode.nodeClass and outerport.view.port_typeName == "function_ref" and \
+			innerport.view.port_typeName.startswith("function[") and len(outernode.inputs()) > len(outernode.getFactoryData().get('inputs',[])):
 				self.onFunctionRefPorts(outernode,"",True)
 
 
@@ -681,7 +681,7 @@ class NodeGraphComponent:
 		ccp = port.connected_ports()
 		if ccp:
 			for prtT in ccp:
-				if prtT.node().nodeClass == "operators.call_lambda":
+				if "operators.call_lambda" in prtT.node().nodeClass:
 					self.onFunctionRefPorts(prtT.node(),signature)
 				else:
 					if not port.view.validate_connection_to(prtT.view):
@@ -830,9 +830,9 @@ class NodeGraphComponent:
 		if fparams:
 			for p in fparams:
 				paramTypes.append(p.replace("(","[").replace(")","]"))
-
+		lenInputsDefault = len(node.getFactoryData().get('inputs',[]))
 		for idx, (k,v) in enumerate(node.inputs().items()):
-			if (idx<=0): continue
+			if (idx<=(lenInputsDefault-1)): continue
 
 			node.delete_input(v)
 		

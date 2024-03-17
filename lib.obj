@@ -71,7 +71,7 @@ def:node:operators
 	
 
 def:node:operators
-
+      node:call_lambda
 		name:Вызвать функцию
 		desc:Вызывает анонимную функцию, объектную или событие.
 		color:Operator
