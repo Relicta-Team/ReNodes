@@ -211,7 +211,10 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
                     dtt = "любые данные"
                 else:
                     dt = tg.split(";")
-                    dt = dt[0]
+                    if dt[1].startswith("@value"):
+                        dt = "value"
+                    else:
+                        dt = dt[0]
                     dtt = VariableManager.refObject._typeData.getVarDatatypeByType(dt)
                     if dtt:
                         dtt = dtt.text.lower()
@@ -291,7 +294,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #todo replace reference
             #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
             from re import search
-            regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([а-яА-Я\w\d]*)\])'
+            regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([а-яА-Я\w\d\s]*)\])'
             while True:
                 pats = search(regexPattern, text)
                 if not pats: break
