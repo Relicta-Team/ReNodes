@@ -294,6 +294,25 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             #todo replace reference
             #<a  style=\"color: green;\"href=\"https://community.bistudio.com/wiki/atan2\">по ссылке</a>
             from re import search
+
+            #pattern for typereferences
+            patTypeReplace = r'(@\[([\w\\\/\.а-яА-Я\#-\_\&]+)\s*([а-яА-Я\w\d\s]*)?\])'
+            while True:
+                pats = search(patTypeReplace,text)
+                if not pats: break
+                #('@[TaskBase^ Объект задачи]', 'TaskBase^', 'Объект задачи') OR
+                # last item is empty
+                if len(pats.groups())!= 3: break
+                fullMacro, typename, displayName = pats.groups()
+                typepostfix = typename
+                if not displayName:
+                    displayName = VariableManager.refObject.getTextTypename(typename)
+                else:
+                    typepostfix = VariableManager.refObject.getTextTypename(typename)
+                clrstl = f'rgba({",".join([str(ci) for ci in VariableManager.refObject.getColorByType(typename)])})'
+                text = text.replace(fullMacro,f'<span style="color:{clrstl}">{displayName} <b>&#91;{typepostfix}&#93;</b></span>')
+
+
             regexPattern = r'(\[([\w\\\/\.а-яА-Я#-_&]+)\s+([а-яА-Я\w\d\s]*)\])'
             while True:
                 pats = search(regexPattern, text)
