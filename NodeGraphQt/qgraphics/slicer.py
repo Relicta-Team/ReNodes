@@ -296,7 +296,7 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             from re import search
 
             #pattern for typereferences
-            patTypeReplace = r'(@\[([\w\\\/\.а-яА-Я\#-\_\&]+)\s*([а-яА-Я\w\d\s]*)?\])'
+            patTypeReplace = r'(@\[([\w\\\/\.а-яА-Я\#-\_\&]+)\s*([а-яА-Я\w\d\s-]*)?\])'
             while True:
                 pats = search(patTypeReplace,text)
                 if not pats: break
