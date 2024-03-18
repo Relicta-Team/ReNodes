@@ -71,7 +71,8 @@ def:node:operators
 	
 
 def:node:operators
-      node:call_lambda
+
+		node:call_lambda
 		name:Вызвать функцию
 		desc:Вызывает анонимную функцию, объектную или событие.
 		color:Operator
@@ -94,19 +95,6 @@ def:node:operators
 		runtimeports:1
 		code:_pcl__=[@genport.in.3(,)];{_pcl__ call _x} foreach (@in.2); @out.1
 		in:function_ref:Функция
-	
-
-def:node:operators
-
-		node:call_lambda_delegate
-		name:Вызывать делегат
-		desc:Вызывает делегат и возвращает значение при наличии. Если объект-владелец делегата не существует - ничего не произойдёт. В случае если делегат должен возвращать значение и объект-владелец не существует - возвращается null-значение.
-		color:Operator
-		icon:data\\icons\\icon_BluePrintEditor_Function_16px
-		exec:pure
-		runtimeports:1
-		code:[@in.1,[@genport.in.2(,)]] call renode_invokeDelegate
-		in:function_ref:Делегат
 	
 
 def:node:operators
@@ -420,6 +408,20 @@ def:node:array
     out:auto:Массив
         opt:typeget=array;@type
     option:"makeport_in"\: {"type"\: "makeport_in","src"\:"[0]","text_format"\:"[{index}]"}
+
+
+def:node:array
+
+    node:makeArrayEmpty
+    path:Массивы
+    name:Создать пустой массив
+    namelib:Создание пустого массива
+    desc:Создает пустой массив для возможности заполнения пользователем.
+    icon:data\\icons\\icon_Blueprint_MakeArray_16x.png
+    exec:pure
+    code:[]
+    out:auto:Массив
+        opt:typeget=array;@type
 
 
 def:node:array
@@ -1286,13 +1288,15 @@ def:node:conversion
 
     node:enumToInt
     name:•
-    namelib:Перечилсение -> Число
+    namelib:Перечилсение
+    opt -> Число
     desc:Преобразование значения перечисления в целое число
     rendertype:NoHeaderText
     exec:pure
     code:@in.1
     in:auto:Перечилсение
-        opt:custom=0:allowtypes=*enum
+    opt:allowtypes=*enum
+        opt:custom=0
     out:int:Число
 
 
@@ -1300,13 +1304,15 @@ def:node:conversion
 
     node:enumToString
     name:•
-    namelib:Перечисление -> Имя
+    namelib:Перечисление
+    opt -> Имя
     desc:Преобразование значения перечисления в его название
     rendertype:NoHeaderText
     exec:pure
     code:enum_vToK_@gettype.in.1 get str(@in.1)
     in:auto:Перечисление
-        opt:custom=0:allowtypes=*enum
+    opt:allowtypes=*enum
+        opt:custom=0
     out:string:Имя
 
 
@@ -1701,11 +1707,11 @@ def:node:math
         desc:Ограничивает входное число диапазоном между нижней и верхней границей
         code:[@in.1,@in.2,@in.3]call clampNumber
         in:auto:Число
-            opt:typeget=value;@type:allowtypes=int|float
+            opt:typeget=value;@type:allowtypes=int|float:def=0:custom=1:custom_type=float:require=0
         in:auto:Нижняя граница
-            opt:typeget=value;@type:allowtypes=int|float:def=0
+            opt:typeget=value;@type:allowtypes=int|float:def=0:custom=1:custom_type=float:require=0
         in:auto:Верхняя граница
-            opt:typeget=value;@type:allowtypes=int|float:def=1
+            opt:typeget=value;@type:allowtypes=int|float:def=1:custom=1:custom_type=float:require=0
         out:float:Результат
             opt:typeget=value;@type:allowtypes=int|float
 
@@ -2380,7 +2386,8 @@ code:values enum_vToK_@gettype.in.1.clear_type()
 desc:Этот узел позволяет получать список имен, хранящихся в перечислении.
 rendertype:NoHeaderText
 in:auto:Перечисление
-out:list[string]:Массив имён:Массив имён перечисления
+    opt:typeget=value;@type:allowtypes=*enum
+out:array[string]:Массив имён:Массив имён перечисления
 
 def:node:enumhelper
 node:enumGetValues
@@ -2392,8 +2399,7 @@ desc:Этот узел позволяет получать список знач
 rendertype:NoHeaderText
 in:auto:Перечисление
     opt:typeget=value;@type:allowtypes=*enum
-out:auto:Массив значений:Массив значений перечисления
-    opt:typeget=array;@type
+out:array[int]:Массив значений:Массив значений перечисления
 
 def:struct:structs
 node:SpawnPoint
@@ -4102,7 +4108,7 @@ def:c:GMBase
 def:c:GameObjectKindTask
 
 		name:Объектная задача
-		desc:Задача, относящаяся к игровым объектам. Например: получение, сохранение и т.д.
+		desc:Задача, относящаяся к игровым объектам. Например\: получение, сохранение и т.д.
 		path:Игровая логика.Задачи.Объектные
 	
 def:f:GameObjectKindTask.__globalRefs_0
@@ -4153,7 +4159,7 @@ def:m:GameObjectKindTask.getObjectNames_0
 def:c:ItemKindTask
 
 		name:Предметная задача
-		desc:Задача, относящаяся к игровым предметам. Например: получение, сохранение и т.д.
+		desc:Задача, относящаяся к игровым предметам. Например\: получение, сохранение и т.д.
 		path:Игровая логика.Задачи.Предметные
 	
 def:c:TaskItemGet
@@ -4176,7 +4182,7 @@ def:c:TaskItemPlace
 	
 def:f:TaskItemPlace.placeName_0
 
-		name:Название месте
+		name:Название места
 		desc:Название места, в которое нужно поместить предметы. Выводится в описании задачи
 		prop:all
 		return:string:Название места
@@ -4270,7 +4276,7 @@ def:c:TaskGetRole
 
 		name:Получить роль
 		desc:Задача на получение роли
-		path:Игровая логика.Задачи
+		path:Игровая логика.Задачи.Ролевые
 	
 def:c:TaskRoleDead
 
@@ -12984,7 +12990,7 @@ $REGION:CLASSMETA
 }
 ,"CollectionSpawnPoint": {
     "baseClass" : "SpawnPoint",
-    "defined" : {"file":"src\\host\\GameObjects\\Structures\\Tools\\Spawners.sqf","line":136},
+    "defined" : {"file":"src\\host\\GameObjects\\Structures\\Tools\\Spawners.sqf","line":151},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -13011,7 +13017,7 @@ $REGION:CLASSMETA
 }
 ,"SpawnPoint": {
     "baseClass" : "IStructNonReplicated",
-    "defined" : {"file":"src\\host\\GameObjects\\Structures\\Tools\\Spawners.sqf","line":104},
+    "defined" : {"file":"src\\host\\GameObjects\\Structures\\Tools\\Spawners.sqf","line":119},
    "fields": { "defined": {
 "model":{"return": "string"},"name":{"return": "null"},"desc":{"return": "null"},"weight":{"return": "null"},"spawnPointName":{"return": "string"}}   },
    "methods": { "defined": {
@@ -14784,7 +14790,7 @@ $REGION:CLASSMETA
 }
 ,"TaskBase": {
     "baseClass" : "IGameEvent",
-    "defined" : {"file":"src\\host\\GameModes\\TaskBase.sqf","line":56},
+    "defined" : {"file":"src\\host\\GameModes\\BasicTask.sqf","line":56},
    "fields": { "defined": {
 "tag":{"return": "string"},"name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"},"_taskDescDelegate":{"return": "unknown_type"},"isTaskSingleCheck":{"return": "bool"},"owners":{"return": "null_array"},"isDone":{"return": "bool"},"checkDelay":{"return": "int"},"result":{"return": "int"},"taskRegistered":{"return": "bool"},"_taskHandle__":{"return": "int"},"_customCondition":{"return": "unknown_type"},"failTaskOnDeadOwner":{"return": "bool"},"_taskOnSuccessDeletage":{"return": "unknown_type"},"_taskOnFailDeletage":{"return": "unknown_type"}}   },
    "methods": { "defined": {
