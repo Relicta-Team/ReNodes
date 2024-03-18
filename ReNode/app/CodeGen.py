@@ -1119,7 +1119,12 @@ class CodeGenerator:
                                         resultReplacerList.append(f'@{portType}.{_iPort+1}')
                         
                         replStr = delimConnector.join(resultReplacerList)
-                        if isParamMaker and replStr: replStr = f'/*gp-gen*/params[{replStr}];'
+                        if isParamMaker:
+                            if replStr: 
+                                replStr = f'/*gp-gen*/params[{replStr}]; SCOPEname \"exec\";'
+                            else:
+                                replStr = 'SCOPEname \"exec\";'
+                        
                         node_code = node_code.replace(fullPattern,replStr)
 
                     pass
@@ -1465,7 +1470,7 @@ class CodeGenerator:
             srcObj: CodeGenerator.NodeData = codeInfo[nodeId]
             execsPorts = [e for e,tp in idat['typeout'].items() if tp == "Exec"]
             isMultiExec = len(execsPorts) > 1
-            hasOutConnected = len(idat['out']) > 0
+            hasOutConnected = len(idat['out']) > 0 #есть выходные порты
             connectedOutExecPorts = [k for k in execsPorts if len(idat['out'][k]) > 0]
             
             noLoops = True
@@ -1494,6 +1499,10 @@ class CodeGenerator:
                     if 'control.return' == srcObj.nodeClass:
                         self.exception(CGReturnTypeUnexpectedException,source=srcObj,entry=entryObj)
             
+            # проверка возвращаемого значения для мультивыходных портов выполнения (castto,branch)
+            elif needReturn and noLoops and hasOutConnected and len(connectedOutExecPorts) != len(execsPorts):
+                self.exception(CGReturnNotAllBranchesException,source=srcObj,entry=entryObj,context=retTypenameExpect)
+
             # проверка операторов контроля цикла
             if srcObj.nodeClass in ["operators.break_loop","operators.continue_loop"] and noLoops:
                 self.exception(CGLoopControlException,source=srcObj)
