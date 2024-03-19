@@ -146,7 +146,7 @@ class NodeGraphComponent:
 			self._compileGraphList_oneItemLoad = len(allGraphsWithIndex)
 			self._compileGraphList_loadingScreen.setMessage("Сборка")
 		
-		cFlags = {"-skipgenloader","-logexcept"}
+		cFlags = {"-skipgenloader","-logexcept"} #,"-exceptinfo" для подробного вывода исключений
 		cFlags.update(compileFlags)
 
 		def __compile(path_with_idx):

@@ -59,7 +59,7 @@ class NodeGraphProxyObject:
     def get_nodes_by_class(self,cls):
         idlist = []
         for nid,ndat in self.serialized_graph['nodes'].items():
-            if ndat['class'] == cls:
+            if ndat['class_'] == cls:
                 idlist.append(nid)
         return idlist
     
