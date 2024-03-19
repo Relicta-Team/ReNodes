@@ -153,6 +153,11 @@ class GraphTypeBase:
         isLambda = NodeLambdaType.isLambdaEntryNode(nodeObject.nodeClass)
         if not nodeObject.isReady: return ""
 
+        # генератор скоупов для проверки какие переменные ДЕЙСТВИТЕЛЬНО есть в графе. по сути строит скоупы на зависимостях exec портов
+        v = cgObj.makeScopeChecker(nodeObject.nodeId,allCodeObjects)
+        if v == None:
+            raise Exception("Unknown error in handlePostReadyEntry: scope checks error")
+
         # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
         varlistalloc = ["'this'"]
         varlistpassed = ["this"]
@@ -162,17 +167,29 @@ class GraphTypeBase:
             #do not pass iterator special vars
             #if localName.lower() in ["_x","_foreachindex"]: continue
             #do not pass var in context from forloop
+            _cObj = allCodeObjects.get(gvarAssoc[localName])
             if localName in gvarAssoc and allCodeObjects.get(gvarAssoc[localName]): 
                 nodeClass = allCodeObjects.get(gvarAssoc[localName]).nodeClass
                 if nodeClass in ["operators.for_loop","operators.foreach_loop"]:
                     continue
                 if NodeLambdaType.isLambdaEntryNode(nodeClass): continue
             
+            # очень тонкая проверка. суть: если есть exec порты и не сгенерировалась скоупа то эта переменная не существует
+            _dpdO = cgObj.dpdGraphExt.get(_cObj.nodeId)
+            if (_dpdO and \
+                ("Exec" in _dpdO['typein'].values() or "Exec" in _dpdO['typeout'].values()) and \
+                len(_cObj.scopes) == 0
+            ):
+                continue #skip var before exec never called
+
             varlistalloc.append(f"\"{localName}\"")
             varlistpassed.append(f"{localName}")
         
         node_code = node_code.replace("@context.get",f"[{','.join(varlistpassed)}]")
         node_code = node_code.replace("@context.alloc",f"params [{','.join(varlistalloc)}]")
+
+        #cleanup scopeobjects
+        for o in allCodeObjects.values(): o.scopes = []
 
         hasConnections = nodeObject.getConnectionOutputs()
         

@@ -2301,3 +2301,50 @@ class CodeGenerator:
                 code = code.replace(metaKeyword,paramCtx)
         
         return code
+
+    def makeScopeChecker(self, entryId, codeInfo):
+        dpdGraphExt = self.dpdGraphExt
+        entryObj = codeInfo[entryId]
+
+        def enterScope(nodeId,scopeStack:list):
+
+            idat = self.dpdGraphExt[nodeId]
+            srcObj: CodeGenerator.NodeData = codeInfo[nodeId]
+            execsPorts = [e for e,tp in idat['typeout'].items() if tp == "Exec"]
+            isMultiExec = len(execsPorts) > 1
+            hasOutConnected = len(idat['out']) > 0 #есть выходные порты
+            connectedOutExecPorts = [k for k in execsPorts if len(idat['out'][k]) > 0]
+
+            srcObj.scopes = scopeStack.copy()
+            className = srcObj.nodeClass
+
+            for k,v in idat['typeout'].items():
+                if v == "Exec":
+                    scopePopNeed = False
+                    hasConnection = len(idat['out'][k]) > 0
+
+                    if isMultiExec:
+                        newLvl = scopeStack[-1].scopeLevel + 1
+                        scp = CodeGenerator.ExecScope(srcObj,k,newLvl)
+
+                        if className in NodeDataType.getScopedLoopNodes():
+                            if k == "Тело цикла":
+                                scp.isLoopScope = True
+
+                        scopeStack.append(scp)
+                        scopePopNeed = True
+                    if hasConnection:
+                        src = list(idat['out'][k][0])[0]
+                        enterScope(src,scopeStack)
+                    
+                    if scopePopNeed:
+                        scopeStack.pop()
+        
+        scopes = [CodeGenerator.ExecScope(entryObj,"entry")]
+        
+        if not dpdGraphExt.get(entryId):
+            return None
+
+        enterScope(entryId,scopes)
+
+        return scopes
