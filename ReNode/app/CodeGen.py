@@ -1070,7 +1070,7 @@ class CodeGenerator:
                             paramList.append(f"@in.{_idxPort+1}")
                     
                     replcode_ = "[" + ", ".join(paramList) + "]"
-                    node_code = re.sub(f'@cfParams',replcode_,node_code)
+                    node_code = re.sub(f'@cfParams',lambda _:replcode_,node_code)
 
                 if "@genport." in node_code and hasRuntimePorts:
                     # обновление портов
@@ -1172,7 +1172,7 @@ class CodeGenerator:
                                     break
                         #replacers
                         node_code = node_code.replace(fullTextTemplate, replacerInfo)
-                        node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',replacerInfo,node_code)
+                        node_code = re.sub(f'@locvar\.{wordpart}\.{numpart}(?=\D|$)',lambda _:replacerInfo,node_code)
                         
                         # create var
                         gvObj = GeneratedVariable(lvar,node_id)
@@ -1293,8 +1293,8 @@ class CodeGenerator:
                                 self.exception(CGMemberNotExistsException,source=obj,context=[memname,selfGraphClass,clsInfo['class']],portname=input_name)
                             if isLambdaEntry and not isContextLambdaEntry:
                                 self.exception(CGEntrySelfObjectPortUnsupported,source=obj,portname=input_name,entry=entryObj)
-
-                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{inlineValue}", node_code)
+                        _str_inlineValue = f"{inlineValue}"
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', lambda _:_str_inlineValue, node_code)
                         continue
 
                     # нечего заменять
@@ -1342,7 +1342,8 @@ class CodeGenerator:
                         if not lvarObj.isUsed:
                             self.contextVariablesUsed.add(lvarObj.localName)
                         lvarObj.isUsed = True
-                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', f"{lvarObj.localName}", node_code)
+                        _lvrObjLocNm = lvarObj.localName
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)', lambda _:_lvrObjLocNm, node_code)
 
                     if inpObj.isReady:
                         #if re.findall(f'@in\.{index+1}(?=\D|$)',node_code):
@@ -1358,7 +1359,7 @@ class CodeGenerator:
                                 codeIn = inpObj.code
                             else:
                                 codeIn = f'BP_EXEC({inpObj._uid},{realIndex})\n /*bp-inp-exec*/ {inpObj.code}'
-                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)',codeIn,node_code) 
+                        node_code = re.sub(f'@in\.{index+1}(?=\D|$)',lambda _:codeIn,node_code) 
 
                 # Переберите все выходы и замените их значения в коде
                 for index, (output_name, output_props) in enumerate(outputs_fromLib):
@@ -1388,7 +1389,7 @@ class CodeGenerator:
                             codeOut = f"\nBP_PS({outputObj._uid}) {outputObj.code} BP_PE"  
                         else:
                             codeOut = f"BP_EXEC({obj._uid},{index})\n {outputObj.code}"
-                        node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", codeOut, node_code) 
+                        node_code = re.sub(f"\@out\.{index+1}(?=\D|$)", lambda _:codeOut, node_code) 
 
                 # prepare if all replaced
                 if "@in." not in node_code and "@out." not in node_code:
