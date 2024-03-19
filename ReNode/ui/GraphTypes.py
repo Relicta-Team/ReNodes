@@ -156,7 +156,9 @@ class GraphTypeBase:
         # генератор скоупов для проверки какие переменные ДЕЙСТВИТЕЛЬНО есть в графе. по сути строит скоупы на зависимостях exec портов
         v = cgObj.makeScopeChecker(nodeObject.nodeId,allCodeObjects)
         if v == None:
-            raise Exception("Unknown error in handlePostReadyEntry: scope checks error")
+            # точек входа нет
+            #raise Exception("Unknown error in handlePostReadyEntry: scope checks error")
+            pass
 
         # handle timer codes @context.get ([a,b,c]), @context.alloc params ["a","b","c"]
         varlistalloc = ["'this'"]
