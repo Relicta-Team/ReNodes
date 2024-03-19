@@ -173,7 +173,7 @@ class TabSearchMenu(QWidget):
         if search_words or self.contextInfo:
             self.hide_items(self.tree.invisibleRootItem(), search_words)
 
-    def hide_items(self, item, search_words):
+    def hide_items(self, item, search_words): 
         for idx in range(item.childCount()):
             child = item.child(idx)
             if self.item_contains_words(child, search_words):
@@ -184,6 +184,11 @@ class TabSearchMenu(QWidget):
             else:
                 child.setHidden(True)
                 self.hide_items(child, search_words)
+        
+        # правка для скрытыия пустых разделов
+        visible_children = [item.child(idx) for idx in range(item.childCount()) if not item.child(idx).isHidden()]
+        if not visible_children and item.childCount() > 0:
+            item.setHidden(True)
 
     def item_contains_words(self, item, search_pattern):
         item_text = item.text(0).lower()
