@@ -12,6 +12,10 @@ import time
 from ReNode.app.utils import intTryParse
 from PyQt5.QtCore import QThread, pyqtSignal
 
+class DummyDebuggerServer(object):
+    def stop(self):
+        pass
+
 class DebuggerServer(QObject):
     started = pyqtSignal()
     stopped = pyqtSignal()

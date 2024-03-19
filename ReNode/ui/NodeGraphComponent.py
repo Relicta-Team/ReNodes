@@ -22,7 +22,7 @@ from ReNode.ui.TabSearchMenu import TabSearchMenu
 
 from ReNode.ui.VariableManager import VariableManager
 from ReNode.app.config import Config
-from ReNode.app.DebuggerServer import DebuggerServer
+from ReNode.app.DebuggerServer import DebuggerServer,DummyDebuggerServer
 from ReNode.app.Constants import NodeLambdaType
 
 class NodeGraphComponent:
@@ -31,6 +31,7 @@ class NodeGraphComponent:
 
 	def __init__(self,mainWindow) -> None:
 		from ReNode.ui.AppWindow import MainWindow
+		from ReNode.app.application import Application
 		from ReNode.ui.ScriptMaker import ScriptMakerManager
 		from threading import Lock
 
@@ -38,8 +39,11 @@ class NodeGraphComponent:
 		NodeGraphComponent.refObject = self
 
 		#thread locker and debugger server init
-		self.debuggerServer = DebuggerServer(nodeGraphRef=self)
-		self.debuggerServer.start()
+		if Application.hasArgument("-noapp"):
+			self.debuggerServer = DummyDebuggerServer()
+		else:
+			self.debuggerServer = DebuggerServer(nodeGraphRef=self)
+			self.debuggerServer.start()
 
 		#common props
 		self.variable_manager = None
