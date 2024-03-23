@@ -271,8 +271,8 @@ class DescriptionItem(QtWidgets.QGraphicsItem):
             for o in lastItem.outputs:
                 inpLib = libInfo['outputs'].get(o.name)
                 desc = ""
-                if desc:
-                    desc = desc.get("desc",'')
+                if inpLib:
+                    desc = inpLib.get("desc",'')
                 if desc:
                     desc = ": " + desc
                 else:
