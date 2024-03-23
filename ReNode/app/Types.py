@@ -256,7 +256,12 @@ def calculate_autoport_type_serialized(fact,sourceType:str,libCalculator:dict,ch
     #libCalculator['typeget'] -> @type(for all), @typeref(for typeref (array,dict etc)), @value.1, @value.2
 
     getterData = libCalculator['typeget']
-    dataType,getter = getterData.split(';')
+    decTG = getterData.split(';')
+    dataType = decTG[0]
+    getter = decTG[1]
+    emplacer = "{}"
+    if len(decTG) > 2:
+        emplacer = decTG[2]
     isMultitype = findall('[\[\]\,]',sourceType)
     if not isMultitype:
         preSource = sourceType
@@ -297,13 +302,13 @@ def calculate_autoport_type_serialized(fact,sourceType:str,libCalculator:dict,ch
 
     if getter == '@type':
         if dataType == "ANY" and typeinfo[0] == dataType:
-            return typeinfo[1] #тип значения редиректится в первый элемент типа
+            return emplacer.format(typeinfo[1]) #тип значения редиректится в первый элемент типа
         return sourceType
     elif getter == '@typeref':
-        return typeinfo[0]
+        return emplacer.format(typeinfo[0])
     elif getter == '@value.1' and len(typeinfo) > 1:
-        return typeinfo[1]
+        return emplacer.format(typeinfo[1])
     elif getter == '@value.2' and len(typeinfo) > 2:
-        return typeinfo[2]
+        return emplacer.format(typeinfo[2])
     else :
         raise Exception(f"Invalid type getter {getter}; Source type info {typeinfo}")

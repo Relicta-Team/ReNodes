@@ -409,7 +409,7 @@ class NodeObjectHandler:
 					listParts_ = parts_[1].split('|') if len(parts_) > 1 and not parts_[1].isspace() else []
 					self.lastPortRef['accepted_paths'] = listParts_
 				elif tInside.startswith("typeget"):
-					self.lastPortRef['typeget'] = tInside.split('=')[1]
+					self.lastPortRef['typeget'] = tInside.split('=',1)[1] #потому что c 1.5+ typeget может иметь в параметрах реплейсер как сигнатуру функции
 				elif tInside.startswith("require"):
 					ival__ = intTryParse(tInside.split("=")[1])
 					self.lastPortRef['require_connection'] = ival__ > 0
