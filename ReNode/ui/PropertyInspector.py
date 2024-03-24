@@ -141,7 +141,7 @@ class Inspector(QDockWidget):
                     obj.set_value(props[cat][sysname])
                     obj.blockSignals(False)
             else:
-                objText.setText(f"{objText.property('defaultName')} (знач. от {par})")
+                objText.setText(f"{objText.property('defaultName')} (по умолчанию)\nНасл. от {par}")
                 if setProp:
                     obj.blockSignals(True)
                     obj.set_value(obj.property("defaultValue"))
@@ -321,8 +321,21 @@ class Inspector(QDockWidget):
                         if restricted and hasattr(propObj,"init_restricted_types"):
                             propObj.init_restricted_types(restricted)
 
+                    #generate ihheritance list
+                    bnmReal = baseName
+                    if baseName in baseList: 
+                        ilist = baseList.index(baseName) + 1
+                        factT = baseList[0]
+                        rangelist = baseList[1:ilist]
+                        rt = []
+                        for nm in rangelist:
+                            rt.append(vmgr.getTextTypename(nm))
+                        bnmReal = vmgr.getTextTypename(factT)
+                        if rt:
+                            bnmReal += " + Родители: " + "->".join(rt)
                     
-                    nameObj = self.addProperty(baseName,cat,propName,fName,propObj,fDefault)
+                    
+                    nameObj = self.addProperty(bnmReal,cat,propName,fName,propObj,fDefault)
                     if vType:
                         icns = vType.icon
                         clrs = vObj
