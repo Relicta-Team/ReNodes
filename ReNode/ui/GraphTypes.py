@@ -189,7 +189,8 @@ class GraphTypeBase:
             varlistalloc.append(f"\"{localName}\"")
             varlistpassed.append(f"{localName}")
         
-        node_code = node_code.replace("@context.get",f"[{','.join(varlistpassed)}]")
+        contextGetVars = f"[{','.join(varlistpassed)}]"
+        #node_code = node_code.replace("@context.get",f"[{','.join(varlistpassed)}]")
         node_code = node_code.replace("@context.alloc",f"params [{','.join(varlistalloc)}]")
 
         #cleanup scopeobjects
@@ -239,6 +240,8 @@ class GraphTypeBase:
                 cgObj.exception(CGMethodOverrideNotFoundException,source=nodeObject,context=metaObj['classname'],target=nodeObject)
 
         nodeObject.code = node_code
+
+        return contextGetVars
 
     def handlePreStartEntry(self,nodeObjec,metaObj):
         """Предварительная обработка точки входа"""

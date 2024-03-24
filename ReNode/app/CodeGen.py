@@ -1411,7 +1411,7 @@ class CodeGenerator:
                 if i.isReady:
                     readyCount += 1
         
-        self.gObjType.handlePostReadyEntry(codeInfo[entryId],self.gObjMeta,codeInfo)
+        contextGetStr = self.gObjType.handlePostReadyEntry(codeInfo[entryId],self.gObjMeta,codeInfo)
 
         errList = []
         topoNodes = list(codeInfo.values())
@@ -1437,7 +1437,7 @@ class CodeGenerator:
             self.exception(CGStackError,entry=entryObj,source=firstNonGenerated)
 
         if not stackGenError:
-            if not self.postCheckCode(codeInfo,entryId):
+            if not self.postCheckCode(codeInfo,entryId,contextGetStr):
                 hasNodeError = True
 
         if hasNodeError:
@@ -1452,7 +1452,7 @@ class CodeGenerator:
         
         return entryObj.code
 
-    def postCheckCode(self,codeInfo,entryId):
+    def postCheckCode(self,codeInfo,entryId,contextGetStr):
         """Постпроверка кода"""
         dpdGraphExt = self.dpdGraphExt
         entryObj = codeInfo[entryId]
@@ -1630,7 +1630,10 @@ class CodeGenerator:
         if hasFoundLvarExeptions: return False
 
         # postprocess replace debug preprocessor
-        entryObj.code = entryObj.code.replace("@IFDEF_DEBUG","\n#ifdef DEBUG\n").replace("@ENDIF","\n#endif\n")
+        entryObj.code = entryObj.code \
+            .replace("@IFDEF_DEBUG","\n#ifdef DEBUG\n") \
+            .replace("@ENDIF","\n#endif\n") \
+            .replace("@context.get",contextGetStr)
 
         return True
 
