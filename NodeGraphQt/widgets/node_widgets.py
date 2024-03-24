@@ -725,12 +725,13 @@ class NodePortMakerButtons(NodeBaseWidget):
         listPorts = nodeItem.inputs if self.maker_type=='in' else nodeItem.outputs #list[PortItem]-> (.name, .port_typeName)
         if len(listPorts) < 1: return
         if len(listPorts) >= 100: return
-        prtItm = listPorts[0]
+        prtItm = next((p for p in listPorts if p.name == self.sourceName),listPorts[0])
         if prtItm.name != self.sourceName: raise Exception(f'Wrong sourceName {prtItm.name} != {self.sourceName}')
 
         #for reftonode basic: portitem.refPort<as Port>.model.node
         origNode = prtItm.refPort.model.node
-        calculatedName = self.text_format.format(value=len(listPorts)+1,index=len(listPorts))
+        idx = len(listPorts) - listPorts.index(prtItm)
+        calculatedName = self.text_format.format(value=idx+1,index=idx)
         
         if self.maker_type=='in':
             origNode.add_input(
@@ -758,13 +759,30 @@ class NodePortMakerButtons(NodeBaseWidget):
         nodeItem = self.node
         listPorts =nodeItem.inputs if self.maker_type=='in' else nodeItem.outputs
         if len(listPorts) <= 1: return
-        prtItm = listPorts[0]
+        prtItm = next((p for p in listPorts if p.name == self.sourceName),listPorts[0])
         if prtItm.name != self.sourceName: raise Exception(f'Wrong sourceName {prtItm.name} != {self.sourceName}')
         
         origNode = prtItm.refPort.model.node
+        checkedName = listPorts[-1].name
+        canDeletePort = False
+        startOfs = 0
+        ofsFind = False
+        for idx, prt in enumerate(listPorts):
+            if prt == prtItm:
+                startOfs = idx
+                ofsFind = True
+            else:
+                if not ofsFind: continue
 
-        port_removing_function = origNode.delete_input if self.maker_type=='in' else origNode.delete_output
-        port_removing_function(listPorts[-1].refPort) 
+            idx = idx - startOfs
+            if self.text_format.format(value=idx+1,index=idx) == checkedName and prt == listPorts[-1]:
+                if prtItm == prt: break #do not delete src port
+                canDeletePort = True
+                break
+
+        if canDeletePort:
+            port_removing_function = origNode.delete_input if self.maker_type=='in' else origNode.delete_output
+            port_removing_function(listPorts[-1].refPort) 
 
     @property
     def type_(self):
