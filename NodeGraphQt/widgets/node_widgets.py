@@ -274,6 +274,18 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         self._label = label
 
 
+class ComboBoxCustom(QtWidgets.QComboBox):
+    sourceWid = None
+    def __init__(self, src=None):
+        super().__init__()
+        self.sourceWid = src
+    def showPopup(self):
+        super().showPopup()
+        self.sourceWid.setZValue(Z_VAL_NODE_WIDGET + 1)
+    def hidePopup(self) -> None:
+        self.sourceWid.setZValue(Z_VAL_NODE_WIDGET)
+        return super().hidePopup()
+
 class NodeComboBox(NodeBaseWidget):
     """
     Displays as a ``QComboBox`` in a node.
@@ -288,9 +300,9 @@ class NodeComboBox(NodeBaseWidget):
 
     def __init__(self, parent=None, name='', label='', items=None,disabledListInputs=None,typingList=None):
         super(NodeComboBox, self).__init__(parent, name, label)
-        self.setZValue(Z_VAL_NODE_WIDGET + 1)
+        #self.setZValue(Z_VAL_NODE_WIDGET + 1)
         
-        combo_view = QtWidgets.QListView()
+        #combo_view = QtWidgets.QListView()
         #combo_view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         
         # тут хранятся ключи которые заблокируют порт при назначении
@@ -298,9 +310,9 @@ class NodeComboBox(NodeBaseWidget):
         # тут хранится заменитель типа для порта. Каждая опция отвечает за свой цвет порта
         self.typingList = typingList
 
-        combo = QtWidgets.QComboBox()
+        combo = ComboBoxCustom(self)#QtWidgets.QComboBox()
         combo.wheelEvent = lambda *event: None #fix mouse scroll
-        combo.setView(combo_view)
+        #combo.setView(combo_view)
         combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
         combo.view().setMinimumWidth(300)
         """combo.setMinimumHeight(24)
@@ -313,7 +325,8 @@ class NodeComboBox(NodeBaseWidget):
         self.set_custom_widget(combo)
         #updated scroll
         combo.setStyleSheet("combobox-popup: 0;")
-        combo.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        combo.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)  
+        combo.setFrame(True)      
 
     @property
     def type_(self):
