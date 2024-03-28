@@ -4,7 +4,7 @@ import math
 from distutils.version import LooseVersion
 
 from Qt import QtGui, QtCore, QtWidgets
-
+from PyQt5.sip import isdeleted
 from NodeGraphQt.base.menu import BaseMenu
 from NodeGraphQt.constants import (
     LayoutDirectionEnum,
@@ -219,6 +219,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                             updateList.append(p)
         
         for obj in updateList:
+            if isdeleted(obj): continue
             obj.update()
 
         # for p in self.all_pipes():

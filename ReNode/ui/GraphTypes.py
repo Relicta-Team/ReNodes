@@ -30,7 +30,7 @@ class GraphTypeFactory:
         GraphTypeFactory.instanceDict = {}
         GraphTypeFactory.registerGraphType(GamemodeGraph)
         GraphTypeFactory.registerGraphType(RoleGraph)
-        GraphTypeFactory.registerGraphType(GameObjectGraph)
+        GraphTypeFactory.registerGraphType(GameObjectScriptGraph)
 
     @staticmethod
     def registerGraphType(type):
@@ -881,12 +881,168 @@ class RoleGraph(ClassGraphType):
             return len(errList) == 0
         return commonValidate
     
-class GameObjectGraph(ClassGraphType):
-    name = "Игровой объект"
-    description = "Игровой объект с пользовательской логикой является переопределенным (унаследованным) от другого объекта. Например, мы можем создать игровой объект, унаследованный от двери и переопределить событие её открытия."
+class GameObjectScriptGraph(ClassGraphType):
+    name = "Скрипт игрового объекта"
+    description = "Скрипт пользовательской логики для игрового объекта."
     systemName = "gobject"
+    
+    create_headerText = "Создание скрипта игрового объекта"
+    create_nameText = "Имя скрипта"
+    create_classnameText = "Имя класса скрипта"
+    path_nameText = "Путь к файлу скрипта"
+    parent_nameText = "Родительский скрипт"
+    parent_classnameText = "ScriptedGameObject"
+    
+    canCreateFromWizard = True
+    savePath = "Graphs\\ObjectScripts" 
+    createFolder = True
 
-    canCreateFromWizard = False
+    def getFirstInitMethods(self):
+        return [
+            "onScriptAssigned",
+            "onMainAction",
+            "onClick"
+        ]
+    
+    scriptWizard_pageText = "Создание скрипта игрового объекта"
+    scriptWizard_pageSubtitle = ""
+
+    def createPageWizard(self,wiz,page):
+        
+        def _initDesc(grid,text,postLine = False):
+            lab = QLabel(text)
+            grid.addWidget(lab,0,0,2,0)
+            if postLine:
+                grid.addWidget(QHLine(),3,0,2,0)
+        name = QLineEdit()
+        name.setMaxLength(64)
+        name.setPlaceholderText("Введите имя скрипта игрового объекта")
+        lab,wid,grid = wiz._addLineOption(f"Имя скрипта:",name)
+        
+        desc = QLineEdit()
+        desc.setPlaceholderText("Введите описание скрипта")
+        lab,wid,grid = wiz._addLineOption("Описание:",desc,2)
+        _initDesc(grid,"Выводимое описание скрипта",True)
+
+        clsname = QLineEdit()
+        clsname.setMaxLength(64)
+        clsname.setPlaceholderText("Введите имя класса")
+        lab,wid,grid = wiz._addLineOption("Имя класса:",clsname,2)
+        _initDesc(grid,"Системное имя класса создаваемого скрипта. Указывается в файле скрипта при создании")
+
+        parent = SearchComboButton()
+        parentClassname = self.parent_classnameText
+        parents = self.getFactory().getClassAllChilds(parentClassname)
+        if not parents: raise Exception(f"Класс \"{parentClassname}\" не найден или отсутствуют дочерние классы")
+        vals = self.getFactory().getClassAllChildsTree(parentClassname)
+        parent.loadContents(createTreeDataContent(vals))
+        lab,wid,grid = wiz._addLineOption(f"Тип родителя:",parent,2)
+        _initDesc(grid,"Родительский класс, от которого будут унаследованы свойства и доступные функции",True)
+
+        filepath = PropFileSavePath()
+        filepath.set_file_ext("*.graph")
+        filepath._ledit.setPlaceholderText("Путь до файла графа")
+        lab,wid,grid = wiz._addLineOption(f"Расположение:",filepath)
+
+        pathDirBase = self.getFactory().getClassData(parentClassname).get('path','') + ".Пользовательские"
+        path = QLineEdit()
+        path.setPlaceholderText("Унаследовать от родителя")
+        lab,wid,grid = wiz._addLineOption("Домен класса (путь):",path,2)
+        _initDesc(grid,"Директория по которой будут доступны узлы созданного графа в библиотеке узлов.\nБазовая директория \"{}\"".format(pathDirBase),True)
+
+        wiz._addSpacer()
+        postfixLabel = wiz._addLabel("",isRichText=True) #вывод ошибок
+
+        def __on_name_changed():
+            enText = transliterate(name.text(),True)
+            
+            words = re.findall(r'[a-zA-Z0-9]+',enText)
+            normalized = "".join([x.capitalize() for x in words])
+            if not normalized.lower().startswith("scr_"):
+                normalized = "SCR_" + normalized
+            else:
+                normalized = "SCR_" + normalized[4:]
+            clsname.setText(normalized)
+            path.setText(name.text())
+        name.textChanged.connect(__on_name_changed)
+
+        def __on_classname_changed():
+            text = clsname.text()
+            basePath = self.savePath
+            fullpath = os.path.join(basePath,f"{text}.graph")
+            filepath.set_value(fullpath)
+        clsname.textChanged.connect(__on_classname_changed)
+
+        def __on_path_changed():
+            inputedName = path.text()
+            
+            clearName = re.sub('\.+','.',inputedName)
+            if clearName.startswith("."):
+                clearName = clearName[1:]
+            if inputedName != clearName:
+                
+                path.blockSignals(True)
+                path.setText(clearName)
+                path.blockSignals(False)
+        path.textChanged.connect(__on_path_changed)
+
+        def commonValidate():
+            errList = []
+            
+            nameText = name.text()
+            clsText = clsname.text()
+            descText = desc.text()
+            parentText = parent.get_value()
+            filePath = filepath.get_value()
+            domain = path.text()
+            
+            if not domain:
+                domain = nameText
+            if not domain.startswith("."):
+                domain = "." + domain
+            if parentText == parentClassname:
+                domain = ".Пользовательские" + domain
+            
+            settings = wiz.setupDict
+            settings['name'] = nameText
+            settings['classname'] = clsText
+            settings['parent'] = parentText
+            settings['desc'] = descText
+            settings['path'] = filePath
+            settings['domain'] = domain
+
+            #namecheck
+            if not nameText:
+                errList.append("Имя графа не может быть пустым")
+            
+            #class check
+            if not clsText:
+                errList.append("Имя класса не может быть пустым")
+            else:
+                if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]+$',clsText):
+                    errList.append(f"Имя класса может содержать только английские буквы, цифры и нижнее подчеркивание, а так же не должно начиться с цифр")
+                if len(clsText) <= 4:
+                    errList.append(f"Имя класса должно содержать более 4 символов")
+                if self.getFactory().classNameExists(clsText):
+                    errList.append(f"Класс \"{clsText}\" уже существует")
+            
+            if os.path.exists(filePath):
+                errList.append(f"Файл \"{filePath}\" уже существует")
+            
+            if not self.getFactory().classNameExists(parentText):
+                errList.append(f"Родительский класс \"{parentText}\" не найден в библиотеке")
+
+            if len(domain) < 1:
+                errList.append("Домен должен быть больше 1 символа")
+
+            if errList:
+                postfixLabel.setText("<span style='color:red; font-size: 14pt'>Создание невозможно. Ошибки:<br/>" + \
+                     ('<br/>'.join(["    - "+e for e in errList])) + "</span>")
+
+            #check name
+            return len(errList) == 0
+        return commonValidate
+
 # TODO: add more:
 # ["Скриптовый объект","scriptedobject","Скриптовый игровой объект с поддержкой компонентов. Это более гибкий инструмент создания игровых объектов, использующий общий класс и реализующий широкий спектр компонентов. С помощью него мы, например, можем создать контейнер, который можно съесть и из которого можно стрелять."],
 # ["Компонент","component","Пользовательский компонент, добавляемый в скриптовый объект."],

@@ -1103,20 +1103,24 @@ class CodeGenerator:
                         formatter = mpInfo.get('text_format')
                         sourcePort = mpInfo.get('src')
                         portNumber = int(portNumber)
+                        basePortIndex = portNumber-1
                         isParamMaker = delimConnector == 'paramGen'
                         if isParamMaker: delimConnector = ", "
                         resultReplacerList = []
                         collectionPorts = class_data['inputs' if portType == 'in' else 'outputs'].keys()
                         for _iPort, _portColName in enumerate(collectionPorts):
+                            _baseIPort = _iPort
+                            if _iPort>=basePortIndex:
+                                _iPort-=basePortIndex
                             if formatter == None or formatter.format(value=_iPort+1,index=_iPort) == _portColName:
-                                if _iPort+1 >= portNumber:
+                                if _baseIPort+1 >= portNumber:
                                     if isParamMaker:
                                         if portType != "out":
                                             self.exception(CGInternalCompilerError,source=obj,context=f'Code genport connection type error: {fullPattern}')
                                             break
-                                        resultReplacerList.append(f'\'@genvar.{portType}.{_iPort+1}\'')
+                                        resultReplacerList.append(f'\'@genvar.{portType}.{_baseIPort+1}\'')
                                     else:
-                                        resultReplacerList.append(f'@{portType}.{_iPort+1}')
+                                        resultReplacerList.append(f'@{portType}.{_baseIPort+1}')
                         
                         replStr = delimConnector.join(resultReplacerList)
                         if isParamMaker:
