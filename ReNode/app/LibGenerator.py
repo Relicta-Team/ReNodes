@@ -430,10 +430,12 @@ class NodeObjectHandler:
 				else:
 					raise Exception(f"Unsupported option: {tInside}")
 		# -------------------- common spec options -------------------- 
+		elif tokenType == 'enumtype' and self.isEnum:
+			self.memberData['enumtype'] = tokens[1]
 		elif tokenType == 'eval' and (self.isEnum or self.isStruct): #enum node value
 			if self.isEnum:
 				eName = tokens[1]
-				eVal = intTryParse(tokens[2])
+				eVal = self.varLib.parseGameValue(tokens[2],self.memberData.get("enumtype","int"),self.classMetadata)
 				enumCase = {
 					'name': eName,
 					'val':eVal,
@@ -861,6 +863,13 @@ class NodeObjectHandler:
 		self['inputs'].append(	(portEnumName,{
 			"type":f'{enumTypeFull}',"mutliconnect":False
 		})	)
+		
+		# если в перечислении нет данных о тип перечисления то добавляем инт
+		enumtype = "int"
+		if "enumtype" in memberData:
+			enumtype = memberData['enumtype']
+			del memberData["enumtype"]
+		
 		codegen = "call {private _eIt = @in.2;"
 		for ienum,eDat in enumerate(self.enumList):
 			enumItem = {
@@ -872,7 +881,10 @@ class NodeObjectHandler:
 				enumItem['desc'] = eDat.get('desc')
 			self['outputs'].append((eDat['name'],enumItem))
 			#code generation
-			codegen += f"if (_eIt == {eDat['val']} /*{self.objectNameFull}.{eDat['name']}*/) exitWith {{@out.{ienum+1}}};"
+			evcdgn = eDat['val']
+			if enumtype == "string":
+				evcdgn = f"\"{eDat['val']}\""
+			codegen += f"if (_eIt == {evcdgn} /*{self.objectNameFull}.{eDat['name']}*/) exitWith {{@out.{ienum+1}}};"
 		codegen += "};"
 		self['code'] = codegen
 		self['name'] = f'Выбрать из {portEnumName}'
@@ -897,8 +909,9 @@ class NodeObjectHandler:
 		enumStorage['allEnums'][enumTypeFull] = {
 			'name': portEnumName,
 			'values': [e['name'] for e in self.enumList],
-			'enumList': self.enumList
-		}
+			'enumList': self.enumList,
+			'enumtype': enumtype
+		}		
 
 	def _preregStruct(self):
 		memberData = self.memberData

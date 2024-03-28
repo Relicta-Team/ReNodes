@@ -1986,7 +1986,8 @@ class CodeGenerator:
         elif self.getVariableManager().isObjectType(tname):
             return value
         elif self.getVariableManager().isEnumType(tname):
-            enumVals = self.getFactory().getEnumData(tname)['enumList']
+            efDat = self.getFactory().getEnumData(tname)
+            enumVals = efDat['enumList']
             factValue = None
             factKey = '$unk_key$'
             for enumItem in enumVals:
@@ -1999,7 +2000,9 @@ class CodeGenerator:
                     factKey = enumItem['name']
                     break
             if factValue == None:
-                self.vtWarn(optObj,f'Неизвестное значение перечисления {self.getFactory().getEnumData(tname)["name"]}: {value}')
+                self.vtWarn(optObj,f'Неизвестное значение перечисления {efDat["name"]}: {value}')
+            if efDat['enumtype']!="int":
+                factValue = self.updateValueDataForType(factValue,efDat['enumtype'],optObj)
             return f'{factValue}/*{tname}:{factKey}*/'
         elif self.getVariableManager().isStructType(tname):
             from ast import literal_eval
