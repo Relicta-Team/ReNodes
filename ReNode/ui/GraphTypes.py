@@ -437,7 +437,7 @@ class ClassGraphType(GraphTypeBase):
             value = fdata['defval']
             # проверяем был ли член определен ранее (запрос переопределения)
 
-            if infoDataProps['fields'].get(fname) or fieldDict.get(fname) == baseClass:
+            if fname in infoDataProps['fields'] or fieldDict.get(fname) == baseClass:
                 value = infoDataProps['fields'].get(fname,value)
                 varvalue = cgObj.updateValueDataForType(value, fdata['return'],'def_field:'+fname)
                 #calcluate repr ingame (always this solution because in values probably contains comments)
