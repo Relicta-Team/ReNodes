@@ -118,7 +118,11 @@ class Inspector(QDockWidget):
             #replaced in command
             #self.syncPropValue(cat,sysname,False) #sync visual
 
-            
+            #! if changed here - update VirtualLib.onUpdateUserVariables
+            cls__ = self.infoData['classname']
+            classData = self.nodeGraphComponent.getFactory().getClassData(cls__)
+            if classData:
+                classData['changedProps'][cat][sysname] = val
         pass
 
     def syncPropValue(self,cat,sysname,setProp=False):
@@ -329,15 +333,27 @@ class Inspector(QDockWidget):
                         ilist = baseList.index(baseName) + 1
                         factT = baseList[0]
                         rangelist = baseList[1:ilist]
+                        
                         # rt = []
                         # for nm in rangelist:
                         #     rt.append(vmgr.getTextTypename(nm))
-                        bnmReal = vmgr.getTextTypename(factT)
+                        #bnmReal = vmgr.getTextTypename(factT)
                         # if rt:
                         #     bnmReal += " + Родители: " + "->".join(rt)
-                        if baseList:
-                            firstDef = baseList[-1]
-                    
+                        if rangelist:
+                            #bnmReal = rangelist[0]
+                            firstDef = rangelist[-1]
+                            if len(rangelist):
+                                parentList = "->".join(rangelist)
+                            for rClass in rangelist:
+                                cpps = fact.getClassData(rClass).get('changedProps',{})
+                                if cpps:
+                                    if propName in cpps[cat]:
+                                        bnmReal = rClass
+                                        fDefault = cpps[cat][propName]
+                                        break
+                        else:
+                            firstDef = f"этом графе ({bnmReal})"
                     
                     nameObj = self.addProperty(bnmReal,cat,propName,fName,propObj,fDefault)
                     if vType:
@@ -357,7 +373,13 @@ class Inspector(QDockWidget):
                         nameObj.setPixmap(newIcon.scaled(pixW,pixH,Qt.KeepAspectRatio))
                     
                     dataTypeText = vmgr.getTextTypename(fRet)
-                    nameObj.setToolTip(f"{fDesc}\n\nУнаследовано от {baseName}\nСистемное имя: {propName}\nТип данных: {dataTypeText} ({fRet})\nТип члена: {optionTextNames[cat]}")
+                    nameObj.setToolTip(f"{fDesc if fDesc else 'Описание отсутствует'}\n\n"+
+                        f"Значение по умолчанию предоставлено от {baseName}\n"+
+                        f"Впервые определен в {firstDef}\n"+
+                        f"Предки свойства: {parentList}\n"+
+                        f"Системное имя: {propName}\n"+
+                        f"Тип данных: {dataTypeText} ({fRet})\n"+
+                        f"Тип члена: {optionTextNames[cat]}")
 
 
                     # line = QFrame()

@@ -8,7 +8,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel,QProgressBar
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import *
-
+from copy import deepcopy
 import threading
 
 
@@ -96,6 +96,7 @@ class VirtualLib(QObject):
 					"fields": {"defined": {}},
 					"methods": {"defined": {}},
 					"name": infoData['name'],
+					"changedProps": infoData.get("props",{}),
 					#baseList, __childList, __inhChild
 				}
 				if infoData.get('path'):
@@ -185,6 +186,12 @@ class VirtualLib(QObject):
 		classData['fields']['nodes'] = []
 		if 'inspectorProps' in classData:
 			del classData['inspectorProps']
+		
+		pps = classData.get('props',{})
+		classData['changedProps'] = {
+			"fields": deepcopy(pps.get('fields',{})),
+			"methods": deepcopy(pps.get('methods',{})),
+		}
 
 		self._regenerateUserLib(vars,cls,classData)
 
