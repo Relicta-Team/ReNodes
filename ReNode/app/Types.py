@@ -217,7 +217,7 @@ def validate_connections_serialized(portFromDict,portToDict):
         allt_list.append(fact.isTypeOf(realOutType,realBaseType))
     if allt_list and all(allt_list): return True
 
-    # implementation of function signature check
+    # implementation of function signature check not used yet, because it's not reliable
     # if ftDec[0]=='function' and ftDec[0]==ttDec[0]:
     #     #parse function signature
     #     fsign = fact.getFunctionSignatureInfo(ftDec[1]) #port > out
