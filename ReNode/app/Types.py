@@ -205,6 +205,7 @@ def validate_connections_serialized(portFromDict,portToDict):
 
     if ftDec[0]!=ttDec[0] or len(ftDec)!=len(ttDec): return False
     allt_list = []
+    #FULL COMPARISON ALGORITHM. Obsoleted???
     for ofs in range(1,len(ftDec)):
         
         realOutType = fact.getRealType(ftDec[ofs])
@@ -216,8 +217,31 @@ def validate_connections_serialized(portFromDict,portToDict):
         allt_list.append(fact.isTypeOf(realOutType,realBaseType))
     if allt_list and all(allt_list): return True
 
+    # implementation of function signature check
+    # if ftDec[0]=='function' and ftDec[0]==ttDec[0]:
+    #     #parse function signature
+    #     fsign = fact.getFunctionSignatureInfo(ftDec[1]) #port > out
+    #     tsign = fact.getFunctionSignatureInfo(ttDec[1]) #port < in
+    #     #can cast upper to lower (fsign istypeof tsign)
+    #     lvalcheck = []
+    #     lvalcheck.append(fsign[0]==tsign[0])
+    #     lvalcheck.append(stdCheckTypesCompatibility(fsign[1],tsign[1],fact))
+    #     if len(fsign[2])!=len(tsign[2]): return False
+    #     for i,fv_ in enumerate(fsign[2]):
+    #         fp = fsign[2][i]
+    #         tp = fsign[2][i]
+    #         lvalcheck.append(stdCheckTypesCompatibility(fp,tp,fact))
+    #     if all(lvalcheck): return True
+
     return False
 
+def stdCheckTypesCompatibility(fromT,toT,fact):
+    fromT = fact.getRealType(fromT)
+    toT = fact.getRealType(toT)
+    if fact.isObjectType(fromT) and fact.isObjectType(toT): 
+        return fact.isTypeOf(fromT,toT)
+    
+    return fromT == toT
 
 def can_connect_auto_port_serialized(factory,fromPort,toPort,nodeClassnameSrc,dataPort):
     """По параметрам смотреть validate_connections_serialized"""
