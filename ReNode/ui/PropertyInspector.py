@@ -323,16 +323,20 @@ class Inspector(QDockWidget):
 
                     #generate ihheritance list
                     bnmReal = baseName
+                    firstDef = 'НЕИЗВЕСТНО'
+                    parentList = "НЕТ"
                     if baseName in baseList: 
                         ilist = baseList.index(baseName) + 1
                         factT = baseList[0]
                         rangelist = baseList[1:ilist]
-                        rt = []
-                        for nm in rangelist:
-                            rt.append(vmgr.getTextTypename(nm))
+                        # rt = []
+                        # for nm in rangelist:
+                        #     rt.append(vmgr.getTextTypename(nm))
                         bnmReal = vmgr.getTextTypename(factT)
-                        if rt:
-                            bnmReal += " + Родители: " + "->".join(rt)
+                        # if rt:
+                        #     bnmReal += " + Родители: " + "->".join(rt)
+                        if baseList:
+                            firstDef = baseList[-1]
                     
                     
                     nameObj = self.addProperty(bnmReal,cat,propName,fName,propObj,fDefault)

@@ -326,11 +326,11 @@ class CodeGenerator:
                 fp__ = self.graph.graph_path
                 guidCompile = ssmgr.CreateCompilerGUID()
                 if self.hasCompileParam("-noupdatecguid"):
-                    _oldcguid = self.graph.infoData.get("compileGUID","")
+                    _oldcguid = FileManagerHelper.getCompiledGUIDByClass(iData['classname'])
                     if _oldcguid:
                         guidCompile = _oldcguid
                 def __updEv(sergraph):
-                    sergraph['graph']['info']['compiledGUID'] = guidCompile
+                    FileManagerHelper.allCompiledGUIDs[iData['classname']] = guidCompile
                     sergraph['graph']['info']['compileStatus'] = "Compiled"
                     #! только при ручном обновлении sergraph['graph']['info']['graphVersion'] = self.graphsys.getFactory().graphVersion
                     return True
@@ -450,6 +450,8 @@ class CodeGenerator:
             #self._warnings.clear()
             self.gObjMeta.clear()
             self.dpdGraphExt.clear()
+            
+            return self.successCompiled
 
     def __generateNames(self,entry : list):
         import copy

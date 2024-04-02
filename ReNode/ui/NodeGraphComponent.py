@@ -131,10 +131,15 @@ class NodeGraphComponent:
 		from ReNode.ui.LoggerConsole import LoggerConsole
 		graphList = []
 		if onlyNotActual:
-			graphList = FileManagerHelper.getBuildRequiredGraphs()
+			graphList = FileManagerHelper.getBuildRequiredGraphs(returnFullData=True)
 		else:
 			graphList = FileManagerHelper.getAllGraphPathes()
-		allGraphsWithIndex = [(path,i+1) for i,path in enumerate(graphList)]
+		allGraphsWithIndex = [(path['graph_path'],i+1) for i,path in enumerate(graphList)]
+
+		nonActualList = []
+		for d in graphList:
+			if not d['gver_actual']:
+				nonActualList.append(d['graph_path'])
 
 		if onlyNotActual and not graphList:
 			CodeGenerator.refLogger.info("Все графы собраны. Сборка пропущена")
@@ -192,10 +197,20 @@ class NodeGraphComponent:
 		else:
 			CodeGenerator.refLogger.error("Обнаружены ошибки при сборке")
 		
+		FileManagerHelper.saveAllCompiledGUIDs() #saving all guids after compilation
+
 		compFinalDt = datetime.datetime.now().strftime("%H:%M:%S.%f")
 		CodeGenerator.refLogger.info(f"Скомпилировано {len([x for x in results if x])} из {len(results)}")
 		CodeGenerator.refLogger.info(f'Выполнено в {compFinalDt} за {int(time.time()*1000.0) - timestamp} мс')
 		CodeGenerator.refLogger.info("-" * 30)
+
+		if nonActualList:
+			CodeGenerator.refLogger.warn(f"Обнаружены устаревшие версии графов. Откройте и сохраните следующие графы для обновления версии.")
+			CodeGenerator.refLogger.warn("Обратите внимание, что при обновлении версии графов некоторые связи могут быть отозваны.")
+			for path in nonActualList:
+				if not FileManagerHelper.graphPathIsRoot(path):
+					path = FileManagerHelper.graphPathToRoot(path)
+				CodeGenerator.refLogger.warn("Обновите версию "+LoggerConsole.createNodeGraphReference(path,text=path))
 
 		return all(results)
 

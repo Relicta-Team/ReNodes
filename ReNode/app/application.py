@@ -127,6 +127,9 @@ class Application:
 
 		self.nodeFactory = NodeFactory()
 
+		from ReNode.app.FileManager import FileManagerHelper
+		FileManagerHelper.loadAllCompiledGUIDs()
+
 		self.mainWindow = MainWindow(self.nodeFactory)
 		debugText = " [DEBUG]" if Application.isDebugMode() else ""
 		self.mainWindow.setWindowTitle(f"{Application.appName} (v.{Application.getVersionString()}){debugText}")
@@ -135,8 +138,8 @@ class Application:
 			self.mainWindow.generateAllCode(allUpdate=False,loadingScreen=False,compileFlags={"-noupdatecguid"})
 
 		#if splashEnabled: time.sleep(3)		
-
-		self.mainWindow.show()
+		if not Application.hasArgument("-noapp"):
+			self.mainWindow.show()
 		#self.mainWindow.showMaximized()
 
 		self.mainWindow.nodeGraph._loadWinStateFromConfig()

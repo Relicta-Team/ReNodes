@@ -156,7 +156,9 @@ class MainWindow( QMainWindow ):
 
 	def generateCode(self):
 		if self.nodeGraph.sessionManager.getActiveTabData():
-			self.nodeGraph.codegen.generateProcess()
+			if self.nodeGraph.codegen.generateProcess():
+				from ReNode.app.FileManager import FileManagerHelper
+				FileManagerHelper.saveAllCompiledGUIDs()
 		else:
 			self.nodeGraph.codegen.logger.warning("Нет активной вкладки для генерации")
 

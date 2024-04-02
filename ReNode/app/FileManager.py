@@ -6,6 +6,9 @@ from datetime import datetime
 from ReNode.app.config import Config
 
 class FileManagerHelper:
+	#dict of classes with compiled guids
+	allCompiledGUIDs = {}
+
 	@staticmethod
 	def getWorkDir():
 		return Config.get_str("workdir","main")
@@ -111,14 +114,6 @@ class FileManagerHelper:
 						os.remove(filepath)
 						logger.info(f"Removed invalid compiled file: {filepath}")
 						continue
-					#get graph
-					#! регенерация должна происходить в другом месте...
-					# if excludeGuid and meta.get("guid")!=excludeGuid:
-					# 	data = FileManagerHelper.loadSessionJson(os.path.join(rootDir,meta['path']))
-					# 	logger.debug("Checking graph: {}".format(meta['path']))
-					# 	graphGuid = data['graph']['info'].get('compiledGUID','')
-					# 	if meta['guid'] != graphGuid:
-					# 		logger.debug("Obsolete guid. Regenerating...")
 
 				if doRemovePrefix:
 					filepath = filepath[2:]
@@ -238,7 +233,7 @@ class FileManagerHelper:
 			sess = FileManagerHelper.loadSessionJson(graphPath)
 			idat = sess['graph']['info']
 			graphVersion = idat.get('graphVersion',-1)
-			lastguid = idat.get("compiledGUID")
+			lastguid = FileManagerHelper.getCompiledGUIDByClass(idat['classname'])
 			fname = FileManagerHelper.getCompiledScriptFilename(idat)
 			fnameComp = os.path.join(FileManagerHelper.getFolderCompiledScripts(),fname)
 			
@@ -275,11 +270,58 @@ class FileManagerHelper:
 		return compMeta
 
 	@staticmethod
-	def getBuildRequiredGraphs():
+	def getBuildRequiredGraphs(returnFullData=False):
 		"""Возвращает список графов, которые необходимо пересобрать"""
-		return [data['graph_path'] for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual') or not data.get('exists_graph') or not data.get("gver_actual")]
+		return [data['graph_path'] if not returnFullData else data for data in FileManagerHelper.getCompareCompiledGraphsInfo() if not data.get('guid_actual') or not data.get('exists_graph') or not data.get("gver_actual")]
 
+	@staticmethod
+	def getCompiledGUIDsFilepath():
+		return ".\\comp_guid.json"
+
+	@staticmethod
+	def loadAllCompiledGUIDs():
+		from ReNode.app.application import Application
+		logger = Application.refObject.logger
+		fpd = FileManagerHelper.getCompiledGUIDsFilepath()
+		if not os.path.exists(fpd):
+			logger.error(f'Cannot load compiled GUIDs. File not found: {fpd}')
+			return
+		try:
+			jsn = None
+			with open(fpd,'r',encoding='utf-8') as file:
+				jsn = json.load(file)
+				FileManagerHelper.allCompiledGUIDs = jsn
+			logger.info(f"Loaded {len(jsn)} compiled GUIDs  from \"{fpd}\"")
+		except Exception as e:
+			logger.error(f'Cannot load compiled GUIDs. Reason: {e}')
+			return
+	
+	@staticmethod
+	def getCompiledGUIDByClass(cls):
+		return FileManagerHelper.allCompiledGUIDs.get(cls,"")
+
+	@staticmethod
+	def saveAllCompiledGUIDs():
+		if FileManagerHelper.allCompiledGUIDs == None:
+			FileManagerHelper.allCompiledGUIDs = {}
 		
+		def default(obj):
+			if isinstance(obj, set):
+				return list(obj)
+			return obj
+
+		fpd = FileManagerHelper.getCompiledGUIDsFilepath()
+		with open(fpd, 'w',encoding='utf-8') as file_out:
+			json.dump(
+				FileManagerHelper.allCompiledGUIDs,
+				file_out,
+				indent=2,
+				separators=(',', ':'),
+				default=default,
+				ensure_ascii=False #Yodes: fix rus letter encoding
+			)
+
+
 	# @staticmethod
 	# def openGraphHandle(file_path):
 	# 	"""Открывает файл и возвращает его дескриптор+json"""

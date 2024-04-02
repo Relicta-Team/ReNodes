@@ -86,7 +86,7 @@ class TabData:
         self.lastTimeSave = os.path.getmtime(FileManagerHelper.graphPathGetReal(self.filePath,True))
 
         _fileCompGuid = self.getLastCompileGUID()
-        _graphCompGuid = self.infoData.get('compiledGUID','')
+        _graphCompGuid = FileManagerHelper.getCompiledGUIDByClass(self.infoData.get("classname",""))
         _equalCompGuid = _fileCompGuid == _graphCompGuid
         self.lastCompileGUID = _graphCompGuid
         _status = CompileStatus.stringToStatus(self.infoData.get("compileStatus",'NotCompiled'))
@@ -168,7 +168,7 @@ class TabData:
     def save(self):
         if not self.filePath:
             return
-        self.infoData['compiledGUID'] = self.lastCompileGUID
+        FileManagerHelper.allCompiledGUIDs[self.infoData['classname']] = self.lastCompileGUID
         self.infoData['compileStatus'] = CompileStatus.statusToString(self.lastCompileStatus)
         self.infoData['graphVersion'] = SessionManager.refObject.graphSystem.getFactory().graphVersion
         
