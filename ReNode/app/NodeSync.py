@@ -274,3 +274,60 @@ class NodeSyncronizer:
 
     def removeAllConnectedPorts(self,nodeId):
         self.cleanupConnList.add(nodeId)
+
+    # ---------------------- model validation -----------------------
+
+    def validateGraphModel(self,gpath,serdat,printErr=True):
+        from ReNode.app.FileManager import FileManagerHelper
+        if not FileManagerHelper.graphPathIsRoot(gpath):
+            gpath = FileManagerHelper.graphPathToRoot(gpath)
+        
+        self.log(f'Start validating graph: {gpath}')
+        try:
+            if 'graph' not in serdat: 
+                self.warn("Cannot find 'graph' key")
+                return False
+            gdata = serdat['graph']
+            idata = gdata['info']
+            classname = idata['classname']
+            fact = self.graphRef.getFactory()
+            gver = idata.get('graphVersion',-1)
+            cd = fact.getClassData(classname)
+            if not cd:
+                self.warn("Cannot find class data")
+                return False
+            
+            # prepare for validation
+
+            # generic check
+            
+            # check version
+            if gver!=fact.graphVersion:
+                self.warn(f"Graph version mismatch. Expected {fact.graphVersion}, got {gver}; Updating...")
+                if gver>fact.graphVersion:
+                    self.warn("Graph version is newer than expected. Please update ReNode.")
+                    return False
+                while gver<fact.graphVersion:
+                    gver+=1
+                    self.log("Updating to v{}".format(gver))
+                    if not self.graphModelUpdateVersionTo(gver):
+                        self.logger.error("Cannot update graph model to v{}".format(gver))
+                        return False
+                
+            
+
+
+        except Exception as e:
+            self.logger.error(f"Cannot validate graph. Exception: {e}")
+            return False
+
+    def vmdl_nodeLink(self,grp,nodeIncrement,name):
+        logCon = self.graphRef.log_dock.__class__
+        return logCon.createNodeGraphReference(grp,nodeIncrement,name)
+    
+
+    def graphModelUpdateVersionTo(self,ver):
+        if ver == 2: #test. new modelupdater will be after v2
+            
+            return True
+        return False
