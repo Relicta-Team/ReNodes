@@ -1,1 +1,1 @@
-global_version = [1, 6]
+global_version = [1, 7]
