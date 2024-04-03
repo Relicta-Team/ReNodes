@@ -133,7 +133,7 @@ class NodeGraphComponent:
 		if onlyNotActual:
 			graphList = FileManagerHelper.getBuildRequiredGraphs(returnFullData=True)
 		else:
-			graphList = FileManagerHelper.getAllGraphPathes()
+			graphList = FileManagerHelper.getCompareCompiledGraphsInfo() #FileManagerHelper.getAllGraphPathes()
 		allGraphsWithIndex = [(path['graph_path'],i+1) for i,path in enumerate(graphList)]
 
 		nonActualList = []
