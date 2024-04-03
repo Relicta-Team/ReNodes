@@ -232,10 +232,11 @@ class ExceptionHandler:
 		import traceback
 		self.logger.error("Unhandled exception", exc_info=(exctype, value, traceback_obj))
 		
-		tb_text = "".join(traceback.format_exception(exctype, value, traceback_obj))
-		error_message = f"\n{Application.appName} {Application.getVersionString()}\nНеобработанное исключение: {exctype.__name__}\n{value}\n\n{tb_text}"
-		#TODO copy error message to clipboard
-		QMessageBox.critical(None, "Критическая ошибка", error_message)
+		if not Application.hasArgument("-noerrwin"):
+			tb_text = "".join(traceback.format_exception(exctype, value, traceback_obj))
+			error_message = f"\n{Application.appName} {Application.getVersionString()}\nНеобработанное исключение: {exctype.__name__}\n{value}\n\n{tb_text}"
+			#TODO copy error message to clipboard
+			QMessageBox.critical(None, "Критическая ошибка", error_message)
 		
 
 		# Вы можете выполнить другие действия здесь, например, показать диалог с сообщением об ошибке.
