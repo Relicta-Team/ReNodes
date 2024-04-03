@@ -758,12 +758,15 @@ class VarMgrFunctionWidget(VarMgrBaseWidgetType):
                 return
             uniParams.append(param['name'])
 
+        cat_sys_name = self.categoryObject.category
+
         funcInfo = {
             "name":funcName,
             "group":funcGrp,
             "desc":funcDesc,
             "params":funcParamsDict,
             'isPure': isPureFunc,
+            "category": cat_sys_name,
             "returnType":retTypename,
             "returnDesc":retDesc,
 
