@@ -474,7 +474,8 @@ class SessionManager(QTabWidget):
             }
             # здесь загрузчик не нужно очищать
             os.makedirs(os.path.dirname(loader), exist_ok=True)
-            self.graphSystem.graph.save_session(loader,defaultGraph)
+            # there using dummyGraph because if tabcount == 0 then graphSystem.graph was None
+            self.graphSystem.dummyGraph.save_session(loader,defaultGraph)
             self.graphSystem.getFactory().vlib.reload_impl()
             
             cgUnit = SessionManager.refObject.graphSystem.codegen.__class__()
