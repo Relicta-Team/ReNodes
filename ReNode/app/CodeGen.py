@@ -924,6 +924,16 @@ class CodeGenerator:
                 if obj.getConnectionOutputs().get("Новое значение"):
                     oldCode = obj.code
                     obj.code = "private @genvar.out.2 = @in.3;" + re.sub(f'@in\.3(?=\D|$)', f"@locvar.out.2", oldCode)
+            
+            if clsName == "control.supercall":
+                rempart = "private @genvar.out.2 = "
+                if isLambdaEntry:
+                    self.exception(CGEntryLambdaSuperNotSupported,source=obj,entry=codeInfo[entryId])
+                    break
+                rtp = entryObj.classLibData['returnType']
+                if rtp=='null':
+                    obj.code = obj.code.replace(rempart,"")
+            
             isPure = True
             if "Exec" in [t.get("type") for t in obj.classLibData['inputs'].values()] or \
                 "Exec" in [t.get("type") for t in obj.classLibData['outputs'].values()]:
