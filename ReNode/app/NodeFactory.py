@@ -15,6 +15,7 @@ class NodeFactory:
 	graphVersion = 2 # Глобальная версия графа (пишется в секции ['graph']['info'] ['graphVersion'])
 
 	defaultColor = (13,18,23,255)
+	execColor = (255, 255, 255, 255)
 
 	def __init__(self):
 		self.logger = RegisterLogger("NodeFactory")

@@ -16,6 +16,7 @@ class MainWindow( QMainWindow ):
 		super().__init__()
 		global logger
 		logger = RegisterLogger("main")
+		self.loggerRef = logger
 		self.nodeFactory = factory
 		self.initUI()
 

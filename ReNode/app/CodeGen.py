@@ -1231,6 +1231,51 @@ class CodeGenerator:
                         #replacers
                         node_code = node_code.replace(fullTextTemplate, replacerInfo)
 
+                if "@gen_switch_on(" in node_code:
+                    # __sv for 
+                    pat = r'(@gen_switch_on\(([_\w]*)\))'
+                    matchObj = re.search(pat, node_code)
+                    switchType = None
+                    if obj.nodeClass.endswith("int"): switchType = "int"
+                    elif obj.nodeClass.endswith("float"): switchType = "float"
+                    elif obj.nodeClass.endswith("string"): switchType = "string"
+                    else:
+                        raise Exception("Unhandled exception; Unknown switch type: " + obj.nodeClass)
+                    
+                    if matchObj:
+                        fullTextTemplate, varComparer = matchObj.groups()
+
+                        #update outputs for stack generator works...
+                        newInputs = {}
+                        newOutputs = {}
+                        
+                        for portDict in obj_data['input_ports']:
+                            newInputs[portDict['name']] = {
+                                'type': portDict['type']
+                            }
+                        for portDict in obj_data['output_ports']:
+                            newOutputs[portDict['name']] = {
+                                'type': portDict['type']
+                            }
+                        class_data['inputs'] = newInputs
+                        class_data['outputs'] = newOutputs
+                        #update types
+                        inputs_fromLib = newInputs.items()
+                        outputs_fromLib = newOutputs.items()
+
+                        #for allports
+                        allport_values__ = []
+                        for i,(k) in enumerate(obj.objectData.get('output_ports',[])):
+                            if i==0: continue
+                            k = k['name']
+                            if switchType=="string":
+                                k = k.replace("\\n","\n").replace("\\t","\t")
+                            k = self.updateValueDataForType(k,switchType)
+                            allport_values__.append(f'if({varComparer}=={k})exitWith{{ @out.{i+1} }};')
+                        __replCode = 'call {'+ "".join(allport_values__) + " @out.1}"
+                        node_code = node_code.replace(fullTextTemplate, __replCode)
+
+
                 inputDict = obj.getConnectionInputs(True)
                 execDict = obj.getConnectionOutputs(True)
 

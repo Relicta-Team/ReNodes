@@ -415,7 +415,7 @@ class NodeGraphComponent:
 		# nmenu.add_command("testcmd",func=test_func,node_type='all') #,node_type='operators.if_branch'
 		
 		nmenu.add_command("Изменить цвет",func=change_color,node_type='internal.backdrop|internal.sticker')
-		
+		self.registerSwitchOnContext(nmenu)
 		self.registerLambdaContext(nmenu)
 		
 		nmenu.add_command("Скопировать",func=copy_nodes,node_type="all")
@@ -711,6 +711,89 @@ class NodeGraphComponent:
 			for prtT in targ.connected_ports():
 				if not targ.view.validate_connection_to(prtT.view):
 					targ.disconnect_from(prtT,False) #donot push undo
+
+	def registerSwitchOnContext(self,nmenu:NodesMenu):
+		nodeTypes = "operators.switch_on_int|operators.switch_on_float|operators.switch_on_string"
+		def __add_value(graph,node:RuntimeNode):
+			nClass = node.nodeClass
+			globPos = QCursor.pos()
+			m = QMenu()
+			layout = QVBoxLayout()
+			layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+			m.setLayout(layout)
+			dlg = QtWidgets.QInputDialog()
+			if nClass.endswith("int"):
+				dlg.setIntValue(0)
+				dlg.setIntRange(-999999,999999)
+			elif nClass.endswith("float"):
+				dlg.setDoubleRange(-999999,999999)
+				dlg.setDoubleDecimals(6)
+				dlg.setDoubleValue(0)
+				dlg.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
+			elif nClass.endswith("string"):
+				dlg.setTextValue("")
+				dlg.setOption(QtWidgets.QInputDialog.InputDialogOption.UsePlainTextEditForTextInput,True)
+			m.layout().addWidget(dlg)
+			dlg.setOkButtonText("Добавить")
+			def __finalizeSelector():
+				if dlg.result() == QtWidgets.QInputDialog.Accepted:
+					val = None
+					if nClass.endswith("int"):
+						val = dlg.intValue()
+					elif nClass.endswith("float"):
+						val = dlg.doubleValue()
+					elif nClass.endswith("string"):
+						val = dlg.textValue().replace("\n","\\n").replace("\t","\\t")
+					self.addNodeForSwitch(node,val)
+				m.close()
+			dlg.finished.connect(__finalizeSelector)
+			m.exec_(globPos)
+		
+		def __remove_value(graph,node:RuntimeNode):
+			from ReNode.ui.SearchMenuWidget import SearchComboButton,CustomMenu,createTreeDataContent,addTreeContent
+			nClass = node.nodeClass
+			menu = CustomMenu(parent=self,isRuntime=True)
+			treeContent = createTreeDataContent()
+			canCollect = False
+			val = "Exec"
+			if nClass.endswith("int"):
+				val = "int"
+			elif nClass.endswith("float"):
+				val = "float"
+			elif nClass.endswith("string"):
+				val = "string"
+			icnRef = self.variable_manager.getIconFromTypename(val)
+			for i, (p,v) in enumerate(node.outputs().items()):
+				if i == 0: continue
+				addTreeContent(treeContent,p,p,icnRef)
+			menu.tree.populate_tree(treeContent)
+
+			def _prov(data,text,icn):
+				node.delete_output(data)
+				node.view.draw_node()
+			menu.addOnClickEvent(_prov)
+
+			menu.exec_(QCursor.pos())
+
+		nmenu.add_command("Добавить значение",__add_value,node_type=nodeTypes)
+		nmenu.add_command("Удалить значение",__remove_value,node_type=nodeTypes)
+		pass
+	def addNodeForSwitch(self,node:RuntimeNode,value):
+		if value == None: return
+		valname = '{}'.format(value)
+		if node.get_output(valname):
+			self.mainWindow.loggerRef.warn(f"Невозможно добавить \"{valname}\", так как указанное значение уже существует")
+			return
+		from ReNode.ui.NodePainter import draw_triangle_port
+		node.add_output(
+			name=valname,
+			color=self.getFactory().execColor,
+			display_name=True,
+			multi_output=False,
+			painter_func=draw_triangle_port,
+			portType="Exec"
+		)
+		node.view.draw_node()
 
 	def registerLambdaContext(self,nmenu:NodesMenu):
 		from ReNode.ui.SearchMenuWidget import SearchComboButton,CustomMenu,createTreeDataContent,addTreeContent
