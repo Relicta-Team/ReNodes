@@ -933,6 +933,9 @@ class CodeGenerator:
                 rtp = entryObj.classLibData['returnType']
                 if rtp=='null':
                     obj.code = obj.code.replace(rempart,"")
+                    if obj.getConnectionOutputs().get("Значение"):
+                        self.exception(CGSuperVoidReturnException,source=obj)
+                        return "//ex:CGSuperVoidReturnException\n"
             
             isPure = True
             if "Exec" in [t.get("type") for t in obj.classLibData['inputs'].values()] or \
