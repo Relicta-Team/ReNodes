@@ -1807,9 +1807,9 @@ class NodeGraph(QtCore.QObject):
         # connection constrains.
         #serial_data['graph']['accept_connection_types'] = self.model.accept_connection_types
         #serial_data['graph']['reject_connection_types'] = self.model.reject_connection_types
-
-        serial_data['graph']['variables'] = nodeSystem.variable_manager.variables
-        serial_data['graph']['info'] = nodeSystem.inspector.infoData
+        
+        serial_data['graph']['variables'] = self.variables #nodeSystem.variable_manager.variables
+        serial_data['graph']['info'] = self.infoData #nodeSystem.inspector.infoData
 
         if serializeMouse:
             serial_data['graph']['mpos'] = self.viewer().scene_rect()
