@@ -815,10 +815,12 @@ def:node:array
     rendertype:NoHeader
     autocoloricon:1
     exec:all
-    code:(@in.2) append (@in.3); @out.1
+    code:private @genvar.out.2 = (@in.2); @locvar.out.2 append (@in.3); @out.1
     in:auto:Источник:Первый массив, к котрому будут добавлены все элементы из второго.
         opt:typeget=array;@type
     in:auto:Добавляемый:Второй массив, элементы которого будут добавлены в первый массив.
+        opt:typeget=array;@type
+    out:auto:Источник:Ссылка на массив-источник
         opt:typeget=array;@type
 
 
@@ -1735,6 +1737,37 @@ def:node:math
 
 def:node:math
 
+        node:percentage
+        name:Процент от
+        namelib:Процент от числа
+        rendertype:NoHeaderText
+        exec:pure
+        desc:Получает процент от числа. Например, 50 процентов от числа 42 равно 21.
+        code:[@in.1,@in.2] call getPrecentage
+        in:auto:Число:Базовое число, от которого получаем процент.
+            opt:typeget=value;@type:allowtypes=int|float:def=1:custom=1:custom_type=float:require=0
+        in:auto:Процент:Процент от базового числа
+            opt:typeget=value;@type:allowtypes=int|float:def=100:custom=1:custom_type=float:require=0
+        out:float:Результат
+            opt:typeget=value;@type:allowtypes=int|float
+
+
+def:node:math
+
+        node:probably
+        name:Prob
+        namelib:Вероятность (Prob)
+        rendertype:NoHeaderText
+        exec:pure
+        desc:Случайная вероятность в процентах. Если выпало значение, меньше указанной вероятности - возвращает истину.
+        code:[@in.1] call randomProbably
+        in:auto:Число:Значение процентов для вероятности. Значения, выше 100 всегда будут возвращать истину.
+            opt:typeget=value;@type:allowtypes=int|float:def=50:custom=1:custom_type=float:require=0
+        out:bool:Результат:Сработала ли вероятность
+
+
+def:node:math
+
         node:floor
         name:Целое вниз
         namelib:Округление вниз (Целое вниз)
@@ -2279,6 +2312,18 @@ eval:Дат. (кому):2:Имя в дательном падеже - Челов
 eval:Вин. (кого,что):3:Имя в винительном падеже - Человека
 eval:Твор. (кем):4:Имя в творительном падеже - Человеком
 eval:Предл. (О ком):5:Имя в предложном падеже - Человеке
+
+def:enum:enums
+node:Nation
+path:Перечисления
+name:Национальность
+	desc:Перечисление национальностей. Содержит все типы национальностей для людей.
+	enumtype:string
+	
+eval:Корняки:white:
+eval:Вахатцы:persian:
+eval:Тегинцы:asian:
+eval:Углярцы:black:
 
 def:enum:enums
 node:DirectionSide
@@ -2843,7 +2888,7 @@ def:node:system
 node:isEditor
 name:Это редактор
 path:Система.Отладка
-code:\n#ifdef EDITOR\ntrue\n#else\nfalse\n#endif\n
+code:__GLOBAL_MACRO_RESDK_EDITOR__
 desc:Возвращает @[bool ИСТИНУ], если текущий граф выполняется в редакторе.
 icon:data\\icons\\icon_BluePrintEditor_Function_16px
 color:PureFunction
@@ -2855,7 +2900,7 @@ def:node:system
 node:isDebug
 name:Это дебаг
 path:Система.Отладка
-code:\n#ifdef DEBUG\ntrue\n#else\nfalse\n#endif\n
+code:__GLOBAL_MACRO_RESDK_DEBUG__
 desc:Возвращает @[bool ИСТИНУ], если текущий граф выполняется в отладочной сборке.
 icon:data\\icons\\icon_BluePrintEditor_Function_16px
 color:PureFunction
@@ -2867,7 +2912,7 @@ def:node:system
 node:isRelease
 name:Это релиз
 path:Система.Отладка
-code:\n#ifdef RELEASE\ntrue\n#else\nfalse\n#endif\n
+code:__GLOBAL_MACRO_RESDK_RELEASE__
 desc:Возвращает @[bool ИСТИНУ], если текущий граф выполняется в релизной сборке.
 icon:data\\icons\\icon_BluePrintEditor_Function_16px
 color:PureFunction
@@ -2920,6 +2965,18 @@ def:func:native_functions
 	out:IDestructible:Объект:Созданный объект
 
 node:createGameObjectInWorld
+path:Игровые объекты.Утилиты
+
+def:func:native_functions
+
+	name:Создать скрипт
+	desc:Создает и назачает скрипт на указанном игровом объекте. Возвращает @[bool ИСТИНУ], если скрипт успешно создан и назначен игровому объекту. Если скрипт уже существует на игровом объекте - просто возвращает @[bool ЛОЖЬ].\n\nОбратите внимание, что у скриптов игровых объектов существует ограничения на допустимые типы объектов. Если ваш скрипт не может быть назначен игровому объекту из-за ограничений, то создания скрипта не произойдёт.
+	in:classname:Тип:Тип создаваемого скрипта.
+		opt:def=ScriptedGameObject
+	in:IDestructible:Объект:Игровой объект, для которого создается скрипт.
+	out:bool:Результат:Результат создания и назначения скрипта. При успешном выполнеии возвращает @[bool ИСТИНУ].
+
+node:createGameObjectScript
 path:Игровые объекты.Утилиты
 
 def:func:native_functions
@@ -3188,6 +3245,29 @@ def:func:taskSystem
 
 node:taskSystem_createTask
 path:Игровая логика.Задачи.Утилиты
+
+def:func:namingSystem
+
+	name:Получить национальность по лицу
+	desc:Получает национальность персонажа по его лицу.
+	exec:all
+	in:string:Лицо:Лицо персонажа.
+	out:enum.Nation:Национальность:Национальность персонажа.
+
+node:getNationByFace_Node
+path:Игровая логика.Характеристики.Национальности
+
+def:func:namingSystem
+
+	name:Получить лица национальности
+	desc:Получает массив всех лиц указанной национальности. При ошибках будет получен массив лиц.
+	exec:all
+	in:enum.Nation:Национальность:Национальность персонажа.
+	in:enum.Gender:Пол:Пол персонажа.
+	out:array[string]:Лица:Лица, указанного пола и национальности.
+
+node:getNationAllFaces_Node
+path:Игровая логика.Характеристики.Национальности
 $ENDREGION:FUNCTIONS
 $REGION:CLASSMEM
 def:c:object
@@ -3684,6 +3764,15 @@ def:m:ScriptedGameObject.getRestrictions_0
 		defval:["IDestructible"]
 		restr:IDestructible
 	
+def:m:ScriptedGameObject.addScriptToAllObjects_0
+
+		name:Применить ко всем объектам
+		desc:Создает экземпляры скрипта для всех игровых объектов, являющихся типами (или их наследниками), указанных в ограничениях типов. Применение происходит когда хотя бы один игровой объект получил созданный скрипт, либо скрипт указан в объектах карты.
+		type:const
+		classprop:1
+		return:bool:Автоприменение скрипта
+		defval:false
+	
 def:m:ScriptedGameObject.onScriptAssigned_0
 
 		name:Скрипт присвоен
@@ -3691,14 +3780,36 @@ def:m:ScriptedGameObject.onScriptAssigned_0
 		type:event
 		out:IDestructible^:Объект:Игровой объект, к которому привязан скрипт.
 	
+def:m:ScriptedGameObject._onTickWrapper_0
+
+		name:В каждую секунду
+		desc:Событие, вызываемое каждую секунду.
+		type:event
+	
+def:m:ScriptedGameObject.setTickMode_0
+
+		name:Переключить ежесекундное событие
+		desc:Запускает или останавливает ежесекундное событие "В каждую секунду".
+		type:method
+		lockoverride:1
+		in:bool:Включить:Если указана @[bool ИСТИНА], то событие будет запущено. В ином случае - остановлено. При попытке включения уже рабочего процесса обновления или выключения нерабочего - ничего не произойдёт.
+	
+def:f:ScriptedGameObject.tickMode_0
+
+		name:Выполнять ежесекундное событие
+		desc:Отвечает за то, будет ли выполняться событие "В каждую секунду".
+		prop:get
+		classprop:1
+		defval:false
+		return:bool
+	
 def:m:ScriptedGameObject._onMainActionWrapper_0
 
 		name:При основном действии
 		namelib:При основном действии
-		desc:Срабатывает при исполнении персонажем основного действия с объектом (при нажатии кнопки "Е").
+		desc:Срабатывает при исполнении персонажем основного действия с объектом (при нажатии кнопки "Е"). Основное действие выполняется, если персонаж может его выполнить. Для этого он должен быть в сознании и у него должна быть рука, которой производится действие.
 		type:event
 		out:BasicMob:Персонаж:Тот, кто выполняет действие по отношению к объекту.
-		return:bool:Результат выполнения основного действия. Возвращает @[bool ИСТИНУ], если основное действие успешно выполнено.
 	
 def:m:ScriptedGameObject.callBaseMainAction_0
 
@@ -3706,7 +3817,6 @@ def:m:ScriptedGameObject.callBaseMainAction_0
 		desc:Базовая логика основного действия, определенная в игровом объекте.
 		type:method
 		lockoverride:1
-		return:bool:Результат выполнения основного действия. Возвращает @[bool ИСТИНУ], если основное действие успешно выполнено.
 	
 def:f:ScriptedGameObject.mainActionName_0
 
@@ -3748,45 +3858,64 @@ def:m:ScriptedGameObject.callBaseExtraAction_0
 		desc:Базовая логика особого действия, определенная в игровом объекте.
 		type:method
 		lockoverride:1
-		return:bool:Результат выполнения особого действия. Возвращает @[bool ИСТИНУ], если особое действие успешно выполнено.
 	
 def:m:ScriptedGameObject._onInteractWithWrapper_0
 
 		name:При взаимодействии предметом
-		namelib:При взаимодействии предметом
-		desc:Срабатывает при исполнении персонажем взаимодействия с объектом с помощью предмета в активной руке. (ЛКМ по объекту с предметом в руке)
+		desc:Срабатывает при взаимодействии персонажа с объектом при помощью другого предмета. 
 		type:event
-		out:Item:Предмет:Предмет, которым выполняется взаимодействие с объектом.
-		out:BasicMob:Персонаж:Тот, кто выполняет действие по отношению к объекту.
-		return:bool:Результат выполнения действия. Возвращает @[bool ИСТИНУ], если действие успешно выполнено.
+		out:Item:Предмет:Предмет, используемый для взаимодействия с владельцем этого скрипта.
+		out:BasicMob:Персонаж:Персонаж, выполняющий взаимодействие.
+		out:bool:Боевой режим:Возвращает истину, если взаимодействие произведено в боевом режиме.
+		out:bool:В инвентаре:Возвращает истину, если взаимодействие применено к объекту, находящемуся в инвентаре.
 	
 def:m:ScriptedGameObject.callBaseInteractWith_0
 
 		name:Взаимодействие предметом
-		desc:Базовая логика взаимодействия с помощью предмета, определенная в игровом объекте.
+		desc:Основная логика взаимодействия с объектом с помощью предмета.
 		type:method
 		lockoverride:1
-		in:Item:Предмет:Предмет, которым выполняется взаимодействие с объектом.
-		in:BasicMob:Персонаж:Тот, кто выполняет действие по отношению к объекту.
-		return:bool:Результат выполнения действия. Возвращает @[bool ИСТИНУ], если действие успешно выполнено.
+	
+def:m:ScriptedGameObject._canSeeVerb_0
+
+		name:Можно видеть ПКМ действия
+		desc:Обработчик видимости базовых действий, получаемых из ПКМ меню объекта.
+		type:event
+		out:BasicMob:Персонаж:Персонаж, выполняющий нажатие.
+		out:string:Действие:Тип действия. Например "pickup", "twohands" и т.д. Полный список зарегистрированных ПКМ действий можно посмотреть в "src\\host\\VerbSystem\\verbsDefine.sqf"
+		return:bool:Будет ли видно действие в ПКМ меню
 	
 def:m:ScriptedGameObject._onClickWrapper_0
 
-		name:При нажатии по объекту
-		namelib:При нажатии по объекту
-		desc:Срабатывает при нажатии ЛКМ пустой рукой по объекту в мире.
+		name:При нажатии
+		desc:Срабатывает при взаимодействии персонажа по объекту пустой рукой (при нажатии "ЛКМ").
 		type:event
-		out:BasicMob:Персонаж:Тот, кто выполняет действие по отношению к объекту.
-		return:bool:Результат выполнения действия. Возвращает @[bool ИСТИНУ], если действие успешно выполнено.
+		out:BasicMob:Персонаж:Персонаж, выполняющий нажатие.
+		out:bool:Боевой режим:Возвращает истину, если нажатие произведено в боевом режиме.
+		out:bool:В инвентаре:Возвращает истину, если нажатие произведено по предмету в инвентаре.
 	
-def:m:ScriptedGameObject.callBaseClick_0
+def:m:ScriptedGameObject.callBaseOnClick_0
 
-		name:Нажатие по объекту
-		desc:Базовая логика нажатия по объекту, определенная в игровом объекте.
+		name:Нажатие
+		desc:Основная логика нажатия на объект.
 		type:method
 		lockoverride:1
-		in:BasicMob:Персонаж:Тот, кто выполняет действие по отношению к объекту.
-		return:bool:Результат выполнения действия. Возвращает @[bool ИСТИНУ], если действие успешно выполнено.
+	
+def:m:ScriptedGameObject._onItemSelfClickWrapper_0
+
+		name:При нажатии в активной руке
+		desc:Срабатывает при нажатии персонажа по предмету в инвентаре, находящемуся в активной руке.
+		type:event
+		out:Item:Предмет:Предмет, по которому выполняется нажатие (Он же владелец скрипта).
+		out:BasicMob:Персонаж:Персонаж, выполняющий нажатие.
+		out:bool:Боевой режим:Возвращает истину, если нажатие произведено в боевом режиме.
+	
+def:m:ScriptedGameObject.callBaseItemSelfClick_0
+
+		name:Нажатие в активной руке
+		desc:Основная логика нажатия по предмету в активной руке.
+		type:method
+		lockoverride:1
 	
 def:c:BasicMob
 
@@ -3842,6 +3971,24 @@ def:m:BasicMob.addTask_0
 		lockoverride:1
 		in:TaskBase:Задача:Добавляемая задача для персонажа
 		return:bool:Была ли задача успешно добавлена.
+	
+def:f:BasicMob.basicRole_0
+
+		name:Базовая роль
+		desc:Базовая роль персонажа, с которой он появился в мире. Тут хранится объект роли, которую выбрал игрок при входе, либо получил в результате успешной проверки на полного антагониста. Базовая роль не меняется до самого конца раунда.
+		prop:get
+		classprop:0
+		return:ScriptedRole:Базовая роль моба
+		restr:ScriptedRole
+	
+def:f:BasicMob.role_0
+
+		name:Текущая роль
+		desc:Текущая роль моба. Можно переназначить с помощью узла "Установить роль мобу". Если вы ни разу не изменяли роль моба, то значение текущей роли эквиваленто базовой роли.
+		prop:get
+		classprop:0
+		return:ScriptedRole:Текущая роль моба
+		restr:ScriptedRole
 	
 def:m:BasicMob.setToRole_0
 
@@ -3959,6 +4106,16 @@ def:m:BasicMob.getLighting_0
 		lockoverride:1
 		return:enum.LightMode:Уровень освещённости
 	
+def:m:BasicMob.generateNaming_0
+
+		name:Установить имена моба
+		desc:Устанавливает первое и второе имя моба. Генерирует имена во всех склонениях.
+		type:method
+		lockoverride:1
+		in:string:Первое имя:Первое имя моба.
+		in:string:Второе имя:Второе имя моба. Чаще всего представлено в виде фамилии.
+			opt:require=-1
+	
 def:m:BasicMob.getFirstName_0
 
 		name:Первое имя моба
@@ -4074,6 +4231,24 @@ def:c:Mob
 		name:Игровой персонаж
 		desc:Игровая сущность, которым могут управлять клиенты.
 		path:Игровые объекты.Сущности
+	
+def:m:Mob.isEmptySlot_0
+
+		name:Слот пустой
+		desc:Возвращает @[bool ИСТИНУ], если проверяемый слот инвентаря персонажа пустой.
+		type:get
+		lockoverride:1
+		in:enum.InventorySlot:Слот:Проверяемый на наличие предмета слот инвентаря.
+		return:bool:Слот пустой
+	
+def:m:Mob.getItemInSlotRedirect_0
+
+		name:Получить предмет в слоте
+		desc:Возвращает предмет, находящийся в слоте. Если предмета нет или слот пустой - вернет @[object^ null-ссылку].
+		type:get
+		lockoverride:1
+		in:enum.InventorySlot:Слот:Проверяемый на наличие предмета слот инвентаря.
+		return:Item:Предмет в слоте
 	
 def:f:Mob.hunger_0
 
@@ -4309,6 +4484,20 @@ def:m:Mob.isHandcuffed_0
 		lockoverride:1
 		return:bool
 	
+def:c:Item
+
+		name:Предмет
+		desc:Базовый игровой предмет
+		path:Игровые объекты.Предметы
+	
+def:m:Item.isInContainer_0
+
+		name:В контейнере
+		desc:Возвращает @[bool ИСТИНУ], если предмет находится в контейнере.
+		type:get
+		lockoverride:1
+		return:bool:Находится ли предмет в контейнере.
+	
 def:c:IRangedWeapon
 
 		name:Дистанционное оружие
@@ -4407,6 +4596,67 @@ def:m:Key._setKeyOwnerWrapper_0
 		type:method
 		lockoverride:1
 		in:string:Типы:Типы ключа с указанными разделителями.
+	
+def:c:IWritableContentItem
+
+		name:Хранящий текст предмет
+		desc:Базовый класс для любого, хранящего текст предмета. Обычно от этого класса унаследованы листки бумаги, книги, документы и т.д.
+		path:Игровые объекты.Текстовые
+	
+def:f:IWritableContentItem.content_0
+
+		name:Текстовое содержимое
+		desc:Текст, содержащийся в книге, бумаге или любом другом предмете, способном хранить текст.
+		prop:get
+		classprop:1
+		return:string:Текстовое содержимое
+	
+def:m:IWritableContentItem.getMaxLen_0
+
+		name:Максимальная длина текста
+		desc:Максимальная допустимая длина текста в книге или листке бумаги. На данный момент константна и равна 3072 символам.
+		type:get
+		lockoverride:1
+		return:int:Максимальная длина текста
+	
+def:m:IWritableContentItem.canWrite_0
+
+		name:Можно записать
+		desc:Возвращает истину, если в хранилище текста можно добавить дополнительные данные.
+		type:get
+		lockoverride:1
+		return:bool:Можно записать
+	
+def:m:IWritableContentItem.canRead_0
+
+		name:Можно прочитать
+		desc:Возвращает истину, если есть возможность открыть хранилище текста для чтения персонажем.
+		type:get
+		lockoverride:1
+		return:bool:Можно прочитать
+	
+def:m:IWritableContentItem.appendText_0
+
+		name:Добавить текст
+		desc:Добавляет текст в хранилище текста.
+		type:method
+		lockoverride:1
+		in:string:Текст:Добавляемый текст
+		in:ItemWritter:Писатель:Объект, которым пишется текст (например, ручка). Обычно отвечает за то, какой будет стиль и цвет текста. Если параметр не указан - добавленный текст будет добавлен стандартным черным цветом.
+			opt:require=-1
+		return:bool:Возвращает истину, если текст добавлен.
+	
+def:c:Book
+
+		name:Книга
+		desc:Базовый класс для книги.
+		path:Игровые объекты.Текстовые
+	
+def:c:Paper
+
+		name:Листок
+		desc:Базовый класс для листа бумаги.
+		path:Игровые объекты.Текстовые
 	
 def:c:ScriptedGamemode
 
@@ -4692,6 +4942,24 @@ def:m:ScriptedRole.isMainRole_0
 		return:bool:Является ли эта роль ключевой.
 		defval:false
 	
+def:f:ScriptedRole.__canBeFullAntag_0
+
+		name:Может быть полным антагонистом
+		desc:Определяет, может ли роль быть полным антагонистом.
+		prop:get
+		classprop:1
+		return:bool:Может ли роль быть полным антагонистом
+		defval:true
+	
+def:f:ScriptedRole.__canBeHiddenAntag_0
+
+		name:Может быть скрытым антагонистом
+		desc:Определяет, может ли роль быть скрытым антагонистом.
+		prop:get
+		classprop:1
+		return:bool:Может ли роль быть скрытым антагонистом
+		defval:true
+	
 def:f:ScriptedRole.returnInLobbyAfterDead_0
 
 		name:В лобби после смерти
@@ -4819,7 +5087,7 @@ def:m:ScriptedRole.canBeFullAntag_0
 
 		name:Полный антагонист
 		namelib:Может быть полным антагонистом
-		desc:Отвечает за то, может ли клиент, взявший эту роль быть полным антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль - в этом событии не требуется проверять является ли роль ключевой. Полным антагонистам выполняется замена роли, а выбор этих ролей происходит в логике игрового режима.
+		desc:Отвечает за то, может ли клиент, взявший эту роль быть полным антагонистом. Данный узел позволяет реализовать специальную логику по решению будет ли эта роль полным антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль - в этом событии не требуется проверять является ли роль ключевой. Полным антагонистам выполняется замена роли, а выбор этих ролей происходит в логике игрового режима.
 		type:event
 		out:ServerClient^:Клиент:Объект клиента, который проверяется на полного антагониста.
 		return:bool:Полный антагонист
@@ -4828,7 +5096,7 @@ def:m:ScriptedRole.canBeHiddenAntag_0
 
 		name:Скрытый антагонист
 		namelib:Может быть скрытым антагонистом
-		desc:Отвечает за то, может ли клиент, взявший эту роль быть скрытым антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль. Скрытые антагонисты получают свои особые задачи без смены роли, в отличии от полных антагонистов. Выбор таких ролей происходит в логике игрового режима.
+		desc:Отвечает за то, может ли клиент, взявший эту роль быть скрытым антагонистом. Данный узел позволяет реализовать специальную логику по решению будет ли эта роль скрытым антагонистом. Эта проверка всегда включает внешнюю проверку на ключевую роль. Скрытые антагонисты получают свои особые задачи без смены роли, в отличии от полных антагонистов. Выбор таких ролей происходит в логике игрового режима.
 		type:event
 		out:ServerClient^:Клиент:Объект клиента, который проверяется на скрытого антагониста.
 		return:bool:Скрытый антагонист
@@ -5035,7 +5303,7 @@ def:f:TaskItemPlace.radius_0
 		desc:Радиус, в котором нужно поместить предметы относительно указанного местоположения.
 		prop:all
 		return:float:Радиус
-		defval:1
+		defval:10
 	
 def:c:MobKindTask
 
@@ -5171,9 +5439,9 @@ def:f:TaskBase.descRoleplay_0
 def:f:TaskBase._taskDescDelegate_0
 
 		name:Обработчик описания задачи
-		desc:Вызываемая функция вывода описания задачи. Обычно в этой функции вычисляются форматируемые значения (например, список объектов). Чтобы посмотреть исходную строку выведите в консоли 'Ролевое описание задачи'.\nПараметры функции-действия\:\n - @[TaskBase^ Задача] - объект задачи, который производит проверку (вызов функции)\n Возврат\: @[string Описание] - текст описания задачи. 
+		desc:Вызываемая функция вывода описания задачи. Обычно в этой функции вычисляются форматируемые значения (например, список объектов). Чтобы посмотреть исходную строку выведите в консоли 'Ролевое описание задачи'.\nПараметры функции-действия\:\n - @[TaskBase^ Задача] - объект задачи, который производит проверку (вызов функции)\n - @[Mob^ Владелец] - владелец задачи, который запрашивает описание\n Возврат\: @[string Описание] - текст описания задачи. 
 		prop:all
-		return:function[event=string=TaskBase^]:Описание задачи
+		return:function[event=string=TaskBase^@Mob^]:Описание задачи
 	
 def:f:TaskBase.isTaskSingleCheck_0
 
@@ -5536,11 +5804,11 @@ $REGION:CLASSMETA
 }
 ,"ScriptedGameObject": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameObjects\\ScriptedGameObject.sqf","line":9},
+    "defined" : {"file":"src\\host\\GameObjects\\ScriptedGameObject.sqf","line":10},
    "fields": { "defined": {
-"name":{"return": "string"},"src":{"return": "object"},"mainActionName":{"return": "string"}}   },
+"name":{"return": "string"},"src":{"return": "object"},"tickMode":{"return": "bool"},"__tickHandle__":{"return": "int"},"mainActionName":{"return": "string"}}   },
    "methods": { "defined": {
-"getRestrictions":{"return": "<undefined>"},"assignScript":{"return": "<undefined>"},"onScriptAssigned":{"return": "<undefined>"},"_onMainActionWrapper":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"callBaseMainAction":{"return": "<undefined>"},"_getMainActionNameWrapper":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"callBaseGetMainActionName":{"return": "<undefined>"},"_onExtraActionWrapper":{"return": "<undefined>"},"onExtraAction":{"return": "<undefined>"},"callBaseExtraAction":{"return": "<undefined>"},"_onInteractWithWrapper":{"return": "<undefined>"},"onInteractWith":{"return": "<undefined>"},"callBaseInteractWith":{"return": "<undefined>"},"_onClickWrapper":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"callBaseClick":{"return": "<undefined>"}
+"getRestrictions":{"return": "<undefined>"},"addScriptToAllObjects":{"return": "<undefined>"},"assignScript":{"return": "<undefined>"},"onScriptAssigned":{"return": "<undefined>"},"_onTickWrapper":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"setTickMode":{"return": "<undefined>"},"_onMainActionWrapper":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"callBaseMainAction":{"return": "<undefined>"},"_getMainActionNameWrapper":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"callBaseGetMainActionName":{"return": "<undefined>"},"_onExtraActionWrapper":{"return": "<undefined>"},"onExtraAction":{"return": "<undefined>"},"callBaseExtraAction":{"return": "<undefined>"},"_onInteractWithWrapper":{"return": "<undefined>"},"onInteractWith":{"return": "<undefined>"},"callBaseInteractWith":{"return": "<undefined>"},"_canSeeVerb":{"return": "<undefined>"},"canSeeVerb":{"return": "<undefined>"},"_onClickWrapper":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"callBaseOnClick":{"return": "<undefined>"},"_onItemSelfClickWrapper":{"return": "<undefined>"},"onItemSelfClick":{"return": "<undefined>"},"callBaseItemSelfClick":{"return": "<undefined>"},"callBaseClickTarget":{"return": "<undefined>"}
 }   }
 }
 ,"VirtualMemoryStorage": {
@@ -5563,7 +5831,7 @@ $REGION:CLASSMETA
 }
 ,"ReNode_AbstractEnum": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":412},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":422},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -5581,7 +5849,7 @@ $REGION:CLASSMETA
 }
 ,"IGamemodeSpecificClass": {
     "baseClass" : "object",
-    "defined" : {"file":"src\\host\\GameModes\\BasicDefines.sqf","line":456},
+    "defined" : {"file":"src\\host\\GameModes\\BasicDefines.sqf","line":433},
    "fields": { "defined": {
 }   },
    "methods": { "defined": {
@@ -5716,7 +5984,7 @@ $REGION:CLASSMETA
 }
 ,"SystemHandItem": {
     "baseClass" : "SystemItem",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":844},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":856},
    "fields": { "defined": {
 "model":{"return": "string"},"object":{"return": "object"},"part":{"return": "null"},"side":{"return": "int"},"mode":{"return": "string"}}   },
    "methods": { "defined": {
@@ -5725,7 +5993,7 @@ $REGION:CLASSMETA
 }
 ,"SystemMessageBoxND": {
     "baseClass" : "SystemInternalND",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":1189},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":1201},
    "fields": { "defined": {
 "ndInteractDistance":{"return": "int"},"delegate_handleInput":{"return": "unknown_type"},"delegate_handleData":{"return": "unknown_type"},"event_inputHandler":{"return": "unknown_type"},"bufferedCtx":{"return": "null"},"event_onClose":{"return": "unknown_type"}}   },
    "methods": { "defined": {
@@ -6929,6 +7197,15 @@ $REGION:CLASSMETA
 "armaItemAddImpl":{"return": "<undefined>"},"armaItemRemoveImpl":{"return": "<undefined>"},"getDropSound":{"return": "<undefined>"},"getPickupSound":{"return": "<undefined>"},"getPutdownSound":{"return": "<undefined>"}
 }   }
 }
+,"Suitcase1": {
+    "baseClass" : "Suitcase",
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":35},
+   "fields": { "defined": {
+"name":{"return": "string"},"icon":{"return": "string"},"model":{"return": "string"},"weight":{"return": "float"},"countSlots":{"return": "int"},"size":{"return": "int"},"maxSize":{"return": "int"}}   },
+   "methods": { "defined": {
+
+}   }
+}
 ,"Suitcase_Saloon": {
     "baseClass" : "Suitcase",
     "defined" : {"file":"src\\host\\GameModes\\Saloon\\GM_Saloon.sqf","line":446},
@@ -6949,7 +7226,7 @@ $REGION:CLASSMETA
 }
 ,"SteelBrownContainer": {
     "baseClass" : "SteelMedicalBox",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":66},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":76},
    "fields": { "defined": {
 "name":{"return": "string"},"model":{"return": "string"}}   },
    "methods": { "defined": {
@@ -6994,7 +7271,7 @@ $REGION:CLASSMETA
 }
 ,"ShuttleBag": {
     "baseClass" : "Container",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":35},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":45},
    "fields": { "defined": {
 "name":{"return": "string"},"icon":{"return": "string"},"model":{"return": "string"},"weight":{"return": "float"},"countSlots":{"return": "int"},"size":{"return": "int"},"maxSize":{"return": "int"}}   },
    "methods": { "defined": {
@@ -7003,7 +7280,7 @@ $REGION:CLASSMETA
 }
 ,"MedicalBag": {
     "baseClass" : "Container",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":45},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":55},
    "fields": { "defined": {
 "name":{"return": "string"},"icon":{"return": "string"},"model":{"return": "string"},"weight":{"return": "float"},"countSlots":{"return": "int"},"size":{"return": "int"},"maxSize":{"return": "int"}}   },
    "methods": { "defined": {
@@ -7012,7 +7289,7 @@ $REGION:CLASSMETA
 }
 ,"SteelMedicalBox": {
     "baseClass" : "Container",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":55},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Containers\\Bags.sqf","line":65},
    "fields": { "defined": {
 "name":{"return": "string"},"icon":{"return": "string"},"model":{"return": "string"},"weight":{"return": "float"},"countSlots":{"return": "int"},"size":{"return": "int"},"maxSize":{"return": "int"}}   },
    "methods": { "defined": {
@@ -8540,6 +8817,15 @@ $REGION:CLASSMETA
 "canIncrease":{"return": "<undefined>"},"getIncreaseType":{"return": "<undefined>"},"increasePool":{"return": "<undefined>"}
 }   }
 }
+,"RatShitMedium": {
+    "baseClass" : "CleanableItem",
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\ReagentContainers\\Cleanable.sqf","line":70},
+   "fields": { "defined": {
+"name":{"return": "string"},"desc":{"return": "string"},"model":{"return": "string"}}   },
+   "methods": { "defined": {
+
+}   }
+}
 ,"KoradizinBox": {
     "baseClass" : "PillBoxSmall",
     "defined" : {"file":"src\\host\\GameObjects\\Items\\ReagentContainers\\Pills.sqf","line":84},
@@ -9118,7 +9404,7 @@ $REGION:CLASSMETA
 }
 ,"Folder": {
     "baseClass" : "Book",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":260},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":345},
    "fields": { "defined": {
 "name":{"return": "string"}}   },
    "methods": { "defined": {
@@ -9127,7 +9413,7 @@ $REGION:CLASSMETA
 }
 ,"BookChemReactions": {
     "baseClass" : "Book",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":302},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":387},
    "fields": { "defined": {
 "ndName":{"return": "string"}}   },
    "methods": { "defined": {
@@ -9136,9 +9422,27 @@ $REGION:CLASSMETA
 }
 ,"Notepad": {
     "baseClass" : "Paper",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":256},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":330},
    "fields": { "defined": {
-"name":{"return": "string"}}   },
+"model":{"return": "string"},"name":{"return": "string"}}   },
+   "methods": { "defined": {
+
+}   }
+}
+,"Documents": {
+    "baseClass" : "Paper",
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":335},
+   "fields": { "defined": {
+"model":{"return": "string"},"name":{"return": "string"}}   },
+   "methods": { "defined": {
+
+}   }
+}
+,"Documents1": {
+    "baseClass" : "Paper",
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":340},
+   "fields": { "defined": {
+"model":{"return": "string"},"name":{"return": "string"}}   },
    "methods": { "defined": {
 
 }   }
@@ -9253,7 +9557,7 @@ $REGION:CLASSMETA
 }
 ,"Book": {
     "baseClass" : "IWritableContentItem",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":83},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":146},
    "fields": { "defined": {
 "name":{"return": "string"},"ndName":{"return": "string"},"model":{"return": "string"}}   },
    "methods": { "defined": {
@@ -9262,7 +9566,7 @@ $REGION:CLASSMETA
 }
 ,"Paper": {
     "baseClass" : "IWritableContentItem",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":99},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":167},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"model":{"return": "string"},"content":{"return": "string"},"ndName":{"return": "string"},"ndInteractDistance":{"return": "float"},"weight":{"return": "float"},"usrsWithWriters":{"return": "null_array"}}   },
    "methods": { "defined": {
@@ -9275,12 +9579,12 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "ndOpenedBy":{"return": "null_array"},"ndCurrentDisplay":{"return": "int"},"ndIsLockedInput":{"return": "bool"},"ndName":{"return": "string"},"ndInteractDistance":{"return": "float"},"content":{"return": "string"}}   },
    "methods": { "defined": {
-"updateNDisplay":{"return": "<undefined>"},"handleNDInput":{"return": "<undefined>"},"openNDisplayImplBackend":{"return": "<undefined>"},"closeNDisplayImplBackend":{"return": "<undefined>"},"openNDisplay":{"return": "<undefined>"},"getNDPointer":{"return": "<undefined>"},"openNDisplayInternal":{"return": "<undefined>"},"closeNDisplay":{"return": "<undefined>"},"closeNDisplayServer":{"return": "<undefined>"},"closeNDisplayForAllMobs":{"return": "<undefined>"},"getMaxLen":{"return": "<undefined>"},"canWrite":{"return": "<undefined>"},"canApplyText":{"return": "<undefined>"},"getContent":{"return": "<undefined>"},"onChangeLoc":{"return": "<undefined>"}
+"updateNDisplay":{"return": "<undefined>"},"handleNDInput":{"return": "<undefined>"},"openNDisplayImplBackend":{"return": "<undefined>"},"closeNDisplayImplBackend":{"return": "<undefined>"},"openNDisplay":{"return": "<undefined>"},"getNDPointer":{"return": "<undefined>"},"openNDisplayInternal":{"return": "<undefined>"},"closeNDisplay":{"return": "<undefined>"},"closeNDisplayServer":{"return": "<undefined>"},"closeNDisplayForAllMobs":{"return": "<undefined>"},"getMaxLen":{"return": "<undefined>"},"canWrite":{"return": "<undefined>"},"canRead":{"return": "<undefined>"},"canApplyText":{"return": "<undefined>"},"getContent":{"return": "<undefined>"},"onChangeLoc":{"return": "<undefined>"},"appendText":{"return": "<undefined>"}
 }   }
 }
 ,"PaperHolder": {
     "baseClass" : "IPaperItemBase",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":265},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Office\\Books.sqf","line":350},
    "fields": { "defined": {
 "model":{"return": "string"},"name":{"return": "string"},"countBlanks":{"return": "int"},"weight":{"return": "int"}}   },
    "methods": { "defined": {
@@ -9343,7 +9647,7 @@ $REGION:CLASSMETA
 }
 ,"ItemRadio": {
     "baseClass" : "Item",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":647},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":659},
    "fields": { "defined": {
 "name":{"return": "string"},"model":{"return": "string"},"radioIsEnabled":{"return": "bool"},"radioSettings":{"return": "null_array"}}   },
    "methods": { "defined": {
@@ -9352,7 +9656,7 @@ $REGION:CLASSMETA
 }
 ,"SystemItem": {
     "baseClass" : "Item",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":712},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":724},
    "fields": { "defined": {
 "weight":{"return": "int"}}   },
    "methods": { "defined": {
@@ -9361,7 +9665,7 @@ $REGION:CLASSMETA
 }
 ,"StolenItem": {
     "baseClass" : "Item",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":720},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":732},
    "fields": { "defined": {
 "suppressDelete":{"return": "bool"}}   },
    "methods": { "defined": {
@@ -9370,7 +9674,7 @@ $REGION:CLASSMETA
 }
 ,"SystemInternalND": {
     "baseClass" : "Item",
-    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":1146},
+    "defined" : {"file":"src\\host\\GameObjects\\Items\\Item.sqf","line":1158},
    "fields": { "defined": {
 "name":{"return": "null"},"desc":{"return": "null"},"ndOpenedBy":{"return": "null_array"},"ndCurrentDisplay":{"return": "int"},"ndIsLockedInput":{"return": "bool"},"ndName":{"return": "string"},"ndInteractDistance":{"return": "float"}}   },
    "methods": { "defined": {
@@ -9626,7 +9930,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "seatListOwners":{"return": "null_array"},"_seatListDummy":{"return": "null_array"}}   },
    "methods": { "defined": {
-"getChairSitdownAnimation":{"return": "<undefined>"},"getChairStandupAnimation":{"return": "<undefined>"},"getChairStandupCombatAnimation":{"return": "<undefined>"},"isSeat":{"return": "<undefined>"},"isSingleSeat":{"return": "<undefined>"},"seatListOffsetPos":{"return": "<undefined>"},"seatListOffsetDir":{"return": "<undefined>"},"seatListName":{"return": "<undefined>"},"constructor":{"return": "<undefined>"},"getSeatMaxIndex":{"return": "<undefined>"},"isSeatFree":{"return": "<undefined>"},"isSeatIndexFree":{"return": "<undefined>"},"canSeat":{"return": "<undefined>"},"getSeatOwner":{"return": "<undefined>"},"getNearFreeSeatIndex":{"return": "<undefined>"},"seatConnect":{"return": "<undefined>"},"onSeat":{"return": "<undefined>"},"onStand":{"return": "<undefined>"},"seatApplySeatAnim":{"return": "<undefined>"},"seatDisconnect":{"return": "<undefined>"},"canUseMainAction":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"getSeatRestPos":{"return": "<undefined>"}
+"getChairSitdownAnimation":{"return": "<undefined>"},"getChairUncAnimations":{"return": "<undefined>"},"canUseSeatUncAnimations":{"return": "<undefined>"},"getChairStandupAnimation":{"return": "<undefined>"},"getChairStandupCombatAnimation":{"return": "<undefined>"},"isSeat":{"return": "<undefined>"},"isSingleSeat":{"return": "<undefined>"},"seatListOffsetPos":{"return": "<undefined>"},"seatListOffsetDir":{"return": "<undefined>"},"seatListName":{"return": "<undefined>"},"constructor":{"return": "<undefined>"},"getSeatMaxIndex":{"return": "<undefined>"},"isSeatFree":{"return": "<undefined>"},"isSeatIndexFree":{"return": "<undefined>"},"canSeat":{"return": "<undefined>"},"getSeatOwner":{"return": "<undefined>"},"getNearFreeSeatIndex":{"return": "<undefined>"},"seatConnect":{"return": "<undefined>"},"onSeat":{"return": "<undefined>"},"onStand":{"return": "<undefined>"},"seatApplySeatAnim":{"return": "<undefined>"},"seatDisconnect":{"return": "<undefined>"},"canUseMainAction":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"getSeatRestPos":{"return": "<undefined>"}
 }   }
 }
 ,"IReagentItem": {
@@ -12533,7 +12837,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "name":{"return": "string"},"seatListOwners":{"return": "null_array"},"_seatListDummy":{"return": "null_array"}}   },
    "methods": { "defined": {
-"getChairSitdownAnimation":{"return": "<undefined>"},"getChairStandupAnimation":{"return": "<undefined>"},"getChairStandupCombatAnimation":{"return": "<undefined>"},"isSeat":{"return": "<undefined>"},"isSingleSeat":{"return": "<undefined>"},"seatListOffsetPos":{"return": "<undefined>"},"seatListOffsetDir":{"return": "<undefined>"},"seatListName":{"return": "<undefined>"},"constructor":{"return": "<undefined>"},"getSeatMaxIndex":{"return": "<undefined>"},"isSeatFree":{"return": "<undefined>"},"isSeatIndexFree":{"return": "<undefined>"},"canSeat":{"return": "<undefined>"},"getSeatOwner":{"return": "<undefined>"},"getNearFreeSeatIndex":{"return": "<undefined>"},"seatConnect":{"return": "<undefined>"},"onSeat":{"return": "<undefined>"},"onStand":{"return": "<undefined>"},"seatApplySeatAnim":{"return": "<undefined>"},"seatDisconnect":{"return": "<undefined>"},"canUseMainAction":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"getSeatRestPos":{"return": "<undefined>"},"getChairOffsetPos":{"return": "<undefined>"},"getChairOffsetDir":{"return": "<undefined>"}
+"getChairSitdownAnimation":{"return": "<undefined>"},"getChairUncAnimations":{"return": "<undefined>"},"canUseSeatUncAnimations":{"return": "<undefined>"},"getChairStandupAnimation":{"return": "<undefined>"},"getChairStandupCombatAnimation":{"return": "<undefined>"},"isSeat":{"return": "<undefined>"},"isSingleSeat":{"return": "<undefined>"},"seatListOffsetPos":{"return": "<undefined>"},"seatListOffsetDir":{"return": "<undefined>"},"seatListName":{"return": "<undefined>"},"constructor":{"return": "<undefined>"},"getSeatMaxIndex":{"return": "<undefined>"},"isSeatFree":{"return": "<undefined>"},"isSeatIndexFree":{"return": "<undefined>"},"canSeat":{"return": "<undefined>"},"getSeatOwner":{"return": "<undefined>"},"getNearFreeSeatIndex":{"return": "<undefined>"},"seatConnect":{"return": "<undefined>"},"onSeat":{"return": "<undefined>"},"onStand":{"return": "<undefined>"},"seatApplySeatAnim":{"return": "<undefined>"},"seatDisconnect":{"return": "<undefined>"},"canUseMainAction":{"return": "<undefined>"},"getMainActionName":{"return": "<undefined>"},"onMainAction":{"return": "<undefined>"},"onClick":{"return": "<undefined>"},"getSeatRestPos":{"return": "<undefined>"},"getChairOffsetPos":{"return": "<undefined>"},"getChairOffsetDir":{"return": "<undefined>"}
 }   }
 }
 ,"IContainerStruct": {
@@ -14927,14 +15231,14 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "canAddAspect":{"return": "bool"},"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"duration":{"return": "int"},"deadSideCount":{"return": "int"},"deadNA":{"return": "int"},"deadCity":{"return": "int"},"mobsNA":{"return": "null_array"},"mobsCity":{"return": "null_array"},"posBaseNA":{"return": "null_array"},"posBaseCity":{"return": "null_array"},"gates":{"return": "null_array"},"gatesIsOpen":{"return": "bool"},"isStarted":{"return": "bool"},"side":{"return": "bool"},"listBoxes":{"return": "null_array"},"stage":{"return": "int"},"timer":{"return": "int"},"playedTime":{"return": "int"}}   },
    "methods": { "defined": {
-"canPlayEvents":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"isVoteSystemEnabled":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"handleCheckFinish":{"return": "<undefined>"},"killAllMobs":{"return": "<undefined>"},"updateStage":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"sendEventMes":{"return": "<undefined>"},"switchGates":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"spawnTraps":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"getCurRoleName":{"return": "<undefined>"},"getCurRoleDesc":{"return": "<undefined>"},"getSpawnPos":{"return": "<undefined>"},"getSpawnDir":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"allocClothType":{"return": "<undefined>"},"pickBackUniform":{"return": "<undefined>"},"pickHeadUniform":{"return": "<undefined>"},"pickFaceUniform":{"return": "<undefined>"},"pickFirstWeapon":{"return": "<undefined>"},"setEquipment":{"return": "<undefined>"},"onSpawnedMob":{"return": "<undefined>"},"onKilledMob":{"return": "<undefined>"}
+"canPlayEvents":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"isVoteSystemEnabled":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"handleCheckFinish":{"return": "<undefined>"},"killAllMobs":{"return": "<undefined>"},"updateStage":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"sendEventMes":{"return": "<undefined>"},"switchGates":{"return": "<undefined>"},"spawnTraps":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"getCurRoleName":{"return": "<undefined>"},"getCurRoleDesc":{"return": "<undefined>"},"getSpawnPos":{"return": "<undefined>"},"getSpawnDir":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"allocClothType":{"return": "<undefined>"},"pickBackUniform":{"return": "<undefined>"},"pickHeadUniform":{"return": "<undefined>"},"pickFaceUniform":{"return": "<undefined>"},"pickFirstWeapon":{"return": "<undefined>"},"setEquipment":{"return": "<undefined>"},"onSpawnedMob":{"return": "<undefined>"},"onKilledMob":{"return": "<undefined>"}
 }   }
 }
 ,"ScriptedGamemode": {
     "baseClass" : "GMBase",
     "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":9},
    "fields": { "defined": {
-"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"_currentFinishResult":{"return": "null_array"},"finishResult":{"return": "int"},"__stdCheckDuration":{"return": "bool"},"__rtf_buf":{"return": "string"},"countDead":{"return": "int"},"__startRoundStructure":{"return": "null_array"}}   },
+"name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"_currentFinishResult":{"return": "null_array"},"finishResult":{"return": "int"},"__stdCheckDuration":{"return": "bool"},"__rtf_buf":{"return": "string"},"___roleFirstInit__":{"return": "bool"},"countDead":{"return": "int"},"__startRoundStructure":{"return": "null_array"}}   },
    "methods": { "defined": {
 "_getAntagRoleFullWrapper":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"_checkFinishWrapper":{"return": "<undefined>"},"setEndgameScriptedMode":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"_onFinishWrapper":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"_conditionToStartWrapper":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onTick":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"_getRolesWrapper":{"return": "<undefined>"},"_getRolesWrapperInternal":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"_getDurationWrapper":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"}
 }   }
@@ -14954,7 +15258,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"duration":{"return": "int"},"lawyers":{"return": "null_array"},"grabTimer":{"return": "int"},"thiefTask":{"return": "null_array"},"milkDoc":{"return": "object"},"generator":{"return": "object"},"lastRoomNumber":{"return": "int"},"listRooms":{"return": "null_array"},"murder":{"return": "object"},"target":{"return": "object"},"detective":{"return": "object"},"murderFinded":{"return": "bool"},"suspicions":{"return": "null_array"},"allEvidences":{"return": "null_array"},"killInfo":{"return": "object"},"killPlace":{"return": "object"},"prevTarget":{"return": "null_array"},"lastPointerInt":{"return": "int"},"leftItems":{"return": "null"},"farmOwnerDoc":{"return": "object"}}   },
    "methods": { "defined": {
-"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getUnsleepGameInfo":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"},"getTaskTextSuccessInfo":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"getMurderPos":{"return": "<undefined>"},"getMurderPosName":{"return": "<undefined>"},"getMurderKillProcess":{"return": "<undefined>"},"getMurderKillReason":{"return": "<undefined>"},"processEvidence":{"return": "<undefined>"},"pickMurder":{"return": "<undefined>"},"doKnownLateMobMurder":{"return": "<undefined>"},"checkMurder":{"return": "<undefined>"}
+"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getUnsleepGameInfo":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"},"getTaskTextSuccessInfo":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"getMurderPos":{"return": "<undefined>"},"getMurderPosName":{"return": "<undefined>"},"getMurderKillProcess":{"return": "<undefined>"},"getMurderKillReason":{"return": "<undefined>"},"processEvidence":{"return": "<undefined>"},"pickMurder":{"return": "<undefined>"},"doKnownLateMobMurder":{"return": "<undefined>"},"checkMurder":{"return": "<undefined>"}
 }   }
 }
 ,"GMStationBase": {
@@ -14963,7 +15267,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "headSecondNames":{"return": "null_array"},"__songIndex":{"return": "string"},"possibleIdeologies":{"return": "null_array"},"ideologyTimeoutStamp":{"return": "int"},"ideology":{"return": "object"}}   },
    "methods": { "defined": {
-"isPlayableGamemode":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"escapeRoundResult":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"ideologySelectionTimeout":{"return": "<undefined>"},"processInitIdeology":{"return": "<undefined>"},"openPickIdeology":{"return": "<undefined>"},"isPickedIdeology":{"return": "<undefined>"},"_onIdeologyTimeout":{"return": "<undefined>"},"pickIdeology":{"return": "<undefined>"},"printRoundStatistic":{"return": "<undefined>"}
+"isPlayableGamemode":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"escapeRoundResult":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"ideologySelectionTimeout":{"return": "<undefined>"},"processInitIdeology":{"return": "<undefined>"},"openPickIdeology":{"return": "<undefined>"},"isPickedIdeology":{"return": "<undefined>"},"_onIdeologyTimeout":{"return": "<undefined>"},"pickIdeology":{"return": "<undefined>"},"printRoundStatistic":{"return": "<undefined>"}
 }   }
 }
 ,"GMPrey": {
@@ -14981,7 +15285,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"duration":{"return": "int"},"task":{"return": "object"},"taskList":{"return": "null_array"},"protectedWalls":{"return": "null_array"},"countDoors":{"return": "int"},"banditBasePos":{"return": "null_array"},"cages":{"return": "null_array"},"allAliveBandits":{"return": "null_array"},"keyRolesList":{"return": "null_array"},"countAliveBandits":{"return": "int"},"deadMobs":{"return": "int"},"isSBSCommandirSpawned":{"return": "bool"}}   },
    "methods": { "defined": {
-"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"isBlockedInSBSCage":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"handleRandomPos":{"return": "<undefined>"},"handleRandomDir":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"}
+"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"isBlockedInSBSCage":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"handleRandomPos":{"return": "<undefined>"},"handleRandomDir":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"}
 }   }
 }
 ,"GMSaloonV2": {
@@ -14990,7 +15294,7 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"duration":{"return": "int"},"task":{"return": "object"},"taskList":{"return": "null_array"},"protectedWalls":{"return": "null_array"},"countDoors":{"return": "int"},"banditBasePos":{"return": "null_array"},"cages":{"return": "null_array"},"allAliveBandits":{"return": "null_array"},"keyRolesList":{"return": "null_array"},"countAliveBandits":{"return": "int"},"deadMobs":{"return": "int"},"isSBSCommandirSpawned":{"return": "bool"}}   },
    "methods": { "defined": {
-"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"isBlockedInSBSCage":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"}
+"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"isBlockedInSBSCage":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"}
 }   }
 }
 ,"GMHunt": {
@@ -15022,7 +15326,7 @@ $REGION:CLASSMETA
 }
 ,"TaskItemSave": {
     "baseClass" : "TaskItemGet",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":302},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":311},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15031,7 +15335,7 @@ $REGION:CLASSMETA
 }
 ,"TaskItemGet": {
     "baseClass" : "ItemKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":272},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":281},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15040,7 +15344,7 @@ $REGION:CLASSMETA
 }
 ,"TaskItemPlace": {
     "baseClass" : "ItemKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":317},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":326},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"},"placeName":{"return": "string"},"location":{"return": "null_array"},"radius":{"return": "int"}}   },
    "methods": { "defined": {
@@ -15049,7 +15353,7 @@ $REGION:CLASSMETA
 }
 ,"ItemKindTask": {
     "baseClass" : "GameObjectKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":222},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":231},
    "fields": { "defined": {
 "name":{"return": "string"},"_taskDescDelegate":{"return": "null"}}   },
    "methods": { "defined": {
@@ -15058,7 +15362,7 @@ $REGION:CLASSMETA
 }
 ,"TaskSelfSave": {
     "baseClass" : "TaskMobSave",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":455},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":464},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15067,7 +15371,7 @@ $REGION:CLASSMETA
 }
 ,"TaskMobKill": {
     "baseClass" : "MobKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":429},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":438},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15076,7 +15380,7 @@ $REGION:CLASSMETA
 }
 ,"TaskMobSave": {
     "baseClass" : "MobKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":441},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":450},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15085,7 +15389,7 @@ $REGION:CLASSMETA
 }
 ,"TaskMoneyGet": {
     "baseClass" : "CounterKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":509},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":518},
    "fields": { "defined": {
 "name":{"return": "string"},"descRoleplay":{"return": "string"},"numeralString":{"return": "null_array"}}   },
    "methods": { "defined": {
@@ -15094,7 +15398,7 @@ $REGION:CLASSMETA
 }
 ,"TaskLocationEnter": {
     "baseClass" : "LocationKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":576},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":585},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15103,7 +15407,7 @@ $REGION:CLASSMETA
 }
 ,"TaskGetRole": {
     "baseClass" : "RoleKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":633},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":642},
    "fields": { "defined": {
 "name":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15112,7 +15416,7 @@ $REGION:CLASSMETA
 }
 ,"TaskRoleDead": {
     "baseClass" : "RoleKindTask",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":657},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":666},
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"}}   },
    "methods": { "defined": {
@@ -15123,14 +15427,14 @@ $REGION:CLASSMETA
     "baseClass" : "TaskBase",
     "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":23},
    "fields": { "defined": {
-"name":{"return": "string"},"__globalRefs":{"return": "null_array"},"__objRefs":{"return": "null_array"},"__typeList":{"return": "null_array"},"failTaskOnItemDestroy":{"return": "bool"},"failResultOnItemDestroy":{"return": "int"}}   },
+"name":{"return": "string"},"__globalRefs":{"return": "null_array"},"__objRefs":{"return": "null_array"},"__typeList":{"return": "null_array"},"__requireValidation":{"return": "bool"},"failTaskOnItemDestroy":{"return": "bool"},"failResultOnItemDestroy":{"return": "int"}}   },
    "methods": { "defined": {
-"onTaskRegistered":{"return": "<undefined>"},"__convertGlobalRefsToObjects":{"return": "<undefined>"},"__onerr_requiredTypeStr":{"return": "<undefined>"},"checkTypeReference":{"return": "<undefined>"},"checkTypeName":{"return": "<undefined>"},"__validateInputs":{"return": "<undefined>"},"processObjectCheck":{"return": "<undefined>"},"onTaskCheck":{"return": "<undefined>"},"getObjectNames":{"return": "<undefined>"}
+"__convertGlobalRefsToObjects":{"return": "<undefined>"},"__onerr_requiredTypeStr":{"return": "<undefined>"},"checkTypeReference":{"return": "<undefined>"},"checkTypeName":{"return": "<undefined>"},"__validateInputs":{"return": "<undefined>"},"processObjectCheck":{"return": "<undefined>"},"onTaskCheck":{"return": "<undefined>"},"getObjectNames":{"return": "<undefined>"}
 }   }
 }
 ,"MobKindTask": {
     "baseClass" : "TaskBase",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":389},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":398},
    "fields": { "defined": {
 "name":{"return": "string"},"target":{"return": "object"},"_taskDescDelegate":{"return": "null"}}   },
    "methods": { "defined": {
@@ -15139,7 +15443,7 @@ $REGION:CLASSMETA
 }
 ,"CounterKindTask": {
     "baseClass" : "TaskBase",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":471},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":480},
    "fields": { "defined": {
 "name":{"return": "string"},"descRoleplay":{"return": "string"},"counter":{"return": "int"},"numeralString":{"return": "null_array"},"_taskDescDelegate":{"return": "null"}}   },
    "methods": { "defined": {
@@ -15148,7 +15452,7 @@ $REGION:CLASSMETA
 }
 ,"LocationKindTask": {
     "baseClass" : "TaskBase",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":547},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":556},
    "fields": { "defined": {
 "name":{"return": "string"},"position":{"return": "null_array"},"radius":{"return": "int"}}   },
    "methods": { "defined": {
@@ -15157,7 +15461,7 @@ $REGION:CLASSMETA
 }
 ,"RoleKindTask": {
     "baseClass" : "TaskBase",
-    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":595},
+    "defined" : {"file":"CommonTasks\\PublicTasks.sqf","line":604},
    "fields": { "defined": {
 "name":{"return": "string"},"roleClass":{"return": "string"},"checkChildRoles":{"return": "bool"},"_taskDescDelegate":{"return": "null"}}   },
    "methods": { "defined": {
@@ -15629,14 +15933,14 @@ $REGION:CLASSMETA
    "fields": { "defined": {
 "name":{"return": "string"},"desc":{"return": "string"},"descExtended":{"return": "string"},"canAddAspect":{"return": "bool"},"duration":{"return": "int"},"finishResult":{"return": "int"},"bufferedFinishText":{"return": "string"},"bufferedLeadingRolesText":{"return": "string"},"countDead":{"return": "int"},"countDeadCity":{"return": "int"},"countDeadCave":{"return": "int"},"bloodLoss":{"return": "int"},"teethLoss":{"return": "int"},"headsLoss":{"return": "int"},"notesCreated":{"return": "int"}}   },
    "methods": { "defined": {
-"getProbability":{"return": "<undefined>"},"isVotable":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getMinFullAntags":{"return": "<undefined>"},"getMinHiddenAntags":{"return": "<undefined>"},"canPlayEvents":{"return": "<undefined>"},"getMinPlayEventTime":{"return": "<undefined>"},"getMaxPlayEventTime":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"handleAntagRoleFull":{"return": "<undefined>"},"getRoleForPostClient":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"onRoundBegin":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"setFinishResult":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getDelayRoundStatistic":{"return": "<undefined>"},"getDelayLeadingRoles":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"},"getCreditsInfo":{"return": "<undefined>"},"__clientOwnersToString":{"return": "<undefined>"},"printLeadingRolesInfo":{"return": "<undefined>"},"printRoundStatistic":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"hasTaskByTag":{"return": "<undefined>"},"getAllTasksByTag":{"return": "<undefined>"},"getFirstTaskByTag":{"return": "<undefined>"},"hasAnySuccessTaskByTag":{"return": "<undefined>"},"hasAllSuccessTaskByTag":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onKnownMobsProcess":{"return": "<undefined>"},"onModeSetup":{"return": "<undefined>"},"isVoteSystemEnabled":{"return": "<undefined>"},"getUnsleepMessagesCount":{"return": "<undefined>"},"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"}
+"getProbability":{"return": "<undefined>"},"isVotable":{"return": "<undefined>"},"isPlayableGamemode":{"return": "<undefined>"},"getReqPlayersMin":{"return": "<undefined>"},"getReqPlayersMax":{"return": "<undefined>"},"getMinFullAntags":{"return": "<undefined>"},"getMinHiddenAntags":{"return": "<undefined>"},"canPlayEvents":{"return": "<undefined>"},"getMinPlayEventTime":{"return": "<undefined>"},"getMaxPlayEventTime":{"return": "<undefined>"},"getAntagRoleFull":{"return": "<undefined>"},"handleAntagRoleHidden":{"return": "<undefined>"},"preSetup":{"return": "<undefined>"},"postSetup":{"return": "<undefined>"},"checkFinish":{"return": "<undefined>"},"setFinishResult":{"return": "<undefined>"},"onFinish":{"return": "<undefined>"},"getResultTextOnFinish":{"return": "<undefined>"},"getDelayRoundStatistic":{"return": "<undefined>"},"getDelayLeadingRoles":{"return": "<undefined>"},"getLeadingRolesInfo":{"return": "<undefined>"},"getCreditsInfo":{"return": "<undefined>"},"__clientOwnersToString":{"return": "<undefined>"},"printLeadingRolesInfo":{"return": "<undefined>"},"printRoundStatistic":{"return": "<undefined>"},"getMapName":{"return": "<undefined>"},"getLobbySoundName":{"return": "<undefined>"},"getLobbyBackground":{"return": "<undefined>"},"getLobbyRoles":{"return": "<undefined>"},"getLateRoles":{"return": "<undefined>"},"conditionToStart":{"return": "<undefined>"},"onFailReasonToStart":{"return": "<undefined>"},"getCandidatesCount":{"return": "<undefined>"},"hasTaskByTag":{"return": "<undefined>"},"getAllTasksByTag":{"return": "<undefined>"},"getFirstTaskByTag":{"return": "<undefined>"},"hasAnySuccessTaskByTag":{"return": "<undefined>"},"hasAllSuccessTaskByTag":{"return": "<undefined>"},"onRoundCode":{"return": "<undefined>"},"onKnownMobsProcess":{"return": "<undefined>"},"onModeSetup":{"return": "<undefined>"},"isVoteSystemEnabled":{"return": "<undefined>"},"getUnsleepMessagesCount":{"return": "<undefined>"},"getUnsleepGameInfo":{"return": "<undefined>"},"getStartSong":{"return": "<undefined>"},"getEndSong":{"return": "<undefined>"}
 }   }
 }
 ,"TaskBase": {
     "baseClass" : "IGameEvent",
-    "defined" : {"file":"src\\host\\GameModes\\BasicTask.sqf","line":56},
+    "defined" : {"file":"src\\host\\GameModes\\BasicTask.sqf","line":57},
    "fields": { "defined": {
-"tag":{"return": "string"},"name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"},"_taskDescDelegate":{"return": "unknown_type"},"isTaskSingleCheck":{"return": "bool"},"owners":{"return": "null_array"},"isDone":{"return": "bool"},"checkDelay":{"return": "int"},"result":{"return": "int"},"taskRegistered":{"return": "bool"},"_taskHandle__":{"return": "int"},"_customCondition":{"return": "unknown_type"},"failTaskOnDeadOwner":{"return": "bool"},"_taskOnSuccessDeletage":{"return": "unknown_type"},"_taskOnFailDeletage":{"return": "unknown_type"}}   },
+"tag":{"return": "string"},"__id":{"return": "int"},"name":{"return": "string"},"desc":{"return": "string"},"descRoleplay":{"return": "string"},"_taskDescDelegate":{"return": "unknown_type"},"isTaskSingleCheck":{"return": "bool"},"owners":{"return": "null_array"},"isDone":{"return": "bool"},"checkDelay":{"return": "int"},"result":{"return": "int"},"taskRegistered":{"return": "bool"},"_taskHandle__":{"return": "int"},"_customCondition":{"return": "unknown_type"},"failTaskOnDeadOwner":{"return": "bool"},"_taskOnSuccessDeletage":{"return": "unknown_type"},"_taskOnFailDeletage":{"return": "unknown_type"}}   },
    "methods": { "defined": {
 "constructor":{"return": "<undefined>"},"destructor":{"return": "<undefined>"},"setTag":{"return": "<undefined>"},"getTaskDescription":{"return": "<undefined>"},"getOwners":{"return": "<undefined>"},"checkCompleteOnEnd":{"return": "<undefined>"},"onRegisterInTarget":{"return": "<undefined>"},"onTaskRegistered":{"return": "<undefined>"},"terminateUpdateProcess":{"return": "<undefined>"},"updateMethod":{"return": "<undefined>"},"updateMethodInternal":{"return": "<undefined>"},"onTaskCheck":{"return": "<undefined>"},"setTaskResult":{"return": "<undefined>"},"onTaskDone":{"return": "<undefined>"},"copyTask":{"return": "<undefined>"}
 }   }
@@ -15661,7 +15965,7 @@ $REGION:CLASSMETA
 }
 ,"ScriptedEater": {
     "baseClass" : "ScriptedRole",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":947},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":995},
    "fields": { "defined": {
 "name":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"count":{"return": "int"},"classMan":{"return": "string"},"classWoman":{"return": "string"}}   },
    "methods": { "defined": {
@@ -16606,11 +16910,11 @@ $REGION:CLASSMETA
 }
 ,"ScriptedRole": {
     "baseClass" : "BasicRole",
-    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":422},
+    "defined" : {"file":"src\\host\\GameModes\\ScriptedDefines.sqf","line":432},
    "fields": { "defined": {
-"name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "string"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"returnInLobbyAfterDead":{"return": "bool"},"_deadTimeout":{"return": "int"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
+"name":{"return": "string"},"desc":{"return": "string"},"descInGame":{"return": "string"},"classMan":{"return": "string"},"classWoman":{"return": "string"},"__canBeFullAntag":{"return": "bool"},"__canBeHiddenAntag":{"return": "bool"},"returnInLobbyAfterDead":{"return": "bool"},"_deadTimeout":{"return": "int"},"count":{"return": "int"},"_currentBaseSkills":{"return": "null_array"},"_currentOtherSkills":{"return": "null_array"},"_currentSpawnLocation":{"return": "null_array"},"_currentConnectedTo":{"return": "null_array"}}   },
    "methods": { "defined": {
-"isMainRole":{"return": "<undefined>"},"_getDeadTimeout":{"return": "<undefined>"},"canStoreNameAndFaceForValidate":{"return": "<undefined>"},"_getSkillsWrapper":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"_getOtherSkillsWrapper":{"return": "<undefined>"},"getOtherSkills":{"return": "<undefined>"},"canTakeInLobby":{"return": "<undefined>"},"_canTakeInLobbyConst":{"return": "<undefined>"},"canVisibleAfterStart":{"return": "<undefined>"},"_canVisibleAfterStartConst":{"return": "<undefined>"},"needDiscordRoles":{"return": "<undefined>"},"roleAccess":{"return": "<undefined>"},"canBeFullAntag":{"return": "<undefined>"},"canBeHiddenAntag":{"return": "<undefined>"},"getBasicMobs":{"return": "<undefined>"},"_spawnLocationWrapper":{"return": "<undefined>"},"spawnLocation":{"return": "<undefined>"},"useRandomDirOnSpawn":{"return": "<undefined>"},"_connectedToWrapper":{"return": "<undefined>"},"connectedTo":{"return": "<undefined>"},"getEquipment":{"return": "<undefined>"},"_onAssignedWrapper":{"return": "<undefined>"},"onAssigned":{"return": "<undefined>"},"_onDeadBasicWrapper":{"return": "<undefined>"},"onDeadBasic":{"return": "<undefined>"},"onEndgameBasic":{"return": "<undefined>"},"getCurrentGamemode":{"return": "<undefined>"}
+"isMainRole":{"return": "<undefined>"},"_getDeadTimeout":{"return": "<undefined>"},"canStoreNameAndFaceForValidate":{"return": "<undefined>"},"_getSkillsWrapper":{"return": "<undefined>"},"getSkills":{"return": "<undefined>"},"_getOtherSkillsWrapper":{"return": "<undefined>"},"getOtherSkills":{"return": "<undefined>"},"canTakeInLobby":{"return": "<undefined>"},"_canTakeInLobbyConst":{"return": "<undefined>"},"canVisibleAfterStart":{"return": "<undefined>"},"_canVisibleAfterStartConst":{"return": "<undefined>"},"needDiscordRoles":{"return": "<undefined>"},"roleAccess":{"return": "<undefined>"},"canBeFullAntag":{"return": "<undefined>"},"canBeHiddenAntag":{"return": "<undefined>"},"getBasicMobs":{"return": "<undefined>"},"_spawnLocationWrapper":{"return": "<undefined>"},"spawnLocation":{"return": "<undefined>"},"useRandomDirOnSpawn":{"return": "<undefined>"},"_connectedToWrapper":{"return": "<undefined>"},"connectedTo":{"return": "<undefined>"},"getEquipment":{"return": "<undefined>"},"_onAssignedWrapper":{"return": "<undefined>"},"onAssigned":{"return": "<undefined>"},"_onDeadBasicWrapper":{"return": "<undefined>"},"onDeadBasic":{"return": "<undefined>"},"onEndgameBasic":{"return": "<undefined>"},"getCurrentGamemode":{"return": "<undefined>"},"constructor":{"return": "<undefined>"},"onRegisteredInGamemode":{"return": "<undefined>"}
 }   }
 }
 ,"GhostRole": {

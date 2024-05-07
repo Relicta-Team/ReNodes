@@ -900,8 +900,9 @@ class GameObjectScriptGraph(ClassGraphType):
     def getFirstInitMethods(self):
         return [
             "onScriptAssigned",
-            "onMainAction",
-            "onClick"
+            "_onMainActionWrapper",
+            "_onClickWrapper",
+            "_onInteractWithWrapper"
         ]
     
     scriptWizard_pageText = "Создание скрипта игрового объекта"
