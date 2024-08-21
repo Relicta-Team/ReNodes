@@ -1,5 +1,6 @@
 import sys
 import time
+import datetime
 import os
 import uuid
 
@@ -234,10 +235,62 @@ class ExceptionHandler:
 		
 		if not Application.hasArgument("-noerrwin"):
 			tb_text = "".join(traceback.format_exception(exctype, value, traceback_obj))
-			error_message = f"\n{Application.appName} {Application.getVersionString()}\nНеобработанное исключение: {exctype.__name__}\n{value}\n\n{tb_text}"
+			error_message = f"\n{Application.appName} {Application.getVersionString()}\n\nНеобработанное исключение: {exctype.__name__}\n\n{value}"
+			more_desc = ""
+			tobj = Application.refObject
+			if tobj:
+				tobj = tobj.mainWindow
+				if tobj:
+					tobj = tobj.nodeGraph
+					if tobj:
+						tobj = tobj.graph
+						if tobj:
+							tobj = tobj._undo_stack
+							if tobj:
+								def get_stack_error_info(cmd:QtWidgets.QUndoCommand):
+									stackListData = []
+									for i in range(cmd.childCount()):
+										c = cmd.child(i)
+										if c:
+											if hasattr(c,'getDebugInfo'):
+												stackListData.append(c.getDebugInfo())
+											else:
+												stackListData.append(str(c.__class__) + " " + c.text())
+									return "\n".join(stackListData)
+
+								if tobj.command(tobj.index()):
+									cmd = tobj.command(tobj.index())
+									ftext = f'Текущая команда: {cmd.text()} ({cmd.actionText()})'
+									more_desc += f"\n{ftext}\n{get_stack_error_info(cmd)}"
+								else:
+									_ln = tobj.count()
+									if _ln > 0:
+										cmd = tobj.command(_ln - 1)
+										ftext = f'Последняя команда: {cmd.text()} ({cmd.actionText()})'
+										more_desc += f"\n{ftext}\n{get_stack_error_info(cmd)}"
+			
 			#TODO copy error message to clipboard
-			QMessageBox.critical(None, "Критическая ошибка", error_message)
-		
+
+			dt = datetime.datetime.now()
+			dtstr = str(dt).replace(":","_").replace(".","_")
+			dumpname = ".\\RENODE_CRASHDUMP_" + dtstr + ".txt"
+			dumpPathABS = os.path.realpath(dumpname)
+
+			mbx = QMessageBox(None)
+			mbx.setWindowTitle("Критическая ошибка")
+			mbx.setText(error_message + f"\nОтчет будет сохранён по пути:\n\"{dumpPathABS}\"")
+			detail = 'Exception info: ' + tb_text + "\n\nДополнительная информация: \n\n" + more_desc
+			mbx.setDetailedText(detail)
+			mbx.setMinimumSize(800, 600)
+			mbx.setStandardButtons(QMessageBox.Ok)
+			mbx.setIcon(QMessageBox.Critical)
+			
+			mbx.exec_()
+			
+			#QMessageBox.critical(None, "Критическая ошибка", error_message)
+			# create file with error info
+			with open(dumpPathABS, "w",encoding="utf-8") as f:
+				f.write(f'Date:{dt}\n\n'+error_message + "\n\n\n" + detail)
 
 		# Вы можете выполнить другие действия здесь, например, показать диалог с сообщением об ошибке.
 		sys.__excepthook__(exctype, value, traceback_obj)  # Вызов стандартного обработчика исключений

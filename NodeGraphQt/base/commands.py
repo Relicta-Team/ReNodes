@@ -6,6 +6,15 @@ from NodeGraphQt.constants import PortTypeEnum
 class UndoCommand(QtWidgets.QUndoCommand):
     def __init__(self):
         QtWidgets.QUndoCommand.__init__(self)
+    
+    def getDebugInfo(self):
+        dlist = []
+        for prop in dir(self):
+            if not prop.startswith('__'):
+                attrval = getattr(self,prop)
+                if callable(attrval): continue
+                dlist.append("\t\t{}=>{}".format(prop,attrval))
+        return ';\n'.join(dlist)
 
 class PropertyChangedCmd(UndoCommand):
     """
