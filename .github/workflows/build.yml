@@ -1,0 +1,26 @@
+
+
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  
+jobs:
+  build:
+    name: Test
+    runs-on: windows-latest
+
+    steps:
+      - name: Build
+        run: |
+          echo "Build started..."
+          help
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v3.1.4
+      - name: Test
+        run: |
+          echo "Test started..."
+          python -V
