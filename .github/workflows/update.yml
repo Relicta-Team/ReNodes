@@ -1,0 +1,26 @@
+
+
+name: Update
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DEPLOY_TOKEN: ${{secrets.TOKEN}}
+
+jobs:
+  build:
+    name: Test build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v3.1.4
+      - name: Compile
+        run: |
+          python -V
+          python gh_build_task.py
