@@ -20,3 +20,5 @@ jobs:
       - name: Deploy to ReSDK
         run: |
           gh workflow run --repo Relicta-Team/ReSDK_A3.vr deploy_renode.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
